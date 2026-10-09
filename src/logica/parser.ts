@@ -1,0 +1,300 @@
+import type { Codigo, Conectivo, Diag, Formula, Rel, Span, Termo } from './ast'
+import { SIMBOLO_DE, type TipoToken, type Token } from './lexer'
+
+export class ErroSintaxe extends Error {
+  constructor(public diag: Diag) {
+    super(diag.msg)
+  }
+}
+
+const BINARIOS: TipoToken[] = ['and', 'or', 'imp', 'iff']
+const RELACOES: Partial<Record<TipoToken, Rel>> = { eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆' }
+const INICIO_FORMULA: TipoToken[] = ['nome', 'not', 'forall', 'exists', 'lpar', 'empty']
+
+export interface OpcoesParser {
+  /** nomes declarados como predicado de aridade 0 (proposições) */
+  ehProposicao?: (nome: string) => boolean
+}
+
+export function parseTokens(tokens: Token[], op: OpcoesParser = {}): Formula {
+  return new Parser(tokens, op).formulaCompleta()
+}
+
+class Parser {
+  private i = 0
+
+  constructor(
+    private toks: Token[],
+    private op: OpcoesParser,
+  ) {}
+
+  // método (não getter) para o TypeScript não "fixar" o tipo do token entre avanços
+  private at(): Token {
+    return this.toks[this.i]
+  }
+  private avancar(): Token {
+    const tk = this.toks[this.i]
+    if (tk.t !== 'eof') this.i++
+    return tk
+  }
+  private erro(codigo: Codigo, msg: string, span: Span): never {
+    throw new ErroSintaxe({ codigo, nivel: 'erro', msg, pos: span.pos, end: Math.max(span.end, span.pos + 1) })
+  }
+  private col(tk: Span) {
+    return `coluna ${tk.pos + 1}`
+  }
+
+  /** Erro para um token que sobrou onde se esperava fim, ')' ou conectivo. */
+  private erroInesperado(tk: Token, esperado: string): never {
+    if (INICIO_FORMULA.includes(tk.t))
+      this.erro('E3', `Duas fórmulas lado a lado sem conectivo (${this.col(tk)}): falta ∧, ∨, ⟹ ou ⟺`, tk)
+    if (RELACOES[tk.t])
+      this.erro('E0', `Relação '${SIMBOLO_DE[tk.t]}' aplicada a uma fórmula, ou relações encadeadas (${this.col(tk)})`, tk)
+    if (tk.t === 'rpar') this.erro('E7', `')' na ${this.col(tk)} não tem '(' correspondente`, tk)
+    this.erro('E0', `'${SIMBOLO_DE[tk.t]}' inesperado na ${this.col(tk)}; esperava ${esperado}`, tk)
+  }
+
+  private faltaOperando(tk: Token): boolean {
+    const a = this.at().t
+    return a === 'eof' || a === 'rpar' || a === 'comma' || BINARIOS.includes(a) || (tk.t !== 'not' && !!RELACOES[a])
+  }
+
+  formulaCompleta(): Formula {
+    if (this.at().t === 'eof') this.erro('E0', 'Fórmula vazia', this.at())
+    const f = this.formula()
+    if (this.at().t !== 'eof') this.erroInesperado(this.at(), 'um conectivo ou o fim da fórmula')
+    return f
+  }
+
+  // formula := iff ; precedência ¬ > ∧ > ∨ > ⟹ > ⟺
+  private formula(): Formula {
+    return this.iff()
+  }
+
+  private operandoDireita(opTk: Token, prox: () => Formula): Formula {
+    if (this.faltaOperando(opTk))
+      this.erro('E1', `Operador '${SIMBOLO_DE[opTk.t]}' sem operando à direita (${this.col(opTk)})`, opTk)
+    return prox()
+  }
+
+  private bin(k: Conectivo, l: Formula, r: Formula): Formula {
+    return { k, l, r, pos: l.pos, end: r.end }
+  }
+
+  private iff(): Formula {
+    let l = this.imp()
+    while (this.at().t === 'iff') {
+      const tk = this.avancar()
+      l = this.bin('iff', l, this.operandoDireita(tk, () => this.imp()))
+    }
+    return l
+  }
+
+  private imp(): Formula {
+    const l = this.or()
+    if (this.at().t === 'imp') {
+      const tk = this.avancar()
+      return this.bin('imp', l, this.operandoDireita(tk, () => this.imp()))
+    }
+    return l
+  }
+
+  private or(): Formula {
+    let l = this.and()
+    while (this.at().t === 'or') {
+      const tk = this.avancar()
+      l = this.bin('or', l, this.operandoDireita(tk, () => this.and()))
+    }
+    return l
+  }
+
+  private and(): Formula {
+    let l = this.unaria(false)
+    while (this.at().t === 'and') {
+      const tk = this.avancar()
+      l = this.bin('and', l, this.operandoDireita(tk, () => this.unaria(false)))
+    }
+    return l
+  }
+
+  private unaria(aposNegacao: boolean): Formula {
+    const tk = this.at()
+    switch (tk.t) {
+      case 'not': {
+        this.avancar()
+        const f = this.operandoDireita(tk, () => this.unaria(true))
+        return { k: 'not', f, pos: tk.pos, end: f.end }
+      }
+      case 'forall':
+      case 'exists':
+        return this.quantificador()
+      case 'and':
+      case 'or':
+      case 'imp':
+      case 'iff':
+        this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem operando à esquerda (${this.col(tk)})`, tk)
+      case 'eq':
+      case 'neq':
+      case 'in':
+      case 'notin':
+      case 'subset':
+        this.erro('E1', `Relação '${SIMBOLO_DE[tk.t]}' sem termo à esquerda (${this.col(tk)})`, tk)
+      case 'cap':
+      case 'cup':
+        this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem termo à esquerda (${this.col(tk)})`, tk)
+      case 'lpar':
+        return this.parenteses()
+      case 'nome':
+      case 'empty':
+      case 'subscr':
+        return this.atomo(aposNegacao)
+      case 'eof':
+        this.erro('E1', 'A fórmula termina sem operando', tk)
+      default:
+        this.erroInesperado(tk, 'uma fórmula')
+    }
+  }
+
+  private quantificador(): Formula {
+    const q = this.avancar()
+    const qs = SIMBOLO_DE[q.t]
+    if (this.at().t !== 'nome')
+      this.erro('E0', `Esperava uma variável depois de '${qs}' (${this.col(q)})`, this.at().t === 'eof' ? q : this.at())
+    const v = this.avancar()
+    if (this.at().t === 'subscr')
+      this.erro('E0', `A variável de '${qs}' deve ser um nome simples, sem subscrito (${this.col(this.at())})`, this.at())
+    let dom: Termo | undefined
+    if (this.at().t === 'in') {
+      const inTk = this.avancar()
+      if (this.faltaOperando(inTk) || this.at().t === 'not')
+        this.erro('E1', `'∈' sem termo depois de '${qs}${v.v}' (${this.col(inTk)})`, inTk)
+      dom = this.termo()
+    }
+    if (this.faltaOperando(q))
+      this.erro('E1', `Quantificador '${qs}${v.v}' sem fórmula depois (${this.col(q)})`, q)
+    const corpo = this.formula()
+    return { k: q.t as 'forall' | 'exists', v: v.v, vPos: v.pos, dom, corpo, pos: q.pos, end: corpo.end }
+  }
+
+  /** '(' pode abrir um termo, ex. "(A ⋂ B) ⊆ C", ou uma fórmula. Tenta termo + relação primeiro. */
+  private parenteses(): Formula {
+    const salvo = this.i
+    try {
+      const t = this.termo()
+      if (RELACOES[this.at().t]) return this.relacao(t)
+    } catch (e) {
+      if (!(e instanceof ErroSintaxe)) throw e
+    }
+    this.i = salvo
+    const abre = this.avancar()
+    if (this.at().t === 'rpar') this.erro('E0', `Parênteses vazios (${this.col(abre)})`, { pos: abre.pos, end: this.at().end })
+    const f = this.formula()
+    if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')' ou um conectivo")
+    const fecha = this.avancar()
+    return { ...f, pos: abre.pos, end: fecha.end }
+  }
+
+  private atomo(aposNegacao: boolean): Formula {
+    const ini = this.at()
+    const t = this.termo()
+    if (RELACOES[this.at().t]) return this.relacao(t)
+    // aplicação sem relação depois → predicado
+    if (t.k === 'app' && !t.subscrito) return { k: 'pred', nome: t.fn, args: t.args, pos: t.pos, end: t.end }
+    if (t.k === 'nome' && this.op.ehProposicao?.(t.nome)) return { k: 'pred', nome: t.nome, args: [], pos: t.pos, end: t.end }
+    const txt = t.k === 'nome' ? t.nome : t.k === 'app' ? `${t.fn}${t.subscrito ? '_' : '('}…` : 'termo'
+    let dica = ''
+    if (t.k === 'nome' && this.at().t === 'lpar' && this.at().espacoAntes)
+      dica = ` Para aplicar '${t.nome}', escreva ${t.nome}(…) sem espaço antes do '('.`
+    else if (t.k === 'nome')
+      dica = ` Se '${t.nome}' é uma proposição, declare-a no dicionário como predicado de aridade 0.`
+    if (aposNegacao)
+      this.erro('E2', `Negação aplicada a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
+    this.erro('E2', `'${txt}' é um termo, não uma fórmula: falta uma relação (=, ≠, ∈, ∉, ⊆) ou um predicado (${this.col(ini)}).${dica}`, t)
+  }
+
+  private relacao(l: Termo): Formula {
+    const opTk = this.avancar()
+    const op = RELACOES[opTk.t]!
+    if (this.faltaOperando(opTk) || this.at().t === 'not' || this.at().t === 'forall' || this.at().t === 'exists')
+      this.erro('E1', `Relação '${op}' sem termo à direita (${this.col(opTk)})`, opTk)
+    const r = this.termo()
+    return { k: 'rel', op, l, r, pos: l.pos, end: r.end }
+  }
+
+  // termo := inter { ⋃ inter } ; inter := prim { ⋂ prim }
+  private termo(): Termo {
+    let l = this.inter()
+    while (this.at().t === 'cup') {
+      const tk = this.avancar()
+      const r = this.operandoTermo(tk, () => this.inter())
+      l = { k: 'uniao', l, r, pos: l.pos, end: r.end }
+    }
+    return l
+  }
+
+  private inter(): Termo {
+    let l = this.prim()
+    while (this.at().t === 'cap') {
+      const tk = this.avancar()
+      const r = this.operandoTermo(tk, () => this.prim())
+      l = { k: 'inter', l, r, pos: l.pos, end: r.end }
+    }
+    return l
+  }
+
+  private operandoTermo(tk: Token, prox: () => Termo): Termo {
+    const a = this.at().t
+    if (a !== 'nome' && a !== 'lpar' && a !== 'empty')
+      this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem termo à direita (${this.col(tk)})`, tk)
+    return prox()
+  }
+
+  private prim(): Termo {
+    const tk = this.at()
+    if (tk.t === 'empty') {
+      this.avancar()
+      return { k: 'vazio', pos: tk.pos, end: tk.end }
+    }
+    if (tk.t === 'nome') {
+      this.avancar()
+      const prox = this.at()
+      if (prox.t === 'lpar' && !prox.espacoAntes) return this.aplicacao(tk)
+      if (prox.t === 'subscr' && !prox.espacoAntes) {
+        this.avancar()
+        const arg: Termo = { k: 'nome', nome: prox.v, pos: prox.pos, end: prox.end }
+        return { k: 'app', fn: tk.v, args: [arg], subscrito: true, pos: tk.pos, end: prox.end }
+      }
+      return { k: 'nome', nome: tk.v, pos: tk.pos, end: tk.end }
+    }
+    if (tk.t === 'lpar') {
+      this.avancar()
+      const t = this.termo()
+      if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')'")
+      const fecha = this.avancar()
+      return { ...t, pos: tk.pos, end: fecha.end }
+    }
+    if (tk.t === 'subscr') this.erro('E0', `Subscrito '${tk.v}' sem nome antes (${this.col(tk)})`, tk)
+    if (tk.t === 'eof' || tk.t === 'rpar' || tk.t === 'comma' || BINARIOS.includes(tk.t))
+      this.erro('E1', `Falta um termo na ${this.col(tk)}`, tk)
+    this.erro('E0', `Esperava um termo na ${this.col(tk)}, encontrei '${SIMBOLO_DE[tk.t]}'`, tk)
+  }
+
+  private aplicacao(nome: Token): Termo {
+    const abre = this.avancar()
+    if (this.at().t === 'rpar') this.erro('E0', `'${nome.v}()' sem argumentos (${this.col(abre)})`, { pos: abre.pos, end: this.at().end })
+    const args: Termo[] = []
+    for (;;) {
+      args.push(this.termo())
+      if (this.at().t === 'comma') {
+        this.avancar()
+        continue
+      }
+      if (this.at().t === 'rpar') break
+      if (this.at().t === 'nome' || this.at().t === 'lpar')
+        this.erro('E0', `Falta ',' entre argumentos de '${nome.v}' (${this.col(this.at())})`, this.at())
+      this.erroInesperado(this.at(), `',' ou ')' nos argumentos de '${nome.v}'`)
+    }
+    const fecha = this.avancar()
+    return { k: 'app', fn: nome.v, args, subscrito: false, pos: nome.pos, end: fecha.end }
+  }
+}

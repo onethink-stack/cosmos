@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useReducer } from 'preact/hooks'
 import type { EntradaDicionario } from './tipos'
+import { guardarZ3, lerZ3Guardados } from '../motor/bancoProvas'
 import { analisar, nao, nomesNumericos, relevantes } from '../motor/motor'
 import { checarZ3, TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
 import { gravarConfig, lerConfig } from './db'
@@ -158,6 +159,23 @@ class EstadoZ3 {
     return this.carregando
   }
 
+  /** Traz do banco de provas as respostas do Z3 já guardadas no aparelho. */
+  async carregarGuardados() {
+    try {
+      for (const r of await lerZ3Guardados())
+        if (!this.confirmacoes.has(r.chave)) this.confirmacoes.set(r.chave, { estado: 'feito', resultado: r.resultado, ms: r.ms })
+      this.avisar()
+    } catch {
+      /* sem banco */
+    }
+  }
+
+  /** Esquece as respostas (o banco de provas foi apagado). */
+  esquecerTudo() {
+    this.confirmacoes.clear()
+    this.avisar()
+  }
+
   /** Resultado já calculado (ou em cálculo) para esta checagem. */
   consulta(chave: string): Confirmacao | undefined {
     return this.confirmacoes.get(chave)
@@ -188,6 +206,8 @@ class EstadoZ3 {
         if (phi) fs.push(nao(phi.expandida))
         const resultado = await checarZ3(api, fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
         this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
+        // fica no banco de provas (não precisa provar de novo noutro dia)
+        if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
       } catch (e) {
         this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
       }
@@ -203,3 +223,7 @@ export function useZ3(): EstadoZ3 {
   useEffect(() => z3.assinar(() => forcar(undefined)), [])
   return z3
 }
+
+/** Chave de uma checagem do Z3: fórmulas, fórmula negada e as fichas (tipo, aridade, número). */
+export const chaveZ3 = (formulas: string[], negar: string | null, dic: EntradaDicionario[]) =>
+  JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico])])

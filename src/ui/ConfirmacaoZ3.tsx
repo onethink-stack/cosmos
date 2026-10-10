@@ -1,6 +1,6 @@
 import { useEffect } from 'preact/hooks'
 import { estado, useEstado } from '../dados/estado'
-import { disponibilidadeZ3, useZ3 } from '../dados/z3'
+import { chaveZ3, disponibilidadeZ3, useZ3 } from '../dados/z3'
 import type { Grupo } from '../motor/motor'
 
 export type TipoConfirmacao =
@@ -98,9 +98,6 @@ function ConfirmacaoZ3Ligado({ tipo, formulas, negar }: { tipo: TipoConfirmacao;
     </div>
   )
 }
-
-const chaveZ3 = (formulas: string[], negar: string | null, dic: { simbolo: string; tipo: string; aridade: number; numerico?: boolean }[]) =>
-  JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico])])
 
 /**
  * Teorema com números: o Z3 confere. Se não segue, testa as notas desativadas

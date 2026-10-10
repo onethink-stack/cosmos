@@ -5,6 +5,7 @@ import { temAritmetica, usosDeNomes } from '../logica/termos'
 import { validar } from '../logica/validador'
 import { Aterrador, ehModal, GrandeDemais, type ProblemaCNF } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
+import { bancoAtual, chaveProva, type BancoProvas, type Prova } from './bancoProvas'
 import { resolver } from './sat'
 
 /** Um grupo de fórmulas que entra ou sai junto (uma nota). */
@@ -173,8 +174,25 @@ function lerModelo(n: number, k: number, p: ProblemaCNF, valores: Int8Array): Mo
  */
 export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: Progresso): Busca {
   const K = formulas.some(ehModal) ? Math.max(1, op.K) : 1
+  // banco de provas: o que já se sabe deste conjunto (pula os tamanhos já testados)
+  const banco = bancoAtual()
+  const chave = banco ? chaveProva(formulas) : ''
+  const sabido = banco ? conhecido(banco.obter(chave)) : null
+  if (sabido?.modelo && sabido.modelo.n <= op.N && (sabido.modelo.modelo.mundos ?? 1) <= K) {
+    banco!.estatisticas.acertos++
+    return { status: 'modelo', n: sabido.modelo.n, modelo: sabido.modelo.modelo }
+  }
+  const jaN = sabido?.semN ?? 0
+  const jaK = sabido?.semK ?? 0
+  if (banco && op.N <= jaN && K <= jaK) {
+    banco.estatisticas.acertos++
+    return { status: 'sem-modelo', K }
+  }
+  if (banco) banco.estatisticas[jaN ? 'parciais' : 'faltas']++
+
   for (let n = 1; n <= op.N; n++) {
     for (let k = 1; k <= K; k++) {
+      if (n <= jaN && k <= jaK) continue // já provado sem modelo
       progresso?.(`testando ${n} objeto${n > 1 ? 's' : ''}${K > 1 ? ` e ${k} mundo${k > 1 ? 's' : ''}` : ''}`)
       let p: ProblemaCNF
       try {
@@ -186,10 +204,39 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
         throw e
       }
       const r = resolver(p.nVars, p.clausulas)
-      if (r.sat) return { status: 'modelo', n, modelo: lerModelo(n, k, p, r.valores) }
+      if (r.sat) {
+        const modelo = lerModelo(n, k, p, r.valores)
+        banco?.guardar({ chave, status: 'modelo', n, modelo, K, usadoEm: Date.now() })
+        return { status: 'modelo', n, modelo }
+      }
     }
   }
+  if (banco) guardarSemModelo(banco, chave, op.N, K, jaN, jaK)
   return { status: 'sem-modelo', K }
+}
+
+/** O que o banco sabe: um modelo, e/ou até onde não há modelo (N objetos, K mundos). */
+function conhecido(p: Prova | undefined): { modelo?: { n: number; modelo: Modelo }; semN: number; semK: number } | null {
+  if (!p) return null
+  // um modelo achado com n objetos: abaixo de n (com os mundos daquela busca) não havia
+  if (p.status === 'modelo') return { modelo: { n: p.n, modelo: p.modelo }, semN: p.n - 1, semK: p.K }
+  return { semN: p.N, semK: p.K }
+}
+
+/** Guarda "sem modelo até N, K", ficando com a maior região já provada. */
+function guardarSemModelo(banco: BancoProvas, chave: string, N: number, K: number, jaN: number, jaK: number) {
+  const [n, k] = N >= jaN ? [N, K >= jaK || N > jaN ? K : jaK] : [jaN, jaK]
+  if (n > jaN || k > jaK) banco.guardar({ chave, status: 'sem-modelo', N: n, K: k, usadoEm: Date.now() })
+}
+
+/** O aprimoramento provou que não há modelo até N, K: registra no banco. */
+export function registrarSemModelo(formulas: Formula[], N: number, K: number) {
+  const banco = bancoAtual()
+  if (!banco) return
+  const chave = chaveProva(formulas)
+  const s = conhecido(banco.obter(chave))
+  if (s?.modelo && s.modelo.n <= N) return
+  guardarSemModelo(banco, chave, N, K, s?.semN ?? 0, s?.semK ?? 0)
 }
 
 export type BuscaFaixa = Busca | { status: 'tempo'; n: number }
@@ -202,8 +249,16 @@ export type BuscaFaixa = Busca | { status: 'tempo'; n: number }
 export function buscarNaFaixa(formulas: Formula[], ns: number[], ks: number[], limite: number, prazo?: number): BuscaFaixa {
   const modal = formulas.some(ehModal)
   const mundos = modal ? ks : ks.includes(1) ? [1] : []
+  const banco = bancoAtual()
+  const sabido = banco ? conhecido(banco.obter(chaveProva(formulas))) : null
+  // um modelo já achado num desses tamanhos responde na hora
+  if (sabido?.modelo && ns.includes(sabido.modelo.n) && mundos.includes(sabido.modelo.modelo.mundos ?? 1)) {
+    banco!.estatisticas.acertos++
+    return { status: 'modelo', n: sabido.modelo.n, modelo: sabido.modelo.modelo }
+  }
   for (const n of ns)
     for (const k of mundos) {
+      if (sabido && n <= sabido.semN && k <= sabido.semK) continue // já provado sem modelo
       let p: ProblemaCNF
       try {
         const at = new Aterrador(n, limite, k)

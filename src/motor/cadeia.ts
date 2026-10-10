@@ -24,6 +24,7 @@ import {
   analisar,
   buscarModelo,
   buscarNaFaixa,
+  registrarSemModelo,
   minimizarRapido,
   nao,
   perguntar,
@@ -303,6 +304,7 @@ function aprofundar(
         return false
       }
       rel.K = k
+      for (const c of cs) registrarSemModelo(c.formulas, rel.N, k)
       atualizar({})
     }
   // um objeto a mais por vez
@@ -314,6 +316,8 @@ function aprofundar(
       return false
     }
     rel.N = n
+    // fica no banco de provas: a próxima rodada começa daqui
+    for (const c of cs) registrarSemModelo(c.formulas, n, modal ? rel.K : 1)
     atualizar({})
   }
   atualizar({ situacao: 'feito', parouPor: `chegou ao limite do aparelho (${lim.N} objetos${modal ? `, ${lim.K} mundos` : ''})` })

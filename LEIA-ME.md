@@ -43,6 +43,15 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   tempo de cada checagem e o tempo total. Medido: o que pesa é o tempo das
   provas (um teorema com extensionalidade leva 4 s com 8 objetos, 24 s com
   12 e 160 s com 17 num PC), não a memória.
+- **Banco de provas**: cada conferência do motor fica guardada no aparelho
+  (banco "caderno-provas", separado das notas). Um contraexemplo achado vale
+  para sempre; "sem contraexemplo até N objetos" faz a próxima busca testar
+  só os tamanhos novos. As respostas do Z3 também ficam. A chave é a forma
+  canônica do conjunto de fórmulas (ordem e nome das variáveis ligadas não
+  importam). Pode ser apagado em *Capacidade do aparelho*.
+- **Reação automática**: a reação em cadeia roda sozinha 20 s depois que as
+  notas mudam (e ao abrir o app, se algo mudou), aproveitando o banco; avisa
+  só quando aparece algo novo. Leis novas continuam esperando sua aprovação.
 - **Salvamento automático**: a nota é salva sozinha pouco depois de você
   parar de digitar, ao sair dela e ao esconder o app.
 - **Segundo plano e avisos**: o motor continua trabalhando enquanto você usa

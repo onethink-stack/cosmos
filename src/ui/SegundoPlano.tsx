@@ -1,6 +1,6 @@
 import { useAvisos } from '../dados/avisos'
 import { descreverPerfil, detectarPerfil, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
-import { useVerificacao, type Ocupacao } from '../dados/verificacao'
+import { useVerificacao, verificacao, type Ocupacao } from '../dados/verificacao'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
   verificar: 'verificando',
@@ -107,6 +107,41 @@ export function ConfigPerfil() {
         <input type="checkbox" checked={pf.aprimorar} onChange={(e) => pf.definirAprimorar((e.target as HTMLInputElement).checked)} />
         Aprimorar sozinho depois de cada rodada (aprofundar até o limite)
       </label>
+      <label class="alternar">
+        <input type="checkbox" checked={pf.automatico} onChange={(e) => pf.definirAutomatico((e.target as HTMLInputElement).checked)} />
+        Reação automática: roda sozinha 20 s depois que as notas mudam (e ao abrir o app, se algo mudou)
+      </label>
+      <Banco />
     </details>
+  )
+}
+
+/** O banco de provas: o que já foi conferido fica guardado e é reaproveitado. */
+function Banco() {
+  const ver = useVerificacao()
+  const b = ver.banco
+  return (
+    <div class="banco-provas">
+      <p class="suave">
+        <b>Banco de provas:</b> cada conferência fica guardada neste aparelho. Ao conferir de novo, o que já foi provado vem do banco, e um
+        aprofundamento só testa os tamanhos novos (se já se sabe "sem contraexemplo até 12 objetos", para ir a 14 testa só 13 e 14).
+        {b && (
+          <>
+            {' '}
+            Guardadas: {b.entradas.toLocaleString('pt-BR')}. Nesta sessão: {b.acertos} respostas vieram inteiras do banco, {b.parciais}{' '}
+            aproveitaram parte, {b.faltas} foram calculadas do zero.
+          </>
+        )}
+      </p>
+      <button
+        type="button"
+        class="mini"
+        onClick={() => {
+          if (confirm('Apagar o banco de provas? Nada das notas é apagado; só o motor terá de conferir tudo de novo.')) void verificacao.limparBanco()
+        }}
+      >
+        Apagar o banco de provas
+      </button>
+    </div>
   )
 }

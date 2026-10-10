@@ -76,6 +76,8 @@ class EstadoPerfil {
   escolhido: IdPerfil = 'automatico'
   /** depois de cada rodada, aprofundar sozinho até o limite do perfil */
   aprimorar = true
+  /** rodar a reação em cadeia sozinha quando as notas mudam */
+  automatico = true
   private ouvintes = new Set<() => void>()
 
   assinar(fn: () => void) {
@@ -92,6 +94,7 @@ class EstadoPerfil {
     try {
       this.escolhido = (await lerConfig<IdPerfil>('perfil')) ?? 'automatico'
       this.aprimorar = (await lerConfig<boolean>('aprimorar')) ?? true
+      this.automatico = (await lerConfig<boolean>('automatico')) ?? true
     } catch {
       /* sem banco */
     }
@@ -107,6 +110,12 @@ class EstadoPerfil {
   escolher(id: IdPerfil) {
     this.escolhido = id
     void gravarConfig('perfil', id).catch(() => {})
+    this.mudou()
+  }
+
+  definirAutomatico(v: boolean) {
+    this.automatico = v
+    void gravarConfig('automatico', v).catch(() => {})
     this.mudou()
   }
 

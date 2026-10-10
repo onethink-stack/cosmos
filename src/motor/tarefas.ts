@@ -1,6 +1,7 @@
 import { preparar } from '../dados/premissas'
 import { lex } from '../logica/lexer'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
+import { bancoAtual, type EstatisticasBanco } from './bancoProvas'
 import { reacaoEmCadeia, type PedidoCadeia, type RelatorioCadeia } from './cadeia'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
@@ -40,6 +41,8 @@ export type RespostaMotor =
   | { id: number; tipo: 'lacunas'; chave: string; teoremaId: string; resultado: ResultadoLacunas; ms: number }
   | { id: number; tipo: 'cadeia'; relatorios: RelatorioCadeia[]; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
+  /** quanto o banco de provas guardou e reaproveitou */
+  | { id: number; tipo: 'banco'; estatisticas: EstatisticasBanco }
   | { id: number; tipo: 'fim' }
 
 export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void) {
@@ -56,7 +59,7 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
     } catch (e) {
       enviar({ id: p.id, tipo: 'erro', chave: 'cadeia', msg: (e as Error).message })
     }
-    enviar({ id: p.id, tipo: 'fim' })
+    terminar(p.id, enviar)
     return
   }
   // teoremas: cada um contra a tarefa do seu contexto
@@ -73,7 +76,7 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
         enviar({ id: p.id, tipo: 'erro', chave: t.chave, msg: (e as Error).message })
       }
     })
-    enviar({ id: p.id, tipo: 'fim' })
+    terminar(p.id, enviar)
     return
   }
   for (const t of p.tarefas) {
@@ -102,7 +105,14 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
       enviar({ id: p.id, tipo: 'erro', chave: t.chave, msg: (e as Error).message })
     }
   }
-  enviar({ id: p.id, tipo: 'fim' })
+  terminar(p.id, enviar)
+}
+
+/** Fim do pedido: manda antes os números do banco de provas. */
+function terminar(id: number, enviar: (r: RespostaMotor) => void) {
+  const b = bancoAtual()
+  if (b) enviar({ id, tipo: 'banco', estatisticas: { ...b.estatisticas } })
+  enviar({ id, tipo: 'fim' })
 }
 
 /** Monta as tarefas: o conjunto geral (lei + fato) e uma por titular de visão. */

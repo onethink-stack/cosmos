@@ -6,7 +6,13 @@ import { avisos } from './avisos'
 import { estado } from './estado'
 import { perfil } from './perfil'
 import { limiteTexto } from '../motor/avaliar'
-import { verificacao, type Conclusao } from './verificacao'
+import { verificacao, assinaturaCadeia, type Conclusao } from './verificacao'
+import { prepararCadeia } from './cadeia'
+import { preparar } from './premissas'
+import { chaveZ3, z3 } from './z3'
+
+/** espera depois da última mudança nas notas antes de rodar a reação sozinha */
+const ESPERA_AUTOMATICA_MS = 20_000
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
@@ -27,6 +33,7 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
             corpo: `${virada.aprimoramento!.parouPor}. Refazendo a rodada com ${virada.aprimoramento!.virada!.N} objetos.`,
             rota: '#/cadeia',
           }
+        if (r.motivo.startsWith('automático')) return null // rodada automática sem mudança: sem aviso
         const niveis = aps.map((x) => `${x.rotulo}: até ${limiteTexto(x.N, x.K)}`).join(' · ')
         return { titulo: `Aprimoramento da rodada ${r.numero} terminado`, corpo: `Tudo confirmado — ${niveis}.`, rota: '#/cadeia' }
       }
@@ -60,6 +67,11 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
             const a = ant.relatorios.find((x) => x.chave === rel.chave)?.teoremas.find((x) => x.id === t.id)
             if (a && a.resultado.tipo !== 'segue' && t.resultado.tipo === 'segue') novos++
           }
+      // rodada automática: só avisa se apareceu algo novo
+      if (r.motivo.startsWith('automático')) {
+        const sugAntes = ant ? ant.relatorios.reduce((s, x) => s + x.sugestoes.length, 0) : 0
+        if (!conflitos && !novos && sugestoes <= sugAntes) return null
+      }
       if (conflitos) partes.push(`⚠ ${plural(conflitos, 'contradição', 'contradições')}`)
       if (novos) partes.push(`${plural(novos, 'teorema passou', 'teoremas passaram')} a seguir`)
       if (seguem) partes.push(`${plural(seguem, 'teorema segue', 'teoremas seguem')}${geracao > 1 ? ` (até a geração ${geracao})` : ''}`)
@@ -155,6 +167,46 @@ export function iniciarSegundoPlano() {
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)
     if (r) avisos.avisar(r.titulo, r.corpo, r.rota)
+    if (c.tipo === 'cadeia') conferirNumerosNoFundo()
+  })
+
+  // reação automática: as notas mudaram (ou a última rodada ficou desatualizada) → nova rodada
+  let espera: ReturnType<typeof setTimeout> | null = null
+  let avisouNomes = ''
+  const agendar = () => {
+    if (espera) clearTimeout(espera)
+    espera = setTimeout(rodarSePreciso, ESPERA_AUTOMATICA_MS)
+  }
+  const rodarSePreciso = () => {
+    espera = null
+    if (!perfil.automatico || !estado.carregado || !verificacao.configCarregada || verificacao.interrompida) return
+    if (verificacao.ocupado) return agendar() // tenta de novo quando o motor estiver livre
+    const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
+    if (!pronto) {
+      // avisa uma vez por conjunto de nomes pendentes
+      const nomes = preparar(estado.notas, estado.dicionario).semFicha.map((p) => p.simbolo).join(', ')
+      if (nomes !== avisouNomes)
+        avisos.avisar('Reação automática esperando', `Confirme no dicionário os nomes sem ficha: ${nomes}.`, '#/contradicoes')
+      avisouNomes = nomes
+      return
+    }
+    avisouNomes = ''
+    if (!pedido.contextos.length) return
+    const ultima = verificacao.rodadas.at(-1)
+    if (ultima && ultima.assinatura === assinaturaCadeia(pedido, estado.dicionario) && !ultima.interrompida) return
+    verificacao.continuarCadeia(ultima ? 'automático: as notas mudaram' : 'automático: primeira rodada')
+  }
+  let notasAntes = estado.notas
+  let dicAntes = estado.dicionario
+  estado.assinar(() => {
+    if (estado.notas === notasAntes && estado.dicionario === dicAntes) return
+    notasAntes = estado.notas
+    dicAntes = estado.dicionario
+    agendar()
+  })
+  perfil.assinar(() => perfil.automatico && agendar())
+  verificacao.assinar(() => {
+    if (verificacao.configCarregada && !espera && !verificacao.ocupado && perfil.automatico) agendar()
   })
 
   verificacao.assinar(() => void ajustarTela())
@@ -179,4 +231,22 @@ export function iniciarSegundoPlano() {
   navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
     if (e.data?.tipo === 'ir' && typeof e.data.url === 'string') location.hash = new URL(e.data.url).hash || '#/notas'
   })
+}
+
+/**
+ * Depois de uma rodada, confere no Z3 (se ligado) os teoremas com números, em
+ * segundo plano: as respostas ficam guardadas e a tela da cadeia já abre com elas.
+ */
+function conferirNumerosNoFundo() {
+  if (!z3.ativo) return
+  const r = verificacao.rodadas.at(-1)
+  if (!r) return
+  const { pedido } = prepararCadeia(estado.notas, estado.dicionario)
+  for (const rel of r.relatorios) {
+    const ctx = pedido.contextos.find((c) => c.chave === rel.chave)
+    if (!ctx) continue
+    const formulas = ctx.grupos.flatMap((g) => g.formulas)
+    for (const t of rel.teoremas)
+      if (t.resultado.tipo === 'aritmetica') z3.confirmar(chaveZ3(formulas, t.formula, estado.dicionario), formulas, estado.dicionario, t.formula, true)
+  }
 }

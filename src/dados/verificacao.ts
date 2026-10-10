@@ -5,9 +5,11 @@ import type { ResultadoLacunas } from '../motor/lacunas'
 import { OPCOES_PADRAO, type Grupo, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
+import { abrirBancoProvas, bancoAtual, bancoNaMemoria, definirBanco, type EstatisticasBanco } from '../motor/bancoProvas'
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
+import { z3 } from './z3'
 import { K_ABSOLUTO, N_ABSOLUTO, perfil } from './perfil'
 import type { EntradaDicionario } from './tipos'
 
@@ -155,6 +157,9 @@ class Verificacao {
   private fila: (() => void)[] = []
   private aoConcluirFns = new Set<(c: Conclusao) => void>()
   private ultimaGravacao = 0
+  private bancoAqui: Promise<void> | null = null
+  /** banco de provas: entradas guardadas e o que foi reaproveitado nesta sessão */
+  banco: EstatisticasBanco | null = null
   /** rodadas refeitas seguidas pelo aprimoramento (limite: MAX_VIRADAS) */
   private viradasSeguidas = 0
 
@@ -289,7 +294,26 @@ class Verificacao {
 
   /** Sem worker: roda na linha principal (a tela pode travar durante a busca). */
   private rodarAqui(pedido: PedidoMotor) {
-    setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30)
+    this.bancoAqui ??= abrirBancoProvas()
+      .then(definirBanco)
+      .catch(() => definirBanco(bancoNaMemoria()))
+    void this.bancoAqui.then(() => setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30))
+  }
+
+  /** Apaga o banco de provas (tudo será conferido de novo). */
+  async limparBanco() {
+    this.cancelar()
+    // o worker segura o banco aberto: fecha antes de apagar
+    this.worker?.terminate()
+    this.worker = null
+    await bancoAtual()?.limpar()
+    await new Promise<void>((ok) => {
+      const r = indexedDB.deleteDatabase('caderno-provas')
+      r.onsuccess = r.onerror = r.onblocked = () => ok()
+    })
+    this.banco = { entradas: 0, acertos: 0, parciais: 0, faltas: 0 }
+    z3.esquecerTudo()
+    this.avisar()
   }
 
   /** Pergunta se a fórmula segue do conjunto da tarefa. Cancela o que estiver rodando. */
@@ -326,7 +350,7 @@ class Verificacao {
     this.rodadas = [
       ...this.rodadas,
       { numero, motivo, relatorios: [], erro: null, ms: 0, terminada: false, assinatura: assinaturaCadeia(pedido, dicionario) },
-    ]
+    ].slice(-10)
     this.ocupado = 'cadeia'
     this.iniciadoEm = Date.now()
     // se o app for fechado no meio, a rodada é retomada na próxima abertura
@@ -416,7 +440,9 @@ class Verificacao {
 
   private receber(r: RespostaMotor) {
     if (r.id !== this.pedido) return
-    if (r.tipo === 'progresso') {
+    if (r.tipo === 'banco') {
+      this.banco = r.estatisticas
+    } else if (r.tipo === 'progresso') {
       this.rodando = { chave: r.chave, msg: r.msg }
     } else if (r.tipo === 'cadeia' || (r.tipo === 'erro' && this.ocupado === 'cadeia')) {
       const atual = this.rodadas.at(-1)

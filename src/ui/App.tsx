@@ -20,6 +20,7 @@ export function App() {
     void estado.carregar()
     void verificacao.carregarConfig()
     void z3.carregarConfig()
+    void z3.carregarGuardados()
   }, [])
 
   const aba = rota.tela === 'nota' || rota.tela === 'nova' || rota.tela === 'sistemas' ? 'notas' : rota.tela

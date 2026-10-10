@@ -12,7 +12,8 @@
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",
     "build:tudo": "npm run build",
     "preview": "node scripts/copiar-z3.mjs && vite preview --host",
-    "icones": "node scripts/gerar-icones.mjs"
+    "icones": "node scripts/gerar-icones.mjs",
+    "cifrar": "node --experimental-strip-types --no-warnings scripts/cifrar-sistema.ts"
   },
   "dependencies": {
     "preact": "^11.0.1",

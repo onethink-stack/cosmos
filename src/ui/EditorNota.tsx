@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'preact/hooks'
 import { estado, notaVazia, useEstado } from '../dados/estado'
 import { montarTarefas, verificacao } from '../dados/verificacao'
-import { NOME_COMPARTIMENTO, NOME_GRAU, type Compartimento, type Grau, type Nota } from '../dados/tipos'
+import { COMPARTIMENTOS, NOME_COMPARTIMENTO, NOME_GRAU, type Compartimento, type Grau, type Nota } from '../dados/tipos'
 import type { Diag } from '../logica/ast'
 import { EditorFormulas } from './EditorFormulas'
 import { guarda, ir } from './rotas'
 import { StatusVerificacao } from './StatusVerificacao'
 
-const COMPARTIMENTOS: Compartimento[] = ['lei', 'fato', 'visao']
 const GRAUS: Grau[] = ['F', 'M', 'D']
 
 // status da verificação feita ao salvar, por nota (sobrevive à troca nova → #/nota/id)
@@ -173,6 +172,13 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
             que φ". Ela nunca entra como premissa do motor geral; só é checada junto com as outras visões do mesmo titular.
           </p>
         </>
+      )}
+
+      {nota.compartimento === 'teorema' && (
+        <p class="nota-teorema">
+          Um teorema não entra como premissa. Em <b>Contradições → Teoremas</b>, o app confere se cada fórmula desta nota segue das leis e
+          fatos ativos — e mostra de quais notas, ou um contraexemplo. Use o texto livre para a demonstração.
+        </p>
       )}
 
       <h2>Fórmulas</h2>

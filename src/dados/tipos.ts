@@ -11,7 +11,8 @@ export interface EntradaDicionario {
   definicao: string
 }
 
-export type Compartimento = 'lei' | 'fato' | 'visao'
+/** teorema: não é premissa; o app confere se segue das leis e fatos ativos */
+export type Compartimento = 'lei' | 'fato' | 'visao' | 'teorema'
 
 /** F = estabelecido · M = mapeamento não medido · D = decisão */
 export type Grau = 'F' | 'M' | 'D'
@@ -35,7 +36,8 @@ export interface Nota {
   titular: string
 }
 
-export const NOME_COMPARTIMENTO: Record<Compartimento, string> = { lei: 'Lei', fato: 'Fato', visao: 'Visão de mundo' }
+export const NOME_COMPARTIMENTO: Record<Compartimento, string> = { lei: 'Lei', fato: 'Fato', visao: 'Visão de mundo', teorema: 'Teorema' }
+export const COMPARTIMENTOS: Compartimento[] = ['lei', 'fato', 'visao', 'teorema']
 
 export const NOME_GRAU: Record<Grau, string> = {
   F: 'estabelecido',

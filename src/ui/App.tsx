@@ -1,6 +1,5 @@
 import { useEffect } from 'preact/hooks'
 import { estado, useEstado } from '../dados/estado'
-import { carregarSistema, sistema } from '../dados/sistemas'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
 import { Backup } from './Backup'
@@ -12,20 +11,11 @@ import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
 import { Sistemas } from './Sistemas'
 
-/** Caderno novo: carrega o sistema pronto escolhido como padrão. */
-async function iniciar() {
-  await estado.carregar()
-  if (estado.primeiraVez && !estado.notas.length) {
-    const s = sistema(estado.sistemaPadrao)
-    if (s) await carregarSistema(s)
-  }
-}
-
 export function App() {
   const est = useEstado()
   const rota = useRota()
   useEffect(() => {
-    void iniciar()
+    void estado.carregar()
     void verificacao.carregarConfig()
     void z3.carregarConfig()
   }, [])

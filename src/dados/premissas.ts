@@ -14,6 +14,8 @@ export interface Preparo {
   premissas: FormulaDeNota[]
   /** fórmulas válidas das visões ativas, agrupadas por titular */
   visoes: Map<string, FormulaDeNota[]>
+  /** fórmulas das notas ativas de teorema: conferidas, nunca premissas */
+  teoremas: FormulaDeNota[]
   /** fórmulas de notas ativas com erro: ficam de fora do motor */
   comErro: FormulaDeNota[]
   /** nomes das notas ativas ainda sem ficha confirmada */
@@ -24,6 +26,7 @@ export interface Preparo {
 
 export function preparar(notas: Nota[], dicionario: EntradaDicionario[]): Preparo {
   const premissas: FormulaDeNota[] = []
+  const teoremas: FormulaDeNota[] = []
   const visoes = new Map<string, FormulaDeNota[]>()
   const comErro: FormulaDeNota[] = []
   const todas: { texto: string; notaId: string }[] = []
@@ -38,12 +41,13 @@ export function preparar(notas: Nota[], dicionario: EntradaDicionario[]): Prepar
         return
       }
       todas.push({ texto, notaId: n.id })
-      if (n.compartimento === 'visao') {
+      if (n.compartimento === 'teorema') teoremas.push(f)
+      else if (n.compartimento === 'visao') {
         const t = n.titular.trim() || '(sem titular)'
         visoes.set(t, [...(visoes.get(t) ?? []), f])
       } else premissas.push(f)
     })
   }
   const semFicha = deduzirFichas(todas, dicionario)
-  return { premissas, visoes, comErro, semFicha, pronto: semFicha.length === 0 }
+  return { premissas, visoes, teoremas, comErro, semFicha, pronto: semFicha.length === 0 }
 }

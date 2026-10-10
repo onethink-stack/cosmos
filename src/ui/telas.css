@@ -228,3 +228,21 @@ details.explicacao p { margin: 6px 0; }
 .lista-sistemas { list-style: none; padding: 0; display: grid; gap: 10px; }
 .lista-sistemas .cartao-link { padding-right: 12px; }
 .lista-sistemas p { margin: 4px 0 8px; font-size: .92rem; }
+
+/* ---------- teoremas ---------- */
+:root { --teorema: #8a5a00; --teorema-fundo: #fbe7b5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --teorema: #f0c66b; --teorema-fundo: #4d3a0e; } }
+:root[data-theme="dark"] { --teorema: #f0c66b; --teorema-fundo: #4d3a0e; }
+.cartao.c-teorema { border-left-color: var(--teorema); }
+.selo.c-teorema { background: var(--teorema-fundo); color: var(--teorema); }
+.chip.c-teorema.ativo, .segmentado button.c-teorema.ativo { background: var(--teorema); border-color: var(--teorema); color: var(--fundo); }
+.nota-teorema { background: var(--teorema-fundo); border-radius: var(--raio); padding: 8px 12px; font-size: .9rem; }
+.lista-teoremas { list-style: none; padding: 0; display: grid; gap: 8px; }
+.lista-teoremas > li { background: var(--superficie); border: 1px solid var(--borda); border-left: 4px solid var(--borda); border-radius: var(--raio); padding: 8px 12px; }
+.lista-teoremas > li.segue { border-left-color: var(--ok); }
+.lista-teoremas > li.nao-segue, .lista-teoremas > li.contradiz { border-left-color: var(--erro); }
+.lista-teoremas .estado-teorema { font-weight: 600; }
+.desbloquear { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.desbloquear input { flex: 1 1 180px; width: auto; }
+.desbloquear .erro-texto { flex-basis: 100%; margin: 0; }
+.vazio .desbloquear { justify-content: center; max-width: 420px; margin: 8px auto; }

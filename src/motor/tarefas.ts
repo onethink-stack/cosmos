@@ -21,6 +21,8 @@ export interface PedidoMotor {
   pergunta?: string
   /** se true, descobre consequências da (única) tarefa */
   descobrir?: boolean
+  /** se presente, confere cada teorema (id → fórmula) contra a (única) tarefa */
+  teoremas?: { id: string; formula: string }[]
 }
 
 export type RespostaMotor =
@@ -28,6 +30,7 @@ export type RespostaMotor =
   | { id: number; tipo: 'resultado'; chave: string; resultado: ResultadoMotor; ms: number }
   | { id: number; tipo: 'resposta'; chave: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'descobertas'; chave: string; resultado: ResultadoDescoberta; ms: number }
+  | { id: number; tipo: 'teorema'; chave: string; teoremaId: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   | { id: number; tipo: 'fim' }
 
@@ -36,6 +39,16 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
     const ini = Date.now()
     const progresso = (msg: string) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg })
     try {
+      if (p.teoremas) {
+        p.teoremas.forEach((th, k) => {
+          const ini2 = Date.now()
+          const resultado = perguntar(t.grupos, th.formula, p.dicionario, p.opcoes, (msg) =>
+            progresso(`teorema ${k + 1} de ${p.teoremas!.length}: ${msg}`),
+          )
+          enviar({ id: p.id, tipo: 'teorema', chave: t.chave, teoremaId: th.id, resultado, ms: Date.now() - ini2 })
+        })
+        continue
+      }
       if (p.descobrir) {
         const resultado = descobrir(t.grupos, p.dicionario, p.opcoes, progresso)
         enviar({ id: p.id, tipo: 'descobertas', chave: t.chave, resultado, ms: Date.now() - ini })

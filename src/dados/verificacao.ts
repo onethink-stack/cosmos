@@ -44,7 +44,15 @@ export interface ResultadoDaDescoberta {
   assinatura: string
 }
 
-export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir'
+export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas'
+
+export interface ResultadoTeorema {
+  resultado: ResultadoPergunta
+  ms: number
+  N: number
+  /** fórmula conferida e premissas usadas; se mudar, o resultado está desatualizado */
+  assinatura: string
+}
 
 export const N_MAXIMO = 12
 export const K_MAXIMO = 5
@@ -59,6 +67,9 @@ class Verificacao {
   pergunta: ResultadoDaPergunta | null = null
   /** última busca de consequências */
   descoberta: ResultadoDaDescoberta | null = null
+  erroTeoremas: string | null = null
+  /** teoremas conferidos: id (nota:índice) → resultado */
+  teoremas = new Map<string, ResultadoTeorema>()
   /** o que o motor está fazendo agora */
   ocupado: Ocupacao | null = null
   get perguntando() {
@@ -73,6 +84,7 @@ class Verificacao {
   private ouvintes = new Set<() => void>()
   private pendentes = new Map<string, Tarefa>()
   private formulaPerguntada: string | undefined
+  private formulasTeoremas = new Map<string, string>()
   private dicionario: EntradaDicionario[] = []
 
   assinar(fn: () => void) {
@@ -157,18 +169,25 @@ class Verificacao {
     this.iniciar([tarefa], dicionario, undefined, true)
   }
 
+  /** Confere se cada teorema segue do conjunto da tarefa (leis e fatos). */
+  conferirTeoremas(tarefa: Tarefa, teoremas: { id: string; formula: string }[], dicionario: EntradaDicionario[]) {
+    if (!teoremas.length) return
+    this.formulasTeoremas = new Map(teoremas.map((t) => [t.id, t.formula]))
+    this.iniciar([tarefa], dicionario, undefined, false, teoremas)
+  }
+
   /** Roda as tarefas (ou uma pergunta, ou a busca de consequências). Um pedido novo cancela o anterior. */
-  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string, descobrir = false) {
+  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string, descobrir = false, teoremas?: { id: string; formula: string }[]) {
     if (!tarefas.length) return
     this.cancelar(false)
-    this.ocupado = descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
+    this.ocupado = teoremas ? 'teoremas' : descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
     this.formulaPerguntada = pergunta
     const id = ++this.pedido
     this.dicionario = dicionario
     this.pendentes = new Map(tarefas.map((t) => [t.chave, t]))
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
-    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, pergunta, descobrir }
+    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, pergunta, descobrir, teoremas }
     this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
@@ -190,6 +209,16 @@ class Verificacao {
     if (r.id !== this.pedido) return
     if (r.tipo === 'progresso') {
       this.rodando = { chave: r.chave, msg: r.msg }
+    } else if (r.tipo === 'teorema') {
+      const t = this.pendentes.get(r.chave)!
+      this.teoremas.set(r.teoremaId, {
+        resultado: r.resultado,
+        ms: r.ms,
+        N: this.N,
+        assinatura: assinatura(t, this.dicionario, this.limites, this.formulasTeoremas.get(r.teoremaId)),
+      })
+    } else if (r.tipo === 'erro' && this.ocupado === 'teoremas') {
+      this.erroTeoremas = r.msg
     } else if (r.tipo === 'descobertas' || (r.tipo === 'erro' && this.ocupado === 'descobrir')) {
       const t = this.pendentes.get(r.chave)!
       this.descoberta = {

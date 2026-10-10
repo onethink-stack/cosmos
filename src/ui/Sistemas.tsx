@@ -1,21 +1,56 @@
 import { useState } from 'preact/hooks'
+import { SenhaErrada } from '../dados/cripto'
 import { useEstado } from '../dados/estado'
-import { carregarSistema, NENHUM, notasPresentes, removerSistema, SISTEMAS, type Sistema } from '../dados/sistemas'
+import { abrirSistema, carregarSistema, CIFRADOS, NENHUM, notasPresentes, removerSistema, type SistemaCifrado } from '../dados/sistemas'
 
-/** Sistemas prontos que vêm dentro do app: carregar, restaurar, remover e escolher o padrão. */
+/** Pede a senha, decifra e carrega o sistema no caderno. */
+export function DesbloquearSistema({ s, rotulo, onFeito }: { s: SistemaCifrado; rotulo: string; onFeito?: (msg: string) => void }) {
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [abrindo, setAbrindo] = useState(false)
+
+  const abrir = async (e: Event) => {
+    e.preventDefault()
+    if (!senha) return
+    setAbrindo(true)
+    setErro(null)
+    try {
+      const c = await abrirSistema(s, senha)
+      await carregarSistema(c)
+      setSenha('')
+      onFeito?.(`${c.nome}: ${c.notas.length} notas e ${c.dicionario.length} fichas no caderno.`)
+    } catch (x) {
+      setErro(x instanceof SenhaErrada ? 'Senha incorreta.' : (x as Error).message)
+    }
+    setAbrindo(false)
+  }
+
+  return (
+    <form class="desbloquear" onSubmit={abrir}>
+      <input
+        type="password"
+        autocomplete="current-password"
+        placeholder={`Senha do ${s.nome}`}
+        aria-label={`Senha do ${s.nome}`}
+        value={senha}
+        onInput={(e) => setSenha((e.target as HTMLInputElement).value)}
+      />
+      <button type="submit" class="primario" disabled={abrindo || !senha}>
+        {abrindo ? 'Abrindo…' : rotulo}
+      </button>
+      {erro && <p class="erro-texto">{erro}</p>}
+    </form>
+  )
+}
+
+/** Sistemas que vêm dentro do app: desbloquear, restaurar, remover e escolher o padrão. */
 export function Sistemas() {
   const est = useEstado()
   const [aviso, setAviso] = useState<string | null>(null)
 
-  const carregar = async (s: Sistema, restaurar: boolean) => {
-    if (restaurar && !confirm(`Restaurar as notas do sistema "${s.nome}" ao original? Mudanças que você fez nelas serão desfeitas.`)) return
-    await carregarSistema(s)
-    setAviso(`${s.nome}: ${s.notas('').length} notas e ${s.dicionario.length} fichas no caderno.`)
-  }
-
-  const remover = async (s: Sistema) => {
-    if (!confirm(`Tirar do caderno as notas do sistema "${s.nome}"? As fichas do dicionário ficam. Você pode carregar de novo quando quiser.`)) return
-    await removerSistema(s)
+  const remover = async (s: SistemaCifrado) => {
+    if (!confirm(`Tirar do caderno as notas do "${s.nome}"? As fichas do dicionário ficam. Para carregar de novo, será preciso a senha.`)) return
+    await removerSistema(s.id)
     setAviso(`${s.nome}: notas removidas do caderno.`)
   }
 
@@ -28,72 +63,64 @@ export function Sistemas() {
       </div>
       <h2>Sistemas prontos</h2>
       <p class="suave">
-        Conjuntos de notas e fichas que vêm dentro do app. Carregar de novo não duplica: as notas do sistema voltam ao original e o resto do
-        seu caderno fica como está.
+        Sistemas pessoais vêm cifrados: no site e no código só existe o texto embaralhado, e o conteúdo só aparece com a senha. Depois de aberto,
+        fica neste aparelho como as outras notas. Carregar de novo não duplica.
       </p>
       {aviso && <p class="status-ok">✓ {aviso}</p>}
+      {!CIFRADOS.length && <p class="suave">Nenhum sistema instalado.</p>}
 
       <ul class="lista-sistemas">
-        {SISTEMAS.map((s) => {
-          const total = s.notas('').length
-          const presentes = notasPresentes(s, est.notas).length
+        {CIFRADOS.map((s) => {
+          const presentes = notasPresentes(s.id, est.notas).length
           return (
             <li class="cartao c-lei">
               <div class="cartao-link">
                 <div class="cartao-topo">
+                  <span class="selo">🔒 protegido por senha</span>
                   {est.sistemaPadrao === s.id && <span class="selo c-lei">padrão</span>}
-                  <span class="suave">
-                    {total} notas · {s.dicionario.length} fichas · {presentes ? `${presentes} de ${total} no caderno` : 'fora do caderno'}
-                  </span>
+                  <span class="suave">{presentes ? `${presentes} notas no caderno` : 'fora do caderno'}</span>
                 </div>
                 <strong class="cartao-titulo">{s.nome}</strong>
-                <p>{s.descricao}</p>
-                <div class="barra-acoes">
-                  {presentes ? (
-                    <>
-                      <button type="button" onClick={() => carregar(s, true)}>
-                        Restaurar originais
-                      </button>
-                      <button type="button" class="discreto perigo" onClick={() => remover(s)}>
-                        Remover do caderno
-                      </button>
-                    </>
-                  ) : (
-                    <button type="button" class="primario" onClick={() => carregar(s, false)}>
-                      Carregar no caderno
-                    </button>
-                  )}
-                </div>
+                <DesbloquearSistema s={s} rotulo={presentes ? 'Restaurar originais' : 'Abrir e carregar'} onFeito={setAviso} />
+                {presentes > 0 && (
+                  <button type="button" class="discreto perigo" onClick={() => remover(s)}>
+                    Remover do caderno
+                  </button>
+                )}
               </div>
             </li>
           )
         })}
       </ul>
 
-      <h2>Caderno novo começa com</h2>
-      <p class="suave">Na primeira vez que o app abre num aparelho ou navegador, o sistema escolhido aqui já vem carregado.</p>
-      <div class="segmentado" role="radiogroup">
-        {SISTEMAS.map((s) => (
-          <button
-            type="button"
-            role="radio"
-            aria-checked={est.sistemaPadrao === s.id}
-            class={est.sistemaPadrao === s.id ? 'ativo' : ''}
-            onClick={() => est.definirSistemaPadrao(s.id)}
-          >
-            {s.nome}
-          </button>
-        ))}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={est.sistemaPadrao === NENHUM}
-          class={est.sistemaPadrao === NENHUM ? 'ativo' : ''}
-          onClick={() => est.definirSistemaPadrao(NENHUM)}
-        >
-          Caderno em branco
-        </button>
-      </div>
+      {CIFRADOS.length > 0 && (
+        <>
+          <h2>Caderno novo começa com</h2>
+          <p class="suave">Na primeira vez que o app abre num aparelho, a tela de Notas já oferece abrir este sistema (pedindo a senha).</p>
+          <div class="segmentado" role="radiogroup">
+            {CIFRADOS.map((s) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={est.sistemaPadrao === s.id}
+                class={est.sistemaPadrao === s.id ? 'ativo' : ''}
+                onClick={() => est.definirSistemaPadrao(s.id)}
+              >
+                {s.nome}
+              </button>
+            ))}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={est.sistemaPadrao === NENHUM}
+              class={est.sistemaPadrao === NENHUM ? 'ativo' : ''}
+              onClick={() => est.definirSistemaPadrao(NENHUM)}
+            >
+              Caderno em branco
+            </button>
+          </div>
+        </>
+      )}
     </section>
   )
 }

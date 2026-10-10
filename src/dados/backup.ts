@@ -1,5 +1,5 @@
 import { notaVazia } from './estado'
-import type { Compartimento, EntradaDicionario, Grau, Nota, TipoSimbolo } from './tipos'
+import { COMPARTIMENTOS, type Compartimento, type EntradaDicionario, type Grau, type Nota, type TipoSimbolo } from './tipos'
 
 export const DIAS_LEMBRETE = 7
 const DIA = 24 * 60 * 60 * 1000
@@ -22,7 +22,6 @@ export function nomeArquivo(agora = new Date()): string {
   return `caderno-logico-${agora.getFullYear()}-${p(agora.getMonth() + 1)}-${p(agora.getDate())}.json`
 }
 
-const COMPARTIMENTOS: Compartimento[] = ['lei', 'fato', 'visao']
 const GRAUS: Grau[] = ['F', 'M', 'D']
 const TIPOS: TipoSimbolo[] = ['constante', 'predicado', 'funcao']
 const texto = (x: unknown, padrao = '') => (typeof x === 'string' ? x : padrao)

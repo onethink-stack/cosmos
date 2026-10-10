@@ -1,53 +1,70 @@
 // Sistemas prontos: conjuntos de notas e fichas que vêm dentro do app.
-// Cada nota e ficha tem um id fixo, então carregar de novo atualiza (não duplica).
+// Sistemas pessoais vêm CIFRADOS (src/dados/cifrado/*.json): no código e no
+// site só existe o texto embaralhado; o conteúdo aparece só com a senha.
+// Toda nota de um sistema tem id "<sistema>-…", então carregar de novo
+// atualiza (não duplica) e remover não precisa da senha.
 
 import { mesclarDicionario, mesclarPorId } from './backup'
-import { estado } from './estado'
+import { decifrar, type Cifrado } from './cripto'
+import { estado, notaVazia } from './estado'
 import type { EntradaDicionario, Nota } from './tipos'
 
-export interface Sistema {
+/** Conteúdo de um sistema (o que fica dentro do arquivo cifrado). */
+export interface ConteudoSistema {
   id: string
   nome: string
   descricao: string
-  /** notas do sistema (datas preenchidas na hora de carregar) */
-  notas: (agora: string) => Nota[]
+  /** notas sem as datas (preenchidas ao carregar) */
+  notas: Omit<Nota, 'criadaEm' | 'atualizadaEm'>[]
   dicionario: EntradaDicionario[]
+}
+
+/** Sistema cifrado: só o nome é visível; o resto precisa da senha. */
+export interface SistemaCifrado extends Cifrado {
+  id: string
+  nome: string
 }
 
 /** id especial: começar um caderno sem nenhum sistema */
 export const NENHUM = 'nenhum'
-export const SISTEMA_PADRAO = 'nenhum'
 
-// Nenhum sistema com conteúdo público: os sistemas pessoais entram cifrados (ver cifrado/).
-export const SISTEMAS: Sistema[] = []
+export const CIFRADOS: SistemaCifrado[] = Object.values(
+  import.meta.glob<SistemaCifrado>('./cifrado/*.json', { eager: true, import: 'default' }),
+).sort((a, b) => a.nome.localeCompare(b.nome))
 
-export const sistema = (id: string) => SISTEMAS.find((s) => s.id === id)
+export const sistemaCifrado = (id: string) => CIFRADOS.find((s) => s.id === id)
 
-/** Ids das notas do sistema que estão no caderno. */
-export function notasPresentes(s: Sistema, notas: Nota[]): Nota[] {
-  const ids = new Set(s.notas('').map((n) => n.id))
-  return notas.filter((n) => ids.has(n.id))
+/** Abre o sistema com a senha (lança SenhaErrada se não conferir). */
+export async function abrirSistema(s: SistemaCifrado, senha: string): Promise<ConteudoSistema> {
+  const c = JSON.parse(await decifrar(s, senha)) as ConteudoSistema
+  if (c.id !== s.id || !Array.isArray(c.notas)) throw new Error('Conteúdo do sistema inválido.')
+  return c
+}
+
+const prefixo = (id: string) => `${id}-`
+
+/** Notas do sistema que estão no caderno (pelo prefixo do id; não precisa da senha). */
+export function notasPresentes(id: string, notas: Nota[]): Nota[] {
+  return notas.filter((n) => n.id.startsWith(prefixo(id)))
 }
 
 /**
  * Coloca o sistema no caderno. As notas e fichas do sistema voltam ao
  * original (mesmo id); o resto do caderno fica como está.
  */
-export async function carregarSistema(s: Sistema) {
+export async function carregarSistema(c: ConteudoSistema) {
   const agora = new Date().toISOString()
-  const novas = s.notas(agora).map((n) => {
-    // preserva a data de criação de quem já estava no caderno
+  const novas: Nota[] = c.notas.map((n) => {
     const antiga = estado.nota(n.id)
-    return antiga ? { ...n, criadaEm: antiga.criadaEm } : n
+    return { ...notaVazia(), ...n, criadaEm: antiga?.criadaEm ?? agora, atualizadaEm: agora }
   })
-  await estado.substituirTudo(mesclarPorId(estado.notas, novas), mesclarDicionario(estado.dicionario, s.dicionario))
+  await estado.substituirTudo(mesclarPorId(estado.notas, novas), mesclarDicionario(estado.dicionario, c.dicionario))
 }
 
 /** Tira do caderno as notas do sistema (as fichas ficam, podem ser usadas por outras notas). */
-export async function removerSistema(s: Sistema) {
-  const ids = new Set(s.notas('').map((n) => n.id))
+export async function removerSistema(id: string) {
   await estado.substituirTudo(
-    estado.notas.filter((n) => !ids.has(n.id)),
+    estado.notas.filter((n) => !n.id.startsWith(prefixo(id))),
     estado.dicionario,
   )
 }

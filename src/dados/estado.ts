@@ -52,7 +52,7 @@ export class Estado {
   /** true na primeira vez que o app abre neste aparelho/navegador (caderno novo) */
   primeiraVez = false
   /** sistema pronto carregado num caderno novo ('nenhum' = começa em branco) */
-  sistemaPadrao = 'nenhum'
+  sistemaPadrao = 'principia'
   /** mensagem quando o IndexedDB não está disponível (os dados ficam só na memória) */
   erroBanco: string | null = null
   private ouvintes = new Set<() => void>()

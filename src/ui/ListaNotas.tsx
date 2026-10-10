@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'preact/hooks'
 import { FILTRO_VAZIO, filtrarNotas, todasAsTags, type Filtro } from '../dados/filtro'
 import { useEstado } from '../dados/estado'
-import { NOME_COMPARTIMENTO, NOME_GRAU, type Compartimento, type Grau, type Nota } from '../dados/tipos'
+import { COMPARTIMENTOS, NOME_COMPARTIMENTO, NOME_GRAU, type Grau, type Nota } from '../dados/tipos'
 import { validar } from '../logica/validador'
+import { sistemaCifrado } from '../dados/sistemas'
 import { FormulaExibida } from './FormulaExibida'
+import { DesbloquearSistema } from './Sistemas'
 
-const COMPARTIMENTOS: Compartimento[] = ['lei', 'fato', 'visao']
 const GRAUS: Grau[] = ['F', 'M', 'D']
 
 let filtroSalvo: Filtro = FILTRO_VAZIO // mantém o filtro ao voltar do editor
@@ -19,6 +20,7 @@ export function ListaNotas() {
   }
 
   const tags = useMemo(() => todasAsTags(est.notas), [est.notas])
+  const padrao = sistemaCifrado(est.sistemaPadrao)
   const notas = useMemo(() => filtrarNotas(est.notas, f, est.dicionario), [est.notas, f, est.dicionario])
   const temFiltro = f.busca || f.compartimento || f.grau || f.tag
 
@@ -81,9 +83,16 @@ export function ListaNotas() {
       {!est.notas.length && est.carregado && (
         <div class="vazio">
           <p>Nenhuma nota ainda.</p>
-          <a class="botao" href="#/sistemas">
-            Sistemas prontos
-          </a>
+          {padrao ? (
+            <>
+              <p class="suave">Abrir o {padrao.nome} (protegido por senha):</p>
+              <DesbloquearSistema s={padrao} rotulo="Abrir e carregar" />
+            </>
+          ) : (
+            <a class="botao" href="#/sistemas">
+              Sistemas prontos
+            </a>
+          )}
         </div>
       )}
       {est.notas.length > 0 && !notas.length && <p class="suave">Nenhuma nota com esse filtro.</p>}

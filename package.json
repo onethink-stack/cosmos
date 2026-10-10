@@ -4,18 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "node scripts/copiar-z3.mjs && vite --host",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node scripts/copiar-z3.mjs && vite build --mode arquivo && node scripts/copiar-arquivo.mjs && vite build",
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",
-    "build:tudo": "npm run build && npm run build:arquivo",
-    "preview": "vite preview --host",
+    "build:tudo": "npm run build",
+    "preview": "node scripts/copiar-z3.mjs && vite preview --host",
     "icones": "node scripts/gerar-icones.mjs"
   },
   "dependencies": {
-    "preact": "^11.0.1"
+    "preact": "^11.0.1",
+    "z3-solver": "^5.2.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",

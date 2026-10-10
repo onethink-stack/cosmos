@@ -47,9 +47,12 @@ export interface ResultadoDaDescoberta {
 export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir'
 
 export const N_MAXIMO = 12
+export const K_MAXIMO = 5
 
 class Verificacao {
   N = OPCOES_PADRAO.N
+  /** máximo de mundos testados quando há □, ◇ ou B[…] */
+  K = OPCOES_PADRAO.K
   rodando: { chave: string; msg: string } | null = null
   resultados = new Map<string, ResultadoTarefa>()
   /** última pergunta feita ("isto segue das notas?") */
@@ -86,9 +89,22 @@ class Verificacao {
     try {
       const n = await lerConfig<number>('N')
       if (n) this.N = n
+      const k = await lerConfig<number>('K')
+      if (k) this.K = k
     } catch {
       /* sem banco: fica o padrão */
     }
+    this.avisar()
+  }
+
+  /** identifica N e K juntos, para marcar resultados desatualizados */
+  get limites() {
+    return `${this.N}/${this.K}`
+  }
+
+  definirK(k: number) {
+    this.K = Math.max(1, Math.min(K_MAXIMO, Math.round(k) || OPCOES_PADRAO.K))
+    void gravarConfig('K', this.K).catch(() => {})
     this.avisar()
   }
 
@@ -152,7 +168,7 @@ class Verificacao {
     this.pendentes = new Map(tarefas.map((t) => [t.chave, t]))
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
-    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N }, pergunta, descobrir }
+    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, pergunta, descobrir }
     this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
@@ -184,7 +200,7 @@ class Verificacao {
         quando: new Date().toISOString(),
         ms: r.tipo === 'descobertas' ? r.ms : 0,
         N: this.N,
-        assinatura: assinatura(t, this.dicionario, this.N),
+        assinatura: assinatura(t, this.dicionario, this.limites),
       }
     } else if (r.tipo === 'resposta' || (r.tipo === 'erro' && this.ocupado === 'perguntar')) {
       const t = this.pendentes.get(r.chave)!
@@ -198,7 +214,7 @@ class Verificacao {
         quando: new Date().toISOString(),
         ms: r.tipo === 'resposta' ? r.ms : 0,
         N: this.N,
-        assinatura: assinatura(t, this.dicionario, this.N, formula),
+        assinatura: assinatura(t, this.dicionario, this.limites, formula),
       }
     } else if (r.tipo === 'resultado' || r.tipo === 'erro') {
       const t = this.pendentes.get(r.chave)!
@@ -210,7 +226,7 @@ class Verificacao {
         quando: new Date().toISOString(),
         ms: r.tipo === 'resultado' ? r.ms : 0,
         N: this.N,
-        assinatura: assinatura(t, this.dicionario, this.N),
+        assinatura: assinatura(t, this.dicionario, this.limites),
       })
     } else {
       this.rodando = null

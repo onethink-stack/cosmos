@@ -9,7 +9,9 @@ export class ErroSintaxe extends Error {
 
 const BINARIOS: TipoToken[] = ['and', 'or', 'imp', 'iff']
 const RELACOES: Partial<Record<TipoToken, Rel>> = { eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆' }
-const INICIO_FORMULA: TipoToken[] = ['nome', 'not', 'forall', 'exists', 'lpar', 'empty']
+const INICIO_FORMULA: TipoToken[] = ['nome', 'not', 'forall', 'exists', 'lpar', 'empty', 'nec', 'pos']
+/** operadores prefixos de fórmula: depois deles não pode vir relação */
+const PREFIXOS: TipoToken[] = ['not', 'nec', 'pos', 'rbrack']
 
 export interface OpcoesParser {
   /** nomes declarados como predicado de aridade 0 (proposições) */
@@ -56,7 +58,7 @@ class Parser {
 
   private faltaOperando(tk: Token): boolean {
     const a = this.at().t
-    return a === 'eof' || a === 'rpar' || a === 'comma' || BINARIOS.includes(a) || (tk.t !== 'not' && !!RELACOES[a])
+    return a === 'eof' || a === 'rpar' || a === 'comma' || a === 'rbrack' || BINARIOS.includes(a) || (!PREFIXOS.includes(tk.t) && !!RELACOES[a])
   }
 
   formulaCompleta(): Formula {
@@ -109,21 +111,28 @@ class Parser {
   }
 
   private and(): Formula {
-    let l = this.unaria(false)
+    let l = this.unaria(null)
     while (this.at().t === 'and') {
       const tk = this.avancar()
-      l = this.bin('and', l, this.operandoDireita(tk, () => this.unaria(false)))
+      l = this.bin('and', l, this.operandoDireita(tk, () => this.unaria(null)))
     }
     return l
   }
 
-  private unaria(aposNegacao: boolean): Formula {
+  /** `apos`: símbolo do operador prefixo logo antes (¬, □, ◇, B[…]), para a mensagem de E2 */
+  private unaria(apos: string | null): Formula {
     const tk = this.at()
     switch (tk.t) {
       case 'not': {
         this.avancar()
-        const f = this.operandoDireita(tk, () => this.unaria(true))
+        const f = this.operandoDireita(tk, () => this.unaria('¬'))
         return { k: 'not', f, pos: tk.pos, end: f.end }
+      }
+      case 'nec':
+      case 'pos': {
+        this.avancar()
+        const f = this.operandoDireita(tk, () => this.unaria(SIMBOLO_DE[tk.t]))
+        return { k: tk.t, f, pos: tk.pos, end: f.end }
       }
       case 'forall':
       case 'exists':
@@ -145,14 +154,37 @@ class Parser {
       case 'lpar':
         return this.parenteses()
       case 'nome':
+        if (tk.v === 'B' && this.toks[this.i + 1]?.t === 'lbrack' && !this.toks[this.i + 1].espacoAntes) return this.crenca()
+        if (tk.v === 'B' && this.toks[this.i + 1]?.v === '[]' && !this.toks[this.i + 1].espacoAntes)
+          this.erro('E0', `B[] sem titular: escreva quem acredita, ex.: B[cristãos] φ (${this.col(tk)})`, { pos: tk.pos, end: this.toks[this.i + 1].end })
+        return this.atomo(apos)
       case 'empty':
       case 'subscr':
-        return this.atomo(aposNegacao)
+        return this.atomo(apos)
+      case 'rbrack':
+        this.erro('E0', `']' sem '[' correspondente (${this.col(tk)})`, tk)
       case 'eof':
         this.erro('E1', 'A fórmula termina sem operando', tk)
       default:
         this.erroInesperado(tk, 'uma fórmula')
     }
+  }
+
+  /** B[agente] φ — o agente pode ter várias palavras: B[Igreja Católica] φ */
+  private crenca(): Formula {
+    const b = this.avancar()
+    const abre = this.avancar()
+    const palavras: string[] = []
+    while (this.at().t === 'nome') palavras.push(this.avancar().v)
+    if (this.at().t !== 'rbrack') {
+      if (this.at().t === 'eof') this.erro('E0', `'[' na ${this.col(abre)} não foi fechado: escreva B[titular] φ`, abre)
+      this.erro('E0', `Em B[…] só cabe o nome do titular (${this.col(this.at())})`, this.at())
+    }
+    const fecha = this.avancar()
+    if (!palavras.length) this.erro('E0', `B[] sem titular: escreva quem acredita, ex.: B[cristãos] φ (${this.col(b)})`, { pos: b.pos, end: fecha.end })
+    const agente = palavras.join(' ')
+    const f = this.operandoDireita({ ...fecha, t: 'rbrack' }, () => this.unaria(`B[${agente}]`))
+    return { k: 'crenca', agente, f, pos: b.pos, end: f.end }
   }
 
   private quantificador(): Formula {
@@ -194,7 +226,7 @@ class Parser {
     return { ...f, pos: abre.pos, end: fecha.end }
   }
 
-  private atomo(aposNegacao: boolean): Formula {
+  private atomo(apos: string | null): Formula {
     const ini = this.at()
     const t = this.termo()
     if (RELACOES[this.at().t]) return this.relacao(t)
@@ -207,8 +239,8 @@ class Parser {
       dica = ` Para aplicar '${t.nome}', escreva ${t.nome}(…) sem espaço antes do '('.`
     else if (t.k === 'nome')
       dica = ` Se '${t.nome}' é uma proposição, declare-a no dicionário como predicado de aridade 0.`
-    if (aposNegacao)
-      this.erro('E2', `Negação aplicada a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
+    if (apos === '¬') this.erro('E2', `Negação aplicada a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
+    if (apos) this.erro('E2', `'${apos}' aplicado a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
     this.erro('E2', `'${txt}' é um termo, não uma fórmula: falta uma relação (=, ≠, ∈, ∉, ⊆) ou um predicado (${this.col(ini)}).${dica}`, t)
   }
 

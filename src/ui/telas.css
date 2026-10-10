@@ -209,3 +209,17 @@ details.explicacao p { margin: 6px 0; }
 .lista-descobertas li { padding: 8px 10px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--fundo); }
 .lista-descobertas .formula-inline { font-size: 1.1rem; }
 .lista-descobertas button.mini { margin: 6px 0 0; }
+
+/* ---------- lógica modal ---------- */
+.modelo .mundo { border-left: 3px solid var(--visao); padding-left: 8px; margin: 8px 0; }
+.selo-mundo { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: .75rem; background: var(--visao-fundo); color: var(--visao); }
+
+/* ---------- Z3 ---------- */
+.z3 { margin: 8px 0; padding: 6px 10px; border-radius: var(--raio); font-size: .9rem; background: var(--superficie-2); border-left: 4px solid var(--destaque); }
+.z3-provado { border-left-color: var(--ok); }
+.z3-desmente { border-left-color: var(--aviso); background: var(--aviso-fundo); }
+.z3-aviso { border-left-color: var(--borda); }
+.z3 button.mini { margin-left: 4px; }
+.offline h3 { margin-top: 14px; }
+.offline progress { display: block; width: 100%; margin-top: 4px; }
+.linha-z3 { margin: 6px 0; }

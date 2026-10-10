@@ -17,6 +17,9 @@ const TECLAS: [simbolo: string, insere: string, nome: string][] = [
   ['(', '(', 'abre parêntese'],
   [')', ')', 'fecha parêntese'],
   [',', ', ', 'vírgula'],
+  ['□', '□', 'necessário'],
+  ['◇', '◇', 'possível'],
+  ['B[ ]', 'B[‸] ', 'crença: B[titular] φ'],
   ['ᵢ', '_', 'subscrito: toque e depois digite a letra'],
 ]
 

@@ -15,6 +15,6 @@ export function salvarDeduzida(formula: string, chave: string, origem: string[],
     titular: visao ?? '',
     grau: 'M',
     tags: ['deduzida'],
-    texto: `Deduzida em ${new Date().toLocaleDateString('pt-BR')} a partir de: ${titulos}. Verdadeira em todos os mundos com até ${N} objetos em que essas notas valem (não é prova absoluta).`,
+    texto: `Deduzida em ${new Date().toLocaleDateString('pt-BR')} a partir de: ${titulos}. Verdadeira em todos os cenários com até ${N} objetos em que essas notas valem.`,
   })
 }

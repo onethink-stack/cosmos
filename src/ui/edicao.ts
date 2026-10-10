@@ -14,6 +14,12 @@ export function inserirTexto(valor: string, ini: number, fim: number, ins: strin
   const depois = valor.slice(fim)
   if (ins.startsWith(' ') && (antes === '' || /[\s(]$/.test(antes))) ins = ins.slice(1)
   if (ins.endsWith(' ') && /^[\s)]/.test(depois)) ins = ins.slice(0, -1)
+  // '‸' marca onde o cursor fica (ex.: "B[‸] " deixa o cursor entre os colchetes)
+  const marca = ins.indexOf('‸')
+  if (marca >= 0) {
+    ins = ins.replace('‸', '')
+    return { texto: antes + ins + depois, cursor: antes.length + marca }
+  }
   return { texto: antes + ins + depois, cursor: antes.length + ins.length }
 }
 

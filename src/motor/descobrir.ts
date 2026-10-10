@@ -12,6 +12,7 @@ import type { Formula } from '../logica/ast'
 import { imprimir } from '../logica/impressao'
 import { renomear } from '../logica/nomes'
 import { usosDeNomes } from '../logica/termos'
+import { ehModal } from './aterrar'
 import { Avaliador } from './avaliar'
 import { analisar, buscarModelo, minimizar, nao, type Grupo, type GrupoPronto, type Modelo, type OpcoesMotor, type Progresso } from './motor'
 
@@ -27,6 +28,8 @@ export type ResultadoDescoberta =
   | {
       tipo: 'consequencias'
       N: number
+      /** mundos testados (1 sem lógica modal) */
+      K: number
       itens: Consequencia[]
       /** candidatas testadas */
       testadas: number
@@ -149,7 +152,8 @@ export function descobrir(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
     const notas = minimizar(prontos, [nao(v.pronta.expandida)], op, 0)
     return { formula: c.formula, descricao: c.descricao, notas: notas.map((x) => x.g.id) }
   })
-  return { tipo: 'consequencias', N: op.N, itens, testadas: vivas.length, jaNasNotas, incertas, truncado }
+  const K = premissas.some(ehModal) ? op.K : 1
+  return { tipo: 'consequencias', N: op.N, K, itens, testadas: vivas.length, jaNasNotas, incertas, truncado }
 }
 
 /**

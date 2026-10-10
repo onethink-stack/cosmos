@@ -1,4 +1,4 @@
-// Aterramento em domínio finito {0..n-1}.
+// Aterramento em domínio finito {0..n-1}, com k mundos {0..k-1} (mundo 0 = real).
 //
 // Cada constante e cada aplicação de função f(e₁..eₖ) a elementos concretos é
 // uma incógnita com valor no domínio, codificada one-hot (exatamente uma
@@ -7,6 +7,16 @@
 // igualdade é a identidade no domínio: reflexividade, simetria,
 // transitividade e substituição (em predicados, funções e ∈) valem por
 // construção, sem axiomas extras.
+//
+// Lógica modal (semântica de Kripke): os objetos são os mesmos em todos os
+// mundos e as constantes são rígidas (denotam o mesmo objeto em todo mundo);
+// predicados, ∈ e funções podem variar de mundo para mundo.
+//   □φ   vale em w se φ vale em todo mundo (S5)
+//   ◇φ   vale em w se φ vale em algum mundo
+//   B[a]φ vale em w se φ vale em todo mundo que a considera possível a partir
+//         de w; a relação de cada agente obedece KD45 (serial, transitiva,
+//         euclidiana): crenças consistentes, com introspecção positiva e negativa.
+// Sem operadores modais, k = 1 e tudo se reduz ao caso clássico.
 //
 // O resultado é um circuito booleano (só nós E, com negação no literal e
 // compartilhamento de subexpressões) convertido em CNF por Tseitin com
@@ -28,9 +38,10 @@ export class GrandeDemais extends Error {
 /** O que cada variável primitiva significa, para ler o modelo. */
 export type InfoVar =
   | { k: 'const'; nome: string; d: number }
-  | { k: 'func'; nome: string; args: number[]; d: number }
-  | { k: 'pred'; nome: string; args: number[] }
-  | { k: 'in'; a: number; b: number }
+  | { k: 'func'; nome: string; args: number[]; d: number; w: number }
+  | { k: 'pred'; nome: string; args: number[]; w: number }
+  | { k: 'in'; a: number; b: number; w: number }
+  | { k: 'acesso'; agente: string; de: number; para: number }
 
 export interface ProblemaCNF {
   nVars: number
@@ -44,6 +55,28 @@ type Env = Map<string, number>
 
 const NOME_VAZIO = '∅'
 
+/** A fórmula usa □, ◇ ou B[…]? */
+export function ehModal(f: Formula): boolean {
+  switch (f.k) {
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return true
+    case 'not':
+      return ehModal(f.f)
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return ehModal(f.l) || ehModal(f.r)
+    case 'forall':
+    case 'exists':
+      return ehModal(f.corpo)
+    default:
+      return false
+  }
+}
+
 export class Aterrador {
   private nVars = 0
   private primitivas = new Map<string, number>()
@@ -56,11 +89,14 @@ export class Aterrador {
   private memoIgual = new Map<string, Lit>()
   private tamanho = 0
   private usaVazio = false
+  private agentes = new Set<string>()
   private raizes: Lit[] = []
 
   constructor(
     readonly n: number,
     private limite: number,
+    /** número de mundos */
+    readonly k = 1,
   ) {}
 
   // ---------- circuito ----------
@@ -105,6 +141,15 @@ export class Aterrador {
     return -this.e(lits.map((l) => -l))
   }
 
+  private acesso(agente: string, de: number, para: number): number {
+    this.agentes.add(agente)
+    return this.prim(`R:${agente}:${de},${para}`, { k: 'acesso', agente, de, para })
+  }
+
+  private pertence(a: number, b: number, w: number): number {
+    return this.prim(`in:${a},${b}@${w}`, { k: 'in', a, b, w })
+  }
+
   // ---------- termos ----------
   /** Variáveis one-hot de uma incógnita (constante ou f aplicada a elementos). */
   private valores(chave: string, info: (d: number) => InfoVar): number[] {
@@ -135,10 +180,10 @@ export class Aterrador {
     }
   }
 
-  /** Literal de "o termo t denota o elemento d". */
-  igual(t: Termo, env: Env, d: number): Lit {
+  /** Literal de "o termo t denota o elemento d, no mundo w". */
+  igual(t: Termo, env: Env, d: number, w: number): Lit {
     if (t.k === 'nome' && env.has(t.nome)) return env.get(t.nome) === d ? VERDADE : FALSO
-    const chave = `${this.chaveTermo(t, env)}=${d}`
+    const chave = `${this.chaveTermo(t, env)}=${d}@${w}`
     const m = this.memoIgual.get(chave)
     if (m !== undefined) return m
     let r: Lit
@@ -151,11 +196,11 @@ export class Aterrador {
         r = this.constante(NOME_VAZIO)[d]
         break
       case 'app': {
-        const opcoesArgs = t.args.map((a) => this.opcoes(a, env))
+        const opcoesArgs = t.args.map((a) => this.opcoes(a, env, w))
         const casos: Lit[] = []
         for (const comb of produto(opcoesArgs)) {
           const args = comb.map(([e]) => e)
-          const vf = this.valores(`f:${t.fn}(${args.join(',')})`, (dd) => ({ k: 'func', nome: t.fn, args, d: dd }))[d]
+          const vf = this.valores(`f:${t.fn}(${args.join(',')})@${w}`, (dd) => ({ k: 'func', nome: t.fn, args, d: dd, w }))[d]
           casos.push(this.e([...comb.map(([, c]) => c), vf]))
         }
         r = this.ou(casos)
@@ -168,34 +213,34 @@ export class Aterrador {
     return r
   }
 
-  /** Valores possíveis do termo, cada um com a condição para valer. */
-  opcoes(t: Termo, env: Env): [number, Lit][] {
+  /** Valores possíveis do termo no mundo w, cada um com a condição para valer. */
+  opcoes(t: Termo, env: Env, w: number): [number, Lit][] {
     if (t.k === 'nome' && env.has(t.nome)) return [[env.get(t.nome)!, VERDADE]]
     const r: [number, Lit][] = []
     for (let d = 0; d < this.n; d++) {
-      const c = this.igual(t, env, d)
+      const c = this.igual(t, env, d, w)
       if (c !== FALSO) r.push([d, c])
     }
     return r
   }
 
   // ---------- fórmulas ----------
-  formula(f: Formula, env: Env): Lit {
+  formula(f: Formula, env: Env, w: number): Lit {
     switch (f.k) {
       case 'const':
         return f.valor ? VERDADE : FALSO
       case 'pred': {
         const casos: Lit[] = []
-        for (const comb of produto(f.args.map((a) => this.opcoes(a, env)))) {
+        for (const comb of produto(f.args.map((a) => this.opcoes(a, env, w)))) {
           const args = comb.map(([e]) => e)
-          const p = this.prim(`p:${f.nome}(${args.join(',')})`, { k: 'pred', nome: f.nome, args })
+          const p = this.prim(`p:${f.nome}(${args.join(',')})@${w}`, { k: 'pred', nome: f.nome, args, w })
           casos.push(this.e([...comb.map(([, c]) => c), p]))
         }
         return this.ou(casos)
       }
       case 'rel': {
-        const ol = this.opcoes(f.l, env)
-        const or = this.opcoes(f.r, env)
+        const ol = this.opcoes(f.l, env, w)
+        const or = this.opcoes(f.r, env, w)
         const casos: Lit[] = []
         if (f.op === '=' || f.op === '≠') {
           for (const [d, c1] of ol) for (const [e, c2] of or) if (d === e) casos.push(this.e([c1, c2]))
@@ -203,25 +248,35 @@ export class Aterrador {
           return f.op === '=' ? r : -r
         }
         if (f.op === '∈' || f.op === '∉') {
-          for (const [d, c1] of ol)
-            for (const [e, c2] of or) casos.push(this.e([c1, c2, this.prim(`in:${d},${e}`, { k: 'in', a: d, b: e })]))
+          for (const [d, c1] of ol) for (const [e, c2] of or) casos.push(this.e([c1, c2, this.pertence(d, e, w)]))
           const r = this.ou(casos)
           return f.op === '∈' ? r : -r
         }
         throw new Error('⊆ deveria ter sido expandido antes do motor')
       }
       case 'not':
-        return -this.formula(f.f, env)
+        return -this.formula(f.f, env, w)
       case 'and':
-        return this.e([this.formula(f.l, env), this.formula(f.r, env)])
+        return this.e([this.formula(f.l, env, w), this.formula(f.r, env, w)])
       case 'or':
-        return this.ou([this.formula(f.l, env), this.formula(f.r, env)])
+        return this.ou([this.formula(f.l, env, w), this.formula(f.r, env, w)])
       case 'imp':
-        return this.ou([-this.formula(f.l, env), this.formula(f.r, env)])
+        return this.ou([-this.formula(f.l, env, w), this.formula(f.r, env, w)])
       case 'iff': {
-        const a = this.formula(f.l, env)
-        const b = this.formula(f.r, env)
+        const a = this.formula(f.l, env, w)
+        const b = this.formula(f.r, env, w)
         return this.e([this.ou([-a, b]), this.ou([a, -b])])
+      }
+      case 'nec':
+      case 'pos': {
+        const partes: Lit[] = []
+        for (let v = 0; v < this.k; v++) partes.push(this.formula(f.f, env, v))
+        return f.k === 'nec' ? this.e(partes) : this.ou(partes)
+      }
+      case 'crenca': {
+        const partes: Lit[] = []
+        for (let v = 0; v < this.k; v++) partes.push(this.ou([-this.acesso(f.agente, w, v), this.formula(f.f, env, v)]))
+        return this.e(partes)
       }
       case 'forall':
       case 'exists': {
@@ -230,7 +285,7 @@ export class Aterrador {
         for (let d = 0; d < this.n; d++) {
           const env2 = new Map(env)
           env2.set(f.v, d)
-          const p = this.formula(f.corpo, env2)
+          const p = this.formula(f.corpo, env2, w)
           // curto-circuito
           if (f.k === 'forall' && p === FALSO) return FALSO
           if (f.k === 'exists' && p === VERDADE) return VERDADE
@@ -241,17 +296,19 @@ export class Aterrador {
     }
   }
 
+  /** Afirma a fórmula no mundo real (0). */
   afirmar(f: Formula) {
-    this.raizes.push(this.formula(f, new Map()))
+    this.raizes.push(this.formula(f, new Map(), 0))
   }
 
   // ---------- CNF ----------
   cnf(): ProblemaCNF {
-    // ∅ não tem elementos: ∀z ¬(z ∈ ∅)
+    // ∅ não tem elementos, em nenhum mundo: ∀z ¬(z ∈ ∅)
     if (this.usaVazio) {
       const vazio = this.constante(NOME_VAZIO)
-      for (let b = 0; b < this.n; b++)
-        for (let a = 0; a < this.n; a++) this.raizes.push(this.ou([-vazio[b], -this.prim(`in:${a},${b}`, { k: 'in', a, b })]))
+      for (let w = 0; w < this.k; w++)
+        for (let b = 0; b < this.n; b++)
+          for (let a = 0; a < this.n; a++) this.raizes.push(this.ou([-vazio[b], -this.pertence(a, b, w)]))
     }
 
     const clausulas: number[][] = []
@@ -295,8 +352,7 @@ export class Aterrador {
         if (filhos && x > 0) fila.push(...filhos)
         else if (filhos) {
           const c = filhos.map((y) => -y)
-          if (c.includes(VERDADE)) continue
-          add(c.filter((y) => y !== FALSO))
+          add(c)
           c.forEach((y) => pilha.push(y))
           fechar()
         } else add([x])
@@ -309,6 +365,20 @@ export class Aterrador {
     for (const vs of this.valorados.values()) {
       add([...vs])
       for (let i = 0; i < vs.length; i++) for (let j = i + 1; j < vs.length; j++) add([-vs[i], -vs[j]])
+    }
+
+    // KD45 para a relação de cada agente: serial, transitiva, euclidiana
+    const K = this.k
+    for (const a of this.agentes) {
+      const R = (x: number, y: number) => this.acesso(a, x, y)
+      for (let w = 0; w < K; w++) {
+        add([...Array(K).keys()].map((v) => R(w, v)))
+        for (let v = 0; v < K; v++)
+          for (let u = 0; u < K; u++) {
+            add([-R(w, v), -R(v, u), R(w, u)])
+            add([-R(w, v), -R(w, u), R(v, u)])
+          }
+      }
     }
 
     // Quebra de simetria (não muda a satisfatibilidade): permutando o domínio,

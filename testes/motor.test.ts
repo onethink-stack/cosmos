@@ -98,7 +98,7 @@ describe('igualdade e termos', () => {
   it('para quando o problema passa do limite', () => {
     // sem modelo em nenhum tamanho: a busca sobe n até o aterramento estourar o limite
     const fs = prepararFormulas(['∀x ∀y ∀z ∀w (R(x, y, z, w) ⟹ R(y, z, w, x))', 'P(a)', '¬P(a)'], [])
-    const r = buscarModelo(fs, { N: 8, limite: 500 })
+    const r = buscarModelo(fs, { N: 8, limite: 500, K: 1 })
     expect(r.status).toBe('grande-demais')
     if (r.status === 'grande-demais') expect(r.n).toBeGreaterThan(1)
   })

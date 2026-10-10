@@ -1,14 +1,29 @@
 import type { ResultadoTarefa } from '../dados/verificacao'
 import type { Nota } from '../dados/tipos'
-import type { PassoExplicacao } from '../motor/avaliar'
-import type { ExplicacaoConflito, Modelo } from '../motor/motor'
+import { limiteTexto, nomeMundo, tamanhoTexto, type PassoExplicacao } from '../motor/avaliar'
+import type { ExplicacaoConflito, Grupo, Modelo } from '../motor/motor'
+import { ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { paraSubscrito } from '../logica/impressao'
 import { FormulaExibida } from './FormulaExibida'
 
 const el = (d: number) => `d${paraSubscrito(String(d + 1)) ?? d + 1}`
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-export function ResultadoVerificacao({ r, notas, desatualizado }: { r: ResultadoTarefa; notas: Nota[]; desatualizado: boolean }) {
+/** Fórmulas (como o motor as recebeu) dos grupos indicados; sem `ids`, de todos. */
+export const formulasDosGrupos = (grupos: Grupo[], ids?: string[]) =>
+  grupos.filter((g) => !ids || ids.includes(g.id)).flatMap((g) => g.formulas)
+
+export function ResultadoVerificacao({
+  r,
+  notas,
+  desatualizado,
+  grupos,
+}: {
+  r: ResultadoTarefa
+  notas: Nota[]
+  desatualizado: boolean
+  grupos: Grupo[]
+}) {
   const meta = (
     <div class="suave res-meta">
       {hora(r.quando)} · N = {r.N}
@@ -41,7 +56,7 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
         <div class="resultado res-ok">
           <strong>✓ Consistente</strong>
           <p>
-            Encontrei um modelo com {res.n} objeto{res.n > 1 ? 's' : ''}: um mundo possível em que todas as fórmulas valem ao mesmo tempo.
+            Encontrei um cenário com {tamanhoTexto(res.n, res.modelo.mundos)} em que todas as fórmulas valem ao mesmo tempo.
           </p>
           {meta}
           <details>
@@ -59,6 +74,7 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
             Com {res.n} objetos o problema aterrado passou do limite de tamanho, e a busca parou sem conclusão. Diminua N ou simplifique as
             fórmulas com muitos quantificadores aninhados.
           </p>
+          {!desatualizado && <ConfirmacaoZ3 tipo="conjunto" formulas={formulasDosGrupos(grupos)} />}
           {meta}
         </div>
       )
@@ -66,10 +82,10 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
       const conflito = res.conflito.map((id) => notas.find((n) => n.id === id)).filter((n): n is Nota => !!n)
       return (
         <div class="resultado res-conflito">
-          <strong>⚠ Sem modelo até {res.N} objetos — provável contradição</strong>
+          <strong>⚠ Sem modelo até {limiteTexto(res.N, res.K)} — provável contradição</strong>
           <p class="suave">
-            Isto não é prova absoluta: nenhum mundo com 1 a {res.N} objetos satisfaz tudo, mas um mundo maior (ou infinito) ainda poderia.
-            Aumentar N reforça a suspeita.
+            Isto não é prova absoluta: nenhum cenário com até {limiteTexto(res.N, res.K)} satisfaz tudo, mas um cenário maior (ou infinito)
+            ainda poderia. Aumentar N reforça a suspeita; o Z3 pode provar de vez.
           </p>
           <p>
             Menor conjunto de notas em conflito ({conflito.length}) — tirando qualquer uma delas, aparece um modelo:
@@ -94,6 +110,7 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
               </li>
             ))}
           </ul>
+          {!desatualizado && <ConfirmacaoZ3 tipo="conflito" formulas={formulasDosGrupos(grupos, res.conflito)} />}
           {meta}
         </div>
       )
@@ -108,11 +125,12 @@ function Explicacao({ e }: { e: ExplicacaoConflito }) {
       return (
         <div>
           <p>
-            Sem ela, as outras notas do conflito valem num mundo com {e.n} objeto{e.n > 1 ? 's' : ''}. Nesse mundo, esta fórmula falha:
+            Sem ela, as outras notas do conflito valem num cenário com {tamanhoTexto(e.n, e.modelo.mundos)}. Nesse cenário, esta fórmula
+            falha:
           </p>
           <ArvorePassos p={e.passos} />
           <details>
-            <summary>Ver esse mundo</summary>
+            <summary>Ver esse cenário</summary>
             <ModeloVisual m={e.modelo} />
           </details>
         </div>
@@ -128,7 +146,7 @@ function Explicacao({ e }: { e: ExplicacaoConflito }) {
             sub.tipo === 'mundo' ? (
               <div class="explicacao-sub">
                 <p>
-                  Sem <span class="formula-inline">{sub.formula}</span>, as outras valem num mundo com {sub.n} objeto{sub.n > 1 ? 's' : ''}, e nele ela
+                  Sem <span class="formula-inline">{sub.formula}</span>, as outras valem num cenário com {tamanhoTexto(sub.n, sub.modelo.mundos)}, e nele ela
                   falha:
                 </p>
                 <ArvorePassos p={sub.passos} />
@@ -149,6 +167,7 @@ export function ArvorePassos({ p }: { p: PassoExplicacao }) {
       <li>
         <span class={`valor ${p.valor ? 'v' : 'f'}`}>{p.valor ? 'V' : 'F'}</span>
         <span class="formula-inline">{p.formula}</span>
+        {(p.mundo ?? 0) > 0 && <span class="selo-mundo">em {nomeMundo(p.mundo)}</span>}
         <span class="motivo"> — {p.motivo}</span>
         {p.filhos.length > 0 && p.filhos.map((f) => <ArvorePassos p={f} />)}
       </li>
@@ -158,13 +177,15 @@ export function ArvorePassos({ p }: { p: PassoExplicacao }) {
 
 export function ModeloVisual({ m }: { m: Modelo }) {
   const D = [...Array(m.n).keys()]
+  const W = [...Array(m.mundos ?? 1).keys()]
+  const varios = W.length > 1
   const nomes = new Map<number, string[]>()
   for (const c of m.constantes) nomes.set(c.valor, [...(nomes.get(c.valor) ?? []), c.nome])
-  const membros = (b: number) => m.pertence.filter(([, y]) => y === b).map(([a]) => a)
+  const membros = (b: number, w: number) => m.pertence.filter(([, y, z]) => y === b && (z ?? 0) === w).map(([a]) => a)
 
-  return (
-    <div class="modelo">
-      <h4>Objetos</h4>
+  const fatosDoMundo = (w: number) => (
+    <>
+      <h4>{varios ? `Elementos no mundo ${nomeMundo(w)}${w === 0 ? ' (real)' : ''}` : 'Objetos'}</h4>
       <ul>
         {D.map((d) => (
           <li>
@@ -172,38 +193,77 @@ export function ModeloVisual({ m }: { m: Modelo }) {
             {nomes.has(d) && <> = {nomes.get(d)!.join(' = ')}</>}
             <span class="suave">
               {' '}
-              · elementos: {membros(d).length ? `{${membros(d).map(el).join(', ')}}` : '{ }'}
+              · elementos: {membros(d, w).length ? `{${membros(d, w).map(el).join(', ')}}` : '{ }'}
             </span>
           </li>
         ))}
       </ul>
       {m.funcoes.map((f) => (
         <>
-          <h4>Função {f.nome}</h4>
+          <h4>
+            Função {f.nome}
+            {varios ? ` em ${nomeMundo(w)}` : ''}
+          </h4>
           <ul class="em-linha">
-            {f.tabela.map((x) => (
-              <li>
-                {f.nome}({x.args.map(el).join(', ')}) = {el(x.valor)}
-              </li>
-            ))}
+            {f.tabela
+              .filter((x) => (x.w ?? 0) === w)
+              .map((x) => (
+                <li>
+                  {f.nome}({x.args.map(el).join(', ')}) = {el(x.valor)}
+                </li>
+              ))}
           </ul>
         </>
       ))}
-      {m.predicados.map((p) => (
+      {m.predicados.map((p) => {
+        const vs = p.verdadeiros.filter((a) => (a.w ?? 0) === w).map((a) => a.args)
+        return (
+          <>
+            <h4>
+              Predicado {p.nome}
+              {p.aridade === 0 ? '' : `/${p.aridade}`}
+              {varios ? ` em ${nomeMundo(w)}` : ''}
+            </h4>
+            <p>
+              {p.aridade === 0
+                ? vs.length
+                  ? 'verdadeiro'
+                  : 'falso'
+                : vs.length
+                  ? `vale para: ${vs.map((a) => (a.length === 1 ? el(a[0]) : `(${a.map(el).join(', ')})`)).join(', ')}`
+                  : 'não vale para nenhum objeto'}
+            </p>
+          </>
+        )
+      })}
+    </>
+  )
+
+  return (
+    <div class="modelo">
+      {varios && (
+        <p class="suave">
+          {W.length} mundos possíveis: {nomeMundo(0)} é o real. Os objetos e as constantes são os mesmos em todos; o que pertence a quem, os
+          predicados e as funções podem mudar de um mundo para outro.
+        </p>
+      )}
+      {W.map((w) => (
+        <div class={varios ? 'mundo' : ''}>{fatosDoMundo(w)}</div>
+      ))}
+      {(m.acessos ?? []).map((r) => (
         <>
-          <h4>
-            Predicado {p.nome}
-            {p.aridade === 0 ? '' : `/${p.aridade}`}
-          </h4>
-          <p>
-            {p.aridade === 0
-              ? p.verdadeiros.length
-                ? 'verdadeiro'
-                : 'falso'
-              : p.verdadeiros.length
-                ? `vale para: ${p.verdadeiros.map((a) => (a.length === 1 ? el(a[0]) : `(${a.map(el).join(', ')})`)).join(', ')}`
-                : 'não vale para nenhum objeto'}
-          </p>
+          <h4>Mundos que {r.agente} considera possíveis</h4>
+          <ul class="em-linha">
+            {W.map((w) => (
+              <li>
+                de {nomeMundo(w)}:{' '}
+                {r.pares
+                  .filter(([a]) => a === w)
+                  .map(([, b]) => nomeMundo(b))
+                  .join(', ') || '—'}
+              </li>
+            ))}
+          </ul>
         </>
       ))}
       <p class="suave">

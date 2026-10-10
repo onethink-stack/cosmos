@@ -4,7 +4,7 @@ import { paraSubscrito } from './impressao'
 const REGRAS: [string, string][] = [
   ['<->', '⟺'], ['->', '⟹'], ['!=', '≠'],
   ['\\notin', '∉'], ['\\empty', '∅'], ['\\sub', '⊆'], ['\\cap', '⋂'], ['\\cup', '⋃'],
-  ['\\in', '∈'], ['\\A', '∀'], ['\\E', '∃'],
+  ['\\in', '∈'], ['\\A', '∀'], ['\\E', '∃'], ['\\nec', '□'], ['\\pos', '◇'], ['[]', '□'], ['<>', '◇'],
   ['~', '¬'], ['&', '∧'], ['|', '∨'],
 ]
 
@@ -16,6 +16,7 @@ export function converterNoCursor(texto: string, cursor: number): { texto: strin
   const antes = texto.slice(0, cursor)
   const depois = texto.slice(cursor)
   for (const [de, para] of REGRAS) {
+    if (de === '[]' && antes.endsWith('B[]')) continue
     if (antes.endsWith(de)) {
       const novo = antes.slice(0, -de.length) + para
       return { texto: novo + depois, cursor: novo.length }
@@ -33,7 +34,8 @@ export function converterNoCursor(texto: string, cursor: number): { texto: strin
 }
 
 const RE_TUDO = new RegExp(
-  REGRAS.map(([de]) => de.replace(/[\\|^$.*+?()[\]{}]/g, '\\$&')).join('|') + '|_([a-z0-9])(?![A-Za-z0-9])',
+  // "B[]" é o começo de uma crença B[titular], não □
+  REGRAS.map(([de]) => (de === '[]' ? '(?<!B)\\[\\]' : de.replace(/[\\|^$.*+?()[\]{}]/g, '\\$&'))).join('|') + '|_([a-z0-9])(?![A-Za-z0-9])',
   'g',
 )
 

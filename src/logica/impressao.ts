@@ -53,10 +53,14 @@ export function imprimir(f: Formula): string {
       return `${imprimirTermo(f.l)} ${f.op} ${imprimirTermo(f.r)}`
     case 'const':
       return f.valor ? '⊤' : '⊥'
-    case 'not': {
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca': {
       const g = f.f
-      const simples = g.k === 'pred' || g.k === 'not' || g.k === 'const'
-      return simples ? `¬${imprimir(g)}` : `¬(${imprimir(g)})`
+      const simples = g.k === 'pred' || g.k === 'not' || g.k === 'const' || g.k === 'nec' || g.k === 'pos' || g.k === 'crenca'
+      const op = f.k === 'crenca' ? `B[${f.agente}] ` : f.k === 'not' ? '¬' : f.k === 'nec' ? '□' : '◇'
+      return simples ? `${op}${imprimir(g)}` : `${op}(${imprimir(g)})`
     }
     case 'forall':
     case 'exists': {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { criarBackup, diasDesde, lerBackup, mesclarDicionario, mesclarPorId, nomeArquivo, type Backup as DadosBackup } from '../dados/backup'
 import { estado, useEstado } from '../dados/estado'
 import { useVerificacao, verificacao } from '../dados/verificacao'
+import { Offline } from './Offline'
 
 /** Baixa o backup como arquivo .json e registra a data. */
 export async function exportarBackup() {
@@ -81,8 +82,10 @@ export function Backup() {
   }
 
   return (
+    <>
+    <Offline />
     <section>
-      <h2>Exportar</h2>
+      <h2>Backup: exportar</h2>
       <p>
         Todos os dados ficam só neste aparelho. Baixe um backup de vez em quando e guarde-o em outro lugar (nuvem, e-mail, computador).
       </p>
@@ -96,7 +99,7 @@ export function Backup() {
         Baixar backup (.json) — {resumo(est.notas.length, est.dicionario.length)}
       </button>
 
-      <h2>Importar</h2>
+      <h2>Backup: importar</h2>
       <label class="botao-arquivo">
         <input type="file" accept=".json,application/json" onChange={escolher} />
         Escolher arquivo de backup…
@@ -147,5 +150,6 @@ export function Backup() {
         </p>
       )}
     </section>
+    </>
   )
 }

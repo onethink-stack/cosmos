@@ -38,6 +38,9 @@ export function nomesUsados(f: Formula, s = new Set<string>()): Set<string> {
       t(f.r)
       break
     case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
       nomesUsados(f.f, s)
       break
     case 'and':
@@ -99,6 +102,9 @@ export function usosDeNomes(f: Formula): UsoNome[] {
         termo(f.r, escopo)
         return
       case 'not':
+      case 'nec':
+      case 'pos':
+      case 'crenca':
         formula(f.f, escopo)
         return
       case 'and':

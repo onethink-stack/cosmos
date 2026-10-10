@@ -1,3 +1,4 @@
+import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import { useVerificacao } from '../dados/verificacao'
 
 /** Linha curta no editor com o resultado da verificação feita ao salvar. */
@@ -24,13 +25,13 @@ export function StatusVerificacao({ chave, bloqueado }: { chave: string | null; 
   if (res.tipo === 'consistente')
     return (
       <div class="status-ver res-ok">
-        ✓ Consistente (modelo com {res.n} objeto{res.n > 1 ? 's' : ''}). <a href="#/contradicoes">Ver</a>
+        ✓ Consistente (cenário com {tamanhoTexto(res.n, res.modelo.mundos)}). <a href="#/contradicoes">Ver</a>
       </div>
     )
   if (res.tipo === 'sem-modelo')
     return (
       <div class="status-ver res-conflito">
-        ⚠ Sem modelo até {res.N} objetos — provável contradição entre {res.conflito.length} nota{res.conflito.length > 1 ? 's' : ''}.{' '}
+        ⚠ Sem modelo até {limiteTexto(res.N, res.K)} — provável contradição entre {res.conflito.length} nota{res.conflito.length > 1 ? 's' : ''}.{' '}
         <a href="#/contradicoes">Ver conflito</a>
       </div>
     )

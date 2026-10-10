@@ -135,6 +135,9 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         termo(f.r, escopo, f.op !== '=' && f.op !== '≠')
         return
       case 'not':
+      case 'nec':
+      case 'pos':
+      case 'crenca':
         formula(f.f, escopo)
         return
       case 'and':
@@ -174,6 +177,9 @@ function coletarLigados(f: Formula, s: Set<string>): void {
       coletarLigados(f.corpo, s)
       return
     case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
       coletarLigados(f.f, s)
       return
     case 'and':

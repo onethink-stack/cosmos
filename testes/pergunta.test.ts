@@ -26,7 +26,7 @@ const PQ = grupos([
 describe('perguntar: isto segue das notas?', () => {
   it('segue, com as notas necessárias (sem as que não importam)', () => {
     const r = perguntar(PQ, 'Q(a)', [], OPCOES_PADRAO)
-    expect(r).toEqual({ tipo: 'segue', N: 8, notas: ['regra', 'fato'] })
+    expect(r).toEqual({ tipo: 'segue', N: 8, K: 1, notas: ['regra', 'fato'] })
   })
 
   it('não segue: mostra um mundo onde as notas valem e a fórmula falha', () => {
@@ -44,13 +44,13 @@ describe('perguntar: isto segue das notas?', () => {
   })
 
   it('vale sempre: não depende de nenhuma nota', () => {
-    expect(perguntar(PQ, 'Q(a) ∨ ¬Q(a)', [], OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, notas: [] })
-    expect(perguntar(PQ, 'a = a', [], OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, notas: [] })
+    expect(perguntar(PQ, 'Q(a) ∨ ¬Q(a)', [], OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, K: 1, notas: [] })
+    expect(perguntar(PQ, 'a = a', [], OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, K: 1, notas: [] })
   })
 
   it('dos axiomas segue ∃x (x ∈ A), usando Ax3, Ax5 e Ax6', () => {
     const r = perguntar(grupos(AX), '∃x (x ∈ A)', DIC, OPCOES_PADRAO)
-    expect(r).toEqual({ tipo: 'segue', N: 8, notas: ['Ax3', 'Ax5', 'Ax6'] })
+    expect(r).toEqual({ tipo: 'segue', N: 8, K: 1, notas: ['Ax3', 'Ax5', 'Ax6'] })
   })
 
   it('o conjunto de notas devolvido é irredutível: sem qualquer uma delas, deixa de seguir', () => {
@@ -83,6 +83,6 @@ describe('perguntar: isto segue das notas?', () => {
     const geral = tarefas.find((t) => t.chave === 'geral')!
     const visao = tarefas.find((t) => t.chave === 'visao:x')!
     expect(perguntar(geral.grupos, 'A ∈ A', DIC, OPCOES_PADRAO).tipo).toBe('contradiz')
-    expect(perguntar(visao.grupos, 'A ∈ A', DIC, OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, notas: ['crença'] })
+    expect(perguntar(visao.grupos, 'A ∈ A', DIC, OPCOES_PADRAO)).toEqual({ tipo: 'segue', N: 8, K: 1, notas: ['crença'] })
   })
 })

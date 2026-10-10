@@ -21,6 +21,10 @@ export type TipoToken =
   | 'lpar'
   | 'rpar'
   | 'comma'
+  | 'nec'
+  | 'pos'
+  | 'lbrack'
+  | 'rbrack'
   | 'eof'
 
 export interface Token {
@@ -45,20 +49,23 @@ export const SUBSCRITOS: Record<string, string> = {
 const SIMBOLOS: [string, TipoToken][] = [
   ['\\notin', 'notin'], ['\\empty', 'empty'], ['\\sub', 'subset'], ['\\cap', 'cap'],
   ['\\cup', 'cup'], ['\\in', 'in'], ['\\A', 'forall'], ['\\E', 'exists'],
-  ['<->', 'iff'], ['->', 'imp'], ['!=', 'neq'],
+  ['\\nec', 'nec'], ['\\pos', 'pos'],
+  ['<->', 'iff'], ['->', 'imp'], ['!=', 'neq'], ['[]', 'nec'], ['<>', 'pos'],
   ['∀', 'forall'], ['∃', 'exists'], ['¬', 'not'], ['~', 'not'],
   ['∧', 'and'], ['&', 'and'], ['∨', 'or'], ['|', 'or'],
   ['⟹', 'imp'], ['⇒', 'imp'], ['→', 'imp'], ['⟺', 'iff'], ['⇔', 'iff'], ['↔', 'iff'],
   ['∈', 'in'], ['∉', 'notin'], ['⊆', 'subset'],
   ['⋂', 'cap'], ['∩', 'cap'], ['⋃', 'cup'], ['∪', 'cup'], ['∅', 'empty'],
   ['=', 'eq'], ['≠', 'neq'], ['(', 'lpar'], [')', 'rpar'], [',', 'comma'],
+  ['□', 'nec'], ['◻', 'nec'], ['◇', 'pos'], ['◊', 'pos'], ['⋄', 'pos'], ['[', 'lbrack'], [']', 'rbrack'],
 ]
 
 /** Símbolo canônico de cada tipo de token, usado nas mensagens. */
 export const SIMBOLO_DE: Record<TipoToken, string> = {
   nome: 'nome', subscr: 'subscrito', forall: '∀', exists: '∃', not: '¬', and: '∧',
   or: '∨', imp: '⟹', iff: '⟺', eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆',
-  cap: '⋂', cup: '⋃', empty: '∅', lpar: '(', rpar: ')', comma: ',', eof: 'fim da fórmula',
+  cap: '⋂', cup: '⋃', empty: '∅', lpar: '(', rpar: ')', comma: ',', nec: '□', pos: '◇', lbrack: '[', rbrack: ']',
+  eof: 'fim da fórmula',
 }
 
 const LETRA = /[\p{L}\p{N}']/u

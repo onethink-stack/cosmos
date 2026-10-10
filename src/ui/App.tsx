@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks'
 import { estado, notaVazia, useEstado } from '../dados/estado'
 import { verificacao } from '../dados/verificacao'
+import { z3 } from '../dados/z3'
 import { Backup } from './Backup'
 import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
@@ -31,6 +32,7 @@ export function App() {
   useEffect(() => {
     void estado.carregar()
     void verificacao.carregarConfig()
+    void z3.carregarConfig()
   }, [])
 
   const aba = rota.tela === 'nota' || rota.tela === 'nova' ? 'notas' : rota.tela
@@ -43,7 +45,7 @@ export function App() {
             Caderno Lógico
           </a>
           <a href="#/backup" class={`link-backup${aba === 'backup' ? ' ativo' : ''}`}>
-            Backup
+            Offline · Backup
           </a>
           <nav>
             <a href="#/notas" class={aba === 'notas' ? 'ativo' : ''}>

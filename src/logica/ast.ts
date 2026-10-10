@@ -21,6 +21,10 @@ export type Formula =
   | ({ k: 'pred'; nome: string; args: Termo[] } & Span)
   | ({ k: 'rel'; op: Rel; l: Termo; r: Termo } & Span)
   | ({ k: 'not'; f: Formula } & Span)
+  /** □φ: necessário (vale em todo mundo) · ◇φ: possível (vale em algum mundo) */
+  | ({ k: 'nec' | 'pos'; f: Formula } & Span)
+  /** B[agente] φ: o agente acredita que φ (lógica doxástica KD45) */
+  | ({ k: 'crenca'; agente: string; f: Formula } & Span)
   | ({ k: Conectivo; l: Formula; r: Formula } & Span)
   | ({ k: 'forall' | 'exists'; v: string; vPos: number; dom?: Termo; corpo: Formula } & Span)
   | ({ k: 'const'; valor: boolean } & Span)

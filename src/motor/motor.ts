@@ -2,7 +2,7 @@ import type { EntradaDicionario } from '../dados/tipos'
 import { expandir } from '../logica/acucar'
 import type { Formula } from '../logica/ast'
 import { validar } from '../logica/validador'
-import { Aterrador, GrandeDemais, type ProblemaCNF } from './aterrar'
+import { Aterrador, ehModal, GrandeDemais, type ProblemaCNF } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
 import { resolver } from './sat'
 
@@ -18,29 +18,36 @@ export interface OpcoesMotor {
   N: number
   /** limite de tamanho do problema aterrado (nós do circuito / cláusulas) */
   limite: number
+  /** maior número de mundos testado quando há □, ◇ ou B[…] */
+  K: number
 }
 
-export const OPCOES_PADRAO: OpcoesMotor = { N: 8, limite: 2_000_000 }
+export const OPCOES_PADRAO: OpcoesMotor = { N: 8, limite: 2_000_000, K: 3 }
 
 export interface Modelo {
   n: number
+  /** número de mundos (1 = sem lógica modal); o mundo 0 é o real */
+  mundos: number
   constantes: { nome: string; valor: number }[]
-  funcoes: { nome: string; tabela: { args: number[]; valor: number }[] }[]
-  predicados: { nome: string; aridade: number; verdadeiros: number[][] }[]
-  /** pares (a, b) com a ∈ b */
-  pertence: [number, number][]
+  funcoes: { nome: string; tabela: { args: number[]; valor: number; w: number }[] }[]
+  predicados: { nome: string; aridade: number; verdadeiros: { args: number[]; w: number }[] }[]
+  /** (a, b, w): a ∈ b no mundo w */
+  pertence: [number, number, number][]
+  /** para cada agente, os pares (w, v): em w, o agente considera v possível */
+  acessos: { agente: string; pares: [number, number][] }[]
 }
 
 export type Busca =
   | { status: 'modelo'; n: number; modelo: Modelo }
-  | { status: 'sem-modelo' }
+  /** K: maior número de mundos testado (1 sem lógica modal) */
+  | { status: 'sem-modelo'; K: number }
   /** tamanho n ficou grande demais; até n-1 não havia modelo */
   | { status: 'grande-demais'; n: number }
 
 export type ResultadoMotor =
   | { tipo: 'vazio' }
   | { tipo: 'consistente'; n: number; modelo: Modelo }
-  | { tipo: 'sem-modelo'; N: number; conflito: string[]; explicacoes: ExplicacaoConflito[] }
+  | { tipo: 'sem-modelo'; N: number; K: number; conflito: string[]; explicacoes: ExplicacaoConflito[] }
   | { tipo: 'grande-demais'; n: number }
 
 /** Por que uma nota é necessária ao conflito. */
@@ -75,12 +82,15 @@ export function prepararFormulas(textos: string[], dicionario: EntradaDicionario
   return analisar(textos, dicionario).map((x) => x.expandida)
 }
 
-function lerModelo(n: number, p: ProblemaCNF, valores: Int8Array): Modelo {
+function lerModelo(n: number, k: number, p: ProblemaCNF, valores: Int8Array): Modelo {
   const constantes: Modelo['constantes'] = []
   const funcoes = new Map<string, Modelo['funcoes'][number]['tabela']>()
-  const predicados = new Map<string, { aridade: number; verdadeiros: number[][] }>()
-  const pertence: [number, number][] = []
+  const predicados = new Map<string, { aridade: number; verdadeiros: { args: number[]; w: number }[] }>()
+  const pertence: [number, number, number][] = []
+  const acessos = new Map<string, [number, number][]>()
   for (const [v, info] of p.info) {
+    if (info.k === 'pred' && !predicados.has(info.nome)) predicados.set(info.nome, { aridade: info.args.length, verdadeiros: [] })
+    if (info.k === 'acesso' && !acessos.has(info.agente)) acessos.set(info.agente, [])
     if (valores[v] !== 1) continue
     switch (info.k) {
       case 'const':
@@ -88,51 +98,61 @@ function lerModelo(n: number, p: ProblemaCNF, valores: Int8Array): Modelo {
         break
       case 'func':
         if (!funcoes.has(info.nome)) funcoes.set(info.nome, [])
-        funcoes.get(info.nome)!.push({ args: info.args, valor: info.d })
+        funcoes.get(info.nome)!.push({ args: info.args, valor: info.d, w: info.w })
         break
       case 'pred':
-        if (!predicados.has(info.nome)) predicados.set(info.nome, { aridade: info.args.length, verdadeiros: [] })
-        predicados.get(info.nome)!.verdadeiros.push(info.args)
+        predicados.get(info.nome)!.verdadeiros.push({ args: info.args, w: info.w })
         break
       case 'in':
-        pertence.push([info.a, info.b])
+        pertence.push([info.a, info.b, info.w])
+        break
+      case 'acesso':
+        acessos.get(info.agente)!.push([info.de, info.para])
         break
     }
   }
-  // predicados usados mas falsos em tudo também aparecem
-  for (const info of p.info.values())
-    if (info.k === 'pred' && !predicados.has(info.nome)) predicados.set(info.nome, { aridade: info.args.length, verdadeiros: [] })
-
   const cmp = (a: number[], b: number[]) => {
     for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]
     return 0
   }
   return {
     n,
+    mundos: k,
     constantes: constantes.sort((a, b) => a.nome.localeCompare(b.nome)),
-    funcoes: [...funcoes].map(([nome, tabela]) => ({ nome, tabela: tabela.sort((a, b) => cmp(a.args, b.args)) })).sort((a, b) => a.nome.localeCompare(b.nome)),
-    predicados: [...predicados].map(([nome, x]) => ({ nome, ...x, verdadeiros: x.verdadeiros.sort(cmp) })).sort((a, b) => a.nome.localeCompare(b.nome)),
-    pertence: pertence.sort((a, b) => a[1] - b[1] || a[0] - b[0]),
+    funcoes: [...funcoes]
+      .map(([nome, tabela]) => ({ nome, tabela: tabela.sort((a, b) => a.w - b.w || cmp(a.args, b.args)) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome)),
+    predicados: [...predicados]
+      .map(([nome, x]) => ({ nome, ...x, verdadeiros: x.verdadeiros.sort((a, b) => a.w - b.w || cmp(a.args, b.args)) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome)),
+    pertence: pertence.sort((a, b) => a[2] - b[2] || a[1] - b[1] || a[0] - b[0]),
+    acessos: [...acessos].map(([agente, pares]) => ({ agente, pares: pares.sort((a, b) => a[0] - b[0] || a[1] - b[1]) })),
   }
 }
 
-/** Procura modelo com domínio de 1 a N elementos. */
+/**
+ * Procura modelo com domínio de 1 a N objetos. Com □, ◇ ou B[…], para cada
+ * tamanho testa de 1 a K mundos.
+ */
 export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: Progresso): Busca {
+  const K = formulas.some(ehModal) ? Math.max(1, op.K) : 1
   for (let n = 1; n <= op.N; n++) {
-    progresso?.(`testando domínio com ${n} objeto${n > 1 ? 's' : ''}`)
-    let p: ProblemaCNF
-    try {
-      const at = new Aterrador(n, op.limite)
-      for (const f of formulas) at.afirmar(f)
-      p = at.cnf()
-    } catch (e) {
-      if (e instanceof GrandeDemais) return { status: 'grande-demais', n }
-      throw e
+    for (let k = 1; k <= K; k++) {
+      progresso?.(`testando ${n} objeto${n > 1 ? 's' : ''}${K > 1 ? ` e ${k} mundo${k > 1 ? 's' : ''}` : ''}`)
+      let p: ProblemaCNF
+      try {
+        const at = new Aterrador(n, op.limite, k)
+        for (const f of formulas) at.afirmar(f)
+        p = at.cnf()
+      } catch (e) {
+        if (e instanceof GrandeDemais) return { status: 'grande-demais', n }
+        throw e
+      }
+      const r = resolver(p.nVars, p.clausulas)
+      if (r.sat) return { status: 'modelo', n, modelo: lerModelo(n, k, p, r.valores) }
     }
-    const r = resolver(p.nVars, p.clausulas)
-    if (r.sat) return { status: 'modelo', n, modelo: lerModelo(n, p, r.valores) }
   }
-  return { status: 'sem-modelo' }
+  return { status: 'sem-modelo', K }
 }
 
 /**
@@ -173,7 +193,7 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
     }
     return explic
   })
-  return { tipo: 'sem-modelo', N: op.N, conflito: conjunto.map((x) => x.g.id), explicacoes }
+  return { tipo: 'sem-modelo', N: op.N, K: r.K, conflito: conjunto.map((x) => x.g.id), explicacoes }
 }
 
 export type GrupoPronto = { g: Grupo; itens: FormulaPronta[] }
@@ -206,9 +226,9 @@ export interface MundoExplicado {
 
 export type ResultadoPergunta =
   /** nenhum mundo até N tem as notas verdadeiras e a fórmula falsa; `notas` = as necessárias ([] = vale sempre) */
-  | { tipo: 'segue'; N: number; notas: string[] }
+  | { tipo: 'segue'; N: number; K: number; notas: string[] }
   /** as notas implicam a negação da fórmula */
-  | { tipo: 'contradiz'; N: number; notas: string[]; mundo: MundoExplicado }
+  | { tipo: 'contradiz'; N: number; K: number; notas: string[]; mundo: MundoExplicado }
   /** há mundo com as notas e a fórmula falsa, e há mundo com as notas e a fórmula verdadeira */
   | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado }
   /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
@@ -246,7 +266,7 @@ export function perguntar(
     const notas = minimizar(prontos, [nao(phi.expandida)], op, 0, (g, i) =>
       progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
-    return { tipo: 'segue', N: op.N, notas: notas.map((x) => x.g.id) }
+    return { tipo: 'segue', N: op.N, K: contra.K, notas: notas.map((x) => x.g.id) }
   }
 
   const mundo: MundoExplicado = { n: contra.n, modelo: contra.modelo, passos: new Avaliador(contra.modelo).explicar(phi.original) }
@@ -256,7 +276,7 @@ export function perguntar(
     const notas = minimizar(prontos, [phi.expandida], op, 0, (g, i) =>
       progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
-    return { tipo: 'contradiz', N: op.N, notas: notas.map((x) => x.g.id), mundo }
+    return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }
   }
   // grande demais ao procurar o mundo a favor: ainda assim sabemos que não segue
   return { tipo: 'nao-segue', N: op.N, mundo }

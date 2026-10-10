@@ -3,6 +3,10 @@ import { salvarDeduzida } from '../dados/deduzida'
 import { useEstado } from '../dados/estado'
 import type { Nota } from '../dados/tipos'
 import { assinatura, useVerificacao, type ResultadoDaDescoberta } from '../dados/verificacao'
+import { limiteTexto } from '../motor/avaliar'
+import type { Grupo } from '../motor/motor'
+import { ConfirmacaoZ3 } from './ConfirmacaoZ3'
+import { formulasDosGrupos } from './ResultadoVerificacao'
 import type { Tarefa } from '../motor/tarefas'
 
 let chaveSalva = 'geral'
@@ -17,7 +21,7 @@ export function Descobrir({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
 
   const r = ver.descoberta
   const tarefaDoResultado = r && tarefas.find((t) => t.chave === r.chave)
-  const desatualizado = !!r && (!tarefaDoResultado || r.assinatura !== assinatura(tarefaDoResultado, est.dicionario, ver.N))
+  const desatualizado = !!r && (!tarefaDoResultado || r.assinatura !== assinatura(tarefaDoResultado, est.dicionario, ver.limites))
 
   return (
     <section class="descobrir">
@@ -54,12 +58,22 @@ export function Descobrir({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
         )}
       </div>
       {!pronto && <p class="erro-texto">Confirme os nomes sem ficha (acima) antes.</p>}
-      {r && !ocupado && <ListaDescobertas r={r} notas={est.notas} desatualizado={desatualizado} />}
+      {r && !ocupado && <ListaDescobertas r={r} notas={est.notas} desatualizado={desatualizado} grupos={tarefaDoResultado?.grupos ?? []} />}
     </section>
   )
 }
 
-function ListaDescobertas({ r, notas, desatualizado }: { r: ResultadoDaDescoberta; notas: Nota[]; desatualizado: boolean }) {
+function ListaDescobertas({
+  r,
+  notas,
+  desatualizado,
+  grupos,
+}: {
+  r: ResultadoDaDescoberta
+  notas: Nota[]
+  desatualizado: boolean
+  grupos: Grupo[]
+}) {
   const [salvas, setSalvas] = useState<Record<string, string>>({})
   const meta = (
     <div class="suave res-meta">
@@ -132,6 +146,7 @@ function ListaDescobertas({ r, notas, desatualizado }: { r: ResultadoDaDescobert
                       'vale sem depender de nota'
                     )}
                   </div>
+                  {!desatualizado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDosGrupos(grupos, c.notas)} negar={c.formula} />}
                   {salvas[c.formula] ? (
                     <span class="status-ok">
                       ✓ <a href={`#/nota/${encodeURIComponent(salvas[c.formula])}`}>Nota criada</a>
@@ -152,7 +167,7 @@ function ListaDescobertas({ r, notas, desatualizado }: { r: ResultadoDaDescobert
               ))}
             </ul>
           )}
-          <p class="suave">Cada uma vale em todos os mundos com até {res.N} objetos onde as notas valem. Não é prova absoluta.</p>
+          <p class="suave">Cada uma vale em todos os cenários com até {limiteTexto(res.N, res.K)} onde as notas valem.</p>
           {meta}
         </div>
       )

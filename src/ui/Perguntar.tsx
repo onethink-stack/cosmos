@@ -8,7 +8,10 @@ import { validar } from '../logica/validador'
 import type { Tarefa } from '../motor/tarefas'
 import { EditorFormulas } from './EditorFormulas'
 import { FormulaExibida } from './FormulaExibida'
-import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
+import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
+import type { Grupo } from '../motor/motor'
+import { ConfirmacaoZ3 } from './ConfirmacaoZ3'
+import { ArvorePassos, formulasDosGrupos, ModeloVisual } from './ResultadoVerificacao'
 
 // mantém o que foi digitado ao trocar de tela
 let formulaSalva = ''
@@ -38,7 +41,7 @@ export function Perguntar({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
 
   const r = ver.pergunta
   const tarefaDoResultado = r && tarefas.find((t) => t.chave === r.chave)
-  const desatualizado = !!r && (!tarefaDoResultado || r.assinatura !== assinatura(tarefaDoResultado, est.dicionario, ver.N, r.formula))
+  const desatualizado = !!r && (!tarefaDoResultado || r.assinatura !== assinatura(tarefaDoResultado, est.dicionario, ver.limites, r.formula))
 
   return (
     <section class="perguntar">
@@ -84,12 +87,24 @@ export function Perguntar({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
       {!pronto && <p class="erro-texto">Confirme os nomes sem ficha (acima) antes de perguntar.</p>}
       {pronto && semFicha && <p class="aviso-texto">A pergunta usa nomes sem ficha no dicionário. Crie a ficha ou corrija o nome.</p>}
 
-      {r && !ver.perguntando && <RespostaPergunta r={r} notas={est.notas} desatualizado={desatualizado} />}
+      {r && !ver.perguntando && (
+        <RespostaPergunta r={r} notas={est.notas} desatualizado={desatualizado} grupos={tarefaDoResultado?.grupos ?? []} />
+      )}
     </section>
   )
 }
 
-function RespostaPergunta({ r, notas, desatualizado }: { r: ResultadoDaPergunta; notas: Nota[]; desatualizado: boolean }) {
+function RespostaPergunta({
+  r,
+  notas,
+  desatualizado,
+  grupos,
+}: {
+  r: ResultadoDaPergunta
+  notas: Nota[]
+  desatualizado: boolean
+  grupos: Grupo[]
+}) {
   const [salva, setSalva] = useState<string | null>(null)
   const titulo = (id: string) => notas.find((n) => n.id === id)
   const listaNotas = (ids: string[]) => (
@@ -145,15 +160,16 @@ function RespostaPergunta({ r, notas, desatualizado }: { r: ResultadoDaPergunta;
           {res.notas.length ? (
             <>
               <p>
-                Em todo mundo com até {res.N} objetos onde estas notas valem, a fórmula também vale. Notas necessárias ({res.notas.length}) — sem
+                Em todo cenário com até {limiteTexto(res.N, res.K)} onde estas notas valem, a fórmula também vale. Notas necessárias ({res.notas.length}) — sem
                 qualquer uma delas, deixa de seguir:
               </p>
               {listaNotas(res.notas)}
             </>
           ) : (
-            <p>Vale em todo mundo com até {res.N} objetos, sem depender de nenhuma nota.</p>
+            <p>Vale em todo cenário com até {limiteTexto(res.N, res.K)}, sem depender de nenhuma nota.</p>
           )}
-          <p class="suave">Não é prova absoluta: um mundo com mais de {res.N} objetos ainda poderia ser exceção.</p>
+          <p class="suave">Não é prova absoluta: um cenário maior ainda poderia ser exceção. O Z3 pode provar de vez.</p>
+          {!desatualizado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDosGrupos(grupos, res.notas)} negar={r.formula} />}
           {res.notas.length > 0 &&
             (salva ? (
               <p class="status-ok">
@@ -172,10 +188,11 @@ function RespostaPergunta({ r, notas, desatualizado }: { r: ResultadoDaPergunta;
         <div class="resultado res-conflito">
           <strong>✗ Suas notas contradizem esta fórmula</strong>
           {cabeca}
-          <p>Em nenhum mundo com até {res.N} objetos as notas valem junto com ela: segue a negação. Notas responsáveis:</p>
+          <p>Em nenhum cenário com até {limiteTexto(res.N, res.K)} as notas valem junto com ela: segue a negação. Notas responsáveis:</p>
           {listaNotas(res.notas)}
+          {!desatualizado && <ConfirmacaoZ3 tipo="contradiz" formulas={[...formulasDosGrupos(grupos, res.notas), r.formula]} />}
           <details class="explicacao">
-            <summary>Ver um mundo das suas notas, onde ela falha</summary>
+            <summary>Ver um cenário das suas notas, onde ela falha</summary>
             <ArvorePassos p={res.mundo.passos} />
             <ModeloVisual m={res.mundo.modelo} />
           </details>
@@ -188,12 +205,12 @@ function RespostaPergunta({ r, notas, desatualizado }: { r: ResultadoDaPergunta;
           <strong>Não segue</strong>
           {cabeca}
           <p>
-            Há um mundo com {res.mundo.n} objeto{res.mundo.n > 1 ? 's' : ''} onde todas as suas notas valem e a fórmula falha. E ela também não é
+            Há um cenário com {tamanhoTexto(res.mundo.n, res.mundo.modelo.mundos)} onde todas as suas notas valem e a fórmula falha. E ela também não é
             contradita: as notas não decidem a questão.
           </p>
           <ArvorePassos p={res.mundo.passos} />
           <details class="explicacao">
-            <summary>Ver esse mundo</summary>
+            <summary>Ver esse cenário</summary>
             <ModeloVisual m={res.mundo.modelo} />
           </details>
           {meta}

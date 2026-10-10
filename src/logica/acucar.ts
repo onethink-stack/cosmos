@@ -64,6 +64,9 @@ export function expandir(f: Formula): Formula {
       case 'const':
         return f
       case 'not':
+      case 'nec':
+      case 'pos':
+      case 'crenca':
         return { ...f, f: ex(f.f) }
       case 'and':
       case 'or':

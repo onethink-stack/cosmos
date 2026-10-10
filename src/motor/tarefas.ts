@@ -1,4 +1,5 @@
 import { preparar } from '../dados/premissas'
+import { lex } from '../logica/lexer'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
@@ -68,11 +69,26 @@ export function montarTarefas(notas: Nota[], dicionario: EntradaDicionario[]): {
     return [...m.values()].sort((a, b) => criada.get(a.id)!.localeCompare(criada.get(b.id)!))
   }
   const tarefas: Tarefa[] = [{ chave: 'geral', rotulo: 'Leis e fatos', grupos: porNota(p.premissas) }]
-  for (const [titular, fs] of [...p.visoes].sort(([a], [b]) => a.localeCompare(b)))
-    tarefas.push({ chave: `visao:${titular}`, rotulo: `Visão de ${titular}`, grupos: porNota(fs) })
+  const visoes = [...p.visoes].sort(([a], [b]) => a.localeCompare(b))
+  for (const [titular, fs] of visoes) tarefas.push({ chave: `visao:${titular}`, rotulo: `Visão de ${titular}`, grupos: porNota(fs) })
+
+  // Tudo junto: leis e fatos como estão, e cada crença como B[titular] (φ).
+  // Titulares que não são um nome válido na linguagem ficam de fora.
+  const comoCrenca = visoes
+    .filter(([titular]) => titularValido(titular))
+    .flatMap(([titular, fs]) => fs.map((f) => ({ ...f, texto: `B[${titular}] (${f.texto})` })))
+  if (comoCrenca.length)
+    tarefas.push({ chave: 'tudo', rotulo: 'Tudo junto (leis, fatos e crenças)', grupos: porNota([...p.premissas, ...comoCrenca]) })
   return { tarefas, pronto: p.pronto }
 }
 
-export function assinatura(t: Tarefa, dicionario: EntradaDicionario[], N: number, pergunta?: string): string {
-  return JSON.stringify([N, t.grupos, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade]), pergunta ?? null])
+/** `limites`: N, ou "N/K" quando o número de mundos também importa */
+export function assinatura(t: Tarefa, dicionario: EntradaDicionario[], limites: number | string, pergunta?: string): string {
+  return JSON.stringify([limites, t.grupos, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade]), pergunta ?? null])
+}
+
+/** O titular cabe em B[…]? (uma ou mais palavras, sem símbolos lógicos) */
+export function titularValido(titular: string): boolean {
+  const { tokens, erros } = lex(titular)
+  return !erros.length && tokens.length > 1 && tokens.every((t) => t.t === 'nome' || t.t === 'eof')
 }

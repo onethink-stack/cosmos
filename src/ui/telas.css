@@ -145,3 +145,29 @@ code.simbolo { font-family: var(--fonte-mat); font-size: 1.1rem; font-weight: 60
 
 .lista-simples { padding-left: 18px; }
 .lista-simples li { margin: 6px 0; }
+
+/* ---------- motor ---------- */
+h3 { font-size: 1rem; margin: 18px 0 6px; }
+.resultado { border: 1px solid var(--borda); border-left-width: 4px; border-radius: var(--raio); padding: 10px 12px; margin: 8px 0; background: var(--superficie); }
+.resultado p { margin: 6px 0; }
+.res-ok { border-left-color: var(--ok); }
+.res-ok > strong { color: var(--ok); }
+.res-conflito { border-left-color: var(--erro); }
+.res-conflito > strong { color: var(--erro); }
+.res-aviso { border-left-color: var(--aviso); }
+.res-erro { border-left-color: var(--erro); }
+.res-rodando { border-left-color: var(--destaque); }
+.res-meta { font-size: .8rem; margin-top: 6px; }
+.selo.aviso { background: var(--aviso-fundo); color: var(--aviso); }
+.lista-conflito { padding-left: 18px; }
+.lista-conflito li { margin: 6px 0; }
+.modelo h4 { margin: 10px 0 2px; font-size: .9rem; }
+.modelo ul { margin: 0; padding-left: 18px; font-family: var(--fonte-mat); }
+.modelo ul.em-linha { display: flex; flex-wrap: wrap; gap: 2px 14px; list-style: none; padding-left: 0; }
+.modelo p { margin: 2px 0; }
+.girando { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--borda); border-top-color: var(--destaque); border-radius: 50%; animation: girar .8s linear infinite; vertical-align: -1px; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .girando { animation: none; } }
+.rodape-acoes { flex-wrap: wrap; }
+.rodape-status { flex-basis: 100%; }
+.status-ver { font-size: .88rem; padding: 6px 10px; border-left-width: 4px; border-left-style: solid; border-radius: 4px; background: var(--superficie); }

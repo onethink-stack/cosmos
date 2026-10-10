@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks'
 import { estado, notaVazia, useEstado } from '../dados/estado'
+import { verificacao } from '../dados/verificacao'
 import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
 import { ListaNotas } from './ListaNotas'
@@ -27,6 +28,7 @@ export function App() {
   const rota = useRota()
   useEffect(() => {
     void estado.carregar()
+    void verificacao.carregarConfig()
   }, [])
 
   const aba = rota.tela === 'nota' || rota.tela === 'nova' ? 'notas' : rota.tela

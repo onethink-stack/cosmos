@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'preact/hooks'
-import { notaVazia, useEstado } from '../dados/estado'
+import { estado, notaVazia, useEstado } from '../dados/estado'
+import { montarTarefas, verificacao } from '../dados/verificacao'
 import { NOME_COMPARTIMENTO, NOME_GRAU, type Compartimento, type Grau, type Nota } from '../dados/tipos'
 import type { Diag } from '../logica/ast'
 import { EditorFormulas } from './EditorFormulas'
 import { guarda, ir } from './rotas'
+import { StatusVerificacao } from './StatusVerificacao'
 
 const COMPARTIMENTOS: Compartimento[] = ['lei', 'fato', 'visao']
 const GRAUS: Grau[] = ['F', 'M', 'D']
+
+// status da verificação feita ao salvar, por nota (sobrevive à troca nova → #/nota/id)
+const statusPorNota = new Map<string, { chave: string; bloqueado: boolean } | null>()
 
 const limparTags = (s: string) => [...new Set(s.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean))]
 const comparavel = (n: Nota) => JSON.stringify({ ...n, formulas: n.formulas.filter((f) => f.trim()), atualizadaEm: '' })
@@ -18,6 +23,7 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
   const [nota, setNota] = useState<Nota>(base)
   const [tagsTexto, setTagsTexto] = useState(base.tags.join(', '))
   const [aviso, setAviso] = useState<string | null>(null)
+  const [verificado, setVerificadoLocal] = useState(() => (id ? (statusPorNota.get(id) ?? null) : null))
 
   const atual = { ...nota, tags: limparTags(tagsTexto) }
   const sujo = comparavel(atual) !== comparavel(base)
@@ -56,7 +62,24 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
     setTagsTexto(nova.tags.join(', '))
     guarda.sair = null
     mostrar('Nota salva')
+    verificarAoSalvar(salva)
     if (!id) ir(`#/nota/${encodeURIComponent(salva.id)}`, true)
+  }
+
+  /** Ao salvar uma nota ativa com fórmulas, verifica o conjunto dela (geral ou do titular). */
+  const verificarAoSalvar = (salva: Nota) => {
+    const setVerificado = (v: { chave: string; bloqueado: boolean } | null) => {
+      statusPorNota.set(salva.id, v)
+      setVerificadoLocal(v)
+    }
+    if (!salva.ativa || !salva.formulas.length) return setVerificado(null)
+    const chave = salva.compartimento === 'visao' ? `visao:${salva.titular.trim() || '(sem titular)'}` : 'geral'
+    const { tarefas, pronto } = montarTarefas(estado.notas, estado.dicionario)
+    const t = tarefas.find((x) => x.chave === chave)
+    if (!pronto) return setVerificado({ chave, bloqueado: true })
+    if (!t) return setVerificado(null)
+    verificacao.iniciar([t], estado.dicionario)
+    setVerificado({ chave, bloqueado: false })
   }
 
   const apagar = async () => {
@@ -177,6 +200,11 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
       )}
 
       <div class="rodape-acoes">
+        {verificado && (
+          <div class="rodape-status">
+            <StatusVerificacao chave={verificado.chave} bloqueado={verificado.bloqueado} />
+          </div>
+        )}
         {id ? (
           <button type="button" class="discreto perigo" onClick={apagar}>
             Apagar

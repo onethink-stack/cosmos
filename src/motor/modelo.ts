@@ -365,6 +365,10 @@ export function rodarModelo(
       nivel,
       (rs) => {
         r.final = rs
+        // a conferência no nível das rodadas acabou: a classificação já aparece
+        // (provisória) enquanto o aprimoramento aprofunda
+        if (!r.itens.length && rs.length && rs.every((x) => x.etapa === 'fim'))
+          r.itens = classificar(notas, rs, dicionario, nivel, { criadas, ativadas, desativadas, refutados, titulo })
         mandar()
       },
       (_, msg) => progresso(`classificando: ${msg}`),
@@ -381,6 +385,7 @@ export function rodarModelo(
       nivel = { ...nivel, N: Math.max(nivel.N, virada.N), K: Math.max(nivel.K, virada.K) }
       provados.clear()
       r.situacao = 'rodadas'
+      r.itens = []
       continue
     }
     break

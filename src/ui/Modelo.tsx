@@ -200,8 +200,16 @@ function Execucao({ exec, desatualizada, ocupado }: { exec: ExecucaoModelo; desa
       {exec.erro && <p class="erro-texto">Falha no motor: {exec.erro}</p>}
       {rel?.parouPor && <p class="suave">Rodadas: {rel.parouPor}.</p>}
       {rel?.final && <Nivel final={rel.final} />}
-      {rel && rel.situacao === 'pronto' && <Classificacao rel={rel} pastas={exec.pastas} travado={desatualizada || ocupado} />}
-      {rel && rel.situacao !== 'pronto' && !rel.eventos.length && !exec.terminada && <p class="suave">Primeira rodada em andamento…</p>}
+      {rel && rel.itens.length > 0 && rel.situacao !== 'pronto' && !exec.terminada && (
+        <p class="aviso-texto">
+          Classificação provisória: o motor ainda está aprofundando (mais objetos e mundos) e pode mudar alguma conclusão. Para levar para o
+          caderno, espere terminar.
+        </p>
+      )}
+      {rel && rel.itens.length > 0 && <Classificacao rel={rel} pastas={exec.pastas} travado={desatualizada || ocupado || rel.situacao !== 'pronto'} />}
+      {rel && !rel.itens.length && !exec.terminada && (
+        <p class="suave">{rel.situacao === 'final' ? 'Rodadas terminadas; conferindo tudo junto…' : `Rodada ${rel.rodada} em andamento…`}</p>
+      )}
       {rel && rel.eventos.length > 0 && <Diario eventos={rel.eventos} aberto={rel.situacao !== 'pronto'} />}
     </div>
   )
@@ -360,7 +368,7 @@ function Classificacao({ rel: rel0, pastas, travado }: { rel: RelatorioModelo; p
             <button type="button" class="primario" disabled={travado} onClick={levar}>
               Levar {mudancas.length} mudança{mudancas.length > 1 ? 's' : ''} para o caderno
             </button>
-            {travado && <p class="suave">Rode de novo antes: as notas mudaram desde esta execução.</p>}
+            {travado && rel.situacao === 'pronto' && <p class="suave">Rode de novo antes: as notas mudaram desde esta execução.</p>}
           </>
         ) : (
           <p class="suave">Nada a mudar no caderno: o modelo não precisou ativar, desativar ou criar notas.</p>

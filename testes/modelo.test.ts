@@ -127,6 +127,25 @@ describe('segundo modelo', () => {
   })
 })
 
+describe('segundo modelo com aprimoramento', () => {
+  it('mostra a classificação provisória antes de terminar de aprofundar', () => {
+    const envios: RelatorioModelo[] = []
+    const aprimorar = { N: 6, K: 1, limite: 1_000_000, tempoChecagemMs: 20_000, orcamentoMs: 60_000 }
+    rodarModelo(
+      { notas: [nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))']), nota('L2', 'lei', ['P(a)']), nota('T1', 'teorema', ['Q(a)'])], aprimorar, orcamentoMs: 60_000 },
+      dic,
+      op,
+      (r) => envios.push(r),
+      () => {},
+    )
+    const provisoria = envios.find((r) => r.situacao === 'final' && r.itens.length)
+    expect(provisoria?.itens.find((i) => i.id === 'T1:0')?.classe).toBe('provado')
+    const final = envios.at(-1)!
+    expect(final.situacao).toBe('pronto')
+    expect(final.final![0].N).toBe(6)
+  })
+})
+
 describe('pastas do segundo modelo', () => {
   it('entram só as notas das pastas escolhidas; os teoremas desativados também', () => {
     const ns = [

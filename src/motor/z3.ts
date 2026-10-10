@@ -31,12 +31,43 @@ function obterContexto(api: any) {
   return new api.Context('caderno')
 }
 
+interface Liberacoes {
+  checando: number
+  adiadas: (() => void)[]
+}
+const liberacoesPorZ3 = new WeakMap<object, Liberacoes>()
+
+/**
+ * O z3-solver solta termos e solvers quando o coletor de lixo do JavaScript os
+ * recolhe (Z3_dec_ref, Z3_solver_dec_ref...): na thread principal, a qualquer
+ * momento, inclusive enquanto o check() roda noutra thread do WebAssembly. O
+ * Z3 não aguenta as duas threads mexendo na memória dele ao mesmo tempo: de
+ * vez em quando a checagem responde errado, quebra ("memory access out of
+ * bounds") ou nunca termina (e trava todas as seguintes, que esperam a vez).
+ * Por isso, durante uma checagem, essas liberações esperam numa fila.
+ */
+function liberacoes(api: any): Liberacoes {
+  let l = liberacoesPorZ3.get(api.Z3)
+  if (!l) {
+    const novo: Liberacoes = { checando: 0, adiadas: [] }
+    for (const nome of Object.keys(api.Z3)) {
+      if (!/(^|_)dec_ref$|^del_context$|^rcf_del$/.test(nome)) continue
+      const liberar = api.Z3[nome]
+      api.Z3[nome] = (...args: any[]) => (novo.checando > 0 ? void novo.adiadas.push(() => liberar(...args)) : liberar(...args))
+    }
+    liberacoesPorZ3.set(api.Z3, novo)
+    l = novo
+  }
+  return l
+}
+
 /**
  * As fórmulas têm modelo? (todas afirmadas no mundo real). `numericos`: nomes
  * de constantes e funções que são números reais (funções numéricas recebem
  * números e não variam com o mundo, como a matemática).
  */
 export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3_MS, numericos: Set<string> = new Set()): Promise<ResultadoZ3> {
+  const espera = liberacoes(api)
   const ctx = obterContexto(api)
   const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real } = ctx
   const Obj = Sort.declare('Obj')
@@ -190,6 +221,10 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
     solver.add(ForAll([a, b, c], Implies(And(R.call(a, b), R.call(b, c)), R.call(a, c))))
     solver.add(ForAll([a, b, c], Implies(And(R.call(a, b), R.call(a, c)), R.call(b, c))))
   }
-  const r = (await solver.check()) as ResultadoZ3
-  return r
+  espera.checando++
+  try {
+    return (await solver.check()) as ResultadoZ3
+  } finally {
+    if (--espera.checando === 0) for (const liberar of espera.adiadas.splice(0)) liberar()
+  }
 }

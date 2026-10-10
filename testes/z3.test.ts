@@ -85,9 +85,9 @@ describe('Z3 com números reais', () => {
   })
   const D = [num('x'), num('y'), num('m'), num('v'), num('J'), num('h', 'funcao', 1)]
   const pf = (fs: string[]) => analisar(fs, D, true).map((p) => p.expandida)
-  const segueN = async (premissas: string[], phi: string) => {
+  const segueN = async (premissas: string[], phi: string, tempoMs = 8_000) => {
     const [alvo] = analisar([phi], D, true)
-    return checarZ3(api, [...pf(premissas), nao(alvo.expandida)], 8_000, nomesNumericos(D))
+    return checarZ3(api, [...pf(premissas), nao(alvo.expandida)], tempoMs, nomesNumericos(D))
   }
 
   it('contas e comparações com constantes', async () => {
@@ -97,13 +97,21 @@ describe('Z3 com números reais', () => {
     expect(await segueN(['x > 2'], 'x^2 > 4')).toBe('unsat')
   }, 60_000)
 
-  it('quantificadores sobre ℝ e funções numéricas', async () => {
+  it('quantificadores sobre ℝ', async () => {
     expect(await segueN([], '∀t∈ℝ ∀a∈ℝ ((a > 0 ∧ t > 2 / a) ⟹ t < 0.5 · a · t^2)')).toBe('unsat')
     expect(await segueN([], '∀s∈ℝ ((s > 0 ∧ 3 · s^2 = 1) ⟹ ∀e∈ℝ ((0 ≤ e ∧ e ≤ 1) ⟹ e · (1 − e^2) ≤ s · (1 − s^2)))')).toBe('unsat')
+  }, 60_000)
+
+  it('funções numéricas: h decrescente e positiva ⟹ 1/h crescente', async () => {
     const dec = ['∀a∈ℝ ∀b∈ℝ (a < b ⟹ h(b) < h(a))', '∀a∈ℝ h(a) > 0']
     expect(await segueN(dec, '∀a∈ℝ ∀b∈ℝ (a < b ⟹ 1 / h(a) < 1 / h(b))')).toBe('unsat')
-    // sem h > 0 não segue (h pode trocar de sinal); o Z3 às vezes não acha o contraexemplo a tempo
-    expect(await segueN(['∀a∈ℝ ∀b∈ℝ (a < b ⟹ h(b) < h(a))'], '∀a∈ℝ ∀b∈ℝ (a < b ⟹ 1 / h(a) < 1 / h(b))')).not.toBe('unsat')
+  }, 60_000)
+
+  it('sem h > 0 não segue: o Z3 não acusa contradição', async () => {
+    // h pode trocar de sinal. O Z3 não acha o contraexemplo e só para pelo tempo
+    // limite ("não sei"): 2 s bastam para conferir que ele não diz "unsat".
+    const dec = ['∀a∈ℝ ∀b∈ℝ (a < b ⟹ h(b) < h(a))']
+    expect(await segueN(dec, '∀a∈ℝ ∀b∈ℝ (a < b ⟹ 1 / h(a) < 1 / h(b))', 2_000)).not.toBe('unsat')
   }, 60_000)
 
   it('números e objetos juntos', async () => {

@@ -10,6 +10,7 @@ import { LembreteBackup } from './LembreteBackup'
 import { ListaNotas } from './ListaNotas'
 import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
+import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
 import { Sistemas } from './Sistemas'
 
 export function App() {
@@ -30,6 +31,7 @@ export function App() {
           <a href="#/notas" class="marca">
             Caderno Lógico
           </a>
+          <MotorOcupado />
           <a href="#/backup" class={`link-backup${aba === 'backup' ? ' ativo' : ''}`}>
             Offline · Backup
           </a>
@@ -49,6 +51,7 @@ export function App() {
           </nav>
         </div>
       </header>
+      <AvisosNaTela />
       <main>
         {est.erroBanco && <div class="faixa-erro">{est.erroBanco}</div>}
         {rota.tela !== 'backup' && <LembreteBackup />}

@@ -39,6 +39,11 @@ export function pedidoDaCadeia(notas: Nota[], dicionario: EntradaDicionario[]): 
   return { contextos, inativas: inativasDoContexto(notas, 'geral') }
 }
 
+/** O pedido da cadeia e se os nomes estão todos confirmados (o motor só roda assim). */
+export function prepararCadeia(notas: Nota[], dicionario: EntradaDicionario[]): { pedido: PedidoCadeia; pronto: boolean } {
+  return { pedido: pedidoDaCadeia(notas, dicionario), pronto: preparar(notas, dicionario).pronto }
+}
+
 export interface ForaDaCadeia {
   /** teoremas ativos só com texto */
   teoremasSemFormula: Nota[]

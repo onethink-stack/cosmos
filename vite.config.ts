@@ -109,6 +109,21 @@ async function paginaDoApp() {
   return (await caches.match(indice)) || fetch(indice)
 }
 
+// Tocar numa notificação: volta para o app aberto (sem recarregar, para não
+// interromper o motor) e pede para mostrar a tela do resultado.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (cs) => {
+      const c = cs.find((x) => x.url.startsWith(self.registration.scope))
+      if (!c) return self.clients.openWindow(url)
+      c.postMessage({ tipo: 'ir', url })
+      return c.focus()
+    }),
+  )
+})
+
 self.addEventListener('fetch', (e) => {
   const req = e.request
   const url = new URL(req.url)

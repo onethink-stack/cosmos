@@ -77,8 +77,14 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
     const t = tarefas.find((x) => x.chave === chave)
     if (!pronto) return setVerificado({ chave, bloqueado: true })
     if (!t) return setVerificado(null)
-    verificacao.iniciar([t], estado.dicionario)
     setVerificado({ chave, bloqueado: false })
+    // um trabalho longo em andamento (cadeia, teoremas…) não é cancelado: a checagem espera a vez
+    if (verificacao.ocupado && verificacao.ocupado !== 'verificar')
+      return verificacao.quandoLivre(() => {
+        const atual = montarTarefas(estado.notas, estado.dicionario).tarefas.find((x) => x.chave === chave)
+        if (atual) verificacao.iniciar([atual], estado.dicionario)
+      })
+    verificacao.iniciar([t], estado.dicionario)
   }
 
   const apagar = async () => {

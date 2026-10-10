@@ -52,7 +52,7 @@ export function Descobrir({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
             </button>
           </>
         ) : (
-          <button type="button" class="primario" disabled={!pronto || !tarefa} onClick={() => tarefa && ver.descobrir(tarefa, est.dicionario)}>
+          <button type="button" class="primario" disabled={(!!ver.ocupado && ver.ocupado !== 'descobrir') || !pronto || !tarefa} onClick={() => tarefa && ver.descobrir(tarefa, est.dicionario)}>
             Descobrir consequências
           </button>
         )}

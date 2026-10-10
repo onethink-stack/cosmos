@@ -7,6 +7,7 @@ import { FormulaExibida } from './FormulaExibida'
 import { useZ3 } from '../dados/z3'
 import { Descobrir } from './Descobrir'
 import { Perguntar } from './Perguntar'
+import { ConfigSegundoPlano } from './SegundoPlano'
 import { Teoremas } from './Teoremas'
 import { ResultadoVerificacao } from './ResultadoVerificacao'
 
@@ -71,12 +72,13 @@ export function PainelContradicoes() {
             Cancelar
           </button>
         ) : (
-          <button type="button" class="primario" disabled={!p.pronto} onClick={rodar}>
+          <button type="button" class="primario" disabled={!!ver.ocupado || !p.pronto} onClick={rodar}>
             Verificar tudo
           </button>
         )}
       </div>
       <AlternarZ3 />
+      <ConfigSegundoPlano />
       {!p.pronto && <p class="erro-texto">O motor só roda depois que todos os nomes acima tiverem ficha confirmada.</p>}
       <p class="suave">
         Método da versão 1: procura um modelo com 1, 2, … até N objetos. Achar um modelo prova que as fórmulas são compatíveis. Não achar até N

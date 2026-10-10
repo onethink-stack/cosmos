@@ -5,7 +5,9 @@ import type { ResultadoLacunas } from '../motor/lacunas'
 import { OPCOES_PADRAO, type Grupo, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
+import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
+import { estado } from './estado'
 import type { EntradaDicionario } from './tipos'
 
 export { assinatura, montarTarefas } from '../motor/tarefas'
@@ -59,7 +61,26 @@ export interface RodadaCadeia {
   terminada: boolean
   /** identifica as entradas; se mudar, a rodada está desatualizada */
   assinatura: string
+  /** parou antes do fim (cancelada, ou o app foi fechado no meio) */
+  interrompida?: boolean
 }
+
+/** Uma rodada que estava rodando quando o app foi fechado (ou descartado pelo sistema). */
+export interface CadeiaPendente {
+  numero: number
+  motivo: string
+  quando: number
+  /** quantas vezes já foi retomada sem terminar (evita repetir sem fim) */
+  tentativas: number
+}
+
+/** Fim de um trabalho do motor (para avisos e para o que estava esperando a vez). */
+export interface Conclusao {
+  tipo: Ocupacao
+  ms: number
+}
+
+const MAX_RODADAS_GUARDADAS = 6
 
 export interface ResultadoDasLacunas {
   resultado: ResultadoLacunas | null
@@ -101,6 +122,12 @@ class Verificacao {
   lacunaRodando: string | null = null
   /** o que o motor está fazendo agora */
   ocupado: Ocupacao | null = null
+  /** quando o trabalho atual começou (ms) */
+  iniciadoEm = 0
+  /** rodada da cadeia que ficou pela metade quando o app foi fechado */
+  interrompida: CadeiaPendente | null = null
+  /** configuração e rodadas guardadas já lidas do banco */
+  configCarregada = false
   get perguntando() {
     return this.ocupado === 'perguntar'
   }
@@ -116,6 +143,10 @@ class Verificacao {
   private formulasTeoremas = new Map<string, string>()
   private assinaturaLacuna = ''
   private dicionario: EntradaDicionario[] = []
+  /** trabalhos esperando o motor ficar livre */
+  private fila: (() => void)[] = []
+  private aoConcluirFns = new Set<(c: Conclusao) => void>()
+  private ultimaGravacao = 0
 
   assinar(fn: () => void) {
     this.ouvintes.add(fn)
@@ -127,15 +158,74 @@ class Verificacao {
     this.ouvintes.forEach((f) => f())
   }
 
+  /** Chamado quando um trabalho do motor termina (não quando é cancelado). */
+  aoConcluir(fn: (c: Conclusao) => void) {
+    this.aoConcluirFns.add(fn)
+    return () => {
+      this.aoConcluirFns.delete(fn)
+    }
+  }
+
+  /** Roda agora se o motor está livre; senão, quando o trabalho atual terminar (sem cancelá-lo). */
+  quandoLivre(fn: () => void) {
+    if (!this.ocupado) fn()
+    else this.fila.push(fn)
+  }
+
+  /** Próxima rodada da reação em cadeia, com as notas como estão agora. Se o motor está ocupado, espera a vez. */
+  continuarCadeia(motivo: string, tentativas = 0) {
+    this.quandoLivre(() => {
+      const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
+      if (pronto && pedido.contextos.length) this.iniciarCadeia(pedido, estado.dicionario, motivo, false, tentativas)
+    })
+  }
+
+  /** Recomeça a rodada que ficou pela metade (no lugar da rodada interrompida). */
+  retomarCadeia() {
+    const p = this.interrompida
+    if (!p) return
+    this.interrompida = null
+    void gravarConfig('cadeiaPendente', null).catch(() => {})
+    const ultima = this.rodadas.at(-1)
+    if (ultima?.interrompida && ultima.numero === p.numero) this.rodadas = this.rodadas.slice(0, -1)
+    this.continuarCadeia(p.motivo.endsWith('(retomada)') ? p.motivo : `${p.motivo} (retomada)`, p.tentativas + 1)
+    this.avisar()
+  }
+
+  /** Esquece a rodada interrompida sem retomar. */
+  descartarInterrompida() {
+    this.interrompida = null
+    void gravarConfig('cadeiaPendente', null).catch(() => {})
+    this.avisar()
+  }
+
+  /** Grava as rodadas (no máximo a cada 3 s enquanto roda; sempre no começo e no fim). */
+  private gravarCadeia(forcar = false) {
+    const agora = Date.now()
+    if (!forcar && agora - this.ultimaGravacao < 3000) return
+    this.ultimaGravacao = agora
+    void gravarConfig('cadeiaRodadas', this.rodadas.slice(-MAX_RODADAS_GUARDADAS)).catch(() => {})
+  }
+
   async carregarConfig() {
     try {
       const n = await lerConfig<number>('N')
       if (n) this.N = n
       const k = await lerConfig<number>('K')
       if (k) this.K = k
+      const rodadas = await lerConfig<RodadaCadeia[]>('cadeiaRodadas')
+      if (rodadas?.length && !this.rodadas.length) this.rodadas = rodadas
+      const pendente = await lerConfig<CadeiaPendente | null>('cadeiaPendente')
+      if (pendente && this.ocupado !== 'cadeia') {
+        this.interrompida = pendente
+        const ultima = this.rodadas.at(-1)
+        if (ultima && ultima.numero === pendente.numero && !ultima.terminada)
+          this.rodadas = [...this.rodadas.slice(0, -1), { ...ultima, terminada: true, interrompida: true }]
+      }
     } catch {
       /* sem banco: fica o padrão */
     }
+    this.configCarregada = true
     this.avisar()
   }
 
@@ -207,8 +297,9 @@ class Verificacao {
   }
 
   /** Começa uma rodada da reação em cadeia. `nova`: apaga as rodadas anteriores. */
-  iniciarCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], motivo: string, nova: boolean) {
+  iniciarCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], motivo: string, nova: boolean, tentativas = 0) {
     this.cancelar(false)
+    this.interrompida = null
     if (nova) this.rodadas = []
     const numero = (this.rodadas.at(-1)?.numero ?? 0) + 1
     this.rodadas = [
@@ -216,6 +307,11 @@ class Verificacao {
       { numero, motivo, relatorios: [], erro: null, ms: 0, terminada: false, assinatura: assinaturaCadeia(pedido, dicionario, this.limites) },
     ]
     this.ocupado = 'cadeia'
+    this.iniciadoEm = Date.now()
+    // se o app for fechado no meio, a rodada é retomada na próxima abertura
+    const pendente: CadeiaPendente = { numero, motivo, quando: Date.now(), tentativas }
+    void gravarConfig('cadeiaPendente', pendente).catch(() => {})
+    this.gravarCadeia(true)
     const id = ++this.pedido
     this.dicionario = dicionario
     this.pendentes = new Map()
@@ -248,6 +344,7 @@ class Verificacao {
     if (!tarefas.length) return
     this.cancelar(false)
     this.ocupado = lacuna ? 'lacunas' : teoremas ? 'teoremas' : descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
+    this.iniciadoEm = Date.now()
     this.formulaPerguntada = pergunta
     const id = ++this.pedido
     this.dicionario = dicionario
@@ -261,11 +358,19 @@ class Verificacao {
     else this.rodarAqui(pedido)
   }
 
+  /** Para o trabalho atual. `avisar` = pedido do usuário (também descarta o que esperava a vez). */
   cancelar(avisar = true) {
     if (this.rodando && this.worker) {
       this.worker.terminate()
       this.worker = null
     }
+    if (this.ocupado === 'cadeia') {
+      const atual = this.rodadas.at(-1)
+      if (atual && !atual.terminada) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true, interrompida: true }]
+      void gravarConfig('cadeiaPendente', null).catch(() => {})
+      this.gravarCadeia(true)
+    }
+    if (avisar) this.fila = []
     this.pedido++
     this.rodando = null
     this.ocupado = null
@@ -284,6 +389,7 @@ class Verificacao {
           ...this.rodadas.slice(0, -1),
           r.tipo === 'cadeia' ? { ...atual, relatorios: r.relatorios, ms: r.ms } : { ...atual, erro: r.msg },
         ]
+      this.gravarCadeia()
     } else if (r.tipo === 'teorema') {
       const t = this.pendentes.get(r.chave)!
       this.teoremas.set(r.teoremaId, {
@@ -342,13 +448,25 @@ class Verificacao {
         assinatura: assinatura(t, this.dicionario, this.limites),
       })
     } else {
-      if (this.ocupado === 'cadeia') {
+      const tipo = this.ocupado
+      if (tipo === 'cadeia') {
         const atual = this.rodadas.at(-1)
         if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true }]
+        void gravarConfig('cadeiaPendente', null).catch(() => {})
+        this.gravarCadeia(true)
       }
       this.rodando = null
       this.ocupado = null
       this.lacunaRodando = null
+      this.avisar()
+      if (tipo) {
+        const c: Conclusao = { tipo, ms: Date.now() - this.iniciadoEm }
+        this.aoConcluirFns.forEach((f) => f(c))
+      }
+      // o próximo da fila (se ninguém começou outro trabalho nesse meio tempo)
+      const prox = this.fila.shift()
+      if (prox) setTimeout(() => (this.ocupado ? this.fila.unshift(prox) : prox()), 0)
+      return
     }
     this.avisar()
   }

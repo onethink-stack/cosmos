@@ -1,10 +1,12 @@
 import { render } from 'preact'
 import { prepararInstalacao } from './dados/instalacao'
+import { iniciarSegundoPlano } from './dados/segundoPlano'
 import { App } from './ui/App'
 import './ui/estilo.css'
 import './ui/telas.css'
 
 prepararInstalacao()
+iniciarSegundoPlano()
 render(<App />, document.getElementById('app')!)
 
 // PWA: só no build publicado (http/https). No arquivo único (file://) não há service worker.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useMemo, useState } from 'preact/hooks'
 import { foraDaCadeia, pedidoDaCadeia } from '../dados/cadeia'
 import { salvarDeduzida } from '../dados/deduzida'
 import { estado, useEstado } from '../dados/estado'
@@ -8,6 +8,7 @@ import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cade
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
 import { CartaoLei } from './LeisQueFaltam'
+import { ConfigSegundoPlano } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
 
 const NOME_ETAPA: Record<RelatorioCadeia['etapa'], string> = {
@@ -55,16 +56,6 @@ export function Cadeia() {
   const atual = ver.rodadas.at(-1)
   const desatualizada = !!atual && atual.assinatura !== assinaturaCadeia(pedido, est.dicionario, ver.limites)
 
-  // aprovar uma lei continua a reação sozinho (com as notas já atualizadas)
-  const [continuar, setContinuar] = useState<string | null>(null)
-  useEffect(() => {
-    if (continuar && !ver.ocupado && p.pronto) {
-      const motivo = continuar
-      setContinuar(null)
-      ver.iniciarCadeia(pedido, est.dicionario, motivo, false)
-    }
-  })
-
   const nada = !pedido.contextos.length
   return (
     <section class="cadeia">
@@ -72,8 +63,21 @@ export function Cadeia() {
       <p class="suave">
         O app bate cada lei, fato e teorema contra os outros: confere se as leis são consistentes e se cada uma é independente ou decorre das
         outras; quais teoremas seguem e de quais outros teoremas (a cadeia, geração por geração); se os que não seguem se contradizem; que leis
-        fechariam o que falta; e que consequências novas aparecem. Ao aprovar uma lei sugerida, a reação continua sozinha numa nova rodada.
+        fechariam o que falta; e que consequências novas aparecem. Ao aprovar uma lei sugerida, a reação continua sozinha numa nova rodada —
+        mesmo que você vá para outra tela.
       </p>
+      <ConfigSegundoPlano />
+      {ver.interrompida && !ver.ocupado && (
+        <div class="interrompida">
+          A rodada {ver.interrompida.numero} ({ver.interrompida.motivo}) parou no meio — o app foi fechado ou pausado pelo sistema.{' '}
+          <button type="button" class="primario mini" disabled={!p.pronto} onClick={() => ver.retomarCadeia()}>
+            Retomar
+          </button>{' '}
+          <button type="button" class="mini" onClick={() => ver.descartarInterrompida()}>
+            Deixar assim
+          </button>
+        </div>
+      )}
       <div class="barra-acoes">
         {ocupado ? (
           <>
@@ -114,7 +118,7 @@ export function Cadeia() {
             pedido={pedido}
             desatualizada={desatualizada}
             ocupado={ocupado}
-            onAprovada={(nome) => setContinuar(`aprovada: ${nome}`)}
+            onAprovada={(nome) => ver.continuarCadeia(`aprovada: ${nome}`)}
           />
         ) : (
           <details class="rodada-antiga">
@@ -199,7 +203,7 @@ function Rodada({
         <span class="suave"> — {r.motivo}</span>
       </h3>
       <div class="suave res-meta">
-        {r.terminada ? 'terminada' : 'em andamento'} · {r.ms < 1000 ? `${r.ms} ms` : `${(r.ms / 1000).toFixed(1)} s`}
+        {r.interrompida ? 'interrompida' : r.terminada ? 'terminada' : 'em andamento'} · {r.ms < 1000 ? `${r.ms} ms` : `${(r.ms / 1000).toFixed(1)} s`}
         {r.terminada && desatualizada && <span class="selo aviso"> desatualizada — as notas mudaram</span>}
       </div>
       {r.erro && <p class="erro-texto">Falha no motor: {r.erro}</p>}

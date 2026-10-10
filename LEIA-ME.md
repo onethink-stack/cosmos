@@ -31,6 +31,13 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   cada uma fecha); consequências novas. Aprovar uma lei dispara a rodada
   seguinte, que mostra o que a aprovação gerou. Um teorema com titular é
   conferido contra a visão desse titular.
+- **Segundo plano e avisos**: o motor continua trabalhando enquanto você usa
+  as outras telas (um indicador no topo mostra o que ele está fazendo), e
+  salvar uma nota não cancela uma reação em andamento. Ao terminar, aparece
+  um aviso dentro do app; com o app minimizado, uma notificação do sistema
+  (ligue em *🔔 Avisos e segundo plano*). Opção de manter a tela acesa
+  enquanto calcula. Se o sistema fechar o app no meio de uma reação em
+  cadeia, ela é retomada sozinha na próxima abertura.
 - **Conjuntos**: *Leis e fatos*; cada *Visão de [titular]* à parte; e *Tudo
   junto*, em que cada crença entra como `B[titular] (φ)` — a crença não vira
   verdade, mas uma lei sobre o necessário (□) pode contradizê-la.

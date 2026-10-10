@@ -79,7 +79,7 @@ export function Perguntar({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
             </button>
           </>
         ) : (
-          <button type="button" class="primario" disabled={!podePerguntar} onClick={perguntar}>
+          <button type="button" class="primario" disabled={(!!ver.ocupado && ver.ocupado !== 'perguntar') || !podePerguntar} onClick={perguntar}>
             Segue das notas?
           </button>
         )}

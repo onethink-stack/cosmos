@@ -272,3 +272,15 @@ details.explicacao p { margin: 6px 0; }
 .explicacao.em-linha { display: inline; }
 .explicacao.em-linha > summary { display: inline; cursor: pointer; color: var(--ok); }
 .explicacao.em-linha[open] { display: block; }
+
+/* ---------- segundo plano ---------- */
+.motor-ocupado { font-size: .85rem; color: var(--destaque); text-decoration: none; padding: 4px 10px; border: 1px solid var(--borda); border-radius: 999px; white-space: nowrap; }
+.avisos-na-tela { position: fixed; z-index: 50; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); width: min(560px, calc(100% - 32px)); display: grid; gap: 8px; }
+.aviso-na-tela { display: flex; align-items: flex-start; gap: 8px; background: var(--superficie); border: 1px solid var(--borda); border-left: 4px solid var(--destaque); border-radius: var(--raio); padding: 10px 8px 10px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, .25); }
+.aviso-na-tela a { flex: 1; display: grid; gap: 2px; color: var(--texto); text-decoration: none; overflow-wrap: anywhere; }
+.aviso-na-tela a span { color: var(--texto-suave); font-size: .9rem; }
+.aviso-na-tela button { font-size: 1.2rem; line-height: 1; padding: 2px 8px; }
+.config-segundo-plano { margin: 10px 0; padding: 8px 12px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
+.config-segundo-plano > summary { cursor: pointer; font-weight: 600; }
+.config-segundo-plano .alternar { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+.interrompida { border-left: 4px solid var(--aviso); background: var(--aviso-fundo); border-radius: var(--raio); padding: 8px 12px; margin: 10px 0; }

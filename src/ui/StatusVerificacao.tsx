@@ -10,7 +10,7 @@ export function StatusVerificacao({ chave, bloqueado }: { chave: string | null; 
         Há nomes sem ficha confirmada; o motor não rodou. <a href="#/contradicoes">Confirmar nomes</a>
       </div>
     )
-  if (ver.rodando?.chave === chave)
+  if (ver.rodando?.chave === chave && !ver.perguntando)
     return (
       <div class="status-ver res-rodando" aria-live="polite">
         <span class="girando" aria-hidden="true" /> Verificando contradições: {ver.rodando.msg}…

@@ -150,15 +150,7 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   if (r.status === 'modelo') return { tipo: 'consistente', n: r.n, modelo: r.modelo }
   if (r.status === 'grande-demais') return { tipo: 'grande-demais', n: r.n }
 
-  let conjunto = prontos
-  for (let i = 0; i < prontos.length; i++) {
-    const alvo = prontos[i]
-    if (!conjunto.includes(alvo) || conjunto.length === 1) continue
-    const sem = conjunto.filter((x) => x !== alvo)
-    progresso?.(`procurando o conflito mínimo: testando sem "${alvo.g.rotulo}" (${i + 1}/${prontos.length})`)
-    // sem modelo mesmo sem ele → ele não é necessário para o conflito
-    if (buscarModelo(formulas(sem), op).status === 'sem-modelo') conjunto = sem
-  }
+  const conjunto = minimizar(prontos, [], op, 1, (g, i) => progresso?.(`procurando o conflito mínimo: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`))
 
   progresso?.('montando a explicação')
   const explicacoes = conjunto.map((alvo) => {
@@ -182,6 +174,92 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
     return explic
   })
   return { tipo: 'sem-modelo', N: op.N, conflito: conjunto.map((x) => x.g.id), explicacoes }
+}
+
+type GrupoPronto = { g: Grupo; itens: FormulaPronta[] }
+
+/**
+ * Remove grupos um por vez, na ordem dada, enquanto `grupos ∪ fixas` continuar
+ * sem modelo até N. O resultado é irredutível: tirar qualquer grupo restante
+ * faz aparecer um modelo. Na dúvida (grande demais), o grupo fica.
+ */
+function minimizar(grupos: GrupoPronto[], fixas: Formula[], op: OpcoesMotor, minimo: number, aviso?: (g: Grupo, i: number) => void): GrupoPronto[] {
+  let conjunto = grupos
+  grupos.forEach((alvo, i) => {
+    if (conjunto.length <= minimo) return
+    const sem = conjunto.filter((x) => x !== alvo)
+    aviso?.(alvo.g, i)
+    const fs = [...sem.flatMap((x) => x.itens.map((it) => it.expandida)), ...fixas]
+    if (buscarModelo(fs, op).status === 'sem-modelo') conjunto = sem
+  })
+  return conjunto
+}
+
+// ---------------------------------------------------------------- perguntar
+
+/** Um mundo concreto e a explicação do valor da fórmula perguntada nele. */
+export interface MundoExplicado {
+  n: number
+  modelo: Modelo
+  passos: PassoExplicacao
+}
+
+export type ResultadoPergunta =
+  /** nenhum mundo até N tem as notas verdadeiras e a fórmula falsa; `notas` = as necessárias ([] = vale sempre) */
+  | { tipo: 'segue'; N: number; notas: string[] }
+  /** as notas implicam a negação da fórmula */
+  | { tipo: 'contradiz'; N: number; notas: string[]; mundo: MundoExplicado }
+  /** há mundo com as notas e a fórmula falsa, e há mundo com as notas e a fórmula verdadeira */
+  | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado }
+  /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
+  | { tipo: 'premissas-contraditorias'; N: number }
+  | { tipo: 'grande-demais'; n: number }
+  | { tipo: 'formula-invalida' }
+
+const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
+
+/**
+ * "A fórmula segue das notas?" — testa notas ∪ {¬φ} e notas ∪ {φ} em
+ * domínios de 1 a N objetos.
+ */
+export function perguntar(
+  grupos: Grupo[],
+  formula: string,
+  dicionario: EntradaDicionario[],
+  op: OpcoesMotor,
+  progresso?: Progresso,
+): ResultadoPergunta {
+  const [phi] = analisar([formula], dicionario)
+  if (!phi) return { tipo: 'formula-invalida' }
+  const prontos: GrupoPronto[] = grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
+  const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+
+  progresso?.('conferindo se as notas são consistentes')
+  const base = buscarModelo(premissas, op)
+  if (base.status === 'grande-demais') return { tipo: 'grande-demais', n: base.n }
+  if (base.status === 'sem-modelo') return { tipo: 'premissas-contraditorias', N: op.N }
+
+  progresso?.('procurando um mundo onde as notas valem e a fórmula falha')
+  const contra = buscarModelo([...premissas, nao(phi.expandida)], op)
+  if (contra.status === 'grande-demais') return { tipo: 'grande-demais', n: contra.n }
+  if (contra.status === 'sem-modelo') {
+    const notas = minimizar(prontos, [nao(phi.expandida)], op, 0, (g, i) =>
+      progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
+    )
+    return { tipo: 'segue', N: op.N, notas: notas.map((x) => x.g.id) }
+  }
+
+  const mundo: MundoExplicado = { n: contra.n, modelo: contra.modelo, passos: new Avaliador(contra.modelo).explicar(phi.original) }
+  progresso?.('procurando um mundo onde as notas valem e a fórmula também')
+  const afavor = buscarModelo([...premissas, phi.expandida], op)
+  if (afavor.status === 'sem-modelo') {
+    const notas = minimizar(prontos, [phi.expandida], op, 0, (g, i) =>
+      progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
+    )
+    return { tipo: 'contradiz', N: op.N, notas: notas.map((x) => x.g.id), mundo }
+  }
+  // grande demais ao procurar o mundo a favor: ainda assim sabemos que não segue
+  return { tipo: 'nao-segue', N: op.N, mundo }
 }
 
 /**

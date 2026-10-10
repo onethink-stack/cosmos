@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'preact/hooks'
-import { OPCOES_PADRAO, type ResultadoMotor } from '../motor/motor'
+import { OPCOES_PADRAO, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
 import { lerConfig, gravarConfig } from './db'
@@ -19,12 +19,29 @@ export interface ResultadoTarefa {
   assinatura: string
 }
 
+export interface ResultadoDaPergunta {
+  /** conjunto perguntado: "geral" ou "visao:<titular>" */
+  chave: string
+  rotulo: string
+  formula: string
+  resultado: ResultadoPergunta | null
+  erro: string | null
+  quando: string
+  ms: number
+  N: number
+  assinatura: string
+}
+
 export const N_MAXIMO = 12
 
 class Verificacao {
   N = OPCOES_PADRAO.N
   rodando: { chave: string; msg: string } | null = null
   resultados = new Map<string, ResultadoTarefa>()
+  /** última pergunta feita ("isto segue das notas?") */
+  pergunta: ResultadoDaPergunta | null = null
+  /** true enquanto o motor responde a uma pergunta (e não a uma verificação) */
+  perguntando = false
   private worker: Worker | null = null
   /** o worker falhou ao carregar neste navegador: daqui em diante roda na linha principal */
   private semWorker = false
@@ -33,6 +50,7 @@ class Verificacao {
   private pedido = 0
   private ouvintes = new Set<() => void>()
   private pendentes = new Map<string, Tarefa>()
+  private formulaPerguntada: string | undefined
   private dicionario: EntradaDicionario[] = []
 
   assinar(fn: () => void) {
@@ -94,16 +112,23 @@ class Verificacao {
     setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30)
   }
 
-  /** Roda as tarefas. Uma verificação nova cancela a anterior. */
-  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[]) {
+  /** Pergunta se a fórmula segue do conjunto da tarefa. Cancela o que estiver rodando. */
+  perguntar(tarefa: Tarefa, formula: string, dicionario: EntradaDicionario[]) {
+    this.iniciar([tarefa], dicionario, formula)
+  }
+
+  /** Roda as tarefas (ou uma pergunta). Um pedido novo cancela o anterior. */
+  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string) {
     if (!tarefas.length) return
     this.cancelar(false)
+    this.perguntando = pergunta !== undefined
+    this.formulaPerguntada = pergunta
     const id = ++this.pedido
     this.dicionario = dicionario
     this.pendentes = new Map(tarefas.map((t) => [t.chave, t]))
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
-    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N } }
+    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N }, pergunta }
     this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
@@ -117,6 +142,7 @@ class Verificacao {
     }
     this.pedido++
     this.rodando = null
+    this.perguntando = false
     if (avisar) this.avisar()
   }
 
@@ -124,6 +150,20 @@ class Verificacao {
     if (r.id !== this.pedido) return
     if (r.tipo === 'progresso') {
       this.rodando = { chave: r.chave, msg: r.msg }
+    } else if (r.tipo === 'resposta' || (r.tipo === 'erro' && this.perguntando)) {
+      const t = this.pendentes.get(r.chave)!
+      const formula = this.formulaPerguntada ?? ''
+      this.pergunta = {
+        chave: r.chave,
+        rotulo: t.rotulo,
+        formula,
+        resultado: r.tipo === 'resposta' ? r.resultado : null,
+        erro: r.tipo === 'erro' ? r.msg : null,
+        quando: new Date().toISOString(),
+        ms: r.tipo === 'resposta' ? r.ms : 0,
+        N: this.N,
+        assinatura: assinatura(t, this.dicionario, this.N, formula),
+      }
     } else if (r.tipo === 'resultado' || r.tipo === 'erro') {
       const t = this.pendentes.get(r.chave)!
       this.resultados.set(r.chave, {
@@ -138,6 +178,7 @@ class Verificacao {
       })
     } else {
       this.rodando = null
+      this.perguntando = false
     }
     this.avisar()
   }

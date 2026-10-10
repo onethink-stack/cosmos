@@ -10,10 +10,12 @@ interface Props {
   onChange: (formulas: string[]) => void
   dicionario: EntradaDicionario[]
   onCriarFicha?: (ficha: NonNullable<Diag['ficha']>) => void
+  /** campo único (sem "+ Fórmula" nem remover); Enter chama onEnter */
+  unica?: { rotulo: string; onEnter: () => void }
 }
 
 /** Lista de fórmulas de uma nota, com a barra de símbolos fixa acima. */
-export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha }: Props) {
+export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha, unica }: Props) {
   const campos = useRef<(HTMLTextAreaElement | null)[]>([])
   const alvo = useRef(0)
   const focarDepois = useRef<number | null>(null)
@@ -65,17 +67,19 @@ export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha }:
           valor={f}
           onChange={(v) => mudar(i, v)}
           dicionario={dicionario}
-          rotulo={`Fórmula ${i + 1}`}
+          rotulo={unica ? unica.rotulo : `Fórmula ${i + 1}`}
           campoRef={(el) => (campos.current[i] = el)}
           onFoco={() => (alvo.current = i)}
-          onEnter={() => adicionar(i)}
-          onRemover={() => remover(i)}
+          onEnter={unica ? unica.onEnter : () => adicionar(i)}
+          onRemover={unica ? undefined : () => remover(i)}
           onCriarFicha={onCriarFicha}
         />
       ))}
-      <button type="button" onClick={() => adicionar()}>
-        + Fórmula
-      </button>
+      {!unica && (
+        <button type="button" onClick={() => adicionar()}>
+          + Fórmula
+        </button>
+      )}
     </div>
   )
 }

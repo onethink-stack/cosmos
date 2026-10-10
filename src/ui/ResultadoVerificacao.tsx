@@ -143,7 +143,7 @@ function Explicacao({ e }: { e: ExplicacaoConflito }) {
 }
 
 /** Árvore de passos: fórmula, valor e motivo; os filhos mostram de onde vem o valor. */
-function ArvorePassos({ p }: { p: PassoExplicacao }) {
+export function ArvorePassos({ p }: { p: PassoExplicacao }) {
   return (
     <ul class="arvore">
       <li>

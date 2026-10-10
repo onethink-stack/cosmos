@@ -1,6 +1,6 @@
 import { preparar } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
-import { verificar, type Grupo, type OpcoesMotor, type ResultadoMotor } from './motor'
+import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
 
 /** Um conjunto checado separadamente: o geral (lei + fato) ou uma visão de mundo. */
 export interface Tarefa {
@@ -15,19 +15,28 @@ export interface PedidoMotor {
   tarefas: Tarefa[]
   dicionario: EntradaDicionario[]
   opcoes: OpcoesMotor
+  /** se presente, em vez de verificar consistência, pergunta se a fórmula segue da (única) tarefa */
+  pergunta?: string
 }
 
 export type RespostaMotor =
   | { id: number; tipo: 'progresso'; chave: string; msg: string }
   | { id: number; tipo: 'resultado'; chave: string; resultado: ResultadoMotor; ms: number }
+  | { id: number; tipo: 'resposta'; chave: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   | { id: number; tipo: 'fim' }
 
 export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void) {
   for (const t of p.tarefas) {
     const ini = Date.now()
+    const progresso = (msg: string) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg })
     try {
-      const resultado = verificar(t.grupos, p.dicionario, p.opcoes, (msg) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg }))
+      if (p.pergunta !== undefined) {
+        const resultado = perguntar(t.grupos, p.pergunta, p.dicionario, p.opcoes, progresso)
+        enviar({ id: p.id, tipo: 'resposta', chave: t.chave, resultado, ms: Date.now() - ini })
+        continue
+      }
+      const resultado = verificar(t.grupos, p.dicionario, p.opcoes, progresso)
       enviar({ id: p.id, tipo: 'resultado', chave: t.chave, resultado, ms: Date.now() - ini })
     } catch (e) {
       enviar({ id: p.id, tipo: 'erro', chave: t.chave, msg: (e as Error).message })
@@ -55,6 +64,6 @@ export function montarTarefas(notas: Nota[], dicionario: EntradaDicionario[]): {
   return { tarefas, pronto: p.pronto }
 }
 
-export function assinatura(t: Tarefa, dicionario: EntradaDicionario[], N: number): string {
-  return JSON.stringify([N, t.grupos, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
+export function assinatura(t: Tarefa, dicionario: EntradaDicionario[], N: number, pergunta?: string): string {
+  return JSON.stringify([N, t.grupos, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade]), pergunta ?? null])
 }

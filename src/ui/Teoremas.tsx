@@ -7,6 +7,8 @@ import { inativasDoContexto } from '../dados/cadeia'
 import { tarefaDoContexto, type Tarefa } from '../motor/tarefas'
 import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { LeisQueFaltam } from './LeisQueFaltam'
+import { SeloGrau } from './SeloGrau'
+import { grauHerdado } from '../dados/grau'
 import { ArvorePassos, formulasDosGrupos, ModeloVisual } from './ResultadoVerificacao'
 
 const idDe = (f: FormulaDeNota) => `${f.notaId}:${f.indice}`
@@ -99,6 +101,7 @@ export function Teoremas({ teoremas, tarefas, pronto }: { teoremas: FormulaDeNot
                       ) : (
                         <span class="suave">sempre, sem depender de nota</span>
                       )}
+                      {geral.chave === 'geral' && <SeloGrau g={grauHerdado(res.notas, est.notas)} />}
                       {!desatualizado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDosGrupos(geral.grupos, res.notas)} negar={t.texto} />}
                     </div>
                   )}

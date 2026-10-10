@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks'
 import { foraDaCadeia, inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
 import { salvarDeduzida } from '../dados/deduzida'
+import { grauHerdado, type GrauHerdado } from '../dados/grau'
 import { estado, useEstado } from '../dados/estado'
 import { usePerfil } from '../dados/perfil'
 import { preparar } from '../dados/premissas'
@@ -10,6 +11,7 @@ import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
 import { ConferenciaNumerica } from './ConfirmacaoZ3'
 import { CartaoLei } from './LeisQueFaltam'
+import { SeloGrau } from './SeloGrau'
 import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
 
@@ -334,6 +336,13 @@ function Relatorio({
   const numericos = rel.teoremas.filter((t) => t.resultado.tipo === 'aritmetica')
   const outros = rel.teoremas.filter((t) => !['segue', 'nao-segue', 'contradiz', 'aritmetica'].includes(t.resultado.tipo))
   const geracoes = [...new Set(seguem.map((t) => t.geracao ?? 1))].sort((a, b) => a - b)
+  // grau herdado pela cadeia, geração por geração (visões não têm grau)
+  const graus = new Map<string, GrauHerdado>()
+  if (!rel.chave.startsWith('visao:'))
+    for (const t of [...seguem].sort((a, b) => (a.geracao ?? 1) - (b.geracao ?? 1))) {
+      const ids = t.apoio?.length ? t.apoio : t.resultado.tipo === 'segue' ? t.resultado.notas : []
+      graus.set(t.id, grauHerdado(ids, estado.notas, graus))
+    }
   const independentes = rel.leis.filter((l) => l.tipo === 'independente')
   const decorrem = rel.leis.filter((l) => l.tipo === 'decorre')
   const c = rel.consistencia
@@ -397,6 +406,12 @@ function Relatorio({
       {rel.teoremas.length > 0 && (
         <>
           <h5>Teoremas</h5>
+          {!rel.chave.startsWith('visao:') && (
+            <p class="suave">
+              Cada teorema que segue herda o grau mais fraco das leis de onde vem: F só se tudo é estabelecido. A lógica não mede nada — para uma
+              lei M virar F, é preciso medir (e então mudar o grau na nota).
+            </p>
+          )}
           {geracoes.map((g) => (
             <div class="geracao">
               <div class="geracao-titulo">
@@ -411,6 +426,7 @@ function Relatorio({
                       <div class="suave">
                         ⇐ {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
                       </div>
+                      {graus.get(t.id) && <SeloGrau g={graus.get(t.id)!} />}
                     </li>
                   ))}
               </ul>
@@ -524,7 +540,7 @@ function Relatorio({
           <h5>Consequências novas</h5>
           <ul class="lista-cadeia">
             {rel.consequencias.map((q) => (
-              <Consequencia q={q} chave={rel.chave} N={rel.N} />
+              <Consequencia q={q} chave={rel.chave} N={rel.N} g={rel.chave.startsWith('visao:') ? null : grauHerdado(q.notas, estado.notas)} />
             ))}
           </ul>
           {rel.consequenciasJaTeorema > 0 && (
@@ -538,12 +554,13 @@ function Relatorio({
   )
 }
 
-function Consequencia({ q, chave, N }: { q: NonNullable<RelatorioCadeia['consequencias']>[number]; chave: string; N: number }) {
+function Consequencia({ q, chave, N, g }: { q: NonNullable<RelatorioCadeia['consequencias']>[number]; chave: string; N: number; g: GrauHerdado | null }) {
   const [salva, setSalva] = useState<string | null>(null)
   return (
     <li>
       <span class="formula-inline">{q.formula}</span> — {q.descricao}
       <div class="suave">⇐ {q.notas.length ? <Links ids={q.notas} /> : 'vale sempre'}</div>
+      {g && <SeloGrau g={g} />}
       {salva ? (
         <span class="status-ok">
           ✓ <a href={`#/nota/${encodeURIComponent(salva)}`}>Nota criada</a>

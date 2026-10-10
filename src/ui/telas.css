@@ -171,3 +171,21 @@ h3 { font-size: 1rem; margin: 18px 0 6px; }
 .rodape-acoes { flex-wrap: wrap; }
 .rodape-status { flex-basis: 100%; }
 .status-ver { font-size: .88rem; padding: 6px 10px; border-left-width: 4px; border-left-style: solid; border-radius: 4px; background: var(--superficie); }
+
+/* ---------- backup ---------- */
+.marca { flex: 1; }
+.link-backup { color: var(--texto-suave); text-decoration: none; padding: 10px 0; font-size: .95rem; }
+.link-backup.ativo { color: var(--texto); font-weight: 600; }
+.topo nav { flex-basis: 100%; }
+@media (min-width: 640px) {
+  .marca { flex: 0 0 auto; }
+  .topo nav { flex-basis: auto; flex: 1; }
+  .link-backup { order: 3; }
+}
+.faixa-lembrete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; background: var(--aviso-fundo); border-radius: var(--raio); padding: 8px 12px; margin: 8px 0; font-size: .9rem; }
+.faixa-botoes { display: flex; gap: 6px; }
+.faixa-botoes button.mini { margin: 0; }
+button.primario.mini { background: var(--destaque); color: var(--destaque-texto); }
+.botao-arquivo { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 12px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--superficie-2); cursor: pointer; }
+.botao-arquivo input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.botao-arquivo:focus-within { outline: 2px solid var(--destaque); outline-offset: 1px; }

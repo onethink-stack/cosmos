@@ -1,6 +1,8 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "caderno", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5173", "--strictPort"], "port": 5173 }
+    { "name": "caderno", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5173", "--strictPort"], "port": 5173 },
+    { "name": "arquivo-unico", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "4180", "-d", "dist-arquivo"], "port": 4180 },
+    { "name": "pwa", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "preview", "--port", "4173", "--strictPort"], "port": 4173 }
   ]
 }

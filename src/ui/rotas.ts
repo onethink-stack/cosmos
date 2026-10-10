@@ -7,6 +7,7 @@ export type Rota =
   | { tela: 'nova'; compartimento: Compartimento }
   | { tela: 'dicionario' }
   | { tela: 'contradicoes' }
+  | { tela: 'backup' }
 
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/')
@@ -21,6 +22,8 @@ export function lerRota(hash: string): Rota {
       return { tela: 'dicionario' }
     case 'contradicoes':
       return { tela: 'contradicoes' }
+    case 'backup':
+      return { tela: 'backup' }
     default:
       return { tela: 'notas' }
   }

@@ -26,6 +26,10 @@ class Verificacao {
   rodando: { chave: string; msg: string } | null = null
   resultados = new Map<string, ResultadoTarefa>()
   private worker: Worker | null = null
+  /** o worker falhou ao carregar neste navegador: daqui em diante roda na linha principal */
+  private semWorker = false
+  private pedidoAtual: PedidoMotor | null = null
+  private recebeuDoWorker = false
   private pedido = 0
   private ouvintes = new Set<() => void>()
   private pendentes = new Map<string, Tarefa>()
@@ -58,18 +62,36 @@ class Verificacao {
   }
 
   private obterWorker(): Worker | null {
+    if (this.semWorker) return null
     if (this.worker) return this.worker
     try {
       this.worker = new MotorWorker()
-      this.worker.onmessage = (e: MessageEvent<RespostaMotor>) => this.receber(e.data)
+      this.worker.onmessage = (e: MessageEvent<RespostaMotor>) => {
+        this.recebeuDoWorker = true
+        this.receber(e.data)
+      }
       this.worker.onerror = (e) => {
+        if (!this.recebeuDoWorker && this.pedidoAtual) {
+          // o worker nem chegou a rodar (ex.: arquivo local em navegador restrito)
+          this.semWorker = true
+          this.worker?.terminate()
+          this.worker = null
+          this.rodarAqui(this.pedidoAtual)
+          return
+        }
         this.receber({ id: this.pedido, tipo: 'erro', chave: this.rodando?.chave ?? 'geral', msg: e.message || 'falha no worker' })
         this.receber({ id: this.pedido, tipo: 'fim' })
       }
     } catch {
+      this.semWorker = true
       this.worker = null
     }
     return this.worker
+  }
+
+  /** Sem worker: roda na linha principal (a tela pode travar durante a busca). */
+  private rodarAqui(pedido: PedidoMotor) {
+    setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30)
   }
 
   /** Roda as tarefas. Uma verificação nova cancela a anterior. */
@@ -82,10 +104,10 @@ class Verificacao {
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
     const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N } }
+    this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
-    // sem worker (ex.: navegador que bloqueia): roda na linha principal
-    else setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30)
+    else this.rodarAqui(pedido)
   }
 
   cancelar(avisar = true) {

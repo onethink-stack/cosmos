@@ -1,8 +1,10 @@
 import { useEffect } from 'preact/hooks'
 import { estado, notaVazia, useEstado } from '../dados/estado'
 import { verificacao } from '../dados/verificacao'
+import { Backup } from './Backup'
 import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
+import { LembreteBackup } from './LembreteBackup'
 import { ListaNotas } from './ListaNotas'
 import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
@@ -40,6 +42,9 @@ export function App() {
           <a href="#/notas" class="marca">
             Caderno Lógico
           </a>
+          <a href="#/backup" class={`link-backup${aba === 'backup' ? ' ativo' : ''}`}>
+            Backup
+          </a>
           <nav>
             <a href="#/notas" class={aba === 'notas' ? 'ativo' : ''}>
               Notas
@@ -55,6 +60,7 @@ export function App() {
       </header>
       <main>
         {est.erroBanco && <div class="faixa-erro">{est.erroBanco}</div>}
+        {rota.tela !== 'backup' && <LembreteBackup />}
         {!est.carregado ? (
           <p class="suave">Carregando…</p>
         ) : rota.tela === 'notas' ? (
@@ -65,6 +71,8 @@ export function App() {
           <EditorNota key={`nova-${rota.compartimento}`} compartimento={rota.compartimento} />
         ) : rota.tela === 'dicionario' ? (
           <Dicionario />
+        ) : rota.tela === 'backup' ? (
+          <Backup />
         ) : (
           <PainelContradicoes />
         )}

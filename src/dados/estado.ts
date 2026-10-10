@@ -45,6 +45,10 @@ export class Estado {
   notas: Nota[] = []
   dicionario: EntradaDicionario[] = []
   carregado = false
+  /** datas (ms) para o lembrete de backup */
+  ultimoBackup: number | undefined
+  adiadoAte: number | undefined
+  primeiroUso = Date.now()
   /** mensagem quando o IndexedDB não está disponível (os dados ficam só na memória) */
   erroBanco: string | null = null
   private ouvintes = new Set<() => void>()
@@ -72,6 +76,15 @@ export class Estado {
       const [notas, dic] = await Promise.all([db.listar<Nota>('notas'), db.listar<EntradaDicionario>('dicionario')])
       this.notas = notas.sort(porData)
       this.dicionario = dic.sort(porSimbolo)
+      const [ultimo, adiado, primeiro] = await Promise.all([
+        db.lerConfig<number>('ultimoBackup'),
+        db.lerConfig<number>('adiadoAte'),
+        db.lerConfig<number>('primeiroUso'),
+      ])
+      this.ultimoBackup = ultimo ?? undefined
+      this.adiadoAte = adiado ?? undefined
+      if (primeiro) this.primeiroUso = primeiro
+      else await db.gravarConfig('primeiroUso', this.primeiroUso)
     } catch (e) {
       this.erroBanco = `Armazenamento indisponível (${(e as Error).message}). Nada será salvo.`
     }
@@ -104,6 +117,30 @@ export class Estado {
     this.avisar()
     await this.persistir(() => db.gravar('dicionario', ...salvas))
     return salvas
+  }
+
+  /** Troca todo o conteúdo (importação no modo "substituir"). */
+  async substituirTudo(notas: Nota[], dicionario: EntradaDicionario[]) {
+    this.notas = [...notas].sort(porData)
+    this.dicionario = [...dicionario].sort(porSimbolo)
+    this.avisar()
+    await this.persistir(() => db.substituirTudo({ notas: this.notas, dicionario: this.dicionario }))
+  }
+
+  async registrarBackup() {
+    this.ultimoBackup = Date.now()
+    this.adiadoAte = undefined
+    this.avisar()
+    await this.persistir(async () => {
+      await db.gravarConfig('ultimoBackup', this.ultimoBackup)
+      await db.gravarConfig('adiadoAte', null)
+    })
+  }
+
+  async adiarLembrete(dias = 1) {
+    this.adiadoAte = Date.now() + dias * 24 * 60 * 60 * 1000
+    this.avisar()
+    await this.persistir(() => db.gravarConfig('adiadoAte', this.adiadoAte))
   }
 
   async apagarEntrada(id: string) {

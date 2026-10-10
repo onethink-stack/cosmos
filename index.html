@@ -12,6 +12,39 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // Se o app não conseguir abrir, mostra o motivo e um jeito de recomeçar
+      // (em vez de tela vazia). As notas ficam: só o cache do app é limpo.
+      ;(function () {
+        var erros = []
+        function mostrar() {
+          var app = document.getElementById('app')
+          if (!app || app.childElementCount) return
+          app.innerHTML =
+            '<div style="max-width:40rem;margin:2rem auto;padding:1rem;font:16px system-ui,sans-serif;color:#222;background:#fff;border-radius:8px">' +
+            '<h2 style="margin-top:0">O Caderno Lógico não conseguiu abrir</h2>' +
+            '<p>Suas notas continuam guardadas neste aparelho. Tente recarregar limpando a versão antiga do app:</p>' +
+            '<p><button id="limpar-cache" style="font:inherit;padding:.6rem 1rem">Recarregar limpando o cache</button></p>' +
+            '<details><summary>Detalhes do erro</summary><pre id="detalhe-erro" style="white-space:pre-wrap;font-size:13px"></pre></details></div>'
+          document.getElementById('detalhe-erro').textContent = (erros.join('\n') || 'o app não iniciou') + '\n\n' + navigator.userAgent
+          document.getElementById('limpar-cache').onclick = function () {
+            var p = []
+            if (navigator.serviceWorker) p.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister() })) }))
+            if (window.caches) p.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k) })) }))
+            Promise.all(p).then(function () { location.reload() }, function () { location.reload() })
+          }
+        }
+        window.addEventListener('error', function (e) {
+          erros.push(e.message || (e.target && (e.target.src || e.target.href) ? 'falhou ao carregar ' + (e.target.src || e.target.href) : 'erro'))
+          setTimeout(mostrar, 500)
+        }, true)
+        window.addEventListener('unhandledrejection', function (e) {
+          erros.push(String(e.reason && (e.reason.stack || e.reason.message) || e.reason))
+          setTimeout(mostrar, 500)
+        })
+        window.addEventListener('load', function () { setTimeout(mostrar, 4000) })
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

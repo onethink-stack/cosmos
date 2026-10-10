@@ -35,6 +35,11 @@ function serviceWorker(): Plugin {
       const hash = createHash('sha256')
       hash.update(arquivos.join('\n'))
       if (conteudoHtml && conteudoHtml.type === 'asset') hash.update(String(conteudoHtml.source))
+      // o conteúdo de cada arquivo também entra: qualquer mudança gera cache novo
+      for (const f of doBuild) {
+        const item = bundle[f]
+        hash.update(item.type === 'chunk' ? item.code : typeof item.source === 'string' ? item.source : Buffer.from(item.source))
+      }
       const versao = hash.digest('hex').slice(0, 12)
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: codigoSW(versao, arquivos) })
     },
@@ -86,6 +91,24 @@ async function doZ3(req) {
   return r
 }
 
+// A página do app vem da rede quando há internet (assim uma versão nova chega
+// na hora, sem misturar com arquivos velhos); sem internet, do cache.
+async function paginaDoApp() {
+  const indice = new URL('./index.html', self.registration.scope).href
+  try {
+    const r = await Promise.race([
+      fetch(indice, { cache: 'no-store' }),
+      new Promise((_, nao) => setTimeout(() => nao(new Error('demorou')), 4000)),
+    ])
+    if (r.ok) {
+      const c = await caches.open(CACHE)
+      await c.put(indice, r.clone())
+      return r
+    }
+  } catch {}
+  return (await caches.match(indice)) || fetch(indice)
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request
   const url = new URL(req.url)
@@ -96,8 +119,7 @@ self.addEventListener('fetch', (e) => {
   }
   // só o endereço do app recebe index.html (um download também chega como navegação)
   if (req.mode === 'navigate' && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
-    const indice = new URL('./index.html', self.registration.scope).href
-    e.respondWith(caches.match(indice).then((r) => r || fetch(req)).then(isolado))
+    e.respondWith(paginaDoApp().then(isolado))
     return
   }
   e.respondWith(caches.match(req, { ignoreSearch: true }).then((r) => r || fetch(req)).then(isolado))

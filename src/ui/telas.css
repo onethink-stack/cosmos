@@ -246,3 +246,9 @@ details.explicacao p { margin: 6px 0; }
 .desbloquear input { flex: 1 1 180px; width: auto; }
 .desbloquear .erro-texto { flex-basis: 100%; margin: 0; }
 .vazio .desbloquear { justify-content: center; max-width: 420px; margin: 8px auto; }
+
+/* ---------- leis que faltam ---------- */
+.lacunas { margin-top: 8px; border-top: 1px dashed var(--borda); padding-top: 8px; }
+.lista-leis-sugeridas { list-style: none; padding: 0; display: grid; gap: 8px; }
+.lista-leis-sugeridas > li { background: var(--superficie-2); border: 1px solid var(--borda); border-left: 4px solid var(--destaque); border-radius: var(--raio); padding: 8px 12px; display: grid; gap: 6px; justify-items: start; }
+.texto-lei { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .85rem; margin: 6px 0 0; }

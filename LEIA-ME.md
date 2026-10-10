@@ -15,6 +15,14 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
 - **Descobrir consequências**: lista consequências simples (igualdades,
   pertinências, inclusões, "não é vazio", predicados, valores de função) com
   as notas de origem.
+- **Teoremas**: notas do compartimento *Teorema* não são premissas; o app
+  confere se cada uma segue das leis e fatos ativos. Quando não segue,
+  **Procurar a lei que falta** testa leis candidatas (primeiro as leis e fatos
+  desativados do caderno, depois leis gerais: extensionalidade, injetividade,
+  "não é vazio", propriedades de relações, pontes entre predicados…) e mostra
+  só as que fecham o teorema **sem contradizer** as leis e fatos, com o texto
+  explicando por que faltava. Você aprova e ela vira Lei (grau D, tag
+  `sugerida`); os teoremas são conferidos de novo na hora.
 - **Conjuntos**: *Leis e fatos*; cada *Visão de [titular]* à parte; e *Tudo
   junto*, em que cada crença entra como `B[titular] (φ)` — a crença não vira
   verdade, mas uma lei sobre o necessário (□) pode contradizê-la.

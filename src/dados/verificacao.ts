@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'preact/hooks'
 import type { ResultadoDescoberta } from '../motor/descobrir'
-import { OPCOES_PADRAO, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
+import type { ResultadoLacunas } from '../motor/lacunas'
+import { OPCOES_PADRAO, type Grupo, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
 import { lerConfig, gravarConfig } from './db'
@@ -44,7 +45,15 @@ export interface ResultadoDaDescoberta {
   assinatura: string
 }
 
-export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas'
+export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas' | 'lacunas'
+
+export interface ResultadoDasLacunas {
+  resultado: ResultadoLacunas | null
+  erro: string | null
+  ms: number
+  /** fórmula do teorema, premissas e notas desativadas; se mudar, o resultado está desatualizado */
+  assinatura: string
+}
 
 export interface ResultadoTeorema {
   resultado: ResultadoPergunta
@@ -70,6 +79,10 @@ class Verificacao {
   erroTeoremas: string | null = null
   /** teoremas conferidos: id (nota:índice) → resultado */
   teoremas = new Map<string, ResultadoTeorema>()
+  /** leis que faltam: id do teorema (nota:índice) → sugestões */
+  lacunas = new Map<string, ResultadoDasLacunas>()
+  /** teorema cujas leis que faltam estão sendo procuradas agora */
+  lacunaRodando: string | null = null
   /** o que o motor está fazendo agora */
   ocupado: Ocupacao | null = null
   get perguntando() {
@@ -85,6 +98,7 @@ class Verificacao {
   private pendentes = new Map<string, Tarefa>()
   private formulaPerguntada: string | undefined
   private formulasTeoremas = new Map<string, string>()
+  private assinaturaLacuna = ''
   private dicionario: EntradaDicionario[] = []
 
   assinar(fn: () => void) {
@@ -176,18 +190,33 @@ class Verificacao {
     this.iniciar([tarefa], dicionario, undefined, false, teoremas)
   }
 
+  /** Procura leis que, junto com as leis e fatos da tarefa, fariam o teorema seguir. */
+  procurarLeis(tarefa: Tarefa, teoremaId: string, formula: string, inativas: Grupo[], dicionario: EntradaDicionario[]) {
+    this.assinaturaLacuna = assinaturaLacuna(tarefa, dicionario, this.limites, formula, inativas)
+    this.iniciar([tarefa], dicionario, undefined, false, undefined, { teoremaId, formula, inativas })
+    this.lacunaRodando = teoremaId
+    this.avisar()
+  }
+
   /** Roda as tarefas (ou uma pergunta, ou a busca de consequências). Um pedido novo cancela o anterior. */
-  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string, descobrir = false, teoremas?: { id: string; formula: string }[]) {
+  iniciar(
+    tarefas: Tarefa[],
+    dicionario: EntradaDicionario[],
+    pergunta?: string,
+    descobrir = false,
+    teoremas?: { id: string; formula: string }[],
+    lacuna?: PedidoMotor['lacuna'],
+  ) {
     if (!tarefas.length) return
     this.cancelar(false)
-    this.ocupado = teoremas ? 'teoremas' : descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
+    this.ocupado = lacuna ? 'lacunas' : teoremas ? 'teoremas' : descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
     this.formulaPerguntada = pergunta
     const id = ++this.pedido
     this.dicionario = dicionario
     this.pendentes = new Map(tarefas.map((t) => [t.chave, t]))
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
-    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, pergunta, descobrir, teoremas }
+    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, pergunta, descobrir, teoremas, lacuna }
     this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
@@ -202,6 +231,7 @@ class Verificacao {
     this.pedido++
     this.rodando = null
     this.ocupado = null
+    this.lacunaRodando = null
     if (avisar) this.avisar()
   }
 
@@ -217,6 +247,15 @@ class Verificacao {
         N: this.N,
         assinatura: assinatura(t, this.dicionario, this.limites, this.formulasTeoremas.get(r.teoremaId)),
       })
+    } else if (r.tipo === 'lacunas' || (r.tipo === 'erro' && this.ocupado === 'lacunas')) {
+      const id = r.tipo === 'lacunas' ? r.teoremaId : this.lacunaRodando
+      if (id)
+        this.lacunas.set(id, {
+          resultado: r.tipo === 'lacunas' ? r.resultado : null,
+          erro: r.tipo === 'erro' ? r.msg : null,
+          ms: r.tipo === 'lacunas' ? r.ms : 0,
+          assinatura: this.assinaturaLacuna,
+        })
     } else if (r.tipo === 'erro' && this.ocupado === 'teoremas') {
       this.erroTeoremas = r.msg
     } else if (r.tipo === 'descobertas' || (r.tipo === 'erro' && this.ocupado === 'descobrir')) {
@@ -260,6 +299,7 @@ class Verificacao {
     } else {
       this.rodando = null
       this.ocupado = null
+      this.lacunaRodando = null
     }
     this.avisar()
   }
@@ -270,6 +310,11 @@ class Verificacao {
 }
 
 export const verificacao = new Verificacao()
+
+/** Identifica uma busca de leis que faltam (muda se o teorema, as premissas ou as notas desativadas mudarem). */
+export function assinaturaLacuna(t: Tarefa, dicionario: EntradaDicionario[], limites: string, formula: string, inativas: Grupo[]): string {
+  return JSON.stringify([assinatura(t, dicionario, limites, formula), inativas])
+}
 
 export function useVerificacao(): Verificacao {
   const [, forcar] = useReducer((x: number) => x + 1, 0)

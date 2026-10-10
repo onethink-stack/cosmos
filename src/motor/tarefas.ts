@@ -2,6 +2,7 @@ import { preparar } from '../dados/premissas'
 import { lex } from '../logica/lexer'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
+import { procurarLeis, type ResultadoLacunas } from './lacunas'
 import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
 
 /** Um conjunto checado separadamente: o geral (lei + fato) ou uma visão de mundo. */
@@ -23,6 +24,8 @@ export interface PedidoMotor {
   descobrir?: boolean
   /** se presente, confere cada teorema (id → fórmula) contra a (única) tarefa */
   teoremas?: { id: string; formula: string }[]
+  /** se presente, procura leis que fariam o teorema seguir da (única) tarefa; `inativas` são candidatas do caderno */
+  lacuna?: { teoremaId: string; formula: string; inativas: Grupo[] }
 }
 
 export type RespostaMotor =
@@ -31,6 +34,7 @@ export type RespostaMotor =
   | { id: number; tipo: 'resposta'; chave: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'descobertas'; chave: string; resultado: ResultadoDescoberta; ms: number }
   | { id: number; tipo: 'teorema'; chave: string; teoremaId: string; resultado: ResultadoPergunta; ms: number }
+  | { id: number; tipo: 'lacunas'; chave: string; teoremaId: string; resultado: ResultadoLacunas; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   | { id: number; tipo: 'fim' }
 
@@ -39,6 +43,12 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
     const ini = Date.now()
     const progresso = (msg: string) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg })
     try {
+      if (p.lacuna) {
+        const { teoremaId, formula, inativas } = p.lacuna
+        const resultado = procurarLeis(t.grupos, inativas, formula, p.dicionario, p.opcoes, progresso)
+        enviar({ id: p.id, tipo: 'lacunas', chave: t.chave, teoremaId, resultado, ms: Date.now() - ini })
+        continue
+      }
       if (p.teoremas) {
         p.teoremas.forEach((th, k) => {
           const ini2 = Date.now()

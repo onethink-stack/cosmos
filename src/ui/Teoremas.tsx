@@ -1,9 +1,12 @@
+import { useEffect, useState } from 'preact/hooks'
 import { useEstado } from '../dados/estado'
 import type { FormulaDeNota } from '../dados/premissas'
 import { assinatura, useVerificacao } from '../dados/verificacao'
 import { limiteTexto } from '../motor/avaliar'
+import type { Grupo } from '../motor/motor'
 import type { Tarefa } from '../motor/tarefas'
 import { ConfirmacaoZ3 } from './ConfirmacaoZ3'
+import { LeisQueFaltam } from './LeisQueFaltam'
 import { ArvorePassos, formulasDosGrupos, ModeloVisual } from './ResultadoVerificacao'
 
 const idDe = (f: FormulaDeNota) => `${f.notaId}:${f.indice}`
@@ -15,6 +18,18 @@ export function Teoremas({ teoremas, geral, pronto }: { teoremas: FormulaDeNota[
   const ocupado = ver.ocupado === 'teoremas'
   const notasTeorema = est.notas.filter((n) => n.compartimento === 'teorema' && n.ativa)
   const semFormula = notasTeorema.filter((n) => !n.formulas.some((f) => f.trim())).length
+  // leis e fatos desativados entram como candidatas na busca da lei que falta
+  const inativas: Grupo[] = est.notas
+    .filter((n) => !n.ativa && (n.compartimento === 'lei' || n.compartimento === 'fato') && n.formulas.some((f) => f.trim()))
+    .map((n) => ({ id: n.id, rotulo: n.titulo || 'Sem título', formulas: n.formulas.filter((f) => f.trim()) }))
+  // depois de aprovar uma lei, confere os teoremas de novo (com as notas já atualizadas)
+  const [reconferir, setReconferir] = useState(false)
+  useEffect(() => {
+    if (reconferir && pronto && !ver.ocupado && teoremas.length) {
+      setReconferir(false)
+      conferir()
+    }
+  })
   if (!notasTeorema.length) return null
 
   const titulo = (id: string) => est.notas.find((n) => n.id === id)?.titulo || 'Sem título'
@@ -44,7 +59,7 @@ export function Teoremas({ teoremas, geral, pronto }: { teoremas: FormulaDeNota[
             </button>
           </>
         ) : (
-          <button type="button" class="primario" disabled={!pronto || !teoremas.length} onClick={conferir}>
+          <button type="button" class="primario" disabled={!pronto || !teoremas.length || !!ver.ocupado} onClick={conferir}>
             Conferir {teoremas.length} teorema{teoremas.length === 1 ? '' : 's'}
           </button>
         )}
@@ -95,6 +110,9 @@ export function Teoremas({ teoremas, geral, pronto }: { teoremas: FormulaDeNota[
                         <ModeloVisual m={res.mundo.modelo} />
                       </details>
                       {!desatualizado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDosGrupos(geral.grupos)} negar={t.texto} />}
+                      {!desatualizado && (
+                        <LeisQueFaltam t={t} id={idDe(t)} geral={geral} inativas={inativas} pronto={pronto} onAprovada={() => setReconferir(true)} />
+                      )}
                     </div>
                   )}
                   {res.tipo === 'contradiz' && (

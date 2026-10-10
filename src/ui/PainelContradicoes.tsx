@@ -4,6 +4,7 @@ import { preparar } from '../dados/premissas'
 import { assinatura, montarTarefas, N_MAXIMO, useVerificacao } from '../dados/verificacao'
 import { ConfirmarNomes } from './ConfirmarNomes'
 import { FormulaExibida } from './FormulaExibida'
+import { Descobrir } from './Descobrir'
 import { Perguntar } from './Perguntar'
 import { ResultadoVerificacao } from './ResultadoVerificacao'
 
@@ -59,12 +60,12 @@ export function PainelContradicoes() {
           N (máx. de objetos)
           <input type="number" min={1} max={N_MAXIMO} value={ver.N} onChange={(e) => ver.definirN(Number((e.target as HTMLInputElement).value))} />
         </label>
-        {ver.rodando && !ver.perguntando ? (
+        {ver.ocupado === 'verificar' ? (
           <button type="button" onClick={() => ver.cancelar()}>
             Cancelar
           </button>
         ) : (
-          <button type="button" class="primario" disabled={!p.pronto || ver.perguntando} onClick={rodar}>
+          <button type="button" class="primario" disabled={!p.pronto} onClick={rodar}>
             Verificar tudo
           </button>
         )}
@@ -75,7 +76,7 @@ export function PainelContradicoes() {
         indica provável contradição, mas não é prova absoluta.
       </p>
 
-      {ver.rodando && !ver.perguntando && (
+      {ver.ocupado === 'verificar' && ver.rodando && (
         <div class="resultado res-rodando" aria-live="polite">
           <span class="girando" aria-hidden="true" /> {tarefas.find((t) => t.chave === ver.rodando!.chave)?.rotulo}: {ver.rodando.msg}…
         </div>
@@ -93,6 +94,7 @@ export function PainelContradicoes() {
       })}
 
       <Perguntar tarefas={tarefas} pronto={p.pronto} />
+      <Descobrir tarefas={tarefas} pronto={p.pronto} />
     </section>
   )
 }

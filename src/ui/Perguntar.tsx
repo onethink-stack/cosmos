@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'preact/hooks'
-import { estado, notaVazia, useEstado } from '../dados/estado'
+import { salvarDeduzida } from '../dados/deduzida'
+import { estado, useEstado } from '../dados/estado'
 import type { Nota } from '../dados/tipos'
 import { assinatura, useVerificacao, type ResultadoDaPergunta } from '../dados/verificacao'
 import type { Diag } from '../logica/ast'
@@ -122,17 +123,7 @@ function RespostaPergunta({ r, notas, desatualizado }: { r: ResultadoDaPergunta;
   )
 
   const salvarComoNota = async (ids: string[]) => {
-    const visao = r.chave.startsWith('visao:') ? r.chave.slice('visao:'.length) : null
-    const origem = ids.map((id) => titulo(id)?.titulo || 'Sem título').join(', ')
-    const nova = await estado.salvarNota({
-      ...notaVazia(visao ? 'visao' : 'lei'),
-      titulo: `Deduzida: ${r.formula}`,
-      formulas: [r.formula],
-      titular: visao ?? '',
-      grau: 'M',
-      tags: ['deduzida'],
-      texto: `Deduzida em ${new Date().toLocaleDateString('pt-BR')} a partir de: ${origem}. Verdadeira em todos os mundos com até ${r.N} objetos em que essas notas valem (não é prova absoluta).`,
-    })
+    const nova = await salvarDeduzida(r.formula, r.chave, ids, r.N)
     setSalva(nova.id)
   }
 

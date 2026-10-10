@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'preact/hooks'
+import type { ResultadoDescoberta } from '../motor/descobrir'
 import { OPCOES_PADRAO, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
@@ -32,6 +33,19 @@ export interface ResultadoDaPergunta {
   assinatura: string
 }
 
+export interface ResultadoDaDescoberta {
+  chave: string
+  rotulo: string
+  resultado: ResultadoDescoberta | null
+  erro: string | null
+  quando: string
+  ms: number
+  N: number
+  assinatura: string
+}
+
+export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir'
+
 export const N_MAXIMO = 12
 
 class Verificacao {
@@ -40,8 +54,13 @@ class Verificacao {
   resultados = new Map<string, ResultadoTarefa>()
   /** última pergunta feita ("isto segue das notas?") */
   pergunta: ResultadoDaPergunta | null = null
-  /** true enquanto o motor responde a uma pergunta (e não a uma verificação) */
-  perguntando = false
+  /** última busca de consequências */
+  descoberta: ResultadoDaDescoberta | null = null
+  /** o que o motor está fazendo agora */
+  ocupado: Ocupacao | null = null
+  get perguntando() {
+    return this.ocupado === 'perguntar'
+  }
   private worker: Worker | null = null
   /** o worker falhou ao carregar neste navegador: daqui em diante roda na linha principal */
   private semWorker = false
@@ -117,18 +136,23 @@ class Verificacao {
     this.iniciar([tarefa], dicionario, formula)
   }
 
-  /** Roda as tarefas (ou uma pergunta). Um pedido novo cancela o anterior. */
-  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string) {
+  /** Descobre consequências simples do conjunto da tarefa. Cancela o que estiver rodando. */
+  descobrir(tarefa: Tarefa, dicionario: EntradaDicionario[]) {
+    this.iniciar([tarefa], dicionario, undefined, true)
+  }
+
+  /** Roda as tarefas (ou uma pergunta, ou a busca de consequências). Um pedido novo cancela o anterior. */
+  iniciar(tarefas: Tarefa[], dicionario: EntradaDicionario[], pergunta?: string, descobrir = false) {
     if (!tarefas.length) return
     this.cancelar(false)
-    this.perguntando = pergunta !== undefined
+    this.ocupado = descobrir ? 'descobrir' : pergunta !== undefined ? 'perguntar' : 'verificar'
     this.formulaPerguntada = pergunta
     const id = ++this.pedido
     this.dicionario = dicionario
     this.pendentes = new Map(tarefas.map((t) => [t.chave, t]))
     this.rodando = { chave: tarefas[0].chave, msg: 'preparando' }
     this.avisar()
-    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N }, pergunta }
+    const pedido: PedidoMotor = { id, tarefas, dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N }, pergunta, descobrir }
     this.pedidoAtual = pedido
     const w = this.obterWorker()
     if (w) w.postMessage(pedido)
@@ -142,7 +166,7 @@ class Verificacao {
     }
     this.pedido++
     this.rodando = null
-    this.perguntando = false
+    this.ocupado = null
     if (avisar) this.avisar()
   }
 
@@ -150,7 +174,19 @@ class Verificacao {
     if (r.id !== this.pedido) return
     if (r.tipo === 'progresso') {
       this.rodando = { chave: r.chave, msg: r.msg }
-    } else if (r.tipo === 'resposta' || (r.tipo === 'erro' && this.perguntando)) {
+    } else if (r.tipo === 'descobertas' || (r.tipo === 'erro' && this.ocupado === 'descobrir')) {
+      const t = this.pendentes.get(r.chave)!
+      this.descoberta = {
+        chave: r.chave,
+        rotulo: t.rotulo,
+        resultado: r.tipo === 'descobertas' ? r.resultado : null,
+        erro: r.tipo === 'erro' ? r.msg : null,
+        quando: new Date().toISOString(),
+        ms: r.tipo === 'descobertas' ? r.ms : 0,
+        N: this.N,
+        assinatura: assinatura(t, this.dicionario, this.N),
+      }
+    } else if (r.tipo === 'resposta' || (r.tipo === 'erro' && this.ocupado === 'perguntar')) {
       const t = this.pendentes.get(r.chave)!
       const formula = this.formulaPerguntada ?? ''
       this.pergunta = {
@@ -178,7 +214,7 @@ class Verificacao {
       })
     } else {
       this.rodando = null
-      this.perguntando = false
+      this.ocupado = null
     }
     this.avisar()
   }

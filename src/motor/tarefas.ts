@@ -1,5 +1,6 @@
 import { preparar } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
+import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
 
 /** Um conjunto checado separadamente: o geral (lei + fato) ou uma visão de mundo. */
@@ -17,12 +18,15 @@ export interface PedidoMotor {
   opcoes: OpcoesMotor
   /** se presente, em vez de verificar consistência, pergunta se a fórmula segue da (única) tarefa */
   pergunta?: string
+  /** se true, descobre consequências da (única) tarefa */
+  descobrir?: boolean
 }
 
 export type RespostaMotor =
   | { id: number; tipo: 'progresso'; chave: string; msg: string }
   | { id: number; tipo: 'resultado'; chave: string; resultado: ResultadoMotor; ms: number }
   | { id: number; tipo: 'resposta'; chave: string; resultado: ResultadoPergunta; ms: number }
+  | { id: number; tipo: 'descobertas'; chave: string; resultado: ResultadoDescoberta; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   | { id: number; tipo: 'fim' }
 
@@ -31,6 +35,11 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
     const ini = Date.now()
     const progresso = (msg: string) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg })
     try {
+      if (p.descobrir) {
+        const resultado = descobrir(t.grupos, p.dicionario, p.opcoes, progresso)
+        enviar({ id: p.id, tipo: 'descobertas', chave: t.chave, resultado, ms: Date.now() - ini })
+        continue
+      }
       if (p.pergunta !== undefined) {
         const resultado = perguntar(t.grupos, p.pergunta, p.dicionario, p.opcoes, progresso)
         enviar({ id: p.id, tipo: 'resposta', chave: t.chave, resultado, ms: Date.now() - ini })

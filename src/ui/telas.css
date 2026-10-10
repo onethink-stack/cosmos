@@ -203,3 +203,9 @@ details.explicacao p { margin: 6px 0; }
 .valor { display: inline-block; min-width: 1.5em; text-align: center; font-size: .75rem; font-weight: 700; border-radius: 4px; padding: 0 4px; margin-right: 6px; vertical-align: 1px; }
 .valor.v { background: var(--fato-fundo); color: var(--ok); }
 .valor.f { background: var(--erro-fundo); color: var(--erro); }
+
+/* ---------- descobrir consequências ---------- */
+.lista-descobertas { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.lista-descobertas li { padding: 8px 10px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--fundo); }
+.lista-descobertas .formula-inline { font-size: 1.1rem; }
+.lista-descobertas button.mini { margin: 6px 0 0; }

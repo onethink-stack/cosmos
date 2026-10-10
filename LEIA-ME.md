@@ -1,8 +1,22 @@
-# Caderno Lógico — versão 1
+# Caderno Lógico — versão 2
 
 Aplicativo pessoal e offline para escrever notas e fórmulas em lógica simbólica,
 separar **lei**, **fato** e **visão de mundo**, validar fórmulas e detectar
 contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
+
+## O que o painel Contradições faz
+
+- **Verificar tudo**: procura um mundo (até N objetos) onde todas as notas
+  ativas valem. Sem mundo, mostra o menor conjunto de notas em conflito e, para
+  cada nota, **por que ela é necessária**: um mundo onde as outras valem e ela
+  falha, com o ponto exato da falha.
+- **Perguntar**: "esta fórmula segue das minhas notas?" Responde *segue* (com
+  as notas necessárias), *não segue* (com um contraexemplo) ou *contradiz*.
+- **Descobrir consequências**: lista consequências simples (igualdades,
+  pertinências, inclusões, "não é vazio", predicados, valores de função) com
+  as notas de origem.
+- Visões de mundo são sempre tratadas à parte, cada titular por si.
+- Tudo vale "até N objetos": é um indício forte, não prova absoluta.
 
 ## Duas formas de usar
 

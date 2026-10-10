@@ -55,13 +55,13 @@ export type ExplicacaoConflito =
 export type Progresso = (msg: string) => void
 
 /** Fórmula de uma nota já analisada: o texto, a árvore como escrita e a expandida para o motor. */
-interface FormulaPronta {
+export interface FormulaPronta {
   texto: string
   original: Formula
   expandida: Formula
 }
 
-function analisar(textos: string[], dicionario: EntradaDicionario[]): FormulaPronta[] {
+export function analisar(textos: string[], dicionario: EntradaDicionario[]): FormulaPronta[] {
   const r: FormulaPronta[] = []
   for (const texto of textos) {
     const v = validar(texto, dicionario)
@@ -176,14 +176,14 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   return { tipo: 'sem-modelo', N: op.N, conflito: conjunto.map((x) => x.g.id), explicacoes }
 }
 
-type GrupoPronto = { g: Grupo; itens: FormulaPronta[] }
+export type GrupoPronto = { g: Grupo; itens: FormulaPronta[] }
 
 /**
  * Remove grupos um por vez, na ordem dada, enquanto `grupos ∪ fixas` continuar
  * sem modelo até N. O resultado é irredutível: tirar qualquer grupo restante
  * faz aparecer um modelo. Na dúvida (grande demais), o grupo fica.
  */
-function minimizar(grupos: GrupoPronto[], fixas: Formula[], op: OpcoesMotor, minimo: number, aviso?: (g: Grupo, i: number) => void): GrupoPronto[] {
+export function minimizar(grupos: GrupoPronto[], fixas: Formula[], op: OpcoesMotor, minimo: number, aviso?: (g: Grupo, i: number) => void): GrupoPronto[] {
   let conjunto = grupos
   grupos.forEach((alvo, i) => {
     if (conjunto.length <= minimo) return
@@ -216,7 +216,7 @@ export type ResultadoPergunta =
   | { tipo: 'grande-demais'; n: number }
   | { tipo: 'formula-invalida' }
 
-const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
+export const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
 
 /**
  * "A fórmula segue das notas?" — testa notas ∪ {¬φ} e notas ∪ {φ} em

@@ -1,6 +1,7 @@
 import { preparar } from '../dados/premissas'
 import { lex } from '../logica/lexer'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
+import { reacaoEmCadeia, type PedidoCadeia, type RelatorioCadeia } from './cadeia'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
 import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
@@ -22,10 +23,12 @@ export interface PedidoMotor {
   pergunta?: string
   /** se true, descobre consequências da (única) tarefa */
   descobrir?: boolean
-  /** se presente, confere cada teorema (id → fórmula) contra a (única) tarefa */
-  teoremas?: { id: string; formula: string }[]
+  /** se presente, confere cada teorema (id → fórmula) contra a tarefa do seu contexto (padrão: a primeira) */
+  teoremas?: { id: string; formula: string; contexto?: string }[]
   /** se presente, procura leis que fariam o teorema seguir da (única) tarefa; `inativas` são candidatas do caderno */
   lacuna?: { teoremaId: string; formula: string; inativas: Grupo[] }
+  /** se presente, roda a reação em cadeia (as tarefas são ignoradas) */
+  cadeia?: PedidoCadeia
 }
 
 export type RespostaMotor =
@@ -35,10 +38,44 @@ export type RespostaMotor =
   | { id: number; tipo: 'descobertas'; chave: string; resultado: ResultadoDescoberta; ms: number }
   | { id: number; tipo: 'teorema'; chave: string; teoremaId: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'lacunas'; chave: string; teoremaId: string; resultado: ResultadoLacunas; ms: number }
+  | { id: number; tipo: 'cadeia'; relatorios: RelatorioCadeia[]; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   | { id: number; tipo: 'fim' }
 
 export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void) {
+  if (p.cadeia) {
+    const ini = Date.now()
+    try {
+      reacaoEmCadeia(
+        p.cadeia,
+        p.dicionario,
+        p.opcoes,
+        (relatorios) => enviar({ id: p.id, tipo: 'cadeia', relatorios, ms: Date.now() - ini }),
+        (chave, msg) => enviar({ id: p.id, tipo: 'progresso', chave, msg }),
+      )
+    } catch (e) {
+      enviar({ id: p.id, tipo: 'erro', chave: 'cadeia', msg: (e as Error).message })
+    }
+    enviar({ id: p.id, tipo: 'fim' })
+    return
+  }
+  // teoremas: cada um contra a tarefa do seu contexto
+  if (p.teoremas) {
+    p.teoremas.forEach((th, k) => {
+      const t = p.tarefas.find((x) => x.chave === (th.contexto ?? p.tarefas[0].chave)) ?? p.tarefas[0]
+      const ini = Date.now()
+      try {
+        const resultado = perguntar(t.grupos, th.formula, p.dicionario, p.opcoes, (msg) =>
+          enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg: `teorema ${k + 1} de ${p.teoremas!.length}: ${msg}` }),
+        )
+        enviar({ id: p.id, tipo: 'teorema', chave: t.chave, teoremaId: th.id, resultado, ms: Date.now() - ini })
+      } catch (e) {
+        enviar({ id: p.id, tipo: 'erro', chave: t.chave, msg: (e as Error).message })
+      }
+    })
+    enviar({ id: p.id, tipo: 'fim' })
+    return
+  }
   for (const t of p.tarefas) {
     const ini = Date.now()
     const progresso = (msg: string) => enviar({ id: p.id, tipo: 'progresso', chave: t.chave, msg })
@@ -47,16 +84,6 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
         const { teoremaId, formula, inativas } = p.lacuna
         const resultado = procurarLeis(t.grupos, inativas, formula, p.dicionario, p.opcoes, progresso)
         enviar({ id: p.id, tipo: 'lacunas', chave: t.chave, teoremaId, resultado, ms: Date.now() - ini })
-        continue
-      }
-      if (p.teoremas) {
-        p.teoremas.forEach((th, k) => {
-          const ini2 = Date.now()
-          const resultado = perguntar(t.grupos, th.formula, p.dicionario, p.opcoes, (msg) =>
-            progresso(`teorema ${k + 1} de ${p.teoremas!.length}: ${msg}`),
-          )
-          enviar({ id: p.id, tipo: 'teorema', chave: t.chave, teoremaId: th.id, resultado, ms: Date.now() - ini2 })
-        })
         continue
       }
       if (p.descobrir) {
@@ -103,6 +130,11 @@ export function montarTarefas(notas: Nota[], dicionario: EntradaDicionario[]): {
   if (comoCrenca.length)
     tarefas.push({ chave: 'tudo', rotulo: 'Tudo junto (leis, fatos e crenças)', grupos: porNota([...p.premissas, ...comoCrenca]) })
   return { tarefas, pronto: p.pronto }
+}
+
+/** A tarefa de um contexto ("geral" ou "visao:<titular>"); vazia se o titular não tem visões ativas. */
+export function tarefaDoContexto(tarefas: Tarefa[], chave: string): Tarefa {
+  return tarefas.find((t) => t.chave === chave) ?? { chave, rotulo: chave.startsWith('visao:') ? `Visão de ${chave.slice(6)}` : chave, grupos: [] }
 }
 
 /** `limites`: N, ou "N/K" quando o número de mundos também importa */

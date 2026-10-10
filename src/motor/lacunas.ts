@@ -18,7 +18,7 @@ import { imprimir } from '../logica/impressao'
 import { usosDeNomes } from '../logica/termos'
 import { ehModal } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
-import { analisar, buscarModelo, minimizar, nao, type Grupo, type GrupoPronto, type OpcoesMotor, type Progresso } from './motor'
+import { analisar, buscarModelo, minimizar, minimizarRapido, nao, type Grupo, type GrupoPronto, type OpcoesMotor, type Progresso } from './motor'
 
 export interface LeiSugerida {
   formula: string
@@ -246,19 +246,6 @@ export function procurarLeis(
   })
   const K = [...premissas, phi.expandida].some(ehModal) ? op.K : 1
   return { tipo: 'sugestoes', N: op.N, K, itens, testadas: candidatas.length, incertas, truncado }
-}
-
-/**
- * Como `minimizar`, mas primeiro com cenários pequenos (rápido) e depois uma
- * única conferência com o limite completo. Se a conferência falhar (algum
- * grupo só era necessário em cenários maiores), refaz com o limite completo.
- */
-function minimizarRapido(grupos: GrupoPronto[], fixas: Formula[], op: OpcoesMotor): GrupoPronto[] {
-  const pequeno = { ...op, N: Math.min(op.N, 4) }
-  if (pequeno.N === op.N) return minimizar(grupos, fixas, op, 0)
-  const r = minimizar(grupos, fixas, pequeno, 0)
-  const fs = [...r.flatMap((x) => x.itens.map((i) => i.expandida)), ...fixas]
-  return buscarModelo(fs, op).status === 'sem-modelo' ? r : minimizar(grupos, fixas, op, 0)
 }
 
 /** Texto da fórmula com as variáveis ligadas renomeadas em ordem (∀x P(x) e ∀y P(y) dão o mesmo). */

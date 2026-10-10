@@ -43,8 +43,12 @@ export function textoDaLei(s: LeiSugerida, teorema: string, N: number, K: number
   return partes.join('\n\n')
 }
 
-/** Aprova a sugestão: cria a nota de lei, ou ativa a nota desativada de onde ela veio. */
-export async function aprovarLei(s: LeiSugerida, teorema: string, N: number, K: number): Promise<Nota> {
+/**
+ * Aprova a sugestão: cria a nota de lei (numa visão, nota da mesma visão), ou
+ * ativa a nota desativada de onde ela veio.
+ */
+export async function aprovarLei(s: LeiSugerida, teorema: string, N: number, K: number, chave = 'geral'): Promise<Nota> {
+  const titular = chave.startsWith('visao:') ? chave.slice('visao:'.length) : null
   const texto = textoDaLei(s, teorema, N, K)
   const existente = s.notaId ? estado.nota(s.notaId) : undefined
   if (existente)
@@ -54,7 +58,8 @@ export async function aprovarLei(s: LeiSugerida, teorema: string, N: number, K: 
       texto: [existente.texto.trim(), '— Ativada pela busca de leis que faltam —', texto].filter(Boolean).join('\n\n'),
     })
   return estado.salvarNota({
-    ...notaVazia('lei'),
+    ...notaVazia(titular ? 'visao' : 'lei'),
+    titular: titular ?? '',
     titulo: s.nome,
     formulas: [s.formula],
     grau: 'D',

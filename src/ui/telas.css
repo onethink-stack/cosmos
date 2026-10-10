@@ -252,3 +252,23 @@ details.explicacao p { margin: 6px 0; }
 .lista-leis-sugeridas { list-style: none; padding: 0; display: grid; gap: 8px; }
 .lista-leis-sugeridas > li { background: var(--superficie-2); border: 1px solid var(--borda); border-left: 4px solid var(--destaque); border-radius: var(--raio); padding: 8px 12px; display: grid; gap: 6px; justify-items: start; }
 .texto-lei { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .85rem; margin: 6px 0 0; }
+
+/* ---------- reação em cadeia ---------- */
+.fora-cadeia { margin: 10px 0; padding: 8px 12px; border: 1px dashed var(--borda); border-radius: var(--raio); }
+.fora-cadeia > summary { cursor: pointer; font-weight: 600; }
+.lista-fora { columns: 2 16rem; padding-left: 1.1rem; margin: 6px 0; }
+.rodada { border-top: 2px solid var(--borda); margin-top: 16px; padding-top: 4px; }
+.rodada-antiga { margin-top: 12px; border-top: 1px solid var(--borda); padding-top: 6px; }
+.rodada-antiga > summary { cursor: pointer; color: var(--texto-suave); }
+.relatorio-cadeia { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 12px; margin: 10px 0; }
+.relatorio-cadeia h4 { margin: 0 0 6px; }
+.relatorio-cadeia h5 { margin: 14px 0 4px; font-size: .95rem; }
+.geracao { margin: 6px 0 10px; }
+.geracao-titulo { font-weight: 600; font-size: .88rem; color: var(--texto-suave); }
+.lista-cadeia { list-style: none; padding: 0; margin: 4px 0; display: grid; gap: 6px; }
+.lista-cadeia > li { padding: 6px 10px; border-left: 3px solid var(--borda); background: var(--superficie-2); border-radius: 4px; overflow-wrap: anywhere; }
+.lista-cadeia > li.segue { border-left-color: var(--ok); }
+.lista-cadeia > li.nao-segue, .lista-cadeia > li.contradiz { border-left-color: var(--erro); }
+.explicacao.em-linha { display: inline; }
+.explicacao.em-linha > summary { display: inline; cursor: pointer; color: var(--ok); }
+.explicacao.em-linha[open] { display: block; }

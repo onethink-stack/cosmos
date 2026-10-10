@@ -105,7 +105,7 @@ export function PainelContradicoes() {
         )
       })}
 
-      <Teoremas teoremas={p.teoremas} geral={tarefas[0]} pronto={p.pronto} />
+      <Teoremas teoremas={p.teoremas} tarefas={tarefas} pronto={p.pronto} />
       <Perguntar tarefas={tarefas} pronto={p.pronto} />
       <Descobrir tarefas={tarefas} pronto={p.pronto} />
     </section>

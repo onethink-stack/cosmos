@@ -23,6 +23,14 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   só as que fecham o teorema **sem contradizer** as leis e fatos, com o texto
   explicando por que faltava. Você aprova e ela vira Lei (grau D, tag
   `sugerida`); os teoremas são conferidos de novo na hora.
+- **Reação em cadeia** (aba *Cadeia*): bate tudo com tudo, em rodadas. Para
+  as leis e fatos (e para cada visão): consistência; cada lei é independente
+  ou decorre das outras (redundante); cada teorema segue, e de quais outros
+  teoremas — a cadeia, geração por geração; teoremas que não seguem e se
+  contradizem entre si; leis que fechariam o que falta (e quantos teoremas
+  cada uma fecha); consequências novas. Aprovar uma lei dispara a rodada
+  seguinte, que mostra o que a aprovação gerou. Um teorema com titular é
+  conferido contra a visão desse titular.
 - **Conjuntos**: *Leis e fatos*; cada *Visão de [titular]* à parte; e *Tudo
   junto*, em que cada crença entra como `B[titular] (φ)` — a crença não vira
   verdade, mas uma lei sobre o necessário (□) pode contradizê-la.

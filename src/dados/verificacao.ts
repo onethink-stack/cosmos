@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'preact/hooks'
+import type { PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import type { ResultadoDescoberta } from '../motor/descobrir'
 import type { ResultadoLacunas } from '../motor/lacunas'
 import { OPCOES_PADRAO, type Grupo, type ResultadoMotor, type ResultadoPergunta } from '../motor/motor'
@@ -45,7 +46,20 @@ export interface ResultadoDaDescoberta {
   assinatura: string
 }
 
-export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas' | 'lacunas'
+export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas' | 'lacunas' | 'cadeia'
+
+/** Uma rodada da reação em cadeia. */
+export interface RodadaCadeia {
+  numero: number
+  /** o que disparou a rodada (ex.: "aprovada: Extensionalidade") */
+  motivo: string
+  relatorios: RelatorioCadeia[]
+  erro: string | null
+  ms: number
+  terminada: boolean
+  /** identifica as entradas; se mudar, a rodada está desatualizada */
+  assinatura: string
+}
 
 export interface ResultadoDasLacunas {
   resultado: ResultadoLacunas | null
@@ -81,6 +95,8 @@ class Verificacao {
   teoremas = new Map<string, ResultadoTeorema>()
   /** leis que faltam: id do teorema (nota:índice) → sugestões */
   lacunas = new Map<string, ResultadoDasLacunas>()
+  /** reação em cadeia: rodadas (a última é a atual) */
+  rodadas: RodadaCadeia[] = []
   /** teorema cujas leis que faltam estão sendo procuradas agora */
   lacunaRodando: string | null = null
   /** o que o motor está fazendo agora */
@@ -183,11 +199,33 @@ class Verificacao {
     this.iniciar([tarefa], dicionario, undefined, true)
   }
 
-  /** Confere se cada teorema segue do conjunto da tarefa (leis e fatos). */
-  conferirTeoremas(tarefa: Tarefa, teoremas: { id: string; formula: string }[], dicionario: EntradaDicionario[]) {
+  /** Confere se cada teorema segue do conjunto do seu contexto (leis e fatos, ou a visão do titular). */
+  conferirTeoremas(tarefas: Tarefa[], teoremas: { id: string; formula: string; contexto?: string }[], dicionario: EntradaDicionario[]) {
     if (!teoremas.length) return
     this.formulasTeoremas = new Map(teoremas.map((t) => [t.id, t.formula]))
-    this.iniciar([tarefa], dicionario, undefined, false, teoremas)
+    this.iniciar(tarefas, dicionario, undefined, false, teoremas)
+  }
+
+  /** Começa uma rodada da reação em cadeia. `nova`: apaga as rodadas anteriores. */
+  iniciarCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], motivo: string, nova: boolean) {
+    this.cancelar(false)
+    if (nova) this.rodadas = []
+    const numero = (this.rodadas.at(-1)?.numero ?? 0) + 1
+    this.rodadas = [
+      ...this.rodadas,
+      { numero, motivo, relatorios: [], erro: null, ms: 0, terminada: false, assinatura: assinaturaCadeia(pedido, dicionario, this.limites) },
+    ]
+    this.ocupado = 'cadeia'
+    const id = ++this.pedido
+    this.dicionario = dicionario
+    this.pendentes = new Map()
+    this.rodando = { chave: 'cadeia', msg: 'preparando' }
+    this.avisar()
+    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, cadeia: pedido }
+    this.pedidoAtual = p
+    const w = this.obterWorker()
+    if (w) w.postMessage(p)
+    else this.rodarAqui(p)
   }
 
   /** Procura leis que, junto com as leis e fatos da tarefa, fariam o teorema seguir. */
@@ -239,6 +277,13 @@ class Verificacao {
     if (r.id !== this.pedido) return
     if (r.tipo === 'progresso') {
       this.rodando = { chave: r.chave, msg: r.msg }
+    } else if (r.tipo === 'cadeia' || (r.tipo === 'erro' && this.ocupado === 'cadeia')) {
+      const atual = this.rodadas.at(-1)
+      if (atual)
+        this.rodadas = [
+          ...this.rodadas.slice(0, -1),
+          r.tipo === 'cadeia' ? { ...atual, relatorios: r.relatorios, ms: r.ms } : { ...atual, erro: r.msg },
+        ]
     } else if (r.tipo === 'teorema') {
       const t = this.pendentes.get(r.chave)!
       this.teoremas.set(r.teoremaId, {
@@ -297,6 +342,10 @@ class Verificacao {
         assinatura: assinatura(t, this.dicionario, this.limites),
       })
     } else {
+      if (this.ocupado === 'cadeia') {
+        const atual = this.rodadas.at(-1)
+        if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true }]
+      }
       this.rodando = null
       this.ocupado = null
       this.lacunaRodando = null
@@ -310,6 +359,11 @@ class Verificacao {
 }
 
 export const verificacao = new Verificacao()
+
+/** Identifica uma rodada da reação em cadeia (muda se qualquer nota que entra nela mudar). */
+export function assinaturaCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], limites: string): string {
+  return JSON.stringify([limites, pedido, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
+}
 
 /** Identifica uma busca de leis que faltam (muda se o teorema, as premissas ou as notas desativadas mudarem). */
 export function assinaturaLacuna(t: Tarefa, dicionario: EntradaDicionario[], limites: string, formula: string, inativas: Grupo[]): string {

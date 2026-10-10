@@ -3,6 +3,7 @@ import { estado, useEstado } from '../dados/estado'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
 import { Backup } from './Backup'
+import { Cadeia } from './Cadeia'
 import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
 import { LembreteBackup } from './LembreteBackup'
@@ -42,6 +43,9 @@ export function App() {
             <a href="#/contradicoes" class={aba === 'contradicoes' ? 'ativo' : ''}>
               Contradições
             </a>
+            <a href="#/cadeia" class={aba === 'cadeia' ? 'ativo' : ''}>
+              Cadeia
+            </a>
           </nav>
         </div>
       </header>
@@ -62,6 +66,8 @@ export function App() {
           <Backup />
         ) : rota.tela === 'sistemas' ? (
           <Sistemas />
+        ) : rota.tela === 'cadeia' ? (
+          <Cadeia />
         ) : (
           <PainelContradicoes />
         )}

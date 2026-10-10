@@ -215,6 +215,26 @@ export function minimizar(grupos: GrupoPronto[], fixas: Formula[], op: OpcoesMot
   return conjunto
 }
 
+/**
+ * Como `minimizar`, mas primeiro com cenários pequenos (rápido) e depois uma
+ * única conferência com o limite completo. Se a conferência falhar (algum
+ * grupo só era necessário em cenários maiores), refaz com o limite completo.
+ */
+export function minimizarRapido(
+  grupos: GrupoPronto[],
+  fixas: Formula[],
+  op: OpcoesMotor,
+  minimo = 0,
+  aviso?: (g: Grupo, i: number) => void,
+): GrupoPronto[] {
+  const pequeno = { ...op, N: Math.min(op.N, 4) }
+  if (pequeno.N === op.N || grupos.length <= minimo) return minimizar(grupos, fixas, op, minimo, aviso)
+  const r = minimizar(grupos, fixas, pequeno, minimo, aviso)
+  if (r.length === grupos.length) return r
+  const fs = [...r.flatMap((x) => x.itens.map((i) => i.expandida)), ...fixas]
+  return buscarModelo(fs, op).status === 'sem-modelo' ? r : minimizar(grupos, fixas, op, minimo, aviso)
+}
+
 // ---------------------------------------------------------------- perguntar
 
 /** Um mundo concreto e a explicação do valor da fórmula perguntada nele. */
@@ -263,7 +283,7 @@ export function perguntar(
   const contra = buscarModelo([...premissas, nao(phi.expandida)], op)
   if (contra.status === 'grande-demais') return { tipo: 'grande-demais', n: contra.n }
   if (contra.status === 'sem-modelo') {
-    const notas = minimizar(prontos, [nao(phi.expandida)], op, 0, (g, i) =>
+    const notas = minimizarRapido(prontos, [nao(phi.expandida)], op, 0, (g, i) =>
       progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
     return { tipo: 'segue', N: op.N, K: contra.K, notas: notas.map((x) => x.g.id) }
@@ -273,7 +293,7 @@ export function perguntar(
   progresso?.('procurando um mundo onde as notas valem e a fórmula também')
   const afavor = buscarModelo([...premissas, phi.expandida], op)
   if (afavor.status === 'sem-modelo') {
-    const notas = minimizar(prontos, [phi.expandida], op, 0, (g, i) =>
+    const notas = minimizarRapido(prontos, [phi.expandida], op, 0, (g, i) =>
       progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
     return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }

@@ -7,6 +7,8 @@ export interface FormulaDeNota {
   titulo: string
   indice: number
   texto: string
+  /** teoremas: conjunto contra o qual são conferidos ("geral" ou "visao:<titular>") */
+  contexto?: string
 }
 
 export interface Preparo {
@@ -41,7 +43,7 @@ export function preparar(notas: Nota[], dicionario: EntradaDicionario[]): Prepar
         return
       }
       todas.push({ texto, notaId: n.id })
-      if (n.compartimento === 'teorema') teoremas.push(f)
+      if (n.compartimento === 'teorema') teoremas.push({ ...f, contexto: contextoDoTeorema(n) })
       else if (n.compartimento === 'visao') {
         const t = n.titular.trim() || '(sem titular)'
         visoes.set(t, [...(visoes.get(t) ?? []), f])
@@ -51,3 +53,6 @@ export function preparar(notas: Nota[], dicionario: EntradaDicionario[]): Prepar
   const semFicha = deduzirFichas(todas, dicionario)
   return { premissas, visoes, teoremas, comErro, semFicha, pronto: semFicha.length === 0 }
 }
+
+/** Um teorema com titular é conferido contra a visão desse titular; sem titular, contra as leis e fatos. */
+export const contextoDoTeorema = (n: Nota) => (n.titular.trim() ? `visao:${n.titular.trim()}` : 'geral')

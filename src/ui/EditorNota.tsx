@@ -175,10 +175,22 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
       )}
 
       {nota.compartimento === 'teorema' && (
-        <p class="nota-teorema">
-          Um teorema não entra como premissa. Em <b>Contradições → Teoremas</b>, o app confere se cada fórmula desta nota segue das leis e
-          fatos ativos — e mostra de quais notas, ou um contraexemplo. Use o texto livre para a demonstração.
-        </p>
+        <>
+          <label class="campo-rotulo">
+            Conferir contra a visão de (opcional)
+            <input
+              type="text"
+              placeholder="vazio = leis e fatos"
+              value={nota.titular}
+              onInput={(e) => mudar({ titular: (e.target as HTMLInputElement).value })}
+            />
+          </label>
+          <p class="nota-teorema">
+            Um teorema não entra como premissa. Em <b>Contradições → Teoremas</b> e na <b>Reação em cadeia</b>, o app confere se cada fórmula
+            desta nota segue {nota.titular.trim() ? <>da visão de <b>{nota.titular.trim()}</b></> : 'das leis e fatos ativos'} — e mostra de
+            quais notas, ou um contraexemplo. Use o texto livre para a demonstração.
+          </p>
+        </>
       )}
 
       <h2>Fórmulas</h2>

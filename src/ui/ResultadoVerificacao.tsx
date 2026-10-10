@@ -1,6 +1,7 @@
 import type { ResultadoTarefa } from '../dados/verificacao'
 import type { Nota } from '../dados/tipos'
-import type { Modelo } from '../motor/motor'
+import type { PassoExplicacao } from '../motor/avaliar'
+import type { ExplicacaoConflito, Modelo } from '../motor/motor'
 import { paraSubscrito } from '../logica/impressao'
 import { FormulaExibida } from './FormulaExibida'
 
@@ -82,6 +83,14 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
                   .map((f) => (
                     <FormulaExibida texto={f} />
                   ))}
+                {(res.explicacoes ?? [])
+                  .filter((e) => e.grupoId === n.id)
+                  .map((e) => (
+                    <details class="explicacao">
+                      <summary>{conflito.length > 1 ? 'Por que esta nota é necessária?' : 'Por que esta nota se contradiz?'}</summary>
+                      <Explicacao e={e} />
+                    </details>
+                  ))}
               </li>
             ))}
           </ul>
@@ -90,6 +99,61 @@ export function ResultadoVerificacao({ r, notas, desatualizado }: { r: Resultado
       )
     }
   }
+}
+
+/** Explicação de por que uma nota participa do conflito. */
+function Explicacao({ e }: { e: ExplicacaoConflito }) {
+  switch (e.tipo) {
+    case 'mundo':
+      return (
+        <div>
+          <p>
+            Sem ela, as outras notas do conflito valem num mundo com {e.n} objeto{e.n > 1 ? 's' : ''}. Nesse mundo, esta fórmula falha:
+          </p>
+          <ArvorePassos p={e.passos} />
+          <details>
+            <summary>Ver esse mundo</summary>
+            <ModeloVisual m={e.modelo} />
+          </details>
+        </div>
+      )
+    case 'sozinha':
+      return (
+        <div>
+          <p>Esta nota não tem modelo nem sozinha. {e.formulas.length > 1 ? 'O conflito está entre estas fórmulas dela:' : 'A fórmula:'}</p>
+          {e.formulas.map((f) => (
+            <FormulaExibida texto={f} />
+          ))}
+          {e.explicacoes.map((sub) =>
+            sub.tipo === 'mundo' ? (
+              <div class="explicacao-sub">
+                <p>
+                  Sem <span class="formula-inline">{sub.formula}</span>, as outras valem num mundo com {sub.n} objeto{sub.n > 1 ? 's' : ''}, e nele ela
+                  falha:
+                </p>
+                <ArvorePassos p={sub.passos} />
+              </div>
+            ) : null,
+          )}
+        </div>
+      )
+    case 'indisponivel':
+      return <p class="suave">Não foi possível montar a explicação (o problema ficou grande demais).</p>
+  }
+}
+
+/** Árvore de passos: fórmula, valor e motivo; os filhos mostram de onde vem o valor. */
+function ArvorePassos({ p }: { p: PassoExplicacao }) {
+  return (
+    <ul class="arvore">
+      <li>
+        <span class={`valor ${p.valor ? 'v' : 'f'}`}>{p.valor ? 'V' : 'F'}</span>
+        <span class="formula-inline">{p.formula}</span>
+        <span class="motivo"> — {p.motivo}</span>
+        {p.filhos.length > 0 && p.filhos.map((f) => <ArvorePassos p={f} />)}
+      </li>
+    </ul>
+  )
 }
 
 export function ModeloVisual({ m }: { m: Modelo }) {

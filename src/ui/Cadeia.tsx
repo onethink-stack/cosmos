@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks'
-import { foraDaCadeia, inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
+import { foraDaCadeia, formulasDoApoio, inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
 import { salvarDeduzida } from '../dados/deduzida'
 import { grauHerdado, type GrauHerdado } from '../dados/grau'
 import { estado, useEstado } from '../dados/estado'
@@ -9,7 +9,7 @@ import { assinaturaCadeia, useVerificacao, type RodadaCadeia } from '../dados/ve
 import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
-import { ConferenciaNumerica } from './ConfirmacaoZ3'
+import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { CartaoLei } from './LeisQueFaltam'
 import { SeloGrau } from './SeloGrau'
 import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
@@ -427,6 +427,7 @@ function Relatorio({
                         ⇐ {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
                       </div>
                       {graus.get(t.id) && <SeloGrau g={graus.get(t.id)!} />}
+                      {!travado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDoApoio(t, rel, grupos)} negar={t.formula} />}
                     </li>
                   ))}
               </ul>

@@ -81,7 +81,8 @@ describe('descobrir consequências', () => {
       const so = grupos(AX).filter((g) => it.notas.includes(g.id))
       expect(perguntar(so, it.formula, DIC, OPCOES_PADRAO).tipo, `${it.formula} só com ${it.notas}`).toBe('segue')
     }
-  })
+    // ~2,5 s num PC; em máquinas lentas (CI) passava dos 5 s padrão
+  }, 30_000)
 
   it('notas contraditórias: avisa em vez de listar', () => {
     expect(descobrir(grupos([['a', 'A ∈ A'], ['b', 'A ∉ A']]), [], OPCOES_PADRAO).tipo).toBe('premissas-contraditorias')

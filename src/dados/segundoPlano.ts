@@ -7,7 +7,7 @@ import { estado } from './estado'
 import { perfil } from './perfil'
 import { limiteTexto } from '../motor/avaliar'
 import { verificacao, assinaturaCadeia, type Conclusao } from './verificacao'
-import { prepararCadeia } from './cadeia'
+import { formulasDoApoio, prepararCadeia } from './cadeia'
 import { preparar } from './premissas'
 import { chaveZ3, z3 } from './z3'
 
@@ -246,7 +246,13 @@ function conferirNumerosNoFundo() {
     const ctx = pedido.contextos.find((c) => c.chave === rel.chave)
     if (!ctx) continue
     const formulas = ctx.grupos.flatMap((g) => g.formulas)
-    for (const t of rel.teoremas)
+    for (const t of rel.teoremas) {
       if (t.resultado.tipo === 'aritmetica') z3.confirmar(chaveZ3(formulas, t.formula, estado.dicionario), formulas, estado.dicionario, t.formula, true)
+      // o que seguiu até N objetos: o Z3 tenta provar para qualquer tamanho
+      if (t.resultado.tipo === 'segue') {
+        const apoio = formulasDoApoio(t, rel, ctx.grupos)
+        z3.confirmar(chaveZ3(apoio, t.formula, estado.dicionario), apoio, estado.dicionario, t.formula)
+      }
+    }
   }
 }

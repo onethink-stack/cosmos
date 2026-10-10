@@ -290,3 +290,9 @@ details.explicacao p { margin: 6px 0; }
 .grau-herdado.g-F { color: var(--ok); }
 .grau-herdado.g-D { color: var(--lei); }
 .grau-herdado.g-M { color: var(--aviso); }
+.especificacao { margin: 8px 0; }
+.especificacao > summary { cursor: pointer; }
+.tabela-espec { border-collapse: collapse; font-size: .85rem; margin: 6px 0; }
+.tabela-espec th, .tabela-espec td { border-bottom: 1px solid var(--borda); padding: 3px 10px; text-align: right; }
+.tabela-espec th:first-child, .tabela-espec td:first-child { text-align: left; }
+.tabela-espec tr.nao-cabe td { color: var(--erro); }

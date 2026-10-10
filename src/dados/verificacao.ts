@@ -10,7 +10,7 @@ import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
 import { z3 } from './z3'
-import { K_ABSOLUTO, N_ABSOLUTO, perfil } from './perfil'
+import { K_ABSOLUTO, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
 import type { EntradaDicionario } from './tipos'
 
 export { assinatura, montarTarefas } from '../motor/tarefas'
@@ -259,7 +259,7 @@ class Verificacao {
   }
 
   definirN(n: number) {
-    this.N = Math.max(1, Math.min(perfil.atual.limites.N, Math.round(n) || OPCOES_PADRAO.N))
+    this.N = Math.max(1, Math.min(perfil.atual.limites.N, N_MANUAL, Math.round(n) || OPCOES_PADRAO.N))
     void gravarConfig('N', this.N).catch(() => {})
     this.avisar()
   }

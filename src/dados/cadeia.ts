@@ -2,7 +2,7 @@
 // fatos e um para cada titular de visão (com os teoremas de cada um), e a
 // lista do que fica de fora (e por quê).
 
-import type { ContextoCadeia, PedidoCadeia } from '../motor/cadeia'
+import type { ContextoCadeia, EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import type { Grupo } from '../motor/motor'
 import { montarTarefas, tarefaDoContexto } from '../motor/tarefas'
 import { preparar } from './premissas'
@@ -63,4 +63,13 @@ export function foraDaCadeia(notas: Nota[], dicionario: EntradaDicionario[]): Fo
     teoremasDesativados: notas.filter((n) => !n.ativa && n.compartimento === 'teorema' && !semFormula(n)),
     comErro: preparar(notas, dicionario).comErro.map((f) => ({ notaId: f.notaId, texto: f.texto })),
   }
+}
+
+/**
+ * Fórmulas de onde um teorema que segue vem (leis do apoio e teoremas
+ * anteriores da cadeia): é o que o Z3 recebe para provar sem limite de tamanho.
+ */
+export function formulasDoApoio(t: EstadoTeorema, rel: RelatorioCadeia, grupos: Grupo[]): string[] {
+  const ids = t.apoio?.length ? t.apoio : t.resultado.tipo === 'segue' ? t.resultado.notas : []
+  return [...grupos.filter((g) => ids.includes(g.id)).flatMap((g) => g.formulas), ...rel.teoremas.filter((x) => ids.includes(x.id)).map((x) => x.formula)]
 }

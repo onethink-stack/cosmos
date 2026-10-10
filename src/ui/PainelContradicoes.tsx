@@ -1,7 +1,7 @@
 import { useMemo } from 'preact/hooks'
 import { useEstado } from '../dados/estado'
 import { preparar } from '../dados/premissas'
-import { usePerfil } from '../dados/perfil'
+import { N_MANUAL, usePerfil } from '../dados/perfil'
 import { assinatura, montarTarefas, useVerificacao } from '../dados/verificacao'
 import { ConfirmarNomes } from './ConfirmarNomes'
 import { FormulaExibida } from './FormulaExibida'
@@ -63,7 +63,7 @@ export function PainelContradicoes() {
       <div class="barra-acoes">
         <label class="aridade">
           N (máx. de objetos)
-          <input type="number" min={1} max={pf.atual.limites.N} value={ver.N} onChange={(e) => ver.definirN(Number((e.target as HTMLInputElement).value))} />
+          <input type="number" min={1} max={Math.min(pf.atual.limites.N, N_MANUAL)} value={ver.N} onChange={(e) => ver.definirN(Number((e.target as HTMLInputElement).value))} />
         </label>
         <label class="aridade" title="Usado só quando há □, ◇ ou B[…]">
           Mundos (modal)
@@ -81,7 +81,7 @@ export function PainelContradicoes() {
       </div>
       <AlternarZ3 />
       <p class="suave">
-        N e mundos valem para Verificar, Perguntar, Teoremas e Descobrir (máximo deste aparelho: {pf.atual.limites.N} objetos e{' '}
+        N e mundos valem para Verificar, Perguntar, Teoremas e Descobrir (máximo aqui: {Math.min(pf.atual.limites.N, N_MANUAL)} objetos e{' '}
         {pf.atual.limites.K} mundos). A reação em cadeia escolhe os dela sozinha.
       </p>
       <ConfigPerfil />

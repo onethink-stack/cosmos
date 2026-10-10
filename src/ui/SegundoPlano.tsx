@@ -1,5 +1,8 @@
 import { useAvisos } from '../dados/avisos'
-import { descreverPerfil, detectarPerfil, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
+import { descreverPerfil, detectarPerfil, MEMORIA_ABA, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
+import { estimarEspecificacao, memoriaTexto, quantidadeTexto, type Especificacao as Espec } from '../dados/especificacao'
+import { useEstado } from '../dados/estado'
+import { useState } from 'preact/hooks'
 import { useVerificacao, verificacao, type Ocupacao } from '../dados/verificacao'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
@@ -103,6 +106,7 @@ export function ConfigPerfil() {
         </select>
       </label>
       <p class="suave">{descreverPerfil(atual)}.</p>
+      <Especificacao />
       <label class="alternar">
         <input type="checkbox" checked={pf.aprimorar} onChange={(e) => pf.definirAprimorar((e.target as HTMLInputElement).checked)} />
         Aprimorar sozinho depois de cada rodada (aprofundar até o limite)
@@ -143,5 +147,79 @@ function Banco() {
         Apagar o banco de provas
       </button>
     </div>
+  )
+}
+
+/**
+ * Especificação: memória que o motor finito precisaria para conferir este
+ * caderno com N objetos (medida no próprio caderno e projetada), e o que isso
+ * quer dizer para 200, 500 e 1000 objetos.
+ */
+function Especificacao() {
+  const est = useEstado()
+  const pf = usePerfil()
+  const [e, setE] = useState<Espec | null | 'calculando'>(null)
+  const calcular = () => {
+    setE('calculando')
+    setTimeout(() => setE(estimarEspecificacao(est.notas, est.dicionario, [10, 20, 30, 50, 100, 200, 500, 1000])), 30)
+  }
+  return (
+    <details class="especificacao">
+      <summary>Especificação: memória e tempo por número de objetos</summary>
+      {e === null && (
+        <button type="button" class="mini" onClick={calcular}>
+          Calcular para o meu caderno
+        </button>
+      )}
+      {e === 'calculando' && (
+        <p class="suave">
+          <span class="girando" aria-hidden="true" /> medindo o caderno…
+        </p>
+      )}
+      {e && e !== 'calculando' && (
+        <>
+          <p class="suave">
+            Medido no seu caderno: o problema que o motor monta cresce como N<sup>{e.expoente.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</sup>{' '}
+            (cada quantificador aninhado multiplica por N). Uma aba do navegador tem perto de {memoriaTexto(MEMORIA_ABA)} de memória, então o
+            motor finito chega a uns <b>{e.maiorN} objetos</b> neste caderno, em qualquer aparelho.
+          </p>
+          <table class="tabela-espec">
+            <thead>
+              <tr>
+                <th>Objetos</th>
+                <th>Cláusulas</th>
+                <th>Memória</th>
+                <th>Cabe?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {e.linhas.map((l) => (
+                <tr class={l.cabe ? '' : 'nao-cabe'}>
+                  <td>{l.N.toLocaleString('pt-BR')}</td>
+                  <td>{quantidadeTexto(l.clausulas)}</td>
+                  <td>{memoriaTexto(l.memoria)}</td>
+                  <td>{l.cabe ? '✓' : '✗'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="suave">
+            <b>Tempo:</b> provar que não há contraexemplo cresce ainda mais rápido que a memória. Exemplo medido num PC (uma prova com 3
+            quantificadores aninhados): 4 s com 8 objetos, 24 s com 12, 160 s com 17, mais de 2 min por tamanho a partir de 18. Achar um
+            contraexemplo, quando existe, costuma ser rápido.
+          </p>
+          <p class="suave">
+            <b>Os perfis experimentais (200, 500, 1000)</b> deixam o aprimoramento tentar por horas; ele para sozinho quando o próximo tamanho
+            não cabe ou passa do tempo, e o banco de provas guarda até onde chegou (a próxima vez continua dali).
+            {pf.atual.limites.N > e.maiorN && ` Neste caderno, isso deve acontecer perto de ${e.maiorN} objetos.`} Para valer em{' '}
+            <b>todos os tamanhos de uma vez</b> — 200, 1000 ou infinitos objetos — o caminho é o Z3, que prova sem limite: ligue-o em
+            Contradições.
+          </p>
+          <button type="button" class="mini" onClick={calcular}>
+            Medir de novo
+          </button>
+        </>
+      )}
+    </details>
   )
 }

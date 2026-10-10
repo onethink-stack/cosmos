@@ -8,7 +8,7 @@ import { useEffect, useReducer } from 'preact/hooks'
 import type { LimitesAprimoramento } from '../motor/cadeia'
 import { gravarConfig, lerConfig } from './db'
 
-export type IdPerfil = 'automatico' | 'celular-simples' | 'celular' | 'pc8' | 'pc16'
+export type IdPerfil = 'automatico' | 'celular-simples' | 'celular' | 'pc8' | 'pc16' | 'exp200' | 'exp500' | 'exp1000'
 
 export interface Perfil {
   id: Exclude<IdPerfil, 'automatico'>
@@ -21,6 +21,17 @@ export interface Perfil {
 }
 
 const MIN = 60_000
+
+/**
+ * Maior problema (cláusulas) que cabe com folga na memória que o navegador dá
+ * a uma aba (perto de 4 GB num PC de 64 bits, bem menos no celular), contando
+ * o resolvedor. Medido: 1,9 milhão de cláusulas ocupam ~0,65 GB só para montar.
+ */
+export const LIMITE_NAVEGADOR = 5_000_000
+/** bytes de memória por cláusula, montagem + resolvedor (medido, arredondado para cima) */
+export const BYTES_POR_CLAUSULA = 700
+/** memória que o navegador costuma dar a uma aba num PC de 64 bits */
+export const MEMORIA_ABA = 4e9
 
 export const PERFIS: Perfil[] = [
   {
@@ -49,13 +60,44 @@ export const PERFIS: Perfil[] = [
     nome: 'PC com 16 GB ou mais',
     Ninicial: 8,
     Kinicial: 3,
-    limites: { N: 18, K: 6, limite: 8_000_000, tempoChecagemMs: 5 * MIN, orcamentoMs: 60 * MIN },
+    limites: { N: 18, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 5 * MIN, orcamentoMs: 60 * MIN },
+  },
+  // Experimentais: deixam o aprimoramento tentar ir longe, por horas, guardando
+  // cada tamanho vencido no banco de provas (continua de onde parou). O teto
+  // real é a memória que o navegador dá a uma aba: ver a especificação.
+  {
+    id: 'exp200',
+    nome: 'Experimental: até 200 objetos',
+    Ninicial: 8,
+    Kinicial: 3,
+    limites: { N: 200, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 30 * MIN, orcamentoMs: 8 * 60 * MIN },
+  },
+  {
+    id: 'exp500',
+    nome: 'Experimental: até 500 objetos',
+    Ninicial: 8,
+    Kinicial: 3,
+    limites: { N: 500, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 60 * MIN, orcamentoMs: 24 * 60 * MIN },
+  },
+  {
+    id: 'exp1000',
+    nome: 'Experimental: até 1000 objetos',
+    Ninicial: 8,
+    Kinicial: 3,
+    limites: { N: 1000, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 2 * 60 * MIN, orcamentoMs: 72 * 60 * MIN },
   },
 ]
 
 /** O maior de todos (limite dos campos de N e K). */
 export const N_ABSOLUTO = Math.max(...PERFIS.map((p) => p.limites.N))
 export const K_ABSOLUTO = Math.max(...PERFIS.map((p) => p.limites.K))
+
+/**
+ * Teto dos campos N e K de Contradições (Verificar, Perguntar…): lá não há
+ * limite de tempo, então um N enorme travaria a tela. Só a reação em cadeia,
+ * que tem prazo, vai além.
+ */
+export const N_MANUAL = 30
 
 /** Adivinha o aparelho pela memória e pelos núcleos que o navegador informa. */
 export function detectarPerfil(): Perfil['id'] {

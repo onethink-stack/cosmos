@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'preact/hooks'
-import { estado, notaVazia, useEstado } from '../dados/estado'
+import { useEffect, useRef, useState } from 'preact/hooks'
+import { estado, notaVazia, novoId, useEstado } from '../dados/estado'
 import { montarTarefas, verificacao } from '../dados/verificacao'
 import { COMPARTIMENTOS, NOME_COMPARTIMENTO, NOME_GRAU, type Compartimento, type Grau, type Nota } from '../dados/tipos'
 import type { Diag } from '../logica/ast'
 import { EditorFormulas } from './EditorFormulas'
-import { guarda, ir } from './rotas'
+import { guarda, ir, trocarEndereco } from './rotas'
 import { StatusVerificacao } from './StatusVerificacao'
 
 const GRAUS: Grau[] = ['F', 'M', 'D']
+/** espera depois da última tecla antes de salvar sozinho */
+const ESPERA_SALVAR_MS = 1200
 
 // status da verificação feita ao salvar, por nota (sobrevive à troca nova → #/nota/id)
 const statusPorNota = new Map<string, { chave: string; bloqueado: boolean } | null>()
@@ -27,18 +29,44 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
   const atual = { ...nota, tags: limparTags(tagsTexto) }
   const sujo = comparavel(atual) !== comparavel(base)
 
-  // pede confirmação ao sair com alterações não salvas
+  // nota nova em branco não é salva; depois de ter algo escrito, salva sozinha
+  const temConteudo = !!(atual.id || atual.titulo.trim() || atual.texto.trim() || atual.formulas.some((f) => f.trim()))
+  const precisaSalvar = sujo && temConteudo
+
+  // salvamento automático: pouco depois de parar de digitar, ao sair da tela, ao esconder o app
+  const salvarRef = useRef<() => void>(() => {})
+  const idSalvo = useRef(base.id)
+  const ultimoSalvo = useRef('')
+  const apagada = useRef(false)
+  salvarRef.current = () => {
+    if (precisaSalvar && !apagada.current) void salvar(true)
+  }
   useEffect(() => {
-    guarda.sair = sujo ? () => confirm('Há alterações não salvas nesta nota. Sair sem salvar?') : null
-    const antesDeFechar = (e: BeforeUnloadEvent) => {
-      if (sujo) e.preventDefault()
+    if (!precisaSalvar) return
+    const t = setTimeout(() => salvarRef.current(), ESPERA_SALVAR_MS)
+    return () => clearTimeout(t)
+  }, [comparavel(atual), precisaSalvar])
+  useEffect(() => {
+    guarda.sair = precisaSalvar
+      ? () => {
+          salvarRef.current()
+          return true
+        }
+      : null
+    const aoEsconder = () => {
+      if (document.visibilityState === 'hidden') salvarRef.current()
     }
-    window.addEventListener('beforeunload', antesDeFechar)
+    const antesDeFechar = () => salvarRef.current()
+    document.addEventListener('visibilitychange', aoEsconder)
+    window.addEventListener('pagehide', antesDeFechar)
     return () => {
       guarda.sair = null
-      window.removeEventListener('beforeunload', antesDeFechar)
+      document.removeEventListener('visibilitychange', aoEsconder)
+      window.removeEventListener('pagehide', antesDeFechar)
     }
-  }, [sujo])
+  }, [precisaSalvar])
+  // ao fechar o editor (trocar de nota pela busca, por exemplo), salva o que faltou
+  useEffect(() => () => salvarRef.current(), [])
 
   if (id && !original && est.carregado) {
     return (
@@ -51,18 +79,30 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
 
   const mudar = (p: Partial<Nota>) => setNota((n) => ({ ...n, ...p }))
 
-  const salvar = async () => {
-    const limpa: Nota = { ...atual, formulas: atual.formulas.filter((f) => f.trim()) }
+  /** `automatico`: não mexe no que está sendo digitado (só guarda e marca como salvo). */
+  const salvar = async (automatico = false) => {
+    // o id é fixado antes de gravar: duas gravações seguidas da mesma nota nova não viram duas notas
+    idSalvo.current ||= atual.id || novoId()
+    const limpa: Nota = { ...atual, id: idSalvo.current, formulas: atual.formulas.filter((f) => f.trim()) }
     if (!limpa.formulas.length) limpa.formulas = []
+    const marca = comparavel(limpa)
+    if (automatico && marca === ultimoSalvo.current) return
+    ultimoSalvo.current = marca
     const salva = await est.salvarNota(limpa)
     const nova = { ...salva, formulas: salva.formulas.length ? salva.formulas : [''] }
     setBase(nova)
-    setNota(nova)
-    setTagsTexto(nova.tags.join(', '))
+    if (automatico) setNota((n) => ({ ...n, id: salva.id, criadaEm: salva.criadaEm, atualizadaEm: salva.atualizadaEm }))
+    else {
+      setNota(nova)
+      setTagsTexto(nova.tags.join(', '))
+    }
     guarda.sair = null
-    mostrar('Nota salva')
-    verificarAoSalvar(salva)
-    if (!id) ir(`#/nota/${encodeURIComponent(salva.id)}`, true)
+    mostrar(automatico ? '✓ Salvo' : 'Nota salva')
+    // só verifica quando mudou algo que o motor lê
+    if (comparavel({ ...limpa, titulo: '', texto: '', tags: [] }) !== comparavel({ ...base, formulas: base.formulas.filter((f) => f.trim()), titulo: '', texto: '', tags: [] }))
+      verificarAoSalvar(salva)
+    // nota nova: ganha o endereço dela sem recarregar o editor (não perde o cursor)
+    if (!id && location.hash.startsWith('#/nova')) trocarEndereco(`#/nota/${encodeURIComponent(salva.id)}`)
   }
 
   /** Ao salvar uma nota ativa com fórmulas, verifica o conjunto dela (geral ou do titular). */
@@ -90,6 +130,7 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
   const apagar = async () => {
     if (!confirm(`Apagar a nota "${nota.titulo || 'sem título'}"? Isto não pode ser desfeito.`)) return
     guarda.sair = null
+    apagada.current = true
     if (nota.id) await est.apagarNota(nota.id)
     ir('#/notas', true)
   }
@@ -217,7 +258,7 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
         Ativa (entra no motor de contradição)
       </label>
 
-      {id && (
+      {nota.id && (
         <p class="suave">
           Criada em {new Date(nota.criadaEm).toLocaleString('pt-BR')} · alterada em {new Date(nota.atualizadaEm).toLocaleString('pt-BR')}
         </p>
@@ -229,7 +270,7 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
             <StatusVerificacao chave={verificado.chave} bloqueado={verificado.bloqueado} />
           </div>
         )}
-        {id ? (
+        {nota.id ? (
           <button type="button" class="discreto perigo" onClick={apagar}>
             Apagar
           </button>
@@ -237,10 +278,10 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
           <span />
         )}
         <span class="suave" aria-live="polite">
-          {aviso ?? (sujo ? 'Alterações não salvas' : '')}
+          {aviso ?? (precisaSalvar ? 'salvando…' : nota.id ? 'salvo automaticamente' : '')}
         </span>
-        <button type="button" class="primario" onClick={salvar} disabled={!sujo && !!id}>
-          Salvar
+        <button type="button" class="primario" onClick={() => salvar()} disabled={!precisaSalvar}>
+          Salvar agora
         </button>
       </div>
     </section>

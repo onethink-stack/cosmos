@@ -50,7 +50,7 @@ export type ResultadoLacunas =
 
 export const MAX_CANDIDATAS_LEI = 300
 /** quantas sugestões no máximo são explicadas (as melhores primeiro) */
-export const MAX_SUGESTOES = 6
+export const MAX_SUGESTOES = 20
 
 export interface CandidataLei {
   formula: string

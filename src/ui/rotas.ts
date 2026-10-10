@@ -52,6 +52,12 @@ export function ir(hash: string, substituir = false) {
   } else location.hash = hash
 }
 
+/** Troca o endereço sem trocar de tela (ex.: nota nova salva sozinha ganha o endereço dela). */
+export function trocarEndereco(hash: string) {
+  history.replaceState(null, '', hash)
+  hashAtual = hash
+}
+
 export function useRota(): Rota {
   const [rota, setRota] = useState(() => lerRota(location.hash))
   useEffect(() => {

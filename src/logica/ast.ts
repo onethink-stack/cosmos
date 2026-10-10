@@ -26,7 +26,15 @@ export type Formula =
   /** B[agente] φ: o agente acredita que φ (lógica doxástica KD45) */
   | ({ k: 'crenca'; agente: string; f: Formula } & Span)
   | ({ k: Conectivo; l: Formula; r: Formula } & Span)
-  | ({ k: 'forall' | 'exists'; v: string; vPos: number; dom?: Termo; corpo: Formula } & Span)
+  | ({
+      k: 'forall' | 'exists'
+      v: string
+      vPos: number
+      dom?: Termo
+      corpo: Formula
+      /** o corpo começa com "(" mas continua depois do ")" que o fecha (posição desse ")") — ver E14 */
+      parentesesEnganoso?: number
+    } & Span)
   | ({ k: 'const'; valor: boolean } & Span)
 
 export type Codigo =
@@ -44,6 +52,7 @@ export type Codigo =
   | 'E11' // ⋂ ou ⋃ em posição não suportada
   | 'E12' // aviso: nome sem ficha no dicionário
   | 'E13' // aviso: nome sem ficha parecido com um nome do dicionário ("você quis dizer…?")
+  | 'E14' // aviso: o escopo do quantificador passa do ")" que parecia fechá-lo
 
 export interface Diag extends Span {
   codigo: Codigo

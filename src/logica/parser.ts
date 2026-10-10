@@ -204,8 +204,21 @@ class Parser {
     }
     if (this.faltaOperando(q))
       this.erro('E1', `Quantificador '${qs}${v.v}' sem fórmula depois (${this.col(q)})`, q)
+    // "∃y (…) ⟹ P": o escopo vai até o fim, não até o ")"; guardamos para avisar (E14)
+    const fecha = this.at().t === 'lpar' ? this.fechamento(this.i) : -1
     const corpo = this.formula()
-    return { k: q.t as 'forall' | 'exists', v: v.v, vPos: v.pos, dom, corpo, pos: q.pos, end: corpo.end }
+    const enganoso = fecha >= 0 && corpo.end > this.toks[fecha].end ? this.toks[fecha].pos : undefined
+    return { k: q.t as 'forall' | 'exists', v: v.v, vPos: v.pos, dom, corpo, pos: q.pos, end: corpo.end, parentesesEnganoso: enganoso }
+  }
+
+  /** Índice do ")" que fecha o "(" na posição i (os parênteses já foram conferidos). */
+  private fechamento(i: number): number {
+    let nivel = 0
+    for (let k = i; k < this.toks.length; k++) {
+      if (this.toks[k].t === 'lpar') nivel++
+      else if (this.toks[k].t === 'rpar' && --nivel === 0) return k
+    }
+    return -1
   }
 
   /** '(' pode abrir um termo, ex. "(A ⋂ B) ⊆ C", ou uma fórmula. Tenta termo + relação primeiro. */

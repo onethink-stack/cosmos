@@ -154,6 +154,13 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         if (d?.tipo === 'constante')
           add('E4', 'erro', `'${f.v}' é constante no dicionário e não pode ser quantificada`, vSpan)
         else if (d) add('E10', 'erro', `'${f.v}' é ${DESC_TIPO[d.tipo]} no dicionário e não pode ser quantificada`, vSpan)
+        if (f.parentesesEnganoso !== undefined)
+          add(
+            'E14',
+            'aviso',
+            `O escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' não termina no ')' da coluna ${f.parentesesEnganoso + 1}: vai até o fim da fórmula. Se queria que terminasse ali, envolva o quantificador em parênteses: (${f.k === 'forall' ? '∀' : '∃'}${f.v} (…)) …`,
+            { pos: f.pos, end: f.vPos + f.v.length },
+          )
         if (escopo.includes(f.v))
           add('E5', 'aviso', `'${f.v}' já está quantificada num escopo externo; este quantificador esconde o anterior`, vSpan)
         if (f.dom) termo(f.dom, escopo, true)

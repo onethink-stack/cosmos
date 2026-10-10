@@ -132,7 +132,10 @@ describe('demais erros', () => {
 
 describe('sintaxe', () => {
   it('atalhos ASCII são aceitos diretamente', () => {
-    expect(codigos('\\A x (x \\in A -> x \\notin B) <-> ~P & Q(x) | x != y', [dic('P', 'predicado', 0)])).toEqual([])
+    // o ⟺ fica dentro do ∀x (o escopo passa do ")"): só o aviso E14
+    expect(codigos('\\A x (x \\in A -> x \\notin B) <-> ~P & Q(x) | x != y', [dic('P', 'predicado', 0)])).toEqual(['E14'])
+    // com o quantificador entre parênteses, o x de fora fica livre (E6)
+    expect(codigos('(\\A x (x \\in A -> x \\notin B)) <-> ~P & Q(x) | x != y', [dic('P', 'predicado', 0)])).toEqual(['E6', 'E6'])
   })
 
   it('precedência ¬ > ∧ > ∨ > ⟹ > ⟺ e ⟹ à direita', () => {
@@ -183,5 +186,20 @@ describe('atalhos de teclado', () => {
     expect(converterTudo('\\A i \\in I (f_i \\sub A) & a != b -> ~P <-> \\E x (x \\in \\empty)')).toBe(
       '∀ i ∈ I (fᵢ ⊆ A) ∧ a ≠ b ⟹ ¬P ⟺ ∃ x (x ∈ ∅)',
     )
+  })
+})
+
+describe('E14: escopo do quantificador passa do parêntese', () => {
+  it('avisa quando o ")" parece fechar o quantificador mas o escopo continua', () => {
+    const r = validar('∀x (¬∃y (y ≠ x ∧ P(x, y)) ⟹ P(x, x))')
+    expect(r.diags.map((d) => d.codigo)).toEqual(['E14'])
+    expect(r.diags[0].nivel).toBe('aviso')
+    expect(validar('∃y (P(y)) ∧ Q(a)').diags.map((d) => d.codigo)).toEqual(['E14'])
+  })
+  it('não avisa quando o escopo termina no ")" ou não começa com "("', () => {
+    expect(validar('∀x ((¬∃y (y ≠ x ∧ P(x, y))) ⟹ P(x, x))').diags).toEqual([])
+    expect(validar('∀x (x ∈ A ⟺ ∃i∈I (x ∈ f(i)))').diags).toEqual([])
+    expect(validar('∃i∈I ∃j∈I (i ≠ j ∧ f(i) ≠ f(j))').diags).toEqual([])
+    expect(validar('∃x P(x) ∧ Q(a)').diags).toEqual([])
   })
 })

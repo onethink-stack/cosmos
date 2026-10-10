@@ -1,29 +1,72 @@
-import { useState } from 'preact/hooks'
-import type { EntradaDicionario } from '../dados/tipos'
-import { EditorFormulas } from './EditorFormulas'
+import { useEffect } from 'preact/hooks'
+import { estado, notaVazia, useEstado } from '../dados/estado'
+import { Dicionario } from './Dicionario'
+import { EditorNota } from './EditorNota'
+import { ListaNotas } from './ListaNotas'
+import { PainelContradicoes } from './PainelContradicoes'
+import { useRota } from './rotas'
 
-// Etapa 2: tela de demonstração do editor. Notas e dicionário chegam na etapa 3.
-const INICIAIS = [
-  '∀i∈I (f(i) ⊆ A)',
-  '∀i∈I (f(i) ≠ A)',
-  '∃i∈I ∃j∈I (i ≠ j ∧ f(i) ≠ f(j))',
-  'A ∉ A',
-  '∀x (x ∈ A ⟺ ∃i∈I (x ∈ f(i)))',
-  '∃x ∀i∈I (x ∈ f(i))',
-  '∀i∈I ∀j∈I (f(i) ∉ f(j))',
+const EXEMPLO: [string, string][] = [
+  ['Ax1', '∀i∈I (f(i) ⊆ A)'],
+  ['Ax2', '∀i∈I (f(i) ≠ A)'],
+  ['Ax3', '∃i∈I ∃j∈I (i ≠ j ∧ f(i) ≠ f(j))'],
+  ['Ax4', 'A ∉ A'],
+  ['Ax5', '∀x (x ∈ A ⟺ ∃i∈I (x ∈ f(i)))'],
+  ['Ax6', '∃x ∀i∈I (x ∈ f(i))'],
+  ['Ax7', '∀i∈I ∀j∈I (f(i) ∉ f(j))'],
 ]
-const DICIONARIO: EntradaDicionario[] = []
+
+async function carregarExemplo() {
+  for (const [titulo, f] of [...EXEMPLO].reverse()) {
+    await estado.salvarNota({ ...notaVazia('lei'), titulo, formulas: [f], tags: ['exemplo'] })
+  }
+}
 
 export function App() {
-  const [formulas, setFormulas] = useState(INICIAIS)
+  const est = useEstado()
+  const rota = useRota()
+  useEffect(() => {
+    void estado.carregar()
+  }, [])
+
+  const aba = rota.tela === 'nota' || rota.tela === 'nova' ? 'notas' : rota.tela
+
   return (
-    <main>
-      <h1>Caderno Lógico</h1>
-      <p class="suave">
-        Etapa 2 — editor de fórmulas. Use a barra de símbolos ou os atalhos: \A ∀ · \E ∃ · ~ ¬ · &amp; ∧ · | ∨ · -&gt; ⟹ ·
-        &lt;-&gt; ⟺ · \in ∈ · \notin ∉ · \sub ⊆ · \cap ⋂ · \cup ⋃ · \empty ∅ · != ≠ · f_i fᵢ. Enter cria a próxima fórmula.
-      </p>
-      <EditorFormulas formulas={formulas} onChange={setFormulas} dicionario={DICIONARIO} />
-    </main>
+    <>
+      <header class="topo">
+        <div class="topo-dentro">
+          <a href="#/notas" class="marca">
+            Caderno Lógico
+          </a>
+          <nav>
+            <a href="#/notas" class={aba === 'notas' ? 'ativo' : ''}>
+              Notas
+            </a>
+            <a href="#/dicionario" class={aba === 'dicionario' ? 'ativo' : ''}>
+              Dicionário
+            </a>
+            <a href="#/contradicoes" class={aba === 'contradicoes' ? 'ativo' : ''}>
+              Contradições
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main>
+        {est.erroBanco && <div class="faixa-erro">{est.erroBanco}</div>}
+        {!est.carregado ? (
+          <p class="suave">Carregando…</p>
+        ) : rota.tela === 'notas' ? (
+          <ListaNotas onExemplo={carregarExemplo} />
+        ) : rota.tela === 'nota' ? (
+          <EditorNota key={rota.id} id={rota.id} />
+        ) : rota.tela === 'nova' ? (
+          <EditorNota key={`nova-${rota.compartimento}`} compartimento={rota.compartimento} />
+        ) : rota.tela === 'dicionario' ? (
+          <Dicionario />
+        ) : (
+          <PainelContradicoes />
+        )}
+      </main>
+    </>
   )
 }

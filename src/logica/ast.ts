@@ -1,3 +1,5 @@
+import type { TipoSimbolo } from '../dados/tipos'
+
 // Árvore sintática das fórmulas. Toda posição é índice (UTF-16) no texto original.
 
 export interface Span {
@@ -36,11 +38,17 @@ export type Codigo =
   | 'E9' // contradição imediata t ≠ t
   | 'E10' // nome usado de modos incompatíveis (constante/função/predicado, aridade)
   | 'E11' // ⋂ ou ⋃ em posição não suportada
+  | 'E12' // aviso: nome sem ficha no dicionário
+  | 'E13' // aviso: nome sem ficha parecido com um nome do dicionário ("você quis dizer…?")
 
 export interface Diag extends Span {
   codigo: Codigo
   nivel: 'erro' | 'aviso'
   msg: string
+  /** E13: nome do dicionário sugerido no lugar deste */
+  sugestao?: string
+  /** E12/E13: ficha deduzida pelo uso, pronta para criar */
+  ficha?: { simbolo: string; tipo: TipoSimbolo; aridade: number }
 }
 
 export const SPAN0: Span = { pos: 0, end: 0 }

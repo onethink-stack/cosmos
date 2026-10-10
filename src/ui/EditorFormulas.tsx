@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'preact/hooks'
 import type { EntradaDicionario } from '../dados/tipos'
+import type { Diag } from '../logica/ast'
 import { CampoFormula } from './CampoFormula'
 import { inserirTexto } from './edicao'
 import { TecladoSimbolos } from './TecladoSimbolos'
@@ -8,10 +9,11 @@ interface Props {
   formulas: string[]
   onChange: (formulas: string[]) => void
   dicionario: EntradaDicionario[]
+  onCriarFicha?: (ficha: NonNullable<Diag['ficha']>) => void
 }
 
 /** Lista de fórmulas de uma nota, com a barra de símbolos fixa acima. */
-export function EditorFormulas({ formulas, onChange, dicionario }: Props) {
+export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha }: Props) {
   const campos = useRef<(HTMLTextAreaElement | null)[]>([])
   const alvo = useRef(0)
   const focarDepois = useRef<number | null>(null)
@@ -68,6 +70,7 @@ export function EditorFormulas({ formulas, onChange, dicionario }: Props) {
           onFoco={() => (alvo.current = i)}
           onEnter={() => adicionar(i)}
           onRemover={() => remover(i)}
+          onCriarFicha={onCriarFicha}
         />
       ))}
       <button type="button" onClick={() => adicionar()}>

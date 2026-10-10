@@ -2,7 +2,8 @@ import type { EntradaDicionario, TipoSimbolo } from '../dados/tipos'
 import type { Diag, Formula, Span, Termo } from './ast'
 import { checarParenteses, lex } from './lexer'
 import { ErroSintaxe, parseTokens } from './parser'
-import { termosIguais } from './termos'
+import { nomeParecido } from './distancia'
+import { termosIguais, usosDeNomes } from './termos'
 
 export interface ResultadoValidacao {
   ast: Formula | null
@@ -17,7 +18,12 @@ function descrever(tipo: TipoSimbolo, aridade: number): string {
   return tipo === 'constante' ? 'constante' : `${DESC_TIPO[tipo]} de aridade ${aridade}`
 }
 
-export function validar(texto: string, dicionario: EntradaDicionario[] = []): ResultadoValidacao {
+export interface OpcoesValidacao {
+  /** avisar (E12/E13) sobre nomes sem ficha no dicionário */
+  exigirFichas?: boolean
+}
+
+export function validar(texto: string, dicionario: EntradaDicionario[] = [], opcoes: OpcoesValidacao = {}): ResultadoValidacao {
   const dic = new Map(dicionario.map((e) => [e.simbolo, e]))
   const fim = (diags: Diag[], ast: Formula | null): ResultadoValidacao => {
     diags.sort((a, b) => a.pos - b.pos)
@@ -44,7 +50,28 @@ export function validar(texto: string, dicionario: EntradaDicionario[] = []): Re
     throw e
   }
 
-  return fim(checarSemantica(ast, dic), ast)
+  const diags = checarSemantica(ast, dic)
+  if (opcoes.exigirFichas) diags.push(...checarFichas(ast, dic))
+  return fim(diags, ast)
+}
+
+/** E12/E13: um aviso por nome sem ficha (na primeira ocorrência). */
+export function checarFichas(ast: Formula, dic: Map<string, EntradaDicionario>): Diag[] {
+  const diags: Diag[] = []
+  // nomes que também aparecem ligados já recebem E6; não repetir com E12
+  const vistos = new Set<string>()
+  coletarLigados(ast, vistos)
+  for (const u of usosDeNomes(ast)) {
+    if (dic.has(u.nome) || vistos.has(u.nome)) continue
+    vistos.add(u.nome)
+    const ficha = { simbolo: u.nome, tipo: u.tipo, aridade: u.aridade }
+    const parecido = nomeParecido(u.nome, dic.keys())
+    if (parecido)
+      diags.push({ codigo: 'E13', nivel: 'aviso', pos: u.pos, end: u.end, ficha, sugestao: parecido, msg: `'${u.nome}' não está no dicionário. Você quis dizer '${parecido}'?` })
+    else
+      diags.push({ codigo: 'E12', nivel: 'aviso', pos: u.pos, end: u.end, ficha, msg: `'${u.nome}' não declarado no dicionário (seria ${descrever(u.tipo, u.aridade)})` })
+  }
+  return diags
 }
 
 /** Checagens que dependem da árvore inteira: E4, E5, E6, E9, E10, E11. */

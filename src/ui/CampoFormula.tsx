@@ -4,6 +4,7 @@ import { expandir } from '../logica/acucar'
 import type { Diag } from '../logica/ast'
 import { converterNoCursor } from '../logica/atalhos'
 import { imprimir } from '../logica/impressao'
+import { renomear } from '../logica/nomes'
 import { validar } from '../logica/validador'
 import { processarEntrada } from './edicao'
 
@@ -16,6 +17,8 @@ interface Props {
   onRemover?: () => void
   campoRef?: (el: HTMLTextAreaElement | null) => void
   rotulo?: string
+  /** cria a ficha deduzida para um nome não declarado (E12/E13) */
+  onCriarFicha?: (ficha: NonNullable<Diag['ficha']>) => void
 }
 
 /** Recorta o texto em trechos, marcando os diagnósticos (sem sobreposição). */
@@ -36,7 +39,7 @@ function realcar(texto: string, diags: Diag[]) {
 
 export function CampoFormula(p: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
-  const r = useMemo(() => validar(p.valor, p.dicionario), [p.valor, p.dicionario])
+  const r = useMemo(() => validar(p.valor, p.dicionario, { exigirFichas: true }), [p.valor, p.dicionario])
 
   const ajustarAltura = () => {
     const el = ref.current
@@ -123,6 +126,16 @@ export function CampoFormula(p: Props) {
               <b>{d.codigo}</b>
               {d.nivel === 'aviso' ? 'Aviso: ' : ''}
               {d.msg}
+              {d.sugestao && (
+                <button type="button" class="mini" onClick={() => p.onChange(renomear(p.valor, d.ficha!.simbolo, d.sugestao!, p.dicionario))}>
+                  Trocar por {d.sugestao}
+                </button>
+              )}
+              {d.ficha && p.onCriarFicha && (
+                <button type="button" class="mini" onClick={() => p.onCriarFicha!(d.ficha!)}>
+                  Criar ficha
+                </button>
+              )}
             </li>
           ))}
         </ul>

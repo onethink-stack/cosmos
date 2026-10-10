@@ -11,7 +11,9 @@ import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
 import { z3 } from './z3'
 import { K_ABSOLUTO, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
-import type { EntradaDicionario } from './tipos'
+import type { EntradaDicionario, Nota } from './tipos'
+import { assinaturaModelo, type ExecucaoModelo } from './modelo'
+import type { RelatorioModelo } from '../motor/modelo'
 
 export { assinatura, montarTarefas } from '../motor/tarefas'
 
@@ -51,7 +53,7 @@ export interface ResultadoDaDescoberta {
   assinatura: string
 }
 
-export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas' | 'lacunas' | 'cadeia'
+export type Ocupacao = 'verificar' | 'perguntar' | 'descobrir' | 'teoremas' | 'lacunas' | 'cadeia' | 'modelo'
 
 /** Uma rodada da reação em cadeia. */
 export interface RodadaCadeia {
@@ -162,6 +164,9 @@ class Verificacao {
   banco: EstatisticasBanco | null = null
   /** rodadas refeitas seguidas pelo aprimoramento (limite: MAX_VIRADAS) */
   private viradasSeguidas = 0
+  /** segundo modelo: a última execução (ou a atual) */
+  modelo: ExecucaoModelo | null = null
+  private ultimaGravacaoModelo = 0
 
   assinar(fn: () => void) {
     this.ouvintes.add(fn)
@@ -233,6 +238,9 @@ class Verificacao {
       if (k) this.K = k
       const rodadas = await lerConfig<RodadaCadeia[]>('cadeiaRodadas')
       if (rodadas?.length && !this.rodadas.length) this.rodadas = rodadas
+      const modelo = await lerConfig<ExecucaoModelo>('modeloUltimo')
+      if (modelo && !this.modelo)
+        this.modelo = modelo.terminada ? modelo : { ...modelo, terminada: true, interrompida: 'fechado' }
       const pendente = await lerConfig<CadeiaPendente | null>('cadeiaPendente')
       if (pendente && this.ocupado !== 'cadeia') {
         this.interrompida = pendente
@@ -369,6 +377,55 @@ class Verificacao {
     else this.rodarAqui(p)
   }
 
+  /** Grava a execução do segundo modelo (no máximo a cada 3 s enquanto roda). */
+  private gravarModelo(forcar = false) {
+    const agora = Date.now()
+    if (!forcar && agora - this.ultimaGravacaoModelo < 3000) return
+    this.ultimaGravacaoModelo = agora
+    void gravarConfig('modeloUltimo', this.modelo).catch(() => {})
+  }
+
+  /**
+   * Roda o segundo modelo sobre uma cópia das notas: rodadas que desativam,
+   * ativam e adotam leis sozinhas até o ponto fixo, e depois a classificação.
+   */
+  iniciarModelo(notas: Nota[], pastas: string[], dicionario: EntradaDicionario[], motivo: string) {
+    const antes = this.modelo
+    this.cancelar(false)
+    const assinatura = assinaturaModelo(notas, dicionario, pastas)
+    // recomeçar o mesmo modelo que parou no meio conta como tentativa
+    const tentativas = antes && antes.assinatura === assinatura && antes.interrompida ? antes.tentativas + 1 : 0
+    this.modelo = { motivo, relatorio: null, erro: null, ms: 0, terminada: false, tentativas, assinatura, pastas, quando: Date.now() }
+    this.gravarModelo(true)
+    const pf = perfil.atual
+    this.ocupado = 'modelo'
+    this.iniciadoEm = Date.now()
+    const id = ++this.pedido
+    this.dicionario = dicionario
+    this.pendentes = new Map()
+    this.rodando = { chave: 'modelo', msg: 'preparando' }
+    this.avisar()
+    const p: PedidoMotor = {
+      id,
+      tarefas: [],
+      dicionario,
+      opcoes: { N: pf.Ninicial, K: pf.Kinicial, limite: pf.limites.limite },
+      modelo: { notas, aprimorar: perfil.aprimorar ? pf.limites : undefined, orcamentoMs: pf.limites.orcamentoMs },
+    }
+    this.pedidoAtual = p
+    const w = this.obterWorker()
+    if (w) w.postMessage(p)
+    else this.rodarAqui(p)
+  }
+
+  /** O Z3 mudou o resultado do segundo modelo (ativou notas com números). */
+  atualizarModelo(quando: number, relatorio: RelatorioModelo) {
+    if (!this.modelo || this.modelo.quando !== quando) return
+    this.modelo = { ...this.modelo, relatorio }
+    this.gravarModelo(true)
+    this.avisar()
+  }
+
   /** Procura leis que, junto com as leis e fatos da tarefa, fariam o teorema seguir. */
   procurarLeis(tarefa: Tarefa, teoremaId: string, formula: string, inativas: Grupo[], dicionario: EntradaDicionario[]) {
     this.assinaturaLacuna = assinaturaLacuna(tarefa, dicionario, this.limites, formula, inativas)
@@ -430,6 +487,10 @@ class Verificacao {
       void gravarConfig('cadeiaPendente', null).catch(() => {})
       this.gravarCadeia(true)
     }
+    if (this.ocupado === 'modelo' && this.modelo && !this.modelo.terminada) {
+      this.modelo = { ...this.modelo, terminada: true, interrompida: avisar ? 'usuario' : 'outro' }
+      this.gravarModelo(true)
+    }
     if (avisar) this.fila = []
     this.pedido++
     this.rodando = null
@@ -463,6 +524,10 @@ class Verificacao {
           setTimeout(() => this.aoConcluirFns.forEach((f) => f(c)), 0)
         }
       }
+    } else if (r.tipo === 'modelo' || (r.tipo === 'erro' && this.ocupado === 'modelo')) {
+      if (this.modelo)
+        this.modelo = r.tipo === 'modelo' ? { ...this.modelo, relatorio: r.relatorio, ms: r.ms } : { ...this.modelo, erro: r.msg }
+      this.gravarModelo()
     } else if (r.tipo === 'teorema') {
       const t = this.pendentes.get(r.chave)!
       this.teoremas.set(r.teoremaId, {
@@ -522,6 +587,10 @@ class Verificacao {
       })
     } else {
       const tipo = this.ocupado
+      if (tipo === 'modelo' && this.modelo) {
+        this.modelo = { ...this.modelo, terminada: true, tentativas: 0 }
+        this.gravarModelo(true)
+      }
       if (tipo === 'cadeia') {
         const atual = this.rodadas.at(-1)
         if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true, baseTerminada: true }]

@@ -12,13 +12,14 @@ const NOME_TRABALHO: Record<Ocupacao, string> = {
   teoremas: 'conferindo teoremas',
   lacunas: 'procurando a lei que falta',
   cadeia: 'reação em cadeia',
+  modelo: 'segundo modelo',
 }
 
 /** No topo, em qualquer tela: o motor está trabalhando (toque para ver). */
 export function MotorOcupado() {
   const ver = useVerificacao()
   if (!ver.ocupado) return null
-  const rota = ver.ocupado === 'cadeia' ? '#/cadeia' : '#/contradicoes'
+  const rota = ver.ocupado === 'cadeia' ? '#/cadeia' : ver.ocupado === 'modelo' ? '#/modelo' : '#/contradicoes'
   return (
     <a class="motor-ocupado" href={rota} title={ver.rodando?.msg}>
       <span class="girando" aria-hidden="true" /> {NOME_TRABALHO[ver.ocupado]}…

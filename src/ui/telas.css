@@ -296,3 +296,18 @@ details.explicacao p { margin: 6px 0; }
 .tabela-espec th, .tabela-espec td { border-bottom: 1px solid var(--borda); padding: 3px 10px; text-align: right; }
 .tabela-espec th:first-child, .tabela-espec td:first-child { text-align: left; }
 .tabela-espec tr.nao-cabe td { color: var(--erro); }
+.modo-cadeia { margin: 4px 0 10px; }
+.segmentado a { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; padding: 6px 12px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); text-decoration: none; }
+.segmentado a small { color: var(--texto-suave); font-size: .78rem; }
+.segmentado a.ativo { background: var(--destaque); color: var(--destaque-texto); border-color: var(--destaque); }
+.segmentado a.ativo small { color: inherit; }
+.resumo-modelo { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.selo.m-segue { color: var(--ok); }
+.selo.m-contradiz { color: var(--erro); }
+.secao-modelo { margin: 8px 0; }
+.secao-modelo > summary { cursor: pointer; padding: 4px 0; }
+.levar-caderno { margin: 14px 0; padding: 10px 12px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
+.levar-caderno h4, .diario-modelo h4 { margin: 6px 0; }
+.levar-caderno ul { margin: 6px 0 10px; padding-left: 20px; }
+.diario-modelo { margin: 10px 0; }
+.diario-modelo > summary { cursor: pointer; }

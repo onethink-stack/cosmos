@@ -176,6 +176,21 @@ class EstadoZ3 {
     this.avisar()
   }
 
+  /** Espera a checagem terminar (devolve na hora se já terminou ou nunca foi pedida). */
+  esperar(chave: string): Promise<Confirmacao | undefined> {
+    return new Promise((ok) => {
+      let sair: (() => void) | null = null
+      const ver = () => {
+        const c = this.confirmacoes.get(chave)
+        if (c && c.estado === 'rodando') return false
+        sair?.()
+        ok(c)
+        return true
+      }
+      if (!ver()) sair = this.assinar(() => void ver())
+    })
+  }
+
   /** Resultado já calculado (ou em cálculo) para esta checagem. */
   consulta(chave: string): Confirmacao | undefined {
     return this.confirmacoes.get(chave)

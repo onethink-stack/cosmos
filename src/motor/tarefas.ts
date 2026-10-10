@@ -5,6 +5,7 @@ import { bancoAtual, type EstatisticasBanco } from './bancoProvas'
 import { reacaoEmCadeia, type PedidoCadeia, type RelatorioCadeia } from './cadeia'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
+import { rodarModelo, type PedidoModelo, type RelatorioModelo } from './modelo'
 import { perguntar, verificar, type Grupo, type OpcoesMotor, type ResultadoMotor, type ResultadoPergunta } from './motor'
 
 /** Um conjunto checado separadamente: o geral (lei + fato) ou uma visão de mundo. */
@@ -30,6 +31,8 @@ export interface PedidoMotor {
   lacuna?: { teoremaId: string; formula: string; inativas: Grupo[] }
   /** se presente, roda a reação em cadeia (as tarefas são ignoradas) */
   cadeia?: PedidoCadeia
+  /** se presente, roda o segundo modelo (as tarefas são ignoradas) */
+  modelo?: PedidoModelo
 }
 
 export type RespostaMotor =
@@ -40,12 +43,29 @@ export type RespostaMotor =
   | { id: number; tipo: 'teorema'; chave: string; teoremaId: string; resultado: ResultadoPergunta; ms: number }
   | { id: number; tipo: 'lacunas'; chave: string; teoremaId: string; resultado: ResultadoLacunas; ms: number }
   | { id: number; tipo: 'cadeia'; relatorios: RelatorioCadeia[]; ms: number }
+  | { id: number; tipo: 'modelo'; relatorio: RelatorioModelo; ms: number }
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   /** quanto o banco de provas guardou e reaproveitou */
   | { id: number; tipo: 'banco'; estatisticas: EstatisticasBanco }
   | { id: number; tipo: 'fim' }
 
 export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void) {
+  if (p.modelo) {
+    const ini = Date.now()
+    try {
+      rodarModelo(
+        p.modelo,
+        p.dicionario,
+        p.opcoes,
+        (relatorio) => enviar({ id: p.id, tipo: 'modelo', relatorio, ms: Date.now() - ini }),
+        (msg) => enviar({ id: p.id, tipo: 'progresso', chave: 'modelo', msg }),
+      )
+    } catch (e) {
+      enviar({ id: p.id, tipo: 'erro', chave: 'modelo', msg: (e as Error).message })
+    }
+    terminar(p.id, enviar)
+    return
+  }
   if (p.cadeia) {
     const ini = Date.now()
     try {

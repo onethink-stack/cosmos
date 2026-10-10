@@ -11,6 +11,7 @@ import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
 import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { CartaoLei } from './LeisQueFaltam'
+import { ModoCadeia } from './Modelo'
 import { SeloGrau } from './SeloGrau'
 import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
@@ -64,6 +65,7 @@ export function Cadeia() {
   const nada = !pedido.contextos.length
   return (
     <section class="cadeia">
+      <ModoCadeia atual="cadeia" />
       <h2>Reação em cadeia</h2>
       <p class="suave">
         O app bate cada lei, fato e teorema contra os outros: confere se as leis são consistentes e se cada uma é independente ou decorre das

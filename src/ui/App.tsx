@@ -8,6 +8,7 @@ import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
 import { LembreteBackup } from './LembreteBackup'
 import { ListaNotas } from './ListaNotas'
+import { Modelo } from './Modelo'
 import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
@@ -23,7 +24,7 @@ export function App() {
     void z3.carregarGuardados()
   }, [])
 
-  const aba = rota.tela === 'nota' || rota.tela === 'nova' || rota.tela === 'sistemas' ? 'notas' : rota.tela
+  const aba = rota.tela === 'nota' || rota.tela === 'nova' || rota.tela === 'sistemas' ? 'notas' : rota.tela === 'modelo' ? 'cadeia' : rota.tela
 
   return (
     <>
@@ -72,6 +73,8 @@ export function App() {
           <Sistemas />
         ) : rota.tela === 'cadeia' ? (
           <Cadeia />
+        ) : rota.tela === 'modelo' ? (
+          <Modelo />
         ) : (
           <PainelContradicoes />
         )}

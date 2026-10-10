@@ -60,6 +60,8 @@ export interface PedidoCadeia {
   inativas: Grupo[]
   /** depois da rodada, aprofunda sozinho as conclusões até estes limites */
   aprimorar?: LimitesAprimoramento
+  /** só consistência, teoremas, conflitos entre eles e leis que faltam (as rodadas do segundo modelo) */
+  rapida?: boolean
 }
 
 /** Até onde o aprimoramento automático pode ir (vem do perfil do aparelho). */
@@ -164,7 +166,7 @@ export function reacaoEmCadeia(
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
   pedido.contextos.forEach((c, k) => {
     const rel = relatorios[k]
-    rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg))
+    rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida)
     rel.etapa = 'fim'
     if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
@@ -335,6 +337,7 @@ function rodarContexto(
   op: OpcoesMotor,
   enviar: () => void,
   progresso: Progresso,
+  rapida = false,
 ) {
   const prontos: GrupoPronto[] = c.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
   const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
@@ -350,7 +353,7 @@ function rodarContexto(
 
   // 2. leis batendo umas com as outras
   rel.etapa = 'leis'
-  if (prontos.length >= 2)
+  if (prontos.length >= 2 && !rapida)
     prontos.forEach((alvo, i) => {
       progresso(`batendo cada lei com as outras (${i + 1}/${prontos.length}): ${alvo.g.rotulo}`)
       const outros = prontos.filter((x) => x !== alvo)
@@ -394,7 +397,7 @@ function rodarContexto(
       .slice(0, k)
       .map((l) => ({ g: { id: l.e.id, rotulo: l.e.formula, formulas: [l.e.formula] }, itens: [l.pronta!] }))
     let apoio = x.e.resultado.tipo === 'segue' ? x.e.resultado.notas : []
-    if (lemas.length) {
+    if (lemas.length && !rapida) {
       progresso(`montando a cadeia (${k + 1}/${provados.length}): ${x.e.formula}`)
       // as leis vêm primeiro na ordem de remoção: onde um teorema anterior basta, ele fica no lugar delas
       apoio = minimizarRapido([...prontos, ...lemas], [nao(x.pronta!.expandida)], op).map((g) => g.g.id)
@@ -457,7 +460,7 @@ function rodarContexto(
 
   // 7. consequências novas
   rel.etapa = 'consequencias'
-  if (prontos.length) {
+  if (prontos.length && !rapida) {
     const d = descobrir(c.grupos, dicionario, op, progresso)
     if (d.tipo === 'consequencias') {
       const jaTeorema = new Set(teoremas.flatMap((x) => (x.pronta ? [canonica(x.pronta.original)] : [])))

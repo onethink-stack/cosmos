@@ -10,6 +10,9 @@ import { verificacao, assinaturaCadeia, type Conclusao } from './verificacao'
 import { formulasDoApoio, prepararCadeia } from './cadeia'
 import { preparar } from './premissas'
 import { chaveZ3, z3 } from './z3'
+import { assinaturaModelo, configModelo, notasDoModelo } from './modelo'
+import type { Classe } from '../motor/modelo'
+import { completarComZ3 } from './modeloZ3'
 
 /** espera depois da última mudança nas notas antes de rodar a reação sozinha */
 const ESPERA_AUTOMATICA_MS = 20_000
@@ -84,6 +87,31 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
         titulo: `Reação em cadeia — rodada ${r.numero} terminada`,
         corpo: (partes.length ? partes.join(' · ') : 'Nada de novo.') + (c.parcial ? ' · aprimorando em cenários maiores…' : ''),
         rota: '#/cadeia',
+      }
+    }
+    case 'modelo': {
+      const m = ver.modelo
+      if (!m || m.interrompida) return null
+      if (m.erro) return { titulo: 'Segundo modelo', corpo: `Falha no motor: ${m.erro}`, rota: '#/modelo' }
+      const rel = m.relatorio
+      if (!rel) return null
+      const conta = (c: Classe) => rel.itens.filter((i) => i.classe === c).length
+      const decisoes = rel.eventos.filter((e) => e.tipo !== 'aviso').length
+      // rodada automática sem nenhuma decisão nova: sem aviso
+      if (m.motivo.startsWith('automático') && !decisoes && !conta('refutado') && !conta('conflito')) return null
+      const partes = [
+        conta('provado') && `${plural(conta('provado'), 'provado', 'provados')}`,
+        conta('tese') && `${plural(conta('tese'), 'tese aberta', 'teses abertas')}`,
+        conta('conflito') && `⚠ ${plural(conta('conflito'), 'tese em conflito', 'teses em conflito')}`,
+        conta('refutado') && `${plural(conta('refutado'), 'refutado', 'refutados')}`,
+        conta('adotada') + conta('ativada') && `${plural(conta('adotada') + conta('ativada'), 'lei adotada', 'leis adotadas')}`,
+        conta('desativada') && `${plural(conta('desativada'), 'desativada', 'desativadas')}`,
+        conta('descoberta') && `${plural(conta('descoberta'), 'consequência nova', 'consequências novas')}`,
+      ].filter(Boolean)
+      return {
+        titulo: `Segundo modelo pronto (${plural(rel.rodada, 'rodada', 'rodadas')})`,
+        corpo: partes.length ? partes.join(' · ') : 'Nada a classificar.',
+        rota: '#/modelo',
       }
     }
     case 'teoremas': {
@@ -164,11 +192,14 @@ async function ajustarTela() {
 export function iniciarSegundoPlano() {
   void avisos.carregarConfig()
   void perfil.carregarConfig()
+  void configModelo.carregar()
 
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)
     if (r) avisos.avisar(r.titulo, r.corpo, r.rota)
     if (c.tipo === 'cadeia') conferirNumerosNoFundo()
+    // o Z3 já vai decidindo o que tem números no segundo modelo, mesmo com a tela fechada
+    if (c.tipo === 'modelo') faseZ3DoModelo()
   })
 
   // reação automática: as notas mudaram (ou a última rodada ficou desatualizada) → nova rodada
@@ -180,8 +211,14 @@ export function iniciarSegundoPlano() {
   }
   const rodarSePreciso = () => {
     espera = null
-    if (!perfil.automatico || !estado.carregado || !verificacao.configCarregada || verificacao.interrompida) return
+    if (!estado.carregado || !verificacao.configCarregada) return
+    if (!perfil.automatico && !configModelo.automatico) return
     if (verificacao.ocupado) return agendar() // tenta de novo quando o motor estiver livre
+    if (perfil.automatico && !verificacao.interrompida && cadeiaSePreciso()) return
+    if (configModelo.automatico) modeloSePreciso()
+  }
+  /** a reação em cadeia automática; true se começou uma rodada */
+  const cadeiaSePreciso = (): boolean => {
     const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
     if (!pronto) {
       // avisa uma vez por conjunto de nomes pendentes
@@ -189,13 +226,26 @@ export function iniciarSegundoPlano() {
       if (nomes !== avisouNomes)
         avisos.avisar('Reação automática esperando', `Confirme no dicionário os nomes sem ficha: ${nomes}.`, '#/contradicoes')
       avisouNomes = nomes
-      return
+      return false
     }
     avisouNomes = ''
-    if (!pedido.contextos.length) return
+    if (!pedido.contextos.length) return false
     const ultima = verificacao.rodadas.at(-1)
-    if (ultima && ultima.assinatura === assinaturaCadeia(pedido, estado.dicionario) && !ultima.interrompida) return
+    if (ultima && ultima.assinatura === assinaturaCadeia(pedido, estado.dicionario) && !ultima.interrompida) return false
     verificacao.continuarCadeia(ultima ? 'automático: as notas mudaram' : 'automático: primeira rodada')
+    return true
+  }
+  /** o segundo modelo automático: roda de novo quando as notas das pastas mudam (ou ele parou no meio sem ser pelo usuário) */
+  const modeloSePreciso = () => {
+    const { pastas } = configModelo
+    const notas = notasDoModelo(estado.notas, pastas)
+    if (!notas.length || !preparar(notas, estado.dicionario).pronto) return
+    const m = verificacao.modelo
+    if (m && m.assinatura === assinaturaModelo(notas, estado.dicionario, pastas)) {
+      if (!m.interrompida || m.interrompida === 'usuario' || m.tentativas >= 2) return
+      return verificacao.iniciarModelo(notas, pastas, estado.dicionario, `${m.motivo.replace(/ \(retomado\)$/, '')} (retomado)`)
+    }
+    verificacao.iniciarModelo(notas, pastas, estado.dicionario, m ? 'automático: as notas mudaram' : 'automático: primeira vez')
   }
   let notasAntes = estado.notas
   let dicAntes = estado.dicionario
@@ -206,8 +256,9 @@ export function iniciarSegundoPlano() {
     agendar()
   })
   perfil.assinar(() => perfil.automatico && agendar())
+  configModelo.assinar(() => configModelo.automatico && agendar())
   verificacao.assinar(() => {
-    if (verificacao.configCarregada && !espera && !verificacao.ocupado && perfil.automatico) agendar()
+    if (verificacao.configCarregada && !espera && !verificacao.ocupado && (perfil.automatico || configModelo.automatico)) agendar()
   })
 
   verificacao.assinar(() => void ajustarTela())
@@ -231,6 +282,24 @@ export function iniciarSegundoPlano() {
   // tocar numa notificação: o service worker pede para abrir a tela do resultado
   navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
     if (e.data?.tipo === 'ir' && typeof e.data.url === 'string') location.hash = new URL(e.data.url).hash || '#/notas'
+  })
+}
+
+/**
+ * Depois do segundo modelo, o Z3 decide o que tem números e ativa as notas
+ * desativadas com números que fecham teses (avisa o que ativou).
+ */
+export function faseZ3DoModelo() {
+  const m = verificacao.modelo
+  if (!m?.relatorio || m.relatorio.situacao !== 'pronto') return
+  const quando = m.quando
+  void completarComZ3(
+    quando,
+    estado.dicionario,
+    () => verificacao.modelo,
+    (r) => verificacao.atualizarModelo(quando, r),
+  ).then((ativadas) => {
+    if (ativadas.length) avisos.avisar('Segundo modelo — Z3', `Ativou ${ativadas.join('; ')}.`, '#/modelo')
   })
 }
 

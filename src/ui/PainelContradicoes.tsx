@@ -1,19 +1,21 @@
 import { useMemo } from 'preact/hooks'
 import { useEstado } from '../dados/estado'
 import { preparar } from '../dados/premissas'
-import { assinatura, K_MAXIMO, montarTarefas, N_MAXIMO, useVerificacao } from '../dados/verificacao'
+import { usePerfil } from '../dados/perfil'
+import { assinatura, montarTarefas, useVerificacao } from '../dados/verificacao'
 import { ConfirmarNomes } from './ConfirmarNomes'
 import { FormulaExibida } from './FormulaExibida'
 import { useZ3 } from '../dados/z3'
 import { Descobrir } from './Descobrir'
 import { Perguntar } from './Perguntar'
-import { ConfigSegundoPlano } from './SegundoPlano'
+import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
 import { Teoremas } from './Teoremas'
 import { ResultadoVerificacao } from './ResultadoVerificacao'
 
 export function PainelContradicoes() {
   const est = useEstado()
   const ver = useVerificacao()
+  const pf = usePerfil()
   const p = useMemo(() => preparar(est.notas, est.dicionario), [est.notas, est.dicionario])
   const { tarefas } = useMemo(() => montarTarefas(est.notas, est.dicionario), [est.notas, est.dicionario])
 
@@ -61,11 +63,11 @@ export function PainelContradicoes() {
       <div class="barra-acoes">
         <label class="aridade">
           N (máx. de objetos)
-          <input type="number" min={1} max={N_MAXIMO} value={ver.N} onChange={(e) => ver.definirN(Number((e.target as HTMLInputElement).value))} />
+          <input type="number" min={1} max={pf.atual.limites.N} value={ver.N} onChange={(e) => ver.definirN(Number((e.target as HTMLInputElement).value))} />
         </label>
         <label class="aridade" title="Usado só quando há □, ◇ ou B[…]">
           Mundos (modal)
-          <input type="number" min={1} max={K_MAXIMO} value={ver.K} onChange={(e) => ver.definirK(Number((e.target as HTMLInputElement).value))} />
+          <input type="number" min={1} max={pf.atual.limites.K} value={ver.K} onChange={(e) => ver.definirK(Number((e.target as HTMLInputElement).value))} />
         </label>
         {ver.ocupado === 'verificar' ? (
           <button type="button" onClick={() => ver.cancelar()}>
@@ -78,6 +80,11 @@ export function PainelContradicoes() {
         )}
       </div>
       <AlternarZ3 />
+      <p class="suave">
+        N e mundos valem para Verificar, Perguntar, Teoremas e Descobrir (máximo deste aparelho: {pf.atual.limites.N} objetos e{' '}
+        {pf.atual.limites.K} mundos). A reação em cadeia escolhe os dela sozinha.
+      </p>
+      <ConfigPerfil />
       <ConfigSegundoPlano />
       {!p.pronto && <p class="erro-texto">O motor só roda depois que todos os nomes acima tiverem ficha confirmada.</p>}
       <p class="suave">

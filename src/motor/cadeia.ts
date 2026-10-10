@@ -17,12 +17,13 @@
 import type { EntradaDicionario } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { ehModal } from './aterrar'
-import { Avaliador } from './avaliar'
+import { Avaliador, tamanhoTexto } from './avaliar'
 import { descobrir, type Consequencia } from './descobrir'
 import { canonica, procurarLeis, type LeiSugerida } from './lacunas'
 import {
   analisar,
   buscarModelo,
+  buscarNaFaixa,
   minimizarRapido,
   nao,
   perguntar,
@@ -56,6 +57,35 @@ export interface PedidoCadeia {
   contextos: ContextoCadeia[]
   /** leis e fatos desativados: candidatos na busca das leis que faltam */
   inativas: Grupo[]
+  /** depois da rodada, aprofunda sozinho as conclusões até estes limites */
+  aprimorar?: LimitesAprimoramento
+}
+
+/** Até onde o aprimoramento automático pode ir (vem do perfil do aparelho). */
+export interface LimitesAprimoramento {
+  /** maior número de objetos */
+  N: number
+  /** maior número de mundos (só com □, ◇, B[…]) */
+  K: number
+  /** limite de tamanho do problema aterrado */
+  limite: number
+  /** cada checagem desiste depois deste tempo */
+  tempoChecagemMs: number
+  /** tempo total do aprimoramento (todas as conclusões, todos os tamanhos) */
+  orcamentoMs: number
+}
+
+export interface EstadoAprimoramento {
+  situacao: 'esperando' | 'aprofundando' | 'feito'
+  /** nível em que a rodada começou */
+  de: { N: number; K: number }
+  /** quantas conclusões dependem do tamanho (são reconferidas) */
+  conclusoes: number
+  /** por que parou */
+  parouPor?: string
+  /** uma conclusão caiu num cenário maior: a rodada precisa ser refeita nesse nível */
+  virada?: { N: number; K: number; descricao: string }
+  ms: number
 }
 
 export type EstadoLei =
@@ -99,6 +129,8 @@ export interface RelatorioCadeia {
   consequencias: Consequencia[] | null
   /** consequências que já estavam escritas como teorema */
   consequenciasJaTeorema: number
+  /** aprimoramento automático (N e K acima sobem conforme as conclusões são reconferidas) */
+  aprimoramento: EstadoAprimoramento | null
 }
 
 const conj = (fs: Formula[]): Formula => fs.reduce((a, b): Formula => ({ k: 'and', l: a, r: b, pos: 0, end: 0 }))
@@ -123,14 +155,169 @@ export function reacaoEmCadeia(
     sugestoes: [],
     consequencias: null,
     consequenciasJaTeorema: 0,
+    aprimoramento: null,
   }))
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
   pedido.contextos.forEach((c, k) => {
     const rel = relatorios[k]
     rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg))
     rel.etapa = 'fim'
+    if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
   })
+  // aprimoramento: as conclusões que dependem do tamanho são reconferidas em cenários maiores
+  const lim = pedido.aprimorar
+  if (!lim) return
+  const ini = Date.now()
+  for (let k = 0; k < pedido.contextos.length; k++) {
+    const c = pedido.contextos[k]
+    const virou = aprofundar(c, relatorios[k], dicionario, lim, ini, enviar, (msg) => progresso?.(c.chave, msg))
+    if (virou) {
+      // o resto fica como está; a próxima rodada (no nível novo) refaz tudo
+      for (const r of relatorios.slice(k + 1))
+        if (r.aprimoramento) r.aprimoramento = { ...r.aprimoramento, situacao: 'feito', parouPor: 'outra conclusão mudou; a próxima rodada refaz tudo' }
+      enviar()
+      return
+    }
+  }
+}
+
+/** Uma conclusão que vale "em todos os cenários até N" (logo, pode mudar num cenário maior). */
+interface ConclusaoLimitada {
+  descricao: string
+  /** fórmulas que não podem ter modelo para a conclusão continuar valendo */
+  formulas: Formula[]
+}
+
+/** Junta as conclusões do relatório que dependem do tamanho dos cenários. */
+function conclusoesLimitadas(c: ContextoCadeia, rel: RelatorioCadeia, dicionario: EntradaDicionario[]): ConclusaoLimitada[] {
+  const prontos: GrupoPronto[] = c.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
+  const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+  const dosGrupos = (ids: string[]) => prontos.filter((x) => ids.includes(x.g.id)).flatMap((x) => x.itens.map((i) => i.expandida))
+  const teorema = new Map(c.teoremas.map((t) => [t.id, t]))
+  const formulaDe = (texto: string) => analisar([texto], dicionario)[0]?.expandida
+  const rotulo = (id: string) => teorema.get(id)?.rotulo ?? prontos.find((x) => x.g.id === id)?.g.rotulo ?? id
+  const cs: ConclusaoLimitada[] = []
+
+  if (rel.consistencia?.tipo === 'sem-modelo') cs.push({ descricao: 'as leis e fatos se contradizem', formulas: premissas })
+  for (const l of rel.leis)
+    if (l.tipo === 'decorre') {
+      const alvo = prontos.find((x) => x.g.id === l.id)
+      if (alvo)
+        cs.push({
+          descricao: `"${alvo.g.rotulo}" decorre das outras`,
+          formulas: [...prontos.filter((x) => x !== alvo).flatMap((x) => x.itens.map((i) => i.expandida)), nao(conj(alvo.itens.map((i) => i.expandida)))],
+        })
+    }
+  for (const t of rel.teoremas) {
+    const phi = formulaDe(t.formula)
+    if (!phi) continue
+    if (t.resultado.tipo === 'segue') {
+      cs.push({ descricao: `"${rotulo(t.id)}" segue das leis`, formulas: [...premissas, nao(phi)] })
+      // a cadeia: o apoio (leis e teoremas anteriores) continua bastando?
+      const lemas = (t.apoio ?? []).filter((id) => teorema.has(id))
+      if (lemas.length) {
+        const fs = lemas.map((id) => formulaDe(teorema.get(id)!.formula)).filter((f): f is Formula => !!f)
+        cs.push({ descricao: `a cadeia de "${rotulo(t.id)}"`, formulas: [...dosGrupos(t.apoio!), ...fs, nao(phi)] })
+      }
+    } else if (t.resultado.tipo === 'contradiz') cs.push({ descricao: `as leis contradizem "${rotulo(t.id)}"`, formulas: [...premissas, phi] })
+  }
+  if (rel.conflitoTeoremas) {
+    const fs = rel.conflitoTeoremas.map((id) => formulaDe(teorema.get(id)?.formula ?? '')).filter((f): f is Formula => !!f)
+    cs.push({ descricao: 'os teoremas incompatíveis entre si', formulas: [...premissas, ...fs] })
+  }
+  for (const s of rel.sugestoes) {
+    const lei = formulaDe(s.lei.formula)
+    if (!lei) continue
+    for (const id of s.fecha) {
+      const phi = formulaDe(teorema.get(id)?.formula ?? '')
+      if (phi) cs.push({ descricao: `a lei sugerida "${s.lei.nome}" fecha "${rotulo(id)}"`, formulas: [...premissas, lei, nao(phi)] })
+    }
+  }
+  for (const q of rel.consequencias ?? []) {
+    const f = formulaDe(q.formula)
+    if (f) cs.push({ descricao: `a consequência ${q.formula}`, formulas: [...premissas, nao(f)] })
+  }
+  return cs
+}
+
+/**
+ * Reconfere as conclusões em cenários cada vez maiores: primeiro mais mundos
+ * (se há lógica modal), depois um objeto a mais por vez, até os limites, o
+ * tempo de cada checagem ou o tempo total. Devolve true se uma conclusão caiu.
+ */
+function aprofundar(
+  c: ContextoCadeia,
+  rel: RelatorioCadeia,
+  dicionario: EntradaDicionario[],
+  lim: LimitesAprimoramento,
+  inicioGeral: number,
+  enviar: () => void,
+  progresso: Progresso,
+): boolean {
+  if (!rel.aprimoramento) return false
+  const ini = Date.now()
+  const cs = conclusoesLimitadas(c, rel, dicionario)
+  const atualizar = (m: Partial<EstadoAprimoramento>) => {
+    rel.aprimoramento = { ...rel.aprimoramento!, ...m, conclusoes: cs.length, ms: Date.now() - ini }
+    enviar()
+  }
+  if (!cs.length) {
+    atualizar({ situacao: 'feito', parouPor: 'nenhuma conclusão depende do tamanho dos cenários: todas já são definitivas' })
+    return false
+  }
+  if (rel.consistencia?.tipo === 'grande-demais') {
+    atualizar({ situacao: 'feito', parouPor: 'o conjunto já é grande demais' })
+    return false
+  }
+  const modal = cs.some((x) => x.formulas.some(ehModal))
+  atualizar({ situacao: 'aprofundando' })
+
+  /** confere todas as conclusões num nível: 'ok', 'virou', ou o motivo de parar */
+  const nivel = (ns: number[], ks: number[], N: number, K: number): string => {
+    for (let i = 0; i < cs.length; i++) {
+      if (Date.now() - inicioGeral > lim.orcamentoMs) return `atingiu o tempo total do aprimoramento (${Math.round(lim.orcamentoMs / 60000)} min)`
+      progresso(`aprimorando com ${N} objetos${modal ? ` e ${K} mundos` : ''} (${i + 1}/${cs.length}): ${cs[i].descricao}`)
+      const r = buscarNaFaixa(cs[i].formulas, ns, ks, lim.limite, Date.now() + lim.tempoChecagemMs)
+      if (r.status === 'modelo') {
+        atualizar({
+          situacao: 'feito',
+          virada: { N: Math.max(r.n, rel.N), K: modal ? K : 1, descricao: cs[i].descricao },
+          parouPor: `com ${tamanhoTexto(r.n, r.modelo.mundos)}, ${cs[i].descricao}: deixou de valer`,
+        })
+        return 'virou'
+      }
+      if (r.status === 'tempo') return `uma checagem passou de ${Math.round(lim.tempoChecagemMs / 1000)} s com ${N} objetos`
+      if (r.status === 'grande-demais') return `o problema ficou grande demais para este aparelho com ${N} objetos`
+    }
+    return 'ok'
+  }
+
+  // mais mundos, nos tamanhos já conferidos
+  if (modal)
+    for (let k = rel.K + 1; k <= lim.K; k++) {
+      const res = nivel([...Array(rel.N).keys()].map((i) => i + 1), [k], rel.N, k)
+      if (res === 'virou') return true
+      if (res !== 'ok') {
+        atualizar({ situacao: 'feito', parouPor: res })
+        return false
+      }
+      rel.K = k
+      atualizar({})
+    }
+  // um objeto a mais por vez
+  for (let n = rel.N + 1; n <= lim.N; n++) {
+    const res = nivel([n], [...Array(modal ? rel.K : 1).keys()].map((i) => i + 1), n, rel.K)
+    if (res === 'virou') return true
+    if (res !== 'ok') {
+      atualizar({ situacao: 'feito', parouPor: res })
+      return false
+    }
+    rel.N = n
+    atualizar({})
+  }
+  atualizar({ situacao: 'feito', parouPor: `chegou ao limite do aparelho (${lim.N} objetos${modal ? `, ${lim.K} mundos` : ''})` })
+  return false
 }
 
 function rodarContexto(

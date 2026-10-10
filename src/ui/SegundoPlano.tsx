@@ -1,4 +1,5 @@
 import { useAvisos } from '../dados/avisos'
+import { descreverPerfil, detectarPerfil, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
 import { useVerificacao, type Ocupacao } from '../dados/verificacao'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
@@ -75,6 +76,37 @@ export function ConfigSegundoPlano() {
         Manter a tela acesa enquanto o motor calcula (o celular não bloqueia no meio)
       </label>
       {!temWakeLock && <p class="suave">Este navegador não permite manter a tela acesa.</p>}
+    </details>
+  )
+}
+
+/** Capacidade do aparelho: limita até onde a reação em cadeia aprofunda sozinha. */
+export function ConfigPerfil() {
+  const pf = usePerfil()
+  const detectado = PERFIS.find((p) => p.id === detectarPerfil())!
+  const atual = pf.atual
+  const opcoes: { id: IdPerfil; nome: string }[] = [{ id: 'automatico', nome: `Automático (${detectado.nome})` }, ...PERFIS]
+  return (
+    <details class="config-segundo-plano">
+      <summary>⚙ Capacidade do aparelho: {atual.nome}</summary>
+      <p class="suave">
+        A reação em cadeia escolhe sozinha quantos objetos e mundos testar: começa pequena (resultados rápidos) e depois reconfere as
+        conclusões em cenários cada vez maiores, um objeto por vez, até o limite deste aparelho. Se alguma conclusão cair num cenário maior,
+        ela refaz a rodada nesse tamanho (no máximo 3 vezes seguidas).
+      </p>
+      <label class="campo-rotulo">
+        Aparelho
+        <select value={pf.escolhido} onChange={(e) => pf.escolher((e.target as HTMLSelectElement).value as IdPerfil)}>
+          {opcoes.map((o) => (
+            <option value={o.id}>{o.nome}</option>
+          ))}
+        </select>
+      </label>
+      <p class="suave">{descreverPerfil(atual)}.</p>
+      <label class="alternar">
+        <input type="checkbox" checked={pf.aprimorar} onChange={(e) => pf.definirAprimorar((e.target as HTMLInputElement).checked)} />
+        Aprimorar sozinho depois de cada rodada (aprofundar até o limite)
+      </label>
     </details>
   )
 }

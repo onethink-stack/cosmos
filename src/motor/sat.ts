@@ -4,10 +4,12 @@
 export type ResultadoSAT =
   | { sat: true; valores: Int8Array } // valores[v] = 1 (verdadeiro) ou -1 (falso)
   | { sat: false }
-  | { sat: null } // limite de conflitos atingido
+  | { sat: null } // limite de conflitos ou prazo atingido
 
 export interface OpcoesSAT {
   maxConflitos?: number
+  /** instante (Date.now()) em que desiste e devolve { sat: null } */
+  prazo?: number
 }
 
 // Internamente um literal é 2v (positivo) ou 2v+1 (negativo).
@@ -238,6 +240,7 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
   let reinicio = 0
   let limiteReinicio = 100 * luby(0)
   let conflitosDesdeReinicio = 0
+  let decisoes = 0
 
   for (;;) {
     const conflito = propagar()
@@ -254,6 +257,7 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
       }
       incAtividade /= 0.95
       if (opcoes.maxConflitos && conflitos >= opcoes.maxConflitos) return { sat: null }
+      if (opcoes.prazo && (conflitos & 63) === 0 && Date.now() > opcoes.prazo) return { sat: null }
       continue
     }
     if (conflitosDesdeReinicio >= limiteReinicio) {
@@ -278,6 +282,7 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
       return { sat: true, valores }
     }
     limites.push(trilha.length)
+    if (opcoes.prazo && (++decisoes & 4095) === 0 && Date.now() > opcoes.prazo) return { sat: null }
     atribuir(fase[v] === 1 ? 2 * v : 2 * v + 1, null)
   }
 }

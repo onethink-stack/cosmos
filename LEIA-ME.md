@@ -31,6 +31,18 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   cada uma fecha); consequências novas. Aprovar uma lei dispara a rodada
   seguinte, que mostra o que a aprovação gerou. Um teorema com titular é
   conferido contra a visão desse titular.
+- **Capacidade do aparelho e aprimoramento**: a reação em cadeia escolhe
+  sozinha quantos objetos e mundos testar. Começa pequena (resultados
+  rápidos) e depois reconfere só as conclusões que dependem do tamanho
+  ("segue", "decorre", "contradiz", consequências, leis sugeridas) em
+  cenários cada vez maiores, um objeto por vez, até o limite do perfil.
+  Se uma delas cai num cenário maior, a rodada é refeita nesse tamanho
+  (no máximo 3 vezes seguidas). Perfis: celular simples (até 8 objetos),
+  celular (10), PC com 8 GB (14), PC com 16 GB ou mais (18), ou
+  automático; cada um limita também os mundos, o tamanho do problema, o
+  tempo de cada checagem e o tempo total. Medido: o que pesa é o tempo das
+  provas (um teorema com extensionalidade leva 4 s com 8 objetos, 24 s com
+  12 e 160 s com 17 num PC), não a memória.
 - **Segundo plano e avisos**: o motor continua trabalhando enquanto você usa
   as outras telas (um indicador no topo mostra o que ele está fazendo), e
   salvar uma nota não cancela uma reação em andamento. Ao terminar, aparece

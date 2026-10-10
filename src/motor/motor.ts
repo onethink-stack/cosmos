@@ -155,6 +155,34 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
   return { status: 'sem-modelo', K }
 }
 
+export type BuscaFaixa = Busca | { status: 'tempo'; n: number }
+
+/**
+ * Procura modelo só nos tamanhos `ns` e números de mundos `ks` dados (sem
+ * lógica modal, só 1 mundo), desistindo quando passa do prazo. Usado para
+ * aprofundar uma conclusão já conferida até um tamanho menor.
+ */
+export function buscarNaFaixa(formulas: Formula[], ns: number[], ks: number[], limite: number, prazo?: number): BuscaFaixa {
+  const modal = formulas.some(ehModal)
+  const mundos = modal ? ks : ks.includes(1) ? [1] : []
+  for (const n of ns)
+    for (const k of mundos) {
+      let p: ProblemaCNF
+      try {
+        const at = new Aterrador(n, limite, k)
+        for (const f of formulas) at.afirmar(f)
+        p = at.cnf()
+      } catch (e) {
+        if (e instanceof GrandeDemais) return { status: 'grande-demais', n }
+        throw e
+      }
+      const r = resolver(p.nVars, p.clausulas, { prazo })
+      if (r.sat === null) return { status: 'tempo', n }
+      if (r.sat) return { status: 'modelo', n, modelo: lerModelo(n, k, p, r.valores) }
+    }
+  return { status: 'sem-modelo', K: Math.max(1, ...mundos) }
+}
+
 /**
  * Verifica se o conjunto de grupos tem modelo até N. Sem modelo, encontra um
  * conjunto de grupos em conflito que é mínimo no sentido de irredutível:

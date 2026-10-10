@@ -2,13 +2,14 @@ import { useMemo, useState } from 'preact/hooks'
 import { foraDaCadeia, pedidoDaCadeia } from '../dados/cadeia'
 import { salvarDeduzida } from '../dados/deduzida'
 import { estado, useEstado } from '../dados/estado'
+import { usePerfil } from '../dados/perfil'
 import { preparar } from '../dados/premissas'
 import { assinaturaCadeia, useVerificacao, type RodadaCadeia } from '../dados/verificacao'
 import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
 import { CartaoLei } from './LeisQueFaltam'
-import { ConfigSegundoPlano } from './SegundoPlano'
+import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
 
 const NOME_ETAPA: Record<RelatorioCadeia['etapa'], string> = {
@@ -53,8 +54,9 @@ export function Cadeia() {
   const pedido = useMemo(() => pedidoDaCadeia(est.notas, est.dicionario), [est.notas, est.dicionario])
   const fora = useMemo(() => foraDaCadeia(est.notas, est.dicionario), [est.notas, est.dicionario])
   const ocupado = ver.ocupado === 'cadeia'
+  const pf = usePerfil()
   const atual = ver.rodadas.at(-1)
-  const desatualizada = !!atual && atual.assinatura !== assinaturaCadeia(pedido, est.dicionario, ver.limites)
+  const desatualizada = !!atual && atual.assinatura !== assinaturaCadeia(pedido, est.dicionario)
 
   const nada = !pedido.contextos.length
   return (
@@ -66,6 +68,7 @@ export function Cadeia() {
         fechariam o que falta; e que consequências novas aparecem. Ao aprovar uma lei sugerida, a reação continua sozinha numa nova rodada —
         mesmo que você vá para outra tela.
       </p>
+      <ConfigPerfil />
       <ConfigSegundoPlano />
       {ver.interrompida && !ver.ocupado && (
         <div class="interrompida">
@@ -100,7 +103,9 @@ export function Cadeia() {
           </button>
         )}
         <span class="suave">
-          cenários até {limiteTexto(ver.N, ver.K)} (ajuste em <a href="#/contradicoes">Contradições</a>)
+          {pf.aprimorar
+            ? `começa com ${limiteTexto(pf.atual.Ninicial, pf.atual.Kinicial)} e aprofunda sozinha até ${limiteTexto(pf.atual.limites.N, pf.atual.limites.K)}`
+            : `cenários até ${limiteTexto(pf.atual.Ninicial, pf.atual.Kinicial)}`}
         </span>
       </div>
       {!p.pronto && <p class="erro-texto">Confirme antes os nomes sem ficha, em Contradições.</p>}
@@ -203,16 +208,16 @@ function Rodada({
         <span class="suave"> — {r.motivo}</span>
       </h3>
       <div class="suave res-meta">
-        {r.interrompida ? 'interrompida' : r.terminada ? 'terminada' : 'em andamento'} · {r.ms < 1000 ? `${r.ms} ms` : `${(r.ms / 1000).toFixed(1)} s`}
-        {r.terminada && desatualizada && <span class="selo aviso"> desatualizada — as notas mudaram</span>}
+        {r.interrompida ? 'interrompida' : r.terminada ? 'terminada' : r.baseTerminada ? 'terminada — aprimorando' : 'em andamento'} · {r.ms < 1000 ? `${r.ms} ms` : `${(r.ms / 1000).toFixed(1)} s`}
+        {(r.terminada || r.baseTerminada) && desatualizada && <span class="selo aviso"> desatualizada — as notas mudaram</span>}
       </div>
       {r.erro && <p class="erro-texto">Falha no motor: {r.erro}</p>}
-      {anterior && r.terminada && <Mudancas r={r} anterior={anterior} />}
+      {anterior && (r.terminada || r.baseTerminada) && <Mudancas r={r} anterior={anterior} />}
       {r.relatorios.map((rel) => (
         <Relatorio
           rel={rel}
           grupos={pedido.contextos.find((c) => c.chave === rel.chave)?.grupos ?? []}
-          travado={desatualizada || ocupado || !r.terminada}
+          travado={desatualizada || !(r.terminada || r.baseTerminada) || (ocupado && !r.baseTerminada)}
           onAprovada={onAprovada}
         />
       ))}
@@ -274,6 +279,32 @@ function Mudancas({ r, anterior }: { r: RodadaCadeia; anterior: RodadaCadeia }) 
   )
 }
 
+/** Até onde as conclusões foram conferidas, e o aprimoramento automático. */
+function Nivel({ rel }: { rel: RelatorioCadeia }) {
+  const ap = rel.aprimoramento
+  return (
+    <div class="nivel-cadeia">
+      <span>
+        Conferido em todos os cenários até <b>{limiteTexto(rel.N, rel.K)}</b>
+        {ap && (ap.de.N !== rel.N || ap.de.K !== rel.K) && <span class="suave"> (a rodada começou com {limiteTexto(ap.de.N, ap.de.K)})</span>}
+      </span>
+      {ap?.situacao === 'esperando' && <span class="suave"> · aprimoramento na fila</span>}
+      {ap?.situacao === 'aprofundando' && (
+        <span class="suave">
+          {' '}
+          · <span class="girando" aria-hidden="true" /> aprimorando ({ap.conclusoes} conclusões a reconferir em cenários maiores)
+        </span>
+      )}
+      {ap?.situacao === 'feito' && !ap.virada && ap.parouPor && <span class="suave"> · aprimoramento: {ap.parouPor}</span>}
+      {ap?.virada && (
+        <div class="aviso-texto">
+          ⚠ Ao aprofundar: {ap.parouPor}. A reação refaz a rodada com {ap.virada.N} objetos.
+        </div>
+      )}
+    </div>
+  )
+}
+
 const nomeResultado = (t: EstadoTeorema) =>
   ({
     segue: '✓ segue',
@@ -311,6 +342,7 @@ function Relatorio({
         {rel.rotulo}
         {rel.etapa !== 'fim' && <span class="suave"> — {NOME_ETAPA[rel.etapa]}…</span>}
       </h4>
+      {rel.etapa === 'fim' && <Nivel rel={rel} />}
 
       {c?.tipo === 'consistente' && (
         <p class="status-ok">

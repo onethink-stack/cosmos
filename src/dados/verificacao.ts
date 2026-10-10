@@ -8,6 +8,7 @@ import MotorWorker from '../motor/worker?worker&inline'
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
+import { K_ABSOLUTO, N_ABSOLUTO, perfil } from './perfil'
 import type { EntradaDicionario } from './tipos'
 
 export { assinatura, montarTarefas } from '../motor/tarefas'
@@ -63,6 +64,8 @@ export interface RodadaCadeia {
   assinatura: string
   /** parou antes do fim (cancelada, ou o app foi fechado no meio) */
   interrompida?: boolean
+  /** a rodada em si terminou (o aprimoramento pode continuar depois) */
+  baseTerminada?: boolean
 }
 
 /** Uma rodada que estava rodando quando o app foi fechado (ou descartado pelo sistema). */
@@ -78,6 +81,8 @@ export interface CadeiaPendente {
 export interface Conclusao {
   tipo: Ocupacao
   ms: number
+  /** a rodada da cadeia terminou, mas o aprimoramento continua */
+  parcial?: boolean
 }
 
 const MAX_RODADAS_GUARDADAS = 6
@@ -98,8 +103,11 @@ export interface ResultadoTeorema {
   assinatura: string
 }
 
-export const N_MAXIMO = 12
-export const K_MAXIMO = 5
+/** limites dos campos de N e K (o perfil do aparelho limita mais) */
+export const N_MAXIMO = N_ABSOLUTO
+export const K_MAXIMO = K_ABSOLUTO
+/** quantas vezes seguidas o aprimoramento pode refazer a rodada sozinho */
+const MAX_VIRADAS = 3
 
 class Verificacao {
   N = OPCOES_PADRAO.N
@@ -147,6 +155,8 @@ class Verificacao {
   private fila: (() => void)[] = []
   private aoConcluirFns = new Set<(c: Conclusao) => void>()
   private ultimaGravacao = 0
+  /** rodadas refeitas seguidas pelo aprimoramento (limite: MAX_VIRADAS) */
+  private viradasSeguidas = 0
 
   assinar(fn: () => void) {
     this.ouvintes.add(fn)
@@ -174,6 +184,9 @@ class Verificacao {
 
   /** Próxima rodada da reação em cadeia, com as notas como estão agora. Se o motor está ocupado, espera a vez. */
   continuarCadeia(motivo: string, tentativas = 0) {
+    this.viradasSeguidas = 0
+    // se a rodada anterior já terminou e só está aprimorando, o aprimoramento dá lugar à rodada nova
+    if (this.ocupado === 'cadeia' && this.rodadas.at(-1)?.baseTerminada) this.cancelar(false)
     this.quandoLivre(() => {
       const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
       if (pronto && pedido.contextos.length) this.iniciarCadeia(pedido, estado.dicionario, motivo, false, tentativas)
@@ -235,13 +248,13 @@ class Verificacao {
   }
 
   definirK(k: number) {
-    this.K = Math.max(1, Math.min(K_MAXIMO, Math.round(k) || OPCOES_PADRAO.K))
+    this.K = Math.max(1, Math.min(perfil.atual.limites.K, Math.round(k) || OPCOES_PADRAO.K))
     void gravarConfig('K', this.K).catch(() => {})
     this.avisar()
   }
 
   definirN(n: number) {
-    this.N = Math.max(1, Math.min(N_MAXIMO, Math.round(n) || OPCOES_PADRAO.N))
+    this.N = Math.max(1, Math.min(perfil.atual.limites.N, Math.round(n) || OPCOES_PADRAO.N))
     void gravarConfig('N', this.N).catch(() => {})
     this.avisar()
   }
@@ -297,14 +310,22 @@ class Verificacao {
   }
 
   /** Começa uma rodada da reação em cadeia. `nova`: apaga as rodadas anteriores. */
-  iniciarCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], motivo: string, nova: boolean, tentativas = 0) {
+  iniciarCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], motivo: string, nova: boolean, tentativas = 0, nivel?: { N: number; K: number }) {
     this.cancelar(false)
     this.interrompida = null
-    if (nova) this.rodadas = []
+    if (nova) {
+      this.rodadas = []
+      this.viradasSeguidas = 0
+    }
+    // o nível de cada rodada vem do perfil do aparelho (ou de onde o aprimoramento achou uma mudança)
+    const pf = perfil.atual
+    const N = Math.min(nivel?.N ?? pf.Ninicial, pf.limites.N)
+    const K = Math.min(nivel?.K ?? pf.Kinicial, pf.limites.K)
+    const completo: PedidoCadeia = { ...pedido, aprimorar: perfil.aprimorar ? pf.limites : undefined }
     const numero = (this.rodadas.at(-1)?.numero ?? 0) + 1
     this.rodadas = [
       ...this.rodadas,
-      { numero, motivo, relatorios: [], erro: null, ms: 0, terminada: false, assinatura: assinaturaCadeia(pedido, dicionario, this.limites) },
+      { numero, motivo, relatorios: [], erro: null, ms: 0, terminada: false, assinatura: assinaturaCadeia(pedido, dicionario) },
     ]
     this.ocupado = 'cadeia'
     this.iniciadoEm = Date.now()
@@ -317,7 +338,7 @@ class Verificacao {
     this.pendentes = new Map()
     this.rodando = { chave: 'cadeia', msg: 'preparando' }
     this.avisar()
-    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { ...OPCOES_PADRAO, N: this.N, K: this.K }, cadeia: pedido }
+    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { N, K, limite: pf.limites.limite }, cadeia: completo }
     this.pedidoAtual = p
     const w = this.obterWorker()
     if (w) w.postMessage(p)
@@ -366,7 +387,22 @@ class Verificacao {
     }
     if (this.ocupado === 'cadeia') {
       const atual = this.rodadas.at(-1)
-      if (atual && !atual.terminada) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true, interrompida: true }]
+      if (atual && !atual.terminada)
+        this.rodadas = [
+          ...this.rodadas.slice(0, -1),
+          atual.baseTerminada
+            ? // só o aprimoramento parou: a rodada vale, no nível que alcançou
+              {
+                ...atual,
+                terminada: true,
+                relatorios: atual.relatorios.map((r) =>
+                  r.aprimoramento && r.aprimoramento.situacao !== 'feito'
+                    ? { ...r, aprimoramento: { ...r.aprimoramento, situacao: 'feito', parouPor: 'parado antes do limite' } }
+                    : r,
+                ),
+              }
+            : { ...atual, terminada: true, interrompida: true },
+        ]
       void gravarConfig('cadeiaPendente', null).catch(() => {})
       this.gravarCadeia(true)
     }
@@ -390,6 +426,17 @@ class Verificacao {
           r.tipo === 'cadeia' ? { ...atual, relatorios: r.relatorios, ms: r.ms } : { ...atual, erro: r.msg },
         ]
       this.gravarCadeia()
+      // a rodada em si acabou; o aprimoramento segue (avisa já o resultado da rodada)
+      const agora = this.rodadas.at(-1)
+      if (r.tipo === 'cadeia' && agora && !agora.baseTerminada && r.relatorios.length && r.relatorios.every((x) => x.etapa === 'fim')) {
+        this.rodadas = [...this.rodadas.slice(0, -1), { ...agora, baseTerminada: true }]
+        void gravarConfig('cadeiaPendente', null).catch(() => {})
+        this.gravarCadeia(true)
+        if (r.relatorios.some((x) => x.aprimoramento)) {
+          const c: Conclusao = { tipo: 'cadeia', ms: Date.now() - this.iniciadoEm, parcial: true }
+          setTimeout(() => this.aoConcluirFns.forEach((f) => f(c)), 0)
+        }
+      }
     } else if (r.tipo === 'teorema') {
       const t = this.pendentes.get(r.chave)!
       this.teoremas.set(r.teoremaId, {
@@ -451,9 +498,19 @@ class Verificacao {
       const tipo = this.ocupado
       if (tipo === 'cadeia') {
         const atual = this.rodadas.at(-1)
-        if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true }]
+        if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true, baseTerminada: true }]
         void gravarConfig('cadeiaPendente', null).catch(() => {})
         this.gravarCadeia(true)
+        // o aprimoramento achou uma conclusão que cai num cenário maior: refaz a rodada nesse nível (com limite)
+        const virada = atual?.relatorios.map((x) => x.aprimoramento?.virada).find((v) => !!v)
+        if (virada && this.viradasSeguidas < MAX_VIRADAS) {
+          this.viradasSeguidas++
+          this.fila.unshift(() => {
+            const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
+            if (pronto && pedido.contextos.length)
+              this.iniciarCadeia(pedido, estado.dicionario, `aprimoramento — com ${virada.N} objetos, ${virada.descricao}: deixou de valer`, false, 0, virada)
+          })
+        }
       }
       this.rodando = null
       this.ocupado = null
@@ -479,8 +536,8 @@ class Verificacao {
 export const verificacao = new Verificacao()
 
 /** Identifica uma rodada da reação em cadeia (muda se qualquer nota que entra nela mudar). */
-export function assinaturaCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[], limites: string): string {
-  return JSON.stringify([limites, pedido, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
+export function assinaturaCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[]): string {
+  return JSON.stringify([pedido.contextos, pedido.inativas, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
 }
 
 /** Identifica uma busca de leis que faltam (muda se o teorema, as premissas ou as notas desativadas mudarem). */

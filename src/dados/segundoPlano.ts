@@ -4,6 +4,8 @@
 
 import { avisos } from './avisos'
 import { estado } from './estado'
+import { perfil } from './perfil'
+import { limiteTexto } from '../motor/avaliar'
 import { verificacao, type Conclusao } from './verificacao'
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
@@ -15,6 +17,19 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
     case 'cadeia': {
       const r = ver.rodadas.at(-1)
       if (!r || r.interrompida) return null
+      const aps = r.relatorios.filter((x) => x.aprimoramento)
+      // fim do aprimoramento (a rodada em si já foi avisada)
+      if (!c.parcial && aps.length) {
+        const virada = aps.find((x) => x.aprimoramento!.virada)
+        if (virada)
+          return {
+            titulo: `⚠ Aprimoramento — rodada ${r.numero}`,
+            corpo: `${virada.aprimoramento!.parouPor}. Refazendo a rodada com ${virada.aprimoramento!.virada!.N} objetos.`,
+            rota: '#/cadeia',
+          }
+        const niveis = aps.map((x) => `${x.rotulo}: até ${limiteTexto(x.N, x.K)}`).join(' · ')
+        return { titulo: `Aprimoramento da rodada ${r.numero} terminado`, corpo: `Tudo confirmado — ${niveis}.`, rota: '#/cadeia' }
+      }
       if (r.erro) return { titulo: `Reação em cadeia — rodada ${r.numero}`, corpo: `Falha no motor: ${r.erro}`, rota: '#/cadeia' }
       const partes: string[] = []
       let seguem = 0
@@ -54,7 +69,7 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
       if (consequencias) partes.push(`${plural(consequencias, 'consequência nova', 'consequências novas')}`)
       return {
         titulo: `Reação em cadeia — rodada ${r.numero} terminada`,
-        corpo: partes.length ? partes.join(' · ') : 'Nada de novo.',
+        corpo: (partes.length ? partes.join(' · ') : 'Nada de novo.') + (c.parcial ? ' · aprimorando em cenários maiores…' : ''),
         rota: '#/cadeia',
       }
     }
@@ -135,6 +150,7 @@ async function ajustarTela() {
 
 export function iniciarSegundoPlano() {
   void avisos.carregarConfig()
+  void perfil.carregarConfig()
 
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)

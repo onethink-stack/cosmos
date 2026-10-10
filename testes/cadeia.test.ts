@@ -66,3 +66,29 @@ describe('reação em cadeia', () => {
     expect(rel.teoremas).toEqual([])
   })
 })
+
+describe('aprimoramento automático', () => {
+  const lim = { N: 6, K: 1, limite: 1_000_000, tempoChecagemMs: 20_000, orcamentoMs: 120_000 }
+  const rodarAprimorando = (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], N: number) => {
+    let ultimo: RelatorioCadeia[] = []
+    reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [], aprimorar: lim }, dic, { ...op, N }, (r) => (ultimo = r))
+    return ultimo[0]
+  }
+
+  it('aprofunda as conclusões até o limite quando todas continuam valendo', () => {
+    const rel = rodarAprimorando([g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')], [t('T1', 'Q(c)')], 3)
+    expect(rel.teoremas[0].resultado.tipo).toBe('segue')
+    expect(rel.N).toBe(6)
+    expect(rel.aprimoramento).toMatchObject({ situacao: 'feito', de: { N: 3 } })
+    expect(rel.aprimoramento!.virada).toBeUndefined()
+  })
+
+  it('acha a conclusão que cai num cenário maior', () => {
+    // "há no máximo 4 objetos": vale em todo cenário até 4, falha com 5
+    const ate4 = '∀x ∀y ∀z ∀w ∀v (x = y ∨ x = z ∨ x = w ∨ x = v ∨ y = z ∨ y = w ∨ y = v ∨ z = w ∨ z = v ∨ w = v)'
+    const rel = rodarAprimorando([g('L1', 'P(c)')], [t('T1', ate4)], 4)
+    expect(rel.teoremas[0].resultado.tipo).toBe('segue')
+    expect(rel.aprimoramento!.virada).toMatchObject({ N: 5 })
+    expect(rel.N).toBe(4)
+  })
+})

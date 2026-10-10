@@ -10,7 +10,7 @@ const GRAUS: Grau[] = ['F', 'M', 'D']
 
 let filtroSalvo: Filtro = FILTRO_VAZIO // mantém o filtro ao voltar do editor
 
-export function ListaNotas({ onExemplo }: { onExemplo: () => void }) {
+export function ListaNotas() {
   const est = useEstado()
   const [f, setF] = useState<Filtro>(filtroSalvo)
   const mudar = (p: Partial<Filtro>) => {
@@ -27,6 +27,9 @@ export function ListaNotas({ onExemplo }: { onExemplo: () => void }) {
       <div class="barra-acoes">
         <a class="botao primario" href={`#/nova/${f.compartimento ?? 'lei'}`}>
           + Nova nota
+        </a>
+        <a class="botao" href="#/sistemas">
+          Sistemas prontos
         </a>
       </div>
 
@@ -78,9 +81,9 @@ export function ListaNotas({ onExemplo }: { onExemplo: () => void }) {
       {!est.notas.length && est.carregado && (
         <div class="vazio">
           <p>Nenhuma nota ainda.</p>
-          <button type="button" onClick={onExemplo}>
-            Carregar exemplo (axiomas Ax1–Ax7)
-          </button>
+          <a class="botao" href="#/sistemas">
+            Sistemas prontos
+          </a>
         </div>
       )}
       {est.notas.length > 0 && !notas.length && <p class="suave">Nenhuma nota com esse filtro.</p>}

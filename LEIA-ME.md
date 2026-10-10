@@ -21,6 +21,12 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
 - O motor normal vale "até N objetos" (e até K mundos, com lógica modal): é um
   indício forte, não prova. Com o **Z3** ligado, a resposta vira prova.
 
+## Sistemas prontos
+
+Em **Notas → Sistemas prontos** ficam conjuntos de notas e fichas que vêm
+dentro do app. Sistemas pessoais vão **cifrados**: só quem tem a senha consegue
+abri-los; no site e no código público só existe o texto embaralhado.
+
 ## Lógica modal
 
 | Escrita | Atalho | Significado |

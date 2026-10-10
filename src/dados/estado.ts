@@ -49,6 +49,10 @@ export class Estado {
   ultimoBackup: number | undefined
   adiadoAte: number | undefined
   primeiroUso = Date.now()
+  /** true na primeira vez que o app abre neste aparelho/navegador (caderno novo) */
+  primeiraVez = false
+  /** sistema pronto carregado num caderno novo ('nenhum' = começa em branco) */
+  sistemaPadrao = 'nenhum'
   /** mensagem quando o IndexedDB não está disponível (os dados ficam só na memória) */
   erroBanco: string | null = null
   private ouvintes = new Set<() => void>()
@@ -76,15 +80,20 @@ export class Estado {
       const [notas, dic] = await Promise.all([db.listar<Nota>('notas'), db.listar<EntradaDicionario>('dicionario')])
       this.notas = notas.sort(porData)
       this.dicionario = dic.sort(porSimbolo)
-      const [ultimo, adiado, primeiro] = await Promise.all([
+      const [ultimo, adiado, primeiro, padrao] = await Promise.all([
         db.lerConfig<number>('ultimoBackup'),
         db.lerConfig<number>('adiadoAte'),
         db.lerConfig<number>('primeiroUso'),
+        db.lerConfig<string>('sistemaPadrao'),
       ])
+      if (padrao) this.sistemaPadrao = padrao
       this.ultimoBackup = ultimo ?? undefined
       this.adiadoAte = adiado ?? undefined
       if (primeiro) this.primeiroUso = primeiro
-      else await db.gravarConfig('primeiroUso', this.primeiroUso)
+      else {
+        this.primeiraVez = true
+        await db.gravarConfig('primeiroUso', this.primeiroUso)
+      }
     } catch (e) {
       this.erroBanco = `Armazenamento indisponível (${(e as Error).message}). Nada será salvo.`
     }
@@ -135,6 +144,12 @@ export class Estado {
       await db.gravarConfig('ultimoBackup', this.ultimoBackup)
       await db.gravarConfig('adiadoAte', null)
     })
+  }
+
+  async definirSistemaPadrao(id: string) {
+    this.sistemaPadrao = id
+    this.avisar()
+    await this.persistir(() => db.gravarConfig('sistemaPadrao', id))
   }
 
   async adiarLembrete(dias = 1) {

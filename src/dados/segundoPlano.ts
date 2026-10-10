@@ -65,7 +65,8 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
         for (const rel of r.relatorios)
           for (const t of rel.teoremas) {
             const a = ant.relatorios.find((x) => x.chave === rel.chave)?.teoremas.find((x) => x.id === t.id)
-            if (a && a.resultado.tipo !== 'segue' && t.resultado.tipo === 'segue') novos++
+            // passou a seguir, ou é um teorema novo que já segue
+            if ((!a || a.resultado.tipo !== 'segue') && t.resultado.tipo === 'segue') novos++
           }
       // rodada automática: só avisa se apareceu algo novo
       if (r.motivo.startsWith('automático')) {
@@ -73,7 +74,7 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
         if (!conflitos && !novos && sugestoes <= sugAntes) return null
       }
       if (conflitos) partes.push(`⚠ ${plural(conflitos, 'contradição', 'contradições')}`)
-      if (novos) partes.push(`${plural(novos, 'teorema passou', 'teoremas passaram')} a seguir`)
+      if (novos) partes.push(`${plural(novos, 'teorema novo seguindo', 'teoremas novos seguindo')}`)
       if (seguem) partes.push(`${plural(seguem, 'teorema segue', 'teoremas seguem')}${geracao > 1 ? ` (até a geração ${geracao})` : ''}`)
       if (naoSeguem) partes.push(`${plural(naoSeguem, 'não segue', 'não seguem')}`)
       if (sugestoes) partes.push(`${plural(sugestoes, 'lei sugerida', 'leis sugeridas')} para aprovar`)

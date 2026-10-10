@@ -132,6 +132,8 @@ export interface RelatorioCadeia {
   consequenciasJaTeorema: number
   /** aprimoramento automático (N e K acima sobem conforme as conclusões são reconferidas) */
   aprimoramento: EstadoAprimoramento | null
+  /** ids das leis e fatos que entraram nesta rodada (para dizer o que é novo na seguinte) */
+  leisIds?: string[]
 }
 
 const conj = (fs: Formula[]): Formula => fs.reduce((a, b): Formula => ({ k: 'and', l: a, r: b, pos: 0, end: 0 }))
@@ -157,6 +159,7 @@ export function reacaoEmCadeia(
     consequencias: null,
     consequenciasJaTeorema: 0,
     aprimoramento: null,
+    leisIds: c.grupos.map((g) => g.id),
   }))
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
   pedido.contextos.forEach((c, k) => {

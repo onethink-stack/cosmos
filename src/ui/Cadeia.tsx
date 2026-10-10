@@ -236,7 +236,14 @@ function Mudancas({ r, anterior }: { r: RodadaCadeia; anterior: RodadaCadeia }) 
     if (!ant) continue
     for (const t of rel.teoremas) {
       const a = ant.teoremas.find((x) => x.id === t.id)
-      if (a && a.resultado.tipo !== t.resultado.tipo)
+      if (!a)
+        itens.push(
+          <li>
+            teorema novo: <Link id={t.id} /> — <b>{nomeResultado(t)}</b>
+            {t.geracao && ` (geração ${t.geracao})`}
+          </li>,
+        )
+      else if (a.resultado.tipo !== t.resultado.tipo)
         itens.push(
           <li>
             <Link id={t.id} />: {nomeResultado(a)} → <b>{nomeResultado(t)}</b>
@@ -252,13 +259,15 @@ function Mudancas({ r, anterior }: { r: RodadaCadeia; anterior: RodadaCadeia }) 
     }
     for (const l of rel.leis) {
       const a = ant.leis.find((x) => x.id === l.id)
-      if (!a)
+      // "nova" só se a lei não estava na rodada anterior (com uma lei só, não há comparação entre leis)
+      const estava = ant.leisIds ? ant.leisIds.includes(l.id) : !!a
+      if (!a && !estava)
         itens.push(
           <li>
             nova no conjunto: <Link id={l.id} /> ({l.tipo === 'decorre' ? 'decorre das outras' : l.tipo})
           </li>,
         )
-      else if (a.tipo !== l.tipo)
+      else if (a && a.tipo !== l.tipo)
         itens.push(
           <li>
             <Link id={l.id} />: {a.tipo} → <b>{l.tipo === 'decorre' ? 'decorre das outras' : l.tipo}</b>

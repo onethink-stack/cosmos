@@ -61,7 +61,8 @@ export interface CandidataLei {
 }
 
 /** Leis gerais montadas com os símbolos usados nas fórmulas. */
-export function gerarLeis(formulas: Formula[]): { candidatas: CandidataLei[]; truncado: boolean } {
+/** `reservados`: nomes que não podem virar variável (ex.: os do dicionário). */
+export function gerarLeis(formulas: Formula[], reservados: Iterable<string> = []): { candidatas: CandidataLei[]; truncado: boolean } {
   const tipos = new Map<string, { tipo: TipoSimbolo; aridade: number }>()
   for (const f of formulas) for (const u of usosDeNomes(f)) if (!tipos.has(u.nome)) tipos.set(u.nome, { tipo: u.tipo, aridade: u.aridade })
   const C = [...tipos].filter(([, t]) => t.tipo === 'constante').map(([n]) => n)
@@ -71,7 +72,7 @@ export function gerarLeis(formulas: Formula[]): { candidatas: CandidataLei[]; tr
   const usaPertence = formulas.some((f) => /[∈∉⊆⋂⋃∅]/.test(imprimir(f)))
 
   // variáveis que não colidem com nenhum nome usado
-  const usados = new Set(tipos.keys())
+  const usados = new Set([...tipos.keys(), ...reservados])
   const vars: string[] = []
   for (const v of ['x', 'y', 'z', 'u', 'v', 'w', 's', 't']) if (!usados.has(v)) vars.push(v)
   for (let i = 1; vars.length < 3; i++) if (!usados.has(`x${i}`)) vars.push(`x${i}`)
@@ -188,7 +189,7 @@ export function procurarLeis(
     const f = fs.length === 1 ? fs[0] : fs.map((t) => `(${t})`).join(' ∧ ')
     return [{ formula: f, nome: g.rotulo, leitura: 'nota desativada do caderno', notaId: g.id }]
   })
-  const { candidatas: gerais, truncado } = gerarLeis([...premissas, phi.expandida])
+  const { candidatas: gerais, truncado } = gerarLeis([...premissas, phi.expandida], dicionario.map((e) => e.simbolo))
   const vistas = new Set<string>()
   const candidatas = [...daNota, ...gerais]
     .map((c) => ({ c, pronta: analisar([c.formula], dicionario)[0] }))

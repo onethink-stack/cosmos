@@ -63,3 +63,19 @@ describe('procurar a lei que falta', () => {
     expect(f('∀x P(x)')).not.toBe(f('∃x P(x)'))
   })
 })
+
+describe('variáveis das leis candidatas', () => {
+  it('não usam nomes do dicionário (x como constante não some com as candidatas)', () => {
+    const dic = [
+      { id: 'x', simbolo: 'x', tipo: 'constante' as const, aridade: 0, termo: 'x', definicao: '', numerico: true },
+      { id: 'P', simbolo: 'P', tipo: 'predicado' as const, aridade: 1, termo: 'P', definicao: '' },
+      { id: 'Q', simbolo: 'Q', tipo: 'predicado' as const, aridade: 1, termo: 'Q', definicao: '' },
+      { id: 'a', simbolo: 'a', tipo: 'constante' as const, aridade: 0, termo: 'a', definicao: '' },
+      { id: 'b', simbolo: 'b', tipo: 'constante' as const, aridade: 0, termo: 'b', definicao: '' },
+    ]
+    const r = procurarLeis([{ id: 'L1', rotulo: 'L1', formulas: ['∀z (P(z) ⟹ Q(z))', 'P(a)'] }], [], 'Q(b)', dic, { ...OPCOES_PADRAO, N: 4 })
+    if (r.tipo !== 'sugestoes') throw new Error(r.tipo)
+    expect(r.itens.map((s) => s.nome)).toContain('Tudo tem P')
+    expect(r.itens.every((s) => !/∀x|∃x/.test(s.formula))).toBe(true)
+  })
+})

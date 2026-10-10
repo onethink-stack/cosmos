@@ -55,7 +55,8 @@ interface Candidata {
 }
 
 /** Gera as candidatas a partir dos símbolos usados nas notas. */
-export function gerarCandidatas(premissas: Formula[]): { candidatas: Candidata[]; truncado: boolean } {
+/** `reservados`: nomes que não podem virar variável (ex.: os do dicionário). */
+export function gerarCandidatas(premissas: Formula[], reservados: Iterable<string> = []): { candidatas: Candidata[]; truncado: boolean } {
   const tipos = new Map<string, { tipo: TipoSimbolo; aridade: number }>()
   for (const f of premissas) for (const u of usosDeNomes(f)) if (!tipos.has(u.nome)) tipos.set(u.nome, { tipo: u.tipo, aridade: u.aridade })
   const C = [...tipos].filter(([, t]) => t.tipo === 'constante').map(([n]) => n)
@@ -63,7 +64,7 @@ export function gerarCandidatas(premissas: Formula[]): { candidatas: Candidata[]
   const F = [...tipos].filter(([, t]) => t.tipo === 'funcao' && t.aridade === 1).map(([n]) => n)
 
   // variável para "não é vazio" que não colida com nenhum nome usado
-  const usados = new Set(tipos.keys())
+  const usados = new Set([...tipos.keys(), ...reservados])
   let x = ['x', 'y', 'z', 'w', 'u', 'v'].find((v) => !usados.has(v))
   for (let i = 1; !x; i++) if (!usados.has(`x${i}`)) x = `x${i}`
 
@@ -109,7 +110,7 @@ export function descobrir(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   if (base.status === 'grande-demais') return { tipo: 'grande-demais', n: base.n }
   if (base.status === 'sem-modelo') return { tipo: 'premissas-contraditorias', N: op.N }
 
-  const { candidatas, truncado } = gerarCandidatas(premissas)
+  const { candidatas, truncado } = gerarCandidatas(premissas, dicionario.map((e) => e.simbolo))
   const escritas = new Set(prontos.flatMap((x) => x.itens.map((i) => imprimir(i.original))))
   const mundos: Modelo[] = [base.modelo]
   const avaliadores = [new Avaliador(base.modelo)]

@@ -4,12 +4,15 @@ import type { Compartimento } from '../dados/tipos'
 export type Rota =
   | { tela: 'notas' }
   | { tela: 'nota'; id: string }
-  | { tela: 'nova'; compartimento: Compartimento }
+  /** `visita`: muda a cada navegação, para cada "nova nota" abrir um editor novo */
+  | { tela: 'nova'; compartimento: Compartimento; visita: number }
   | { tela: 'dicionario' }
   | { tela: 'contradicoes' }
   | { tela: 'backup' }
   | { tela: 'sistemas' }
   | { tela: 'cadeia' }
+
+let visitas = 0
 
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/')
@@ -18,7 +21,7 @@ export function lerRota(hash: string): Rota {
       return partes[1] ? { tela: 'nota', id: decodeURIComponent(partes[1]) } : { tela: 'notas' }
     case 'nova': {
       const c = partes[1]
-      return { tela: 'nova', compartimento: c === 'fato' || c === 'visao' || c === 'teorema' ? c : 'lei' }
+      return { tela: 'nova', compartimento: c === 'fato' || c === 'visao' || c === 'teorema' ? c : 'lei', visita: ++visitas }
     }
     case 'dicionario':
       return { tela: 'dicionario' }

@@ -63,7 +63,7 @@ export function App() {
         ) : rota.tela === 'nota' ? (
           <EditorNota key={rota.id} id={rota.id} />
         ) : rota.tela === 'nova' ? (
-          <EditorNota key={`nova-${rota.compartimento}`} compartimento={rota.compartimento} />
+          <EditorNota key={`nova-${rota.compartimento}-${rota.visita}`} compartimento={rota.compartimento} />
         ) : rota.tela === 'dicionario' ? (
           <Dicionario />
         ) : rota.tela === 'backup' ? (

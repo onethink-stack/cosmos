@@ -14,7 +14,7 @@ import { renomear } from '../logica/nomes'
 import { usosDeNomes } from '../logica/termos'
 import { ehModal } from './aterrar'
 import { Avaliador } from './avaliar'
-import { analisar, buscarModelo, minimizar, nao, type Grupo, type GrupoPronto, type Modelo, type OpcoesMotor, type Progresso } from './motor'
+import { analisar, buscarModelo, minimizarRapido, nao, type Grupo, type GrupoPronto, type Modelo, type OpcoesMotor, type Progresso } from './motor'
 
 export interface Consequencia {
   formula: string
@@ -150,7 +150,7 @@ export function descobrir(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   const itens: Consequencia[] = enxutas.map((c, k) => {
     progresso?.(`procurando as notas de origem (${k + 1}/${enxutas.length}): ${c.formula}`)
     const v = porFormula.get(c.formula)!
-    const notas = minimizar(prontos, [nao(v.pronta.expandida)], op, 0)
+    const notas = minimizarRapido(prontos, [nao(v.pronta.expandida)], op, 0)
     return { formula: c.formula, descricao: c.descricao, notas: notas.map((x) => x.g.id) }
   })
   const K = premissas.some(ehModal) ? op.K : 1

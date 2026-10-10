@@ -16,10 +16,10 @@ const dic = ['P', 'Q', 'R', 'S'].map((p) => ficha(p, 'predicado', 1)).concat([fi
 const g = (id: string, ...formulas: string[]) => ({ id, rotulo: id, formulas })
 const t = (id: string, formula: string) => ({ id: `${id}:0`, notaId: id, rotulo: id, formula })
 
-function rodar(grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], inativas: ReturnType<typeof g>[] = []) {
+async function rodar(grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], inativas: ReturnType<typeof g>[] = []) {
   let ultimo: RelatorioCadeia[] = []
   const etapas: string[] = []
-  reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas }, dic, op, (r) => {
+  await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas }, dic, op, (r) => {
     ultimo = r
     etapas.push(r[0].etapa)
   })
@@ -29,16 +29,16 @@ function rodar(grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[],
 describe('reação em cadeia', () => {
   const leis = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', '∀x (Q(x) ⟹ R(x))'), g('L3', 'P(c)'), g('L4', '∀x (P(x) ⟹ R(x))')]
 
-  it('bate as leis umas com as outras: independentes e redundantes', () => {
-    const { rel } = rodar(leis, [])
+  it('bate as leis umas com as outras: independentes e redundantes', async () => {
+    const { rel } = await rodar(leis, [])
     expect(rel.consistencia?.tipo).toBe('consistente')
     const L4 = rel.leis.find((l) => l.id === 'L4')!
     expect(L4).toMatchObject({ tipo: 'decorre', notas: ['L1', 'L2'] })
     expect(rel.leis.find((l) => l.id === 'L3')!.tipo).toBe('independente')
   })
 
-  it('monta a cadeia de teoremas, geração por geração', () => {
-    const { rel, etapas } = rodar(leis.slice(0, 3), [t('T2', 'R(c)'), t('T1', 'Q(c)')])
+  it('monta a cadeia de teoremas, geração por geração', async () => {
+    const { rel, etapas } = await rodar(leis.slice(0, 3), [t('T2', 'R(c)'), t('T1', 'Q(c)')])
     const T1 = rel.teoremas.find((x) => x.id === 'T1:0')!
     const T2 = rel.teoremas.find((x) => x.id === 'T2:0')!
     expect(T1).toMatchObject({ geracao: 1 })
@@ -47,21 +47,21 @@ describe('reação em cadeia', () => {
     expect(etapas.at(-1)).toBe('fim')
   })
 
-  it('sugere a lei que fecha vários teoremas de uma vez', () => {
-    const { rel } = rodar([g('L1', 'P(c)')], [t('T1', 'S(c)'), t('T2', '∃x S(x)')], [g('desligada', '∀y (P(y) ⟹ S(y))')])
+  it('sugere a lei que fecha vários teoremas de uma vez', async () => {
+    const { rel } = await rodar([g('L1', 'P(c)')], [t('T1', 'S(c)'), t('T2', '∃x S(x)')], [g('desligada', '∀y (P(y) ⟹ S(y))')])
     expect(rel.teoremas.every((x) => x.resultado.tipo === 'nao-segue')).toBe(true)
     const s = rel.sugestoes[0]
     expect(s.lei.notaId).toBe('desligada')
     expect(s.fecha.sort()).toEqual(['T1:0', 'T2:0'])
   })
 
-  it('acusa teoremas incompatíveis entre si', () => {
-    const { rel } = rodar([g('L1', 'P(c)')], [t('T1', 'S(c)'), t('T2', '¬S(c)')])
+  it('acusa teoremas incompatíveis entre si', async () => {
+    const { rel } = await rodar([g('L1', 'P(c)')], [t('T1', 'S(c)'), t('T2', '¬S(c)')])
     expect(rel.conflitoTeoremas?.sort()).toEqual(['T1:0', 'T2:0'])
   })
 
-  it('para nas leis contraditórias', () => {
-    const { rel } = rodar([g('L1', 'P(c)'), g('L2', '¬P(c)')], [t('T1', 'Q(c)')])
+  it('para nas leis contraditórias', async () => {
+    const { rel } = await rodar([g('L1', 'P(c)'), g('L2', '¬P(c)')], [t('T1', 'Q(c)')])
     expect(rel.consistencia?.tipo).toBe('sem-modelo')
     expect(rel.teoremas).toEqual([])
   })
@@ -69,24 +69,24 @@ describe('reação em cadeia', () => {
 
 describe('aprimoramento automático', () => {
   const lim = { N: 6, K: 1, limite: 1_000_000, tempoChecagemMs: 20_000, orcamentoMs: 120_000 }
-  const rodarAprimorando = (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], N: number) => {
+  const rodarAprimorando = async (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], N: number) => {
     let ultimo: RelatorioCadeia[] = []
-    reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [], aprimorar: lim }, dic, { ...op, N }, (r) => (ultimo = r))
+    await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [], aprimorar: lim }, dic, { ...op, N }, (r) => (ultimo = r))
     return ultimo[0]
   }
 
-  it('aprofunda as conclusões até o limite quando todas continuam valendo', () => {
-    const rel = rodarAprimorando([g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')], [t('T1', 'Q(c)')], 3)
+  it('aprofunda as conclusões até o limite quando todas continuam valendo', async () => {
+    const rel = await rodarAprimorando([g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')], [t('T1', 'Q(c)')], 3)
     expect(rel.teoremas[0].resultado.tipo).toBe('segue')
     expect(rel.N).toBe(6)
     expect(rel.aprimoramento).toMatchObject({ situacao: 'feito', de: { N: 3 } })
     expect(rel.aprimoramento!.virada).toBeUndefined()
   })
 
-  it('acha a conclusão que cai num cenário maior', () => {
+  it('acha a conclusão que cai num cenário maior', async () => {
     // "há no máximo 4 objetos": vale em todo cenário até 4, falha com 5
     const ate4 = '∀x ∀y ∀z ∀w ∀v (x = y ∨ x = z ∨ x = w ∨ x = v ∨ y = z ∨ y = w ∨ y = v ∨ z = w ∨ z = v ∨ w = v)'
-    const rel = rodarAprimorando([g('L1', 'P(c)')], [t('T1', ate4)], 4)
+    const rel = await rodarAprimorando([g('L1', 'P(c)')], [t('T1', ate4)], 4)
     expect(rel.teoremas[0].resultado.tipo).toBe('segue')
     expect(rel.aprimoramento!.virada).toMatchObject({ N: 5 })
     expect(rel.N).toBe(4)

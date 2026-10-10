@@ -92,10 +92,10 @@ describe('teoremas', () => {
     expect(p.teoremas.map((f) => f.texto)).toEqual(['Q(a)', 'Q(b)'])
   })
 
-  it('o motor confere cada teorema contra as leis e fatos', () => {
+  it('o motor confere cada teorema contra as leis e fatos', async () => {
     const { tarefas } = montarTarefas(notas, CONTEUDO.dicionario)
     const respostas: RespostaMotor[] = []
-    executarTarefas(
+    await executarTarefas(
       {
         id: 1,
         tarefas: [tarefas[0]],

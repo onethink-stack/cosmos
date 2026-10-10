@@ -19,7 +19,7 @@ import { contextoDoTeorema } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import { canonica } from '../logica/canonica'
 import { limiteTexto, tamanhoTexto } from './avaliar'
-import { reacaoEmCadeia, type ContextoCadeia, type LimitesAprimoramento, type RelatorioCadeia } from './cadeia'
+import { reacaoEmCadeia, type AjudaZ3, type ContextoCadeia, type LimitesAprimoramento, type RelatorioCadeia } from './cadeia'
 import { analisar, buscarModelo, nao, type OpcoesMotor } from './motor'
 
 /** começo do id das leis que o modelo cria (sem ":", que marca fórmula de teorema) */
@@ -157,13 +157,14 @@ function maisFraca(ids: string[], notas: Nota[], criadas: Set<string>): { nota: 
 
 const lista = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} e ${xs.at(-1)}`)
 
-export function rodarModelo(
+export async function rodarModelo(
   p: PedidoModelo,
   dicionario: EntradaDicionario[],
   op: OpcoesMotor,
   enviar: (r: RelatorioModelo) => void,
   progresso: (msg: string) => void,
-) {
+  ajudaZ3?: AjudaZ3,
+): Promise<void> {
   const ini = Date.now()
   let notas = p.notas.map((n) => ({ ...n, formulas: [...n.formulas], tags: [...n.tags] }))
   const eventos: EventoModelo[] = []
@@ -213,7 +214,7 @@ export function rodarModelo(
         // só os teoremas ainda abertos são conferidos de novo
         const c: ContextoCadeia = ordenar({ ...c0, teoremas: c0.teoremas.filter((t) => !provados.has(t.id)) }, notas, criadas, true)
         let rel: RelatorioCadeia | null = null
-        reacaoEmCadeia(
+        await reacaoEmCadeia(
           { contextos: [c], inativas: inativasDoContexto(notas, c.chave), rapida: true },
           dicionario,
           nivel,
@@ -359,7 +360,7 @@ export function rodarModelo(
       notas.map((n) => (notaRefutada.has(n.id) ? { ...n, ativa: true } : n)),
       dicionario,
     )
-    reacaoEmCadeia(
+    await reacaoEmCadeia(
       { ...pedido, contextos: pedido.contextos.map((c) => ordenar(c, notas, criadas, false)), aprimorar: p.aprimorar },
       dicionario,
       nivel,
@@ -372,6 +373,7 @@ export function rodarModelo(
         mandar()
       },
       (_, msg) => progresso(`classificando: ${msg}`),
+      ajudaZ3,
     )
     const virada = r.final?.map((x) => x.aprimoramento?.virada).find((v) => !!v)
     if (virada && refeitas < MAX_REFEITAS) {

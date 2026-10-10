@@ -3,7 +3,7 @@ import { expandir } from '../logica/acucar'
 import type { Formula } from '../logica/ast'
 import { temAritmetica, usosDeNomes } from '../logica/termos'
 import { validar } from '../logica/validador'
-import { Aterrador, ehModal, GrandeDemais, type ProblemaCNF } from './aterrar'
+import { Aterrador, ehModal, GrandeDemais, PREFIXO_SKOLEM, type ProblemaCNF } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
 import { bancoAtual, chaveProva, type BancoProvas, type Prova } from './bancoProvas'
 import { resolver } from './sat'
@@ -132,7 +132,8 @@ function lerModelo(n: number, k: number, p: ProblemaCNF, valores: Int8Array): Mo
     if (valores[v] !== 1) continue
     switch (info.k) {
       case 'const':
-        constantes.push({ nome: info.nome, valor: info.d })
+        // as constantes criadas no lugar de um "existe" são do motor, não do usuário
+        if (!info.nome.startsWith(PREFIXO_SKOLEM)) constantes.push({ nome: info.nome, valor: info.d })
         break
       case 'func':
         if (!funcoes.has(info.nome)) funcoes.set(info.nome, [])
@@ -290,7 +291,7 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   if (r.status === 'modelo') return { tipo: 'consistente', n: r.n, modelo: r.modelo }
   if (r.status === 'grande-demais') return { tipo: 'grande-demais', n: r.n }
 
-  const conjunto = minimizar(prontos, [], op, 1, (g, i) => progresso?.(`procurando o conflito mínimo: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`))
+  const conjunto = minimizarRapido(prontos, [], op, 1, (g, i) => progresso?.(`procurando o conflito mínimo: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`))
 
   progresso?.('montando a explicação')
   const explicacoes = conjunto.map((alvo) => {

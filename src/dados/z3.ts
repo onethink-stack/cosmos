@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useReducer } from 'preact/hooks'
 import type { EntradaDicionario } from './tipos'
+import type { Formula } from '../logica/ast'
 import { guardarZ3, lerZ3Guardados } from '../motor/bancoProvas'
 import { analisar, nao, nomesNumericos, relevantes } from '../motor/motor'
 import { checarZ3, TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
@@ -191,6 +192,31 @@ class EstadoZ3 {
     })
   }
 
+  /**
+   * O conjunto de fórmulas (já prontas, do motor) não tem modelo de nenhum
+   * tamanho? Usado pelo aprofundamento: o que o Z3 prova não precisa ser
+   * reconferido com mais objetos. Resposta guardada como as outras.
+   */
+  async provarFormulas(formulas: Formula[], dicionario: EntradaDicionario[]): Promise<ResultadoZ3 | null> {
+    const chave = `formulas:${JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))}`
+    if (!this.confirmacoes.has(chave)) {
+      this.confirmacoes.set(chave, { estado: 'rodando' })
+      this.fila = this.fila.then(async () => {
+        const ini = Date.now()
+        try {
+          const api = await this.carregar()
+          const resultado = await checarZ3(api, formulas, TEMPO_APROFUNDAR_MS, nomesNumericos(dicionario))
+          this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
+          if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
+        } catch (e) {
+          this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
+        }
+        this.avisar()
+      })
+    }
+    return (await this.esperar(chave))?.resultado ?? null
+  }
+
   /** Resultado já calculado (ou em cálculo) para esta checagem. */
   consulta(chave: string): Confirmacao | undefined {
     return this.confirmacoes.get(chave)
@@ -230,6 +256,9 @@ class EstadoZ3 {
     })
   }
 }
+
+/** tempo do Z3 para cada conclusão do aprofundamento (o motor finito segue trabalhando enquanto isso) */
+const TEMPO_APROFUNDAR_MS = 10_000
 
 export const z3 = new EstadoZ3()
 

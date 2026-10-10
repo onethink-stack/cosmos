@@ -306,10 +306,17 @@ function Nivel({ rel }: { rel: RelatorioCadeia }) {
       {ap?.situacao === 'aprofundando' && (
         <span class="suave">
           {' '}
-          · <span class="girando" aria-hidden="true" /> aprimorando ({ap.conclusoes} conclusões a reconferir em cenários maiores)
+          · <span class="girando" aria-hidden="true" /> aprimorando ({ap.conclusoes} conclusões a reconferir em cenários maiores
+          {ap.paralelo && ap.paralelo > 1 ? `, ${ap.paralelo} núcleos` : ''})
         </span>
       )}
       {ap?.situacao === 'feito' && !ap.virada && ap.parouPor && <span class="suave"> · aprimoramento: {ap.parouPor}</span>}
+      {!!ap?.provadasZ3 && (
+        <span class="suave">
+          {' '}
+          · o Z3 provou {ap.provadasZ3} de {ap.conclusoes} conclusões para qualquer número de objetos
+        </span>
+      )}
       {ap?.virada && (
         <div class="aviso-texto">
           ⚠ Ao aprofundar: {ap.parouPor}. A reação refaz a rodada com {ap.virada.N} objetos.

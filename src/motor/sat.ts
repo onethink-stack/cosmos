@@ -1,5 +1,8 @@
-// SAT solver CDCL: literais vigiados, aprendizado 1-UIP, VSIDS, salvamento de
-// fase e reinícios de Luby. Entrada no estilo DIMACS: variáveis 1..n, literal ±v.
+// SAT solver CDCL: literais vigiados, aprendizado 1-UIP com minimização
+// recursiva da cláusula aprendida, VSIDS, salvamento de fase, reinícios de
+// Luby e limpeza periódica das cláusulas aprendidas (fica a metade melhor,
+// pela LBD — quantos níveis de decisão a cláusula liga —, e as de LBD ≤ 2
+// ficam sempre). Entrada no estilo DIMACS: variáveis 1..n, literal ±v.
 
 export type ResultadoSAT =
   | { sat: true; valores: Int8Array } // valores[v] = 1 (verdadeiro) ou -1 (falso)
@@ -10,6 +13,8 @@ export interface OpcoesSAT {
   maxConflitos?: number
   /** instante (Date.now()) em que desiste e devolve { sat: null } */
   prazo?: number
+  /** se dado, recebe os números da busca (para medir) */
+  estatisticas?: { conflitos: number; decisoes: number; aprendidas: number; limpezas: number }
 }
 
 // Internamente um literal é 2v (positivo) ou 2v+1 (negativo).
@@ -30,6 +35,10 @@ function luby(i: number): number {
   return 2 ** seq
 }
 
+/** primeira limpeza das aprendidas depois de tantos conflitos; cada uma seguinte vem um pouco mais tarde */
+const PRIMEIRA_LIMPEZA = 2000
+const AUMENTO_LIMPEZA = 300
+
 export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT = {}): ResultadoSAT {
   const valor = new Int8Array(nVars + 1) // 0 livre, 1 V, -1 F
   const nivel = new Int32Array(nVars + 1)
@@ -41,6 +50,19 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
   const trilha: number[] = []
   const limites: number[] = [] // início de cada nível de decisão na trilha
   let cabeca = 0
+  /** cláusulas do problema (com 2 literais ou mais) */
+  let originais: number[][] = []
+  /** cláusulas aprendidas e a LBD de cada uma */
+  let aprendidas: number[][] = []
+  let lbds: number[] = []
+  let conflitos = 0
+  let decisoes = 0
+  let limpezas = 0
+
+  const fim = (r: ResultadoSAT): ResultadoSAT => {
+    if (opcoes.estatisticas) Object.assign(opcoes.estatisticas, { conflitos, decisoes, aprendidas: aprendidas.length, limpezas })
+    return r
+  }
 
   // valor de um literal interno: 1, -1 ou 0
   const val = (l: number) => {
@@ -142,13 +164,14 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
     }
     if (tautologia) continue
     const c = [...vistos].map(lit)
-    if (c.length === 0) return { sat: false }
+    if (c.length === 0) return fim({ sat: false })
     if (c.length === 1) {
       const x = val(c[0])
-      if (x === -1) return { sat: false }
+      if (x === -1) return fim({ sat: false })
       if (x === 0) atribuir(c[0], null)
       continue
     }
+    originais.push(c)
     vigiar(c)
   }
   for (let v = 1; v <= nVars; v++) inserir(v)
@@ -197,6 +220,55 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
 
   // ---------- análise de conflito (1-UIP) ----------
   const visto = new Uint8Array(nVars + 1)
+  const pilha: number[] = []
+  /** variáveis marcadas durante a minimização (para desmarcar no fim) */
+  const marcadas: number[] = []
+  const nivelAbstrato = (v: number) => 1 << (nivel[v] & 31)
+
+  /**
+   * O literal (falso) é redundante na cláusula aprendida se o motivo da sua
+   * atribuição só usa literais que já estão na cláusula (ou que também são
+   * redundantes, recursivamente). Assim a cláusula sai menor.
+   */
+  const redundante = (p: number, niveis: number): boolean => {
+    pilha.length = 0
+    pilha.push(p)
+    const topo = marcadas.length
+    while (pilha.length) {
+      const c = razao[pilha.pop()! >> 1]!
+      for (let k = 1; k < c.length; k++) {
+        const v = c[k] >> 1
+        if (visto[v] || nivel[v] === 0) continue
+        if (razao[v] !== null && niveis & nivelAbstrato(v)) {
+          visto[v] = 1
+          pilha.push(c[k])
+          marcadas.push(v)
+        } else {
+          for (let i = topo; i < marcadas.length; i++) visto[marcadas[i]] = 0
+          marcadas.length = topo
+          return false
+        }
+      }
+    }
+    return true
+  }
+
+  const carimbo = new Int32Array(nVars + 2)
+  let carimboAtual = 0
+  /** quantos níveis de decisão diferentes a cláusula liga */
+  const lbdDe = (c: number[]) => {
+    carimboAtual++
+    let n = 0
+    for (const l of c) {
+      const nv = nivel[l >> 1]
+      if (carimbo[nv] !== carimboAtual) {
+        carimbo[nv] = carimboAtual
+        n++
+      }
+    }
+    return n
+  }
+
   const analisar = (conflito: number[]): { aprendida: number[]; volta: number } => {
     const aprendida: number[] = [0]
     let caminho = 0
@@ -222,7 +294,17 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
       caminho--
     } while (caminho > 0)
     aprendida[0] = p ^ 1
-    for (let k = 1; k < aprendida.length; k++) visto[aprendida[k] >> 1] = 0
+
+    // minimização: tira os literais implicados pelos outros
+    let niveis = 0
+    for (let k = 1; k < aprendida.length; k++) niveis |= nivelAbstrato(aprendida[k] >> 1)
+    marcadas.length = 0
+    const antes = aprendida.slice(1)
+    let j = 1
+    for (const q of antes) if (razao[q >> 1] === null || !redundante(q, niveis)) aprendida[j++] = q
+    aprendida.length = j
+    for (const q of antes) visto[q >> 1] = 0
+    for (const v of marcadas) visto[v] = 0
 
     let volta = 0
     if (aprendida.length > 1) {
@@ -234,30 +316,90 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
     return { aprendida, volta }
   }
 
+  /**
+   * Limpeza (no nível 0): sai a metade das aprendidas com LBD maior (as de
+   * LBD ≤ 2 ficam), somem as cláusulas já satisfeitas para sempre e os
+   * literais já falsos para sempre; as vigias são refeitas. Devolve false se
+   * sobrar uma cláusula vazia (sem solução).
+   */
+  const limpar = (): boolean => {
+    limpezas++
+    const candidatas = aprendidas.map((_, i) => i).filter((i) => lbds[i] > 2)
+    candidatas.sort((a, b) => lbds[b] - lbds[a] || b - a)
+    const sai = new Uint8Array(aprendidas.length)
+    for (const i of candidatas.slice(0, candidatas.length >> 1)) sai[i] = 1
+    for (const w of vigias) w.length = 0
+    const simplificar = (cs: number[][], manter: (i: number) => boolean, lbd?: number[]): [number[][], number[]] | null => {
+      const novas: number[][] = []
+      const novasLbd: number[] = []
+      for (let i = 0; i < cs.length; i++) {
+        if (!manter(i)) continue
+        const c = cs[i]
+        let satisfeita = false
+        let k = 0
+        for (const l of c) {
+          const x = val(l)
+          if (x === 1) {
+            satisfeita = true
+            break
+          }
+          if (x === 0) c[k++] = l
+        }
+        if (satisfeita) continue
+        c.length = k
+        if (k === 0) return null
+        if (k === 1) {
+          atribuir(c[0], null)
+          continue
+        }
+        vigiar(c)
+        novas.push(c)
+        if (lbd) novasLbd.push(lbd[i])
+      }
+      return [novas, novasLbd]
+    }
+    const o = simplificar(originais, () => true)
+    if (!o) return false
+    const a = simplificar(aprendidas, (i) => !sai[i], lbds)
+    if (!a) return false
+    originais = o[0]
+    ;[aprendidas, lbds] = a
+    return true
+  }
+
   // ---------- laço principal ----------
-  if (propagar()) return { sat: false }
-  let conflitos = 0
+  if (propagar()) return fim({ sat: false })
   let reinicio = 0
   let limiteReinicio = 100 * luby(0)
   let conflitosDesdeReinicio = 0
-  let decisoes = 0
+  let proximaLimpeza = PRIMEIRA_LIMPEZA
+  let intervaloLimpeza = PRIMEIRA_LIMPEZA
 
   for (;;) {
     const conflito = propagar()
     if (conflito) {
       conflitos++
       conflitosDesdeReinicio++
-      if (limites.length === 0) return { sat: false }
+      if (limites.length === 0) return fim({ sat: false })
       const { aprendida, volta } = analisar(conflito)
       voltar(volta)
       if (aprendida.length === 1) atribuir(aprendida[0], null)
       else {
+        aprendidas.push(aprendida)
+        lbds.push(lbdDe(aprendida))
         vigiar(aprendida)
         atribuir(aprendida[0], aprendida)
       }
       incAtividade /= 0.95
-      if (opcoes.maxConflitos && conflitos >= opcoes.maxConflitos) return { sat: null }
-      if (opcoes.prazo && (conflitos & 63) === 0 && Date.now() > opcoes.prazo) return { sat: null }
+      if (opcoes.maxConflitos && conflitos >= opcoes.maxConflitos) return fim({ sat: null })
+      if (opcoes.prazo && (conflitos & 63) === 0 && Date.now() > opcoes.prazo) return fim({ sat: null })
+      continue
+    }
+    if (conflitos >= proximaLimpeza) {
+      intervaloLimpeza += AUMENTO_LIMPEZA
+      proximaLimpeza = conflitos + intervaloLimpeza
+      voltar(0)
+      if (!limpar()) return fim({ sat: false })
       continue
     }
     if (conflitosDesdeReinicio >= limiteReinicio) {
@@ -279,10 +421,10 @@ export function resolver(nVars: number, entrada: number[][], opcoes: OpcoesSAT =
     if (!v) {
       const valores = new Int8Array(nVars + 1)
       for (let i = 1; i <= nVars; i++) valores[i] = valor[i] || -1
-      return { sat: true, valores }
+      return fim({ sat: true, valores })
     }
     limites.push(trilha.length)
-    if (opcoes.prazo && (++decisoes & 4095) === 0 && Date.now() > opcoes.prazo) return { sat: null }
+    if (opcoes.prazo && (++decisoes & 4095) === 0 && Date.now() > opcoes.prazo) return fim({ sat: null })
     atribuir(fase[v] === 1 ? 2 * v : 2 * v + 1, null)
   }
 }

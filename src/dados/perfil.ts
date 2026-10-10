@@ -99,6 +99,28 @@ export const K_ABSOLUTO = Math.max(...PERFIS.map((p) => p.limites.K))
  */
 export const N_MANUAL = 30
 
+/**
+ * Quantas checagens rodam ao mesmo tempo, cada uma num worker: um por núcleo
+ * (menos um, para a tela), e no máximo um a cada 1,5 GB de memória.
+ */
+export function nucleosDisponiveis(): number {
+  const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Navigator & { deviceMemory?: number }
+  const nucleos = nav.hardwareConcurrency ?? 2
+  const memoria = nav.deviceMemory ?? 4
+  return Math.max(1, Math.min(nucleos - 1, Math.floor(memoria / 1.5), 12))
+}
+
+/**
+ * Com vários workers aprofundando ao mesmo tempo, cada um fica com uma parte
+ * da memória (perto de 40% da do aparelho, dividida entre eles).
+ */
+export function limitePorWorker(limite: number, workers: number): number {
+  if (workers <= 1) return limite
+  const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Navigator & { deviceMemory?: number }
+  const bytes = (nav.deviceMemory ?? 4) * 1e9 * 0.4
+  return Math.min(limite, Math.max(300_000, Math.floor(bytes / workers / BYTES_POR_CLAUSULA)))
+}
+
 /** Adivinha o aparelho pela memória e pelos núcleos que o navegador informa. */
 export function detectarPerfil(): Perfil['id'] {
   const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Navigator & {
@@ -120,6 +142,8 @@ class EstadoPerfil {
   aprimorar = true
   /** rodar a reação em cadeia sozinha quando as notas mudam */
   automatico = true
+  /** checagens ao mesmo tempo ('auto' = um por núcleo livre) */
+  nucleos: 'auto' | number = 'auto'
   private ouvintes = new Set<() => void>()
 
   assinar(fn: () => void) {
@@ -137,6 +161,7 @@ class EstadoPerfil {
       this.escolhido = (await lerConfig<IdPerfil>('perfil')) ?? 'automatico'
       this.aprimorar = (await lerConfig<boolean>('aprimorar')) ?? true
       this.automatico = (await lerConfig<boolean>('automatico')) ?? true
+      this.nucleos = (await lerConfig<'auto' | number>('nucleos')) ?? 'auto'
     } catch {
       /* sem banco */
     }
@@ -152,6 +177,19 @@ class EstadoPerfil {
   escolher(id: IdPerfil) {
     this.escolhido = id
     void gravarConfig('perfil', id).catch(() => {})
+    this.mudou()
+  }
+
+  /** quantas checagens ao mesmo tempo, agora */
+  get paralelo(): number {
+    if (this.nucleos === 'auto') return nucleosDisponiveis()
+    const nucleos = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2
+    return Math.max(1, Math.min(this.nucleos, nucleos))
+  }
+
+  definirNucleos(v: 'auto' | number) {
+    this.nucleos = v
+    void gravarConfig('nucleos', v).catch(() => {})
     this.mudou()
   }
 

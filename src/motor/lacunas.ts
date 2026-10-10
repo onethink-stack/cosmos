@@ -19,7 +19,7 @@ import { imprimir } from '../logica/impressao'
 import { usosDeNomes } from '../logica/termos'
 import { ehModal } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
-import { analisar, buscarModelo, minimizar, minimizarRapido, nao, type Grupo, type GrupoPronto, type OpcoesMotor, type Progresso } from './motor'
+import { analisar, buscarModelo, minimizarRapido, nao, type Grupo, type GrupoPronto, type OpcoesMotor, type Progresso } from './motor'
 
 export interface LeiSugerida {
   formula: string
@@ -177,7 +177,7 @@ export function procurarLeis(
   progresso?.('conferindo se as leis e fatos contradizem o teorema')
   const afavor = buscarModelo([...premissas, phi.expandida], op)
   if (afavor.status === 'sem-modelo') {
-    const notas = minimizar(prontos, [phi.expandida], op, 0)
+    const notas = minimizarRapido(prontos, [phi.expandida], op, 0)
     return { tipo: 'contradiz', N: op.N, notas: notas.map((x) => x.g.id) }
   }
 

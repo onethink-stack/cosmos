@@ -2,7 +2,8 @@ import { preparar } from '../dados/premissas'
 import { lex } from '../logica/lexer'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import { bancoAtual, type EstatisticasBanco } from './bancoProvas'
-import { reacaoEmCadeia, type PedidoCadeia, type RelatorioCadeia } from './cadeia'
+import type { Formula } from '../logica/ast'
+import { reacaoEmCadeia, type AjudaZ3, type PedidoCadeia, type RelatorioCadeia } from './cadeia'
 import { descobrir, type ResultadoDescoberta } from './descobrir'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
 import { rodarModelo, type PedidoModelo, type RelatorioModelo } from './modelo'
@@ -33,6 +34,8 @@ export interface PedidoMotor {
   cadeia?: PedidoCadeia
   /** se presente, roda o segundo modelo (as tarefas são ignoradas) */
   modelo?: PedidoModelo
+  /** quantos workers auxiliares usar (1 = só o próprio worker) */
+  paralelo?: number
 }
 
 export type RespostaMotor =
@@ -47,18 +50,22 @@ export type RespostaMotor =
   | { id: number; tipo: 'erro'; chave: string; msg: string }
   /** quanto o banco de provas guardou e reaproveitou */
   | { id: number; tipo: 'banco'; estatisticas: EstatisticasBanco }
+  /** o motor pede ao Z3 (na linha principal) para provar estes conjuntos sem limite de tamanho */
+  | { id: number; tipo: 'z3-pedido'; pedido: number; conjuntos: Formula[][] }
   | { id: number; tipo: 'fim' }
 
-export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void) {
+/** `ajudaZ3`: como pedir provas ao Z3 (só no worker; nos testes e sem worker, não há) */
+export async function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => void, ajudaZ3?: AjudaZ3): Promise<void> {
   if (p.modelo) {
     const ini = Date.now()
     try {
-      rodarModelo(
+      await rodarModelo(
         p.modelo,
         p.dicionario,
         p.opcoes,
         (relatorio) => enviar({ id: p.id, tipo: 'modelo', relatorio, ms: Date.now() - ini }),
         (msg) => enviar({ id: p.id, tipo: 'progresso', chave: 'modelo', msg }),
+        ajudaZ3,
       )
     } catch (e) {
       enviar({ id: p.id, tipo: 'erro', chave: 'modelo', msg: (e as Error).message })
@@ -69,12 +76,13 @@ export function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor) => vo
   if (p.cadeia) {
     const ini = Date.now()
     try {
-      reacaoEmCadeia(
+      await reacaoEmCadeia(
         p.cadeia,
         p.dicionario,
         p.opcoes,
         (relatorios) => enviar({ id: p.id, tipo: 'cadeia', relatorios, ms: Date.now() - ini }),
         (chave, msg) => enviar({ id: p.id, tipo: 'progresso', chave, msg }),
+        ajudaZ3,
       )
     } catch (e) {
       enviar({ id: p.id, tipo: 'erro', chave: 'cadeia', msg: (e as Error).message })

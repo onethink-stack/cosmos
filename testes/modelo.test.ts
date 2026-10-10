@@ -36,18 +36,18 @@ const nota = (id: string, compartimento: Nota['compartimento'], formulas: string
   }
 }
 
-function rodar(notas: Nota[]): { final: RelatorioModelo; envios: number } {
+async function rodar(notas: Nota[]): Promise<{ final: RelatorioModelo; envios: number }> {
   let final: RelatorioModelo | null = null
   let envios = 0
-  rodarModelo({ notas, orcamentoMs: 60_000 }, dic, op, (r) => ((final = r), envios++), () => {})
+  await rodarModelo({ notas, orcamentoMs: 60_000 }, dic, op, (r) => ((final = r), envios++), () => {})
   return { final: final!, envios }
 }
 
 const classe = (r: RelatorioModelo, id: string) => r.itens.find((i) => i.id === id)?.classe
 
 describe('segundo modelo', () => {
-  it('desativa a nota mais fraca de uma contradição e segue sozinho', () => {
-    const { final } = rodar([
+  it('desativa a nota mais fraca de uma contradição e segue sozinho', async () => {
+    const { final } = await rodar([
       nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))']),
       nota('L2', 'lei', ['P(a)']),
       nota('L3', 'lei', ['¬Q(a)'], { grau: 'M' }),
@@ -61,14 +61,14 @@ describe('segundo modelo', () => {
     expect(ev.detalhe).toContain('grau M')
   })
 
-  it('refuta o teorema que as leis contradizem', () => {
-    const { final } = rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['¬P(a)'])])
+  it('refuta o teorema que as leis contradizem', async () => {
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['¬P(a)'])])
     expect(classe(final, 'T1:0')).toBe('refutado')
     expect(final.eventos.some((e) => e.tipo === 'refutou')).toBe(true)
   })
 
-  it('ativa a nota desativada que fecha teoremas, sem pedir aprovação', () => {
-    const { final } = rodar([
+  it('ativa a nota desativada que fecha teoremas, sem pedir aprovação', async () => {
+    const { final } = await rodar([
       nota('L1', 'lei', ['P(a)']),
       nota('desligada', 'lei', ['∀y (P(y) ⟹ S(y))'], { ativa: false }),
       nota('T1', 'teorema', ['S(a)']),
@@ -83,15 +83,15 @@ describe('segundo modelo', () => {
     expect(ms).toMatchObject([{ tipo: 'ativar' }])
   })
 
-  it('não adota lei que refutaria outro teorema aberto: as teses em conflito ficam', () => {
-    const { final } = rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['S(a)']), nota('T2', 'teorema', ['¬S(a)'])])
+  it('não adota lei que refutaria outro teorema aberto: as teses em conflito ficam', async () => {
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['S(a)']), nota('T2', 'teorema', ['¬S(a)'])])
     expect(classe(final, 'T1:0')).toBe('conflito')
     expect(classe(final, 'T2:0')).toBe('conflito')
     expect(final.notas.filter((n) => n.id.startsWith('modelo-'))).toEqual([])
   })
 
-  it('adota uma lei nova (grau D) e o grau passa para o que segue dela', () => {
-    const { final } = rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['Q(a)'])])
+  it('adota uma lei nova (grau D) e o grau passa para o que segue dela', async () => {
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)']), nota('T1', 'teorema', ['Q(a)'])])
     const adotada = final.itens.find((i) => i.classe === 'adotada')
     expect(adotada).toBeTruthy()
     const lei = final.notas.find((n) => n.id === adotada!.notaId)!
@@ -102,8 +102,8 @@ describe('segundo modelo', () => {
     expect(ms.some((m) => m.tipo === 'criar' && m.nota.id === lei.id)).toBe(true)
   })
 
-  it('entre leis que fecham o mesmo, adota a mais fraca; o apoio fica com as notas mais fortes', () => {
-    const { final } = rodar([
+  it('entre leis que fecham o mesmo, adota a mais fraca; o apoio fica com as notas mais fortes', async () => {
+    const { final } = await rodar([
       nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))']),
       nota('L2', 'fato', ['P(a)']),
       nota('T1', 'teorema', ['Q(a)']),
@@ -116,8 +116,8 @@ describe('segundo modelo', () => {
     expect(final.itens.find((i) => i.id === 'T1:0')!.apoio!.sort()).toEqual(['L1', 'L2'])
   })
 
-  it('classifica as desativadas pelo usuário: cabem ou não cabem', () => {
-    const { final } = rodar([
+  it('classifica as desativadas pelo usuário: cabem ou não cabem', async () => {
+    const { final } = await rodar([
       nota('L1', 'lei', ['P(a)']),
       nota('cabe', 'lei', ['Q(b)'], { ativa: false }),
       nota('nao-cabe', 'lei', ['¬P(a)'], { ativa: false }),
@@ -128,10 +128,10 @@ describe('segundo modelo', () => {
 })
 
 describe('segundo modelo com aprimoramento', () => {
-  it('mostra a classificação provisória antes de terminar de aprofundar', () => {
+  it('mostra a classificação provisória antes de terminar de aprofundar', async () => {
     const envios: RelatorioModelo[] = []
     const aprimorar = { N: 6, K: 1, limite: 1_000_000, tempoChecagemMs: 20_000, orcamentoMs: 60_000 }
-    rodarModelo(
+    await rodarModelo(
       { notas: [nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))']), nota('L2', 'lei', ['P(a)']), nota('T1', 'teorema', ['Q(a)'])], aprimorar, orcamentoMs: 60_000 },
       dic,
       op,
@@ -147,7 +147,7 @@ describe('segundo modelo com aprimoramento', () => {
 })
 
 describe('pastas do segundo modelo', () => {
-  it('entram só as notas das pastas escolhidas; os teoremas desativados também', () => {
+  it('entram só as notas das pastas escolhidas; os teoremas desativados também', async () => {
     const ns = [
       nota('A', 'lei', ['P(a)'], { tags: ['x'] }),
       nota('B', 'lei', ['Q(a)'], { tags: ['y'] }),

@@ -10,7 +10,9 @@ import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
 import { z3 } from './z3'
-import { K_ABSOLUTO, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
+import { K_ABSOLUTO, limitePorWorker, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
+import type { Formula } from '../logica/ast'
+import { disponibilidadeZ3 } from './z3'
 import type { EntradaDicionario, Nota } from './tipos'
 import { assinaturaModelo, type ExecucaoModelo } from './modelo'
 import type { RelatorioModelo } from '../motor/modelo'
@@ -308,6 +310,21 @@ class Verificacao {
     void this.bancoAqui.then(() => setTimeout(() => executarTarefas(pedido, (r) => this.receber(r)), 30))
   }
 
+  /**
+   * O motor pediu ao Z3 para provar conclusões sem limite de tamanho (com o
+   * Z3 ligado): cada uma provada é avisada ao worker, que deixa de aprofundá-la.
+   */
+  private async provarNoZ3(pedido: number, conjuntos: Formula[][]) {
+    if (!z3.ativo || !disponibilidadeZ3().ok) return
+    const w = this.worker
+    const dicionario = this.dicionario
+    for (const [indice, formulas] of conjuntos.entries()) {
+      if (!w || this.worker !== w) return // o trabalho foi cancelado
+      const r = await z3.provarFormulas(formulas, dicionario)
+      if (r === 'unsat' && this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice })
+    }
+  }
+
   /** Apaga o banco de provas (tudo será conferido de novo). */
   async limparBanco() {
     this.cancelar()
@@ -353,7 +370,11 @@ class Verificacao {
     const pf = perfil.atual
     const N = Math.min(nivel?.N ?? pf.Ninicial, pf.limites.N)
     const K = Math.min(nivel?.K ?? pf.Kinicial, pf.limites.K)
-    const completo: PedidoCadeia = { ...pedido, aprimorar: perfil.aprimorar ? pf.limites : undefined }
+    const paralelo = perfil.paralelo
+    const completo: PedidoCadeia = {
+      ...pedido,
+      aprimorar: perfil.aprimorar ? { ...pf.limites, limite: limitePorWorker(pf.limites.limite, paralelo) } : undefined,
+    }
     const numero = (this.rodadas.at(-1)?.numero ?? 0) + 1
     this.rodadas = [
       ...this.rodadas,
@@ -370,7 +391,7 @@ class Verificacao {
     this.pendentes = new Map()
     this.rodando = { chave: 'cadeia', msg: 'preparando' }
     this.avisar()
-    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { N, K, limite: pf.limites.limite }, cadeia: completo }
+    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { N, K, limite: pf.limites.limite }, cadeia: completo, paralelo }
     this.pedidoAtual = p
     const w = this.obterWorker()
     if (w) w.postMessage(p)
@@ -410,7 +431,12 @@ class Verificacao {
       tarefas: [],
       dicionario,
       opcoes: { N: pf.Ninicial, K: pf.Kinicial, limite: pf.limites.limite },
-      modelo: { notas, aprimorar: perfil.aprimorar ? pf.limites : undefined, orcamentoMs: pf.limites.orcamentoMs },
+      modelo: {
+        notas,
+        aprimorar: perfil.aprimorar ? { ...pf.limites, limite: limitePorWorker(pf.limites.limite, perfil.paralelo) } : undefined,
+        orcamentoMs: pf.limites.orcamentoMs,
+      },
+      paralelo: perfil.paralelo,
     }
     this.pedidoAtual = p
     const w = this.obterWorker()
@@ -501,6 +527,10 @@ class Verificacao {
 
   private receber(r: RespostaMotor) {
     if (r.id !== this.pedido) return
+    if (r.tipo === 'z3-pedido') {
+      void this.provarNoZ3(r.pedido, r.conjuntos)
+      return
+    }
     if (r.tipo === 'banco') {
       this.banco = r.estatisticas
     } else if (r.tipo === 'progresso') {

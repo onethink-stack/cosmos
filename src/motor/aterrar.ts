@@ -54,6 +54,51 @@ export interface ProblemaCNF {
 type Env = Map<string, number>
 
 const NOME_VAZIO = '∅'
+/** começo do nome das constantes criadas no lugar de um "existe" (não é um nome que se possa escrever) */
+export const PREFIXO_SKOLEM = '§'
+
+/** Troca a variável v pelo termo t (as variáveis são únicas no escopo: não há captura). */
+function substituirTermo(x: Termo, v: string, t: Termo): Termo {
+  switch (x.k) {
+    case 'nome':
+      return x.nome === v ? t : x
+    case 'app':
+      return { ...x, args: x.args.map((a) => substituirTermo(a, v, t)) }
+    case 'inter':
+    case 'uniao':
+    case 'arit':
+      return { ...x, l: substituirTermo(x.l, v, t), r: substituirTermo(x.r, v, t) }
+    case 'neg':
+      return { ...x, t: substituirTermo(x.t, v, t) }
+    default:
+      return x
+  }
+}
+
+function substituir(f: Formula, v: string, t: Termo): Formula {
+  switch (f.k) {
+    case 'pred':
+      return { ...f, args: f.args.map((a) => substituirTermo(a, v, t)) }
+    case 'rel':
+      return { ...f, l: substituirTermo(f.l, v, t), r: substituirTermo(f.r, v, t) }
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return { ...f, f: substituir(f.f, v, t) }
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return { ...f, l: substituir(f.l, v, t), r: substituir(f.r, v, t) }
+    case 'forall':
+    case 'exists':
+      if (f.v === v) return f
+      return { ...f, dom: f.dom && substituirTermo(f.dom, v, t), corpo: substituir(f.corpo, v, t) }
+    case 'const':
+      return f
+  }
+}
 
 /** A fórmula usa □, ◇ ou B[…]? */
 export function ehModal(f: Formula): boolean {
@@ -91,6 +136,7 @@ export class Aterrador {
   private usaVazio = false
   private agentes = new Set<string>()
   private raizes: Lit[] = []
+  private skolems = 0
 
   constructor(
     readonly n: number,
@@ -298,7 +344,40 @@ export class Aterrador {
 
   /** Afirma a fórmula no mundo real (0). */
   afirmar(f: Formula) {
-    this.raizes.push(this.formula(f, new Map(), 0))
+    for (const g of this.skolemizar(f)) this.raizes.push(this.formula(g, new Map(), 0))
+  }
+
+  /**
+   * Um "existe x" afirmado no topo (fora de ∀, ∨, □…) vira uma constante nova
+   * no lugar de x: tem modelo exatamente quando a original tem, e a constante
+   * entra na quebra de simetria — o motor testa x só em poucos objetos, em vez
+   * de em todos. As conjunções do topo viram afirmações separadas.
+   */
+  private skolemizar(f: Formula): Formula[] {
+    switch (f.k) {
+      case 'and':
+        return [...this.skolemizar(f.l), ...this.skolemizar(f.r)]
+      case 'exists':
+        if (f.dom) return [f]
+        return this.skolemizar(substituir(f.corpo, f.v, { k: 'nome', nome: `${PREFIXO_SKOLEM}${++this.skolems}`, pos: 0, end: 0 }))
+      case 'not': {
+        const g = f.f
+        switch (g.k) {
+          case 'not':
+            return this.skolemizar(g.f)
+          case 'forall':
+            return g.dom ? [f] : this.skolemizar({ ...g, k: 'exists', corpo: { k: 'not', f: g.corpo, pos: 0, end: 0 } })
+          case 'or':
+            return [...this.skolemizar({ k: 'not', f: g.l, pos: 0, end: 0 }), ...this.skolemizar({ k: 'not', f: g.r, pos: 0, end: 0 })]
+          case 'imp':
+            return [...this.skolemizar(g.l), ...this.skolemizar({ k: 'not', f: g.r, pos: 0, end: 0 })]
+          default:
+            return [f]
+        }
+      }
+      default:
+        return [f]
+    }
   }
 
   // ---------- CNF ----------
@@ -386,6 +465,13 @@ export class Aterrador {
     this.ordemConstantes.forEach((nome, k) => {
       const vs = this.valorados.get(`c:${nome}`)!
       for (let d = k + 1; d < this.n; d++) add([-vs[d]])
+    })
+    // e sem buracos: numerando os objetos na ordem em que as constantes aparecem,
+    // a k-ésima constante num elemento d > 0 exige uma anterior em d − 1
+    this.ordemConstantes.forEach((nome, k) => {
+      const vs = this.valorados.get(`c:${nome}`)!
+      const anteriores = this.ordemConstantes.slice(0, k).map((o) => this.valorados.get(`c:${o}`)!)
+      for (let d = 1; d <= Math.min(k, this.n - 1); d++) add([-vs[d], ...anteriores.map((a) => a[d - 1])])
     })
 
     return { nVars: this.nVars, clausulas, info: this.info, valorados: this.valorados }

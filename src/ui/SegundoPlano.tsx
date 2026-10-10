@@ -1,5 +1,5 @@
 import { useAvisos } from '../dados/avisos'
-import { descreverPerfil, detectarPerfil, MEMORIA_ABA, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
+import { descreverPerfil, detectarPerfil, MEMORIA_ABA, nucleosDisponiveis, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
 import { estimarEspecificacao, memoriaTexto, quantidadeTexto, type Especificacao as Espec } from '../dados/especificacao'
 import { useEstado } from '../dados/estado'
 import { useState } from 'preact/hooks'
@@ -107,6 +107,27 @@ export function ConfigPerfil() {
         </select>
       </label>
       <p class="suave">{descreverPerfil(atual)}.</p>
+      <label class="campo-rotulo">
+        Núcleos trabalhando ao mesmo tempo
+        <select
+          value={String(pf.nucleos)}
+          onChange={(e) => {
+            const v = (e.target as HTMLSelectElement).value
+            pf.definirNucleos(v === 'auto' ? 'auto' : Number(v))
+          }}
+        >
+          <option value="auto">Automático ({nucleosDisponiveis()} neste aparelho)</option>
+          {Array.from({ length: Math.max(1, navigator.hardwareConcurrency || 2) }, (_, i) => i + 1).map((n) => (
+            <option value={String(n)}>{n === 1 ? '1 (um de cada vez)' : String(n)}</option>
+          ))}
+        </select>
+      </label>
+      <p class="suave">
+        Cada núcleo confere uma coisa (um teorema, uma lei, uma conclusão no aprofundamento) ao mesmo tempo que os outros. Mais núcleos:
+        mais rápido, mas o aparelho esquenta e gasta mais bateria. O automático deixa um núcleo livre para a tela e usa no máximo um a cada
+        1,5 GB de memória. Com o Z3 ligado, ele também prova as conclusões para qualquer número de objetos, e essas nem precisam ser
+        aprofundadas.
+      </p>
       <Especificacao />
       <label class="alternar">
         <input type="checkbox" checked={pf.aprimorar} onChange={(e) => pf.definirAprimorar((e.target as HTMLInputElement).checked)} />

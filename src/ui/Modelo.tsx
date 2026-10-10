@@ -229,6 +229,8 @@ function Nivel({ final }: { final: NonNullable<RelatorioModelo['final']> }) {
             </>
           )}
           {r.aprimoramento?.parouPor && ` — ${r.aprimoramento.parouPor}`}
+          {!!r.aprimoramento?.provadasZ3 &&
+            ` · o Z3 provou ${r.aprimoramento.provadasZ3} de ${r.aprimoramento.conclusoes} conclusões para qualquer número de objetos`}
         </li>
       ))}
     </ul>

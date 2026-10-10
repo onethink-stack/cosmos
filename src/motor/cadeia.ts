@@ -19,17 +19,17 @@ import type { Formula } from '../logica/ast'
 import { ehModal } from './aterrar'
 import { Avaliador, tamanhoTexto } from './avaliar'
 import { descobrir, type Consequencia } from './descobrir'
-import { canonica, procurarLeis, type LeiSugerida } from './lacunas'
+import { darVez, emParalelo, poolAtual } from './paralelo'
+import { canonica, type LeiSugerida, type ResultadoLacunas } from './lacunas'
 import {
   analisar,
   buscarModelo,
-  buscarNaFaixa,
   registrarSemModelo,
   minimizarRapido,
   nao,
-  perguntar,
   verificar,
   type Grupo,
+  type BuscaFaixa,
   type GrupoPronto,
   type MundoExplicado,
   type OpcoesMotor,
@@ -88,8 +88,19 @@ export interface EstadoAprimoramento {
   parouPor?: string
   /** uma conclusão caiu num cenário maior: a rodada precisa ser refeita nesse nível */
   virada?: { N: number; K: number; descricao: string }
+  /** conclusões que o Z3 provou para qualquer tamanho (não precisam ser aprofundadas) */
+  provadasZ3?: number
+  /** checagens rodando ao mesmo tempo */
+  paralelo?: number
   ms: number
 }
+
+/**
+ * Pede ao Z3 (na linha principal) para provar, sem limite de tamanho, que
+ * cada conjunto de fórmulas não tem modelo. Os índices provados vão entrando
+ * no conjunto devolvido conforme as respostas chegam.
+ */
+export type AjudaZ3 = (conjuntos: Formula[][]) => Set<number>
 
 export type EstadoLei =
   /** as outras leis valem neste cenário e esta falha: ela diz algo que as outras não dizem */
@@ -140,13 +151,14 @@ export interface RelatorioCadeia {
 
 const conj = (fs: Formula[]): Formula => fs.reduce((a, b): Formula => ({ k: 'and', l: a, r: b, pos: 0, end: 0 }))
 
-export function reacaoEmCadeia(
+export async function reacaoEmCadeia(
   pedido: PedidoCadeia,
   dicionario: EntradaDicionario[],
   op: OpcoesMotor,
   parcial: (r: RelatorioCadeia[]) => void,
   progresso?: (chave: string, msg: string) => void,
-) {
+  ajudaZ3?: AjudaZ3,
+): Promise<void> {
   const relatorios: RelatorioCadeia[] = pedido.contextos.map((c) => ({
     chave: c.chave,
     rotulo: c.rotulo,
@@ -164,20 +176,20 @@ export function reacaoEmCadeia(
     leisIds: c.grupos.map((g) => g.id),
   }))
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
-  pedido.contextos.forEach((c, k) => {
+  for (const [k, c] of pedido.contextos.entries()) {
     const rel = relatorios[k]
-    rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida)
+    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida)
     rel.etapa = 'fim'
     if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
-  })
+  }
   // aprimoramento: as conclusões que dependem do tamanho são reconferidas em cenários maiores
   const lim = pedido.aprimorar
   if (!lim) return
   const ini = Date.now()
   for (let k = 0; k < pedido.contextos.length; k++) {
     const c = pedido.contextos[k]
-    const virou = aprofundar(c, relatorios[k], dicionario, lim, ini, enviar, (msg) => progresso?.(c.chave, msg))
+    const virou = await aprofundar(c, relatorios[k], dicionario, lim, ini, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3)
     if (virou) {
       // o resto fica como está; a próxima rodada (no nível novo) refaz tudo
       for (const r of relatorios.slice(k + 1))
@@ -252,7 +264,7 @@ function conclusoesLimitadas(c: ContextoCadeia, rel: RelatorioCadeia, dicionario
  * (se há lógica modal), depois um objeto a mais por vez, até os limites, o
  * tempo de cada checagem ou o tempo total. Devolve true se uma conclusão caiu.
  */
-function aprofundar(
+async function aprofundar(
   c: ContextoCadeia,
   rel: RelatorioCadeia,
   dicionario: EntradaDicionario[],
@@ -260,15 +272,28 @@ function aprofundar(
   inicioGeral: number,
   enviar: () => void,
   progresso: Progresso,
-): boolean {
+  ajudaZ3?: AjudaZ3,
+): Promise<boolean> {
   if (!rel.aprimoramento) return false
   const ini = Date.now()
-  const cs = conclusoesLimitadas(c, rel, dicionario)
+  const todas = conclusoesLimitadas(c, rel, dicionario)
+  // o Z3 tenta provar cada uma para qualquer tamanho; as que ele prova saem do aprofundamento
+  const provadas = todas.length && ajudaZ3 ? ajudaZ3(todas.map((x) => x.formulas)) : new Set<number>()
+  let cs = todas
+  const paralelo = poolAtual().tamanho
   const atualizar = (m: Partial<EstadoAprimoramento>) => {
-    rel.aprimoramento = { ...rel.aprimoramento!, ...m, conclusoes: cs.length, ms: Date.now() - ini }
+    rel.aprimoramento = { ...rel.aprimoramento!, ...m, conclusoes: todas.length, provadasZ3: provadas.size, paralelo, ms: Date.now() - ini }
     enviar()
   }
-  if (!cs.length) {
+  /** tira as que o Z3 já provou; true se não sobrou nenhuma */
+  const semAsProvadas = async () => {
+    await darVez() // deixa chegar as respostas do Z3
+    cs = todas.filter((_, i) => !provadas.has(i))
+    if (cs.length) return false
+    atualizar({ situacao: 'feito', parouPor: 'o Z3 provou todas as conclusões que dependiam do tamanho: valem para qualquer número de objetos' })
+    return true
+  }
+  if (!todas.length) {
     atualizar({ situacao: 'feito', parouPor: 'nenhuma conclusão depende do tamanho dos cenários: todas já são definitivas' })
     return false
   }
@@ -276,33 +301,49 @@ function aprofundar(
     atualizar({ situacao: 'feito', parouPor: 'o conjunto já é grande demais' })
     return false
   }
-  const modal = cs.some((x) => x.formulas.some(ehModal))
+  const modal = todas.some((x) => x.formulas.some(ehModal))
   atualizar({ situacao: 'aprofundando' })
 
-  /** confere todas as conclusões num nível: 'ok', 'virou', ou o motivo de parar */
-  const nivel = (ns: number[], ks: number[], N: number, K: number): string => {
-    for (let i = 0; i < cs.length; i++) {
-      if (Date.now() - inicioGeral > lim.orcamentoMs) return `atingiu o tempo total do aprimoramento (${Math.round(lim.orcamentoMs / 60000)} min)`
-      progresso(`aprimorando com ${N} objetos${modal ? ` e ${K} mundos` : ''} (${i + 1}/${cs.length}): ${cs[i].descricao}`)
-      const r = buscarNaFaixa(cs[i].formulas, ns, ks, lim.limite, Date.now() + lim.tempoChecagemMs)
-      if (r.status === 'modelo') {
-        atualizar({
-          situacao: 'feito',
-          virada: { N: Math.max(r.n, rel.N), K: modal ? K : 1, descricao: cs[i].descricao },
-          parouPor: `com ${tamanhoTexto(r.n, r.modelo.mundos)}, ${cs[i].descricao}: deixou de valer`,
-        })
-        return 'virou'
-      }
-      if (r.status === 'tempo') return `uma checagem passou de ${Math.round(lim.tempoChecagemMs / 1000)} s com ${N} objetos`
-      if (r.status === 'grande-demais') return `o problema ficou grande demais para este aparelho com ${N} objetos`
+  const tempoTotal = () => `atingiu o tempo total do aprimoramento (${Math.round(lim.orcamentoMs / 60000)} min)`
+  /** confere todas as conclusões num nível (várias ao mesmo tempo): 'ok', 'virou', ou o motivo de parar */
+  const nivel = async (ns: number[], ks: number[], N: number, K: number): Promise<string> => {
+    const resta = lim.orcamentoMs - (Date.now() - inicioGeral)
+    if (resta <= 0) return tempoTotal()
+    const onde = `aprimorando com ${N} objetos${modal ? ` e ${K} mundos` : ''}`
+    const vez = paralelo > 1 ? `, ${Math.min(paralelo, cs.length)} ao mesmo tempo` : ''
+    let feitas = 0
+    progresso(`${onde} (0/${cs.length}${vez})`)
+    let rs: BuscaFaixa[]
+    try {
+      rs = await emParalelo(
+        cs,
+        (x) => ({ tipo: 'faixa', formulas: x.formulas, ns, ks, limite: lim.limite, prazoMs: Math.min(lim.tempoChecagemMs, resta) }),
+        () => progresso(`${onde} (${++feitas}/${cs.length}${vez})`),
+      )
+    } catch (e) {
+      return `falha num worker do motor com ${N} objetos (${(e as Error).message})`
     }
+    const i = rs.findIndex((r) => r.status === 'modelo')
+    if (i >= 0) {
+      const r = rs[i] as Extract<BuscaFaixa, { status: 'modelo' }>
+      atualizar({
+        situacao: 'feito',
+        virada: { N: Math.max(r.n, rel.N), K: modal ? K : 1, descricao: cs[i].descricao },
+        parouPor: `com ${tamanhoTexto(r.n, r.modelo.mundos)}, ${cs[i].descricao}: deixou de valer`,
+      })
+      return 'virou'
+    }
+    if (rs.some((r) => r.status === 'tempo'))
+      return Date.now() - inicioGeral >= lim.orcamentoMs ? tempoTotal() : `uma checagem passou de ${Math.round(lim.tempoChecagemMs / 1000)} s com ${N} objetos`
+    if (rs.some((r) => r.status === 'grande-demais')) return `o problema ficou grande demais para este aparelho com ${N} objetos`
     return 'ok'
   }
 
   // mais mundos, nos tamanhos já conferidos
   if (modal)
     for (let k = rel.K + 1; k <= lim.K; k++) {
-      const res = nivel([...Array(rel.N).keys()].map((i) => i + 1), [k], rel.N, k)
+      if (await semAsProvadas()) return false
+      const res = await nivel([...Array(rel.N).keys()].map((i) => i + 1), [k], rel.N, k)
       if (res === 'virou') return true
       if (res !== 'ok') {
         atualizar({ situacao: 'feito', parouPor: res })
@@ -314,7 +355,8 @@ function aprofundar(
     }
   // um objeto a mais por vez
   for (let n = rel.N + 1; n <= lim.N; n++) {
-    const res = nivel([n], [...Array(modal ? rel.K : 1).keys()].map((i) => i + 1), n, rel.K)
+    if (await semAsProvadas()) return false
+    const res = await nivel([n], [...Array(modal ? rel.K : 1).keys()].map((i) => i + 1), n, rel.K)
     if (res === 'virou') return true
     if (res !== 'ok') {
       atualizar({ situacao: 'feito', parouPor: res })
@@ -329,7 +371,24 @@ function aprofundar(
   return false
 }
 
-function rodarContexto(
+/** Uma lei batida com as outras do conjunto: decorre delas (e de quais) ou é independente (com o cenário que prova). */
+export function estadoDaLei(grupos: Grupo[], alvoId: string, dicionario: EntradaDicionario[], op: OpcoesMotor): EstadoLei {
+  const prontos: GrupoPronto[] = grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
+  const alvo = prontos.find((x) => x.g.id === alvoId)
+  if (!alvo) return { id: alvoId, tipo: 'incerto' }
+  const outros = prontos.filter((x) => x !== alvo)
+  const negada = nao(conj(alvo.itens.map((it) => it.expandida)))
+  const r = buscarModelo([...outros.flatMap((x) => x.itens.map((it) => it.expandida)), negada], op)
+  if (r.status === 'modelo') {
+    const av = new Avaliador(r.modelo)
+    const falha = alvo.itens.find((it) => !av.avaliar(it.original)) ?? alvo.itens[0]
+    return { id: alvoId, tipo: 'independente', formula: falha.texto, mundo: { n: r.n, modelo: r.modelo, passos: av.explicar(falha.original) } }
+  }
+  if (r.status === 'sem-modelo') return { id: alvoId, tipo: 'decorre', notas: minimizarRapido(outros, [negada], op).map((x) => x.g.id) }
+  return { id: alvoId, tipo: 'incerto' }
+}
+
+async function rodarContexto(
   c: ContextoCadeia,
   rel: RelatorioCadeia,
   inativas: Grupo[],
@@ -338,7 +397,9 @@ function rodarContexto(
   enviar: () => void,
   progresso: Progresso,
   rapida = false,
-) {
+): Promise<void> {
+  const paralelo = poolAtual().tamanho
+  const vez = (n: number) => (paralelo > 1 && n > 1 ? `, ${Math.min(paralelo, n)} ao mesmo tempo` : '')
   const prontos: GrupoPronto[] = c.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
   const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
   const teoremas = c.teoremas.map((t) => ({ t, pronta: analisar([t.formula], dicionario)[0] }))
@@ -353,37 +414,40 @@ function rodarContexto(
 
   // 2. leis batendo umas com as outras
   rel.etapa = 'leis'
-  if (prontos.length >= 2 && !rapida)
-    prontos.forEach((alvo, i) => {
-      progresso(`batendo cada lei com as outras (${i + 1}/${prontos.length}): ${alvo.g.rotulo}`)
-      const outros = prontos.filter((x) => x !== alvo)
-      const negada = nao(conj(alvo.itens.map((it) => it.expandida)))
-      const r = buscarModelo([...outros.flatMap((x) => x.itens.map((it) => it.expandida)), negada], op)
-      if (r.status === 'modelo') {
-        const av = new Avaliador(r.modelo)
-        const falha = alvo.itens.find((it) => !av.avaliar(it.original)) ?? alvo.itens[0]
-        rel.leis.push({
-          id: alvo.g.id,
-          tipo: 'independente',
-          formula: falha.texto,
-          mundo: { n: r.n, modelo: r.modelo, passos: av.explicar(falha.original) },
-        })
-      } else if (r.status === 'sem-modelo') {
-        const notas = minimizarRapido(outros, [negada], op)
-        rel.leis.push({ id: alvo.g.id, tipo: 'decorre', notas: notas.map((x) => x.g.id) })
-      } else rel.leis.push({ id: alvo.g.id, tipo: 'incerto' })
-      enviar()
-    })
-
-  // 3. cada teorema
-  rel.etapa = 'teoremas'
-  teoremas.forEach(({ t }, i) => {
-    const resultado = perguntar(c.grupos, t.formula, dicionario, op, (msg) =>
-      progresso(`teorema ${i + 1} de ${teoremas.length} (${t.rotulo}): ${msg}`),
+  if (prontos.length >= 2 && !rapida) {
+    const leis: (EstadoLei | undefined)[] = []
+    let feitas = 0
+    progresso(`batendo cada lei com as outras (0/${prontos.length}${vez(prontos.length)})`)
+    await emParalelo(
+      prontos,
+      (alvo) => ({ tipo: 'lei', grupos: c.grupos, alvo: alvo.g.id, dicionario, op }),
+      (i, r) => {
+        leis[i] = r
+        rel.leis = leis.filter((x): x is EstadoLei => !!x)
+        progresso(`batendo cada lei com as outras (${++feitas}/${prontos.length}${vez(prontos.length)})`)
+        enviar()
+      },
     )
-    rel.teoremas.push({ id: t.id, notaId: t.notaId, formula: t.formula, resultado })
-    enviar()
-  })
+  }
+
+  // 3. cada teorema (vários ao mesmo tempo)
+  rel.etapa = 'teoremas'
+  {
+    const estados: (EstadoTeorema | undefined)[] = []
+    let feitos = 0
+    if (teoremas.length) progresso(`conferindo os teoremas (0/${teoremas.length}${vez(teoremas.length)})`)
+    await emParalelo(
+      teoremas,
+      ({ t }) => ({ tipo: 'perguntar', grupos: c.grupos, formula: t.formula, dicionario, op }),
+      (i, resultado) => {
+        const { t } = teoremas[i]
+        estados[i] = { id: t.id, notaId: t.notaId, formula: t.formula, resultado }
+        rel.teoremas = estados.filter((x): x is EstadoTeorema => !!x)
+        progresso(`conferindo os teoremas (${++feitos}/${teoremas.length}${vez(teoremas.length)})`)
+        enviar()
+      },
+    )
+  }
 
   // 4. a cadeia: teoremas que seguem de teoremas já provados
   rel.etapa = 'cadeia'
@@ -426,22 +490,36 @@ function rodarContexto(
 
   // 6. leis que fechariam os que faltam
   rel.etapa = 'lacunas'
-  const porForma = new Map<string, SugestaoCadeia>()
-  abertos.forEach((x, i) => {
-    const r = procurarLeis(c.grupos, inativas, x.e.formula, dicionario, op, (msg) =>
-      progresso(`lei que falta para o teorema ${i + 1} de ${abertos.length}: ${msg}`),
-    )
-    if (r.tipo !== 'sugestoes') return
-    for (const lei of r.itens) {
-      const p = analisar([lei.formula], dicionario)[0]
-      const k = p ? canonica(p.original) : lei.formula
-      const s = porForma.get(k)
-      if (s) s.fecha.push(x.e.id)
-      else porForma.set(k, { lei, fecha: [x.e.id] })
-    }
-    rel.sugestoes = ordenar([...porForma.values()])
-    enviar()
-  })
+  // as leis que fecham cada teorema aberto, juntadas pela forma (a mesma lei pode fechar vários)
+  const juntar = (rs: (ResultadoLacunas | undefined)[]) => {
+    const m = new Map<string, SugestaoCadeia>()
+    rs.forEach((r, i) => {
+      if (r?.tipo !== 'sugestoes') return
+      for (const lei of r.itens) {
+        const p = analisar([lei.formula], dicionario)[0]
+        const k = p ? canonica(p.original) : lei.formula
+        const s = m.get(k)
+        if (s) s.fecha.push(abertos[i].e.id)
+        else m.set(k, { lei, fecha: [abertos[i].e.id] })
+      }
+    })
+    return m
+  }
+  const lacunas: (ResultadoLacunas | undefined)[] = []
+  let feitas = 0
+  if (abertos.length) progresso(`procurando a lei que falta (0/${abertos.length}${vez(abertos.length)})`)
+  await emParalelo(
+    abertos,
+    (x) => ({ tipo: 'lacunas', grupos: c.grupos, inativas, formula: x.e.formula, dicionario, op }),
+    (i, r) => {
+      lacunas[i] = r
+      rel.sugestoes = ordenar([...juntar(lacunas).values()])
+      progresso(`procurando a lei que falta (${++feitas}/${abertos.length}${vez(abertos.length)})`)
+      enviar()
+    },
+  )
+  // na ordem dos teoremas (o resultado não depende de qual worker acabou antes)
+  const porForma = juntar(lacunas)
   // cada lei sugerida fecha também outros teoremas abertos?
   const sugestoes = [...porForma.values()]
   sugestoes.forEach((s, i) => {

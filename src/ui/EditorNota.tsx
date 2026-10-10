@@ -142,7 +142,7 @@ export function EditorNota({ id, compartimento }: { id?: string; compartimento?:
 
   const criarFicha = async (f: NonNullable<Diag['ficha']>) => {
     if (est.dicionario.some((e) => e.simbolo === f.simbolo)) return
-    await est.salvarEntradas({ id: '', termo: f.simbolo, simbolo: f.simbolo, tipo: f.tipo, aridade: f.aridade, definicao: '' })
+    await est.salvarEntradas({ id: '', termo: f.simbolo, simbolo: f.simbolo, tipo: f.tipo, aridade: f.aridade, definicao: '', ...(f.numerico ? { numerico: true } : {}) })
     mostrar(`Ficha de '${f.simbolo}' criada. Complete o termo e a definição no Dicionário.`)
   }
 

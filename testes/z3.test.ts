@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { init, killThreads } from 'z3-solver'
 import type { EntradaDicionario } from '../src/dados/tipos'
-import { nao, prepararFormulas } from '../src/motor/motor'
+import { analisar, nao, nomesNumericos, prepararFormulas } from '../src/motor/motor'
 import { checarZ3 } from '../src/motor/z3'
 import { validar } from '../src/logica/validador'
 import { expandir } from '../src/logica/acucar'
@@ -70,5 +70,46 @@ describe('Z3: mesma semântica do motor finito, sem limite de tamanho', () => {
     expect(await segue([], 'B[x] P(a) ⟹ P(a)')).toBe('sat')
     expect(await z3(['A ∉ A', 'B[x] (A ∈ A)'])).toBe('sat')
     expect(await z3(['□(A ∉ A)', 'B[x] (A ∈ A)'])).toBe('unsat')
+  }, 60_000)
+})
+
+describe('Z3 com números reais', () => {
+  const num = (simbolo: string, tipo: EntradaDicionario['tipo'] = 'constante', aridade = 0): EntradaDicionario => ({
+    id: simbolo,
+    termo: simbolo,
+    simbolo,
+    tipo,
+    aridade,
+    definicao: '',
+    numerico: true,
+  })
+  const D = [num('x'), num('y'), num('m'), num('v'), num('J'), num('h', 'funcao', 1)]
+  const pf = (fs: string[]) => analisar(fs, D, true).map((p) => p.expandida)
+  const segueN = async (premissas: string[], phi: string) => {
+    const [alvo] = analisar([phi], D, true)
+    return checarZ3(api, [...pf(premissas), nao(alvo.expandida)], 8_000, nomesNumericos(D))
+  }
+
+  it('contas e comparações com constantes', async () => {
+    expect(await segueN(['x + y = 10', 'x − y = 2'], 'x = 6')).toBe('unsat')
+    expect(await segueN(['x + y = 10'], 'x = 6')).toBe('sat')
+    expect(await segueN(['m > 0', 'm · (v − 3) = J'], 'v − 3 = J / m')).toBe('unsat')
+    expect(await segueN(['x > 2'], 'x^2 > 4')).toBe('unsat')
+  }, 60_000)
+
+  it('quantificadores sobre ℝ e funções numéricas', async () => {
+    expect(await segueN([], '∀t∈ℝ ∀a∈ℝ ((a > 0 ∧ t > 2 / a) ⟹ t < 0.5 · a · t^2)')).toBe('unsat')
+    expect(await segueN([], '∀s∈ℝ ((s > 0 ∧ 3 · s^2 = 1) ⟹ ∀e∈ℝ ((0 ≤ e ∧ e ≤ 1) ⟹ e · (1 − e^2) ≤ s · (1 − s^2)))')).toBe('unsat')
+    const dec = ['∀a∈ℝ ∀b∈ℝ (a < b ⟹ h(b) < h(a))', '∀a∈ℝ h(a) > 0']
+    expect(await segueN(dec, '∀a∈ℝ ∀b∈ℝ (a < b ⟹ 1 / h(a) < 1 / h(b))')).toBe('unsat')
+    // sem h > 0 não segue (h pode trocar de sinal); o Z3 às vezes não acha o contraexemplo a tempo
+    expect(await segueN(['∀a∈ℝ ∀b∈ℝ (a < b ⟹ h(b) < h(a))'], '∀a∈ℝ ∀b∈ℝ (a < b ⟹ 1 / h(a) < 1 / h(b))')).not.toBe('unsat')
+  }, 60_000)
+
+  it('números e objetos juntos', async () => {
+    const DM = [...D, { id: 'P', termo: 'P', simbolo: 'P', tipo: 'predicado' as const, aridade: 1, definicao: '' }, { id: 'c', termo: 'c', simbolo: 'c', tipo: 'constante' as const, aridade: 0, definicao: '' }]
+    const fs = analisar(['P(c) ⟹ x > 1', 'P(c)'], DM, true).map((p) => p.expandida)
+    const [alvo] = analisar(['x > 0'], DM, true)
+    expect(await checarZ3(api, [...fs, nao(alvo.expandida)], 20_000, nomesNumericos(DM))).toBe('unsat')
   }, 60_000)
 })

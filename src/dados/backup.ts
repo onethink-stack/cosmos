@@ -86,6 +86,7 @@ export function lerBackup(conteudo: string): { ok: true; backup: Backup; avisos:
       tipo: e.tipo as TipoSimbolo,
       aridade: e.tipo === 'constante' ? 0 : Math.max(0, Math.floor(Number(e.aridade) || 0)),
       definicao: texto(e.definicao),
+      ...(e.numerico === true && e.tipo !== 'predicado' ? { numerico: true } : {}),
     })
   }
 

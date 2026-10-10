@@ -260,6 +260,8 @@ export class Avaliador {
         if (z === null) return com(vals, `todo elemento de ${mostra(f.l)} está em ${mostra(f.r)}`)
         return com(vals, `${nomeElemento(z)} ∈ ${mostra(f.l)}, mas ${nomeElemento(z)} ∉ ${mostra(f.r)}`)
       }
+      default:
+        return 'fórmula com números: conferida só pelo Z3'
     }
   }
 
@@ -293,8 +295,13 @@ function instanciarTermo(t: Termo, env: Env): Termo {
       return { ...t, args: t.args.map((a) => instanciarTermo(a, env)), subscrito: t.subscrito && t.args.every((a) => a.k === 'nome' && !env.has(a.nome)) }
     case 'inter':
     case 'uniao':
+    case 'arit':
       return { ...t, l: instanciarTermo(t.l, env), r: instanciarTermo(t.r, env) }
+    case 'neg':
+      return { ...t, t: instanciarTermo(t.t, env) }
     case 'vazio':
+    case 'num':
+    case 'reais':
       return t
   }
 }

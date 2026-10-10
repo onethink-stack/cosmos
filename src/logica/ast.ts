@@ -12,8 +12,21 @@ export type Termo =
   | ({ k: 'app'; fn: string; args: Termo[]; subscrito: boolean } & Span)
   | ({ k: 'inter' | 'uniao'; l: Termo; r: Termo } & Span)
   | ({ k: 'vazio' } & Span)
+  /** número (real), como escrito: "2", "0.5" */
+  | ({ k: 'num'; valor: string } & Span)
+  /** conta entre números: + − · / ^ */
+  | ({ k: 'arit'; op: OpArit; l: Termo; r: Termo } & Span)
+  /** −t */
+  | ({ k: 'neg'; t: Termo } & Span)
+  /** ℝ: só como domínio de quantificador (∀x∈ℝ): a variável é um número real */
+  | ({ k: 'reais' } & Span)
 
-export type Rel = '=' | '≠' | '∈' | '∉' | '⊆'
+export type OpArit = '+' | '−' | '·' | '/' | '^'
+
+export type Rel = '=' | '≠' | '∈' | '∉' | '⊆' | '<' | '≤' | '>' | '≥'
+
+/** relações de ordem entre números */
+export const ORDEM: Rel[] = ['<', '≤', '>', '≥']
 
 export type Conectivo = 'and' | 'or' | 'imp' | 'iff'
 
@@ -53,6 +66,7 @@ export type Codigo =
   | 'E12' // aviso: nome sem ficha no dicionário
   | 'E13' // aviso: nome sem ficha parecido com um nome do dicionário ("você quis dizer…?")
   | 'E14' // aviso: o escopo do quantificador passa do ")" que parecia fechá-lo
+  | 'E15' // número usado como objeto, ou objeto usado como número
 
 export interface Diag extends Span {
   codigo: Codigo
@@ -61,7 +75,7 @@ export interface Diag extends Span {
   /** E13: nome do dicionário sugerido no lugar deste */
   sugestao?: string
   /** E12/E13: ficha deduzida pelo uso, pronta para criar */
-  ficha?: { simbolo: string; tipo: TipoSimbolo; aridade: number }
+  ficha?: { simbolo: string; tipo: TipoSimbolo; aridade: number; numerico?: boolean }
 }
 
 export const SPAN0: Span = { pos: 0, end: 0 }

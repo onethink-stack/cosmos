@@ -21,6 +21,16 @@ const TECLAS: [simbolo: string, insere: string, nome: string][] = [
   ['◇', '◇', 'possível'],
   ['B[ ]', 'B[‸] ', 'crença: B[titular] φ'],
   ['ᵢ', '_', 'subscrito: toque e depois digite a letra'],
+  ['ℝ', '∈ℝ ', 'número real: ∀x∈ℝ'],
+  ['+', ' + ', 'mais'],
+  ['−', ' − ', 'menos'],
+  ['·', ' · ', 'vezes'],
+  ['/', ' / ', 'dividido por'],
+  ['^', '^', 'elevado a'],
+  ['<', ' < ', 'menor que'],
+  ['≤', ' ≤ ', 'menor ou igual'],
+  ['>', ' > ', 'maior que'],
+  ['≥', ' ≥ ', 'maior ou igual'],
 ]
 
 /**

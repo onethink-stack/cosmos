@@ -1,4 +1,4 @@
-import type { Codigo, Conectivo, Diag, Formula, Rel, Span, Termo } from './ast'
+import type { Codigo, Conectivo, Diag, Formula, OpArit, Rel, Span, Termo } from './ast'
 import { SIMBOLO_DE, type TipoToken, type Token } from './lexer'
 
 export class ErroSintaxe extends Error {
@@ -8,8 +8,12 @@ export class ErroSintaxe extends Error {
 }
 
 const BINARIOS: TipoToken[] = ['and', 'or', 'imp', 'iff']
-const RELACOES: Partial<Record<TipoToken, Rel>> = { eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆' }
-const INICIO_FORMULA: TipoToken[] = ['nome', 'not', 'forall', 'exists', 'lpar', 'empty', 'nec', 'pos']
+const RELACOES: Partial<Record<TipoToken, Rel>> = { eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆', lt: '<', le: '≤', gt: '>', ge: '≥' }
+const SOMA: Partial<Record<TipoToken, OpArit>> = { plus: '+', minus: '−' }
+const PRODUTO: Partial<Record<TipoToken, OpArit>> = { times: '·', div: '/' }
+/** tokens que podem começar um termo */
+const INICIO_TERMO: TipoToken[] = ['nome', 'lpar', 'empty', 'num', 'minus']
+const INICIO_FORMULA: TipoToken[] = ['nome', 'not', 'forall', 'exists', 'lpar', 'empty', 'nec', 'pos', 'num', 'minus']
 /** operadores prefixos de fórmula: depois deles não pode vir relação */
 const PREFIXOS: TipoToken[] = ['not', 'nec', 'pos', 'rbrack']
 
@@ -147,7 +151,16 @@ class Parser {
       case 'in':
       case 'notin':
       case 'subset':
+      case 'lt':
+      case 'le':
+      case 'gt':
+      case 'ge':
         this.erro('E1', `Relação '${SIMBOLO_DE[tk.t]}' sem termo à esquerda (${this.col(tk)})`, tk)
+      case 'plus':
+      case 'times':
+      case 'div':
+      case 'pow':
+        this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem número à esquerda (${this.col(tk)})`, tk)
       case 'cap':
       case 'cup':
         this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem termo à esquerda (${this.col(tk)})`, tk)
@@ -160,7 +173,11 @@ class Parser {
         return this.atomo(apos)
       case 'empty':
       case 'subscr':
+      case 'num':
+      case 'minus':
         return this.atomo(apos)
+      case 'reais':
+        this.erro('E0', `'ℝ' só pode aparecer como domínio de quantificador: ∀x∈ℝ ou ∃x∈ℝ (${this.col(tk)})`, tk)
       case 'rbrack':
         this.erro('E0', `']' sem '[' correspondente (${this.col(tk)})`, tk)
       case 'eof':
@@ -200,7 +217,10 @@ class Parser {
       const inTk = this.avancar()
       if (this.faltaOperando(inTk) || this.at().t === 'not')
         this.erro('E1', `'∈' sem termo depois de '${qs}${v.v}' (${this.col(inTk)})`, inTk)
-      dom = this.termo()
+      if (this.at().t === 'reais') {
+        const r = this.avancar()
+        dom = { k: 'reais', pos: r.pos, end: r.end }
+      } else dom = this.termo()
     }
     if (this.faltaOperando(q))
       this.erro('E1', `Quantificador '${qs}${v.v}' sem fórmula depois (${this.col(q)})`, q)
@@ -246,7 +266,7 @@ class Parser {
     // aplicação sem relação depois → predicado
     if (t.k === 'app' && !t.subscrito) return { k: 'pred', nome: t.fn, args: t.args, pos: t.pos, end: t.end }
     if (t.k === 'nome' && this.op.ehProposicao?.(t.nome)) return { k: 'pred', nome: t.nome, args: [], pos: t.pos, end: t.end }
-    const txt = t.k === 'nome' ? t.nome : t.k === 'app' ? `${t.fn}${t.subscrito ? '_' : '('}…` : 'termo'
+    const txt = t.k === 'nome' ? t.nome : t.k === 'app' ? `${t.fn}${t.subscrito ? '_' : '('}…` : t.k === 'num' ? t.valor : 'termo'
     let dica = ''
     if (t.k === 'nome' && this.at().t === 'lpar' && this.at().espacoAntes)
       dica = ` Para aplicar '${t.nome}', escreva ${t.nome}(…) sem espaço antes do '('.`
@@ -254,7 +274,7 @@ class Parser {
       dica = ` Se '${t.nome}' é uma proposição, declare-a no dicionário como predicado de aridade 0.`
     if (apos === '¬') this.erro('E2', `Negação aplicada a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
     if (apos) this.erro('E2', `'${apos}' aplicado a um termo ('${txt}'), não a uma fórmula (${this.col(ini)}).${dica}`, t)
-    this.erro('E2', `'${txt}' é um termo, não uma fórmula: falta uma relação (=, ≠, ∈, ∉, ⊆) ou um predicado (${this.col(ini)}).${dica}`, t)
+    this.erro('E2', `'${txt}' é um termo, não uma fórmula: falta uma relação (=, ≠, <, ≤, ∈, ∉, ⊆) ou um predicado (${this.col(ini)}).${dica}`, t)
   }
 
   private relacao(l: Termo): Formula {
@@ -266,8 +286,47 @@ class Parser {
     return { k: 'rel', op, l, r, pos: l.pos, end: r.end }
   }
 
-  // termo := inter { ⋃ inter } ; inter := prim { ⋂ prim }
+  // termo := produto { (+|−) produto } ; produto := sinal { (·|/) sinal } ; sinal := − sinal | potencia
+  // potencia := conjunto [ ^ sinal ] ; conjunto := inter { ⋃ inter } ; inter := prim { ⋂ prim }
   private termo(): Termo {
+    let l = this.produto()
+    for (let op = SOMA[this.at().t]; op; op = SOMA[this.at().t]) {
+      const tk = this.avancar()
+      const r = this.operandoTermo(tk, () => this.produto())
+      l = { k: 'arit', op, l, r, pos: l.pos, end: r.end }
+    }
+    return l
+  }
+
+  private produto(): Termo {
+    let l = this.sinal()
+    for (let op = PRODUTO[this.at().t]; op; op = PRODUTO[this.at().t]) {
+      const tk = this.avancar()
+      const r = this.operandoTermo(tk, () => this.sinal())
+      l = { k: 'arit', op, l, r, pos: l.pos, end: r.end }
+    }
+    return l
+  }
+
+  private sinal(): Termo {
+    const tk = this.at()
+    if (tk.t === 'minus') {
+      this.avancar()
+      const t = this.operandoTermo(tk, () => this.sinal())
+      return { k: 'neg', t, pos: tk.pos, end: t.end }
+    }
+    return this.potencia()
+  }
+
+  private potencia(): Termo {
+    const base = this.conjunto()
+    if (this.at().t !== 'pow') return base
+    const tk = this.avancar()
+    const exp = this.operandoTermo(tk, () => this.sinal())
+    return { k: 'arit', op: '^', l: base, r: exp, pos: base.pos, end: exp.end }
+  }
+
+  private conjunto(): Termo {
     let l = this.inter()
     while (this.at().t === 'cup') {
       const tk = this.avancar()
@@ -288,8 +347,7 @@ class Parser {
   }
 
   private operandoTermo(tk: Token, prox: () => Termo): Termo {
-    const a = this.at().t
-    if (a !== 'nome' && a !== 'lpar' && a !== 'empty')
+    if (!INICIO_TERMO.includes(this.at().t))
       this.erro('E1', `Operador '${SIMBOLO_DE[tk.t]}' sem termo à direita (${this.col(tk)})`, tk)
     return prox()
   }
@@ -300,6 +358,11 @@ class Parser {
       this.avancar()
       return { k: 'vazio', pos: tk.pos, end: tk.end }
     }
+    if (tk.t === 'num') {
+      this.avancar()
+      return { k: 'num', valor: tk.v, pos: tk.pos, end: tk.end }
+    }
+    if (tk.t === 'reais') this.erro('E0', `'ℝ' só pode aparecer como domínio de quantificador: ∀x∈ℝ ou ∃x∈ℝ (${this.col(tk)})`, tk)
     if (tk.t === 'nome') {
       this.avancar()
       const prox = this.at()
@@ -335,7 +398,7 @@ class Parser {
         continue
       }
       if (this.at().t === 'rpar') break
-      if (this.at().t === 'nome' || this.at().t === 'lpar')
+      if (this.at().t === 'nome' || this.at().t === 'lpar' || this.at().t === 'num')
         this.erro('E0', `Falta ',' entre argumentos de '${nome.v}' (${this.col(this.at())})`, this.at())
       this.erroInesperado(this.at(), `',' ou ')' nos argumentos de '${nome.v}'`)
     }

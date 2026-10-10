@@ -1,5 +1,5 @@
 import type { TipoSimbolo } from '../dados/tipos'
-import type { Formula, Termo } from './ast'
+import { ORDEM, type Formula, type Termo } from './ast'
 
 /** Igualdade estrutural de termos (ignora posições e a forma subscrita/parênteses). */
 export function termosIguais(a: Termo, b: Termo): boolean {
@@ -13,6 +13,62 @@ export function termosIguais(a: Termo, b: Termo): boolean {
       return b.k === a.k && termosIguais(a.l, b.l) && termosIguais(a.r, b.r)
     case 'vazio':
       return b.k === 'vazio'
+    case 'reais':
+      return b.k === 'reais'
+    case 'num':
+      return b.k === 'num' && Number(a.valor) === Number(b.valor)
+    case 'arit':
+      return b.k === 'arit' && a.op === b.op && termosIguais(a.l, b.l) && termosIguais(a.r, b.r)
+    case 'neg':
+      return b.k === 'neg' && termosIguais(a.t, b.t)
+  }
+}
+
+/** O termo é claramente um número (tem número ou conta)? */
+export function termoNumerico(t: Termo): boolean {
+  return t.k === 'num' || t.k === 'arit' || t.k === 'neg'
+}
+
+/** A fórmula usa números: contas, números, <, ≤, >, ≥ ou ∀x∈ℝ (o motor finito não lê; o Z3 lê). */
+export function temAritmetica(f: Formula, numericos?: (nome: string) => boolean): boolean {
+  const t = (x: Termo): boolean => {
+    switch (x.k) {
+      case 'num':
+      case 'arit':
+      case 'neg':
+      case 'reais':
+        return true
+      case 'nome':
+        return !!numericos?.(x.nome)
+      case 'app':
+        return !!numericos?.(x.fn) || x.args.some(t)
+      case 'inter':
+      case 'uniao':
+        return t(x.l) || t(x.r)
+      case 'vazio':
+        return false
+    }
+  }
+  switch (f.k) {
+    case 'pred':
+      return f.args.some(t)
+    case 'rel':
+      return ORDEM.includes(f.op) || t(f.l) || t(f.r)
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return temAritmetica(f.f, numericos)
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return temAritmetica(f.l, numericos) || temAritmetica(f.r, numericos)
+    case 'forall':
+    case 'exists':
+      return (!!f.dom && t(f.dom)) || temAritmetica(f.corpo, numericos)
+    case 'const':
+      return false
   }
 }
 
@@ -23,10 +79,10 @@ export function nomesUsados(f: Formula, s = new Set<string>()): Set<string> {
     else if (x.k === 'app') {
       s.add(x.fn)
       x.args.forEach(t)
-    } else if (x.k === 'inter' || x.k === 'uniao') {
+    } else if (x.k === 'inter' || x.k === 'uniao' || x.k === 'arit') {
       t(x.l)
       t(x.r)
-    }
+    } else if (x.k === 'neg') t(x.t)
   }
   switch (f.k) {
     case 'pred':
@@ -69,25 +125,39 @@ export interface UsoNome {
   aridade: number
   pos: number
   end: number
+  /** usado como número (numa conta, comparação ou igualdade com número) */
+  numerico?: boolean
 }
 
 export function usosDeNomes(f: Formula): UsoNome[] {
   const usos: UsoNome[] = []
-  const termo = (t: Termo, escopo: string[]): void => {
+  // `num`: o termo está num lugar de número
+  const termo = (t: Termo, escopo: string[], num = false): void => {
     switch (t.k) {
       case 'nome':
-        if (!escopo.includes(t.nome)) usos.push({ nome: t.nome, tipo: 'constante', aridade: 0, pos: t.pos, end: t.end })
+        if (!escopo.includes(t.nome)) usos.push({ nome: t.nome, tipo: 'constante', aridade: 0, pos: t.pos, end: t.end, numerico: num || undefined })
         return
       case 'app':
-        if (!escopo.includes(t.fn)) usos.push({ nome: t.fn, tipo: 'funcao', aridade: t.args.length, pos: t.pos, end: t.pos + t.fn.length })
-        t.args.forEach((a) => termo(a, escopo))
+        if (!escopo.includes(t.fn))
+          usos.push({ nome: t.fn, tipo: 'funcao', aridade: t.args.length, pos: t.pos, end: t.pos + t.fn.length, numerico: num || undefined })
+        // uma função numérica recebe números
+        t.args.forEach((a) => termo(a, escopo, num))
         return
       case 'inter':
       case 'uniao':
         termo(t.l, escopo)
         termo(t.r, escopo)
         return
+      case 'arit':
+        termo(t.l, escopo, true)
+        termo(t.r, escopo, true)
+        return
+      case 'neg':
+        termo(t.t, escopo, true)
+        return
       case 'vazio':
+      case 'num':
+      case 'reais':
         return
     }
   }
@@ -97,10 +167,12 @@ export function usosDeNomes(f: Formula): UsoNome[] {
         if (!escopo.includes(f.nome)) usos.push({ nome: f.nome, tipo: 'predicado', aridade: f.args.length, pos: f.pos, end: f.pos + f.nome.length })
         f.args.forEach((a) => termo(a, escopo))
         return
-      case 'rel':
-        termo(f.l, escopo)
-        termo(f.r, escopo)
+      case 'rel': {
+        const num = ORDEM.includes(f.op) || ((f.op === '=' || f.op === '≠') && (termoNumerico(f.l) || termoNumerico(f.r)))
+        termo(f.l, escopo, num)
+        termo(f.r, escopo, num)
         return
+      }
       case 'not':
       case 'nec':
       case 'pos':

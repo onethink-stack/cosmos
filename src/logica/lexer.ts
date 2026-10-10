@@ -25,6 +25,17 @@ export type TipoToken =
   | 'pos'
   | 'lbrack'
   | 'rbrack'
+  | 'num'
+  | 'plus'
+  | 'minus'
+  | 'times'
+  | 'div'
+  | 'pow'
+  | 'lt'
+  | 'le'
+  | 'gt'
+  | 'ge'
+  | 'reais'
   | 'eof'
 
 export interface Token {
@@ -50,7 +61,10 @@ const SIMBOLOS: [string, TipoToken][] = [
   ['\\notin', 'notin'], ['\\empty', 'empty'], ['\\sub', 'subset'], ['\\cap', 'cap'],
   ['\\cup', 'cup'], ['\\in', 'in'], ['\\A', 'forall'], ['\\E', 'exists'],
   ['\\nec', 'nec'], ['\\pos', 'pos'],
-  ['<->', 'iff'], ['->', 'imp'], ['!=', 'neq'], ['[]', 'nec'], ['<>', 'pos'],
+  ['<->', 'iff'], ['<=>', 'iff'], ['->', 'imp'], ['!=', 'neq'], ['[]', 'nec'], ['<>', 'pos'],
+  ['<=', 'le'], ['>=', 'ge'], ['<', 'lt'], ['>', 'gt'], ['≤', 'le'], ['≥', 'ge'], ['⩽', 'le'], ['⩾', 'ge'],
+  ['+', 'plus'], ['−', 'minus'], ['-', 'minus'], ['·', 'times'], ['*', 'times'], ['×', 'times'], ['/', 'div'], ['^', 'pow'],
+  ['\\R', 'reais'],
   ['∀', 'forall'], ['∃', 'exists'], ['¬', 'not'], ['~', 'not'],
   ['∧', 'and'], ['&', 'and'], ['∨', 'or'], ['|', 'or'],
   ['⟹', 'imp'], ['⇒', 'imp'], ['→', 'imp'], ['⟺', 'iff'], ['⇔', 'iff'], ['↔', 'iff'],
@@ -65,6 +79,7 @@ export const SIMBOLO_DE: Record<TipoToken, string> = {
   nome: 'nome', subscr: 'subscrito', forall: '∀', exists: '∃', not: '¬', and: '∧',
   or: '∨', imp: '⟹', iff: '⟺', eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆',
   cap: '⋂', cup: '⋃', empty: '∅', lpar: '(', rpar: ')', comma: ',', nec: '□', pos: '◇', lbrack: '[', rbrack: ']',
+  num: 'número', plus: '+', minus: '−', times: '·', div: '/', pow: '^', lt: '<', le: '≤', gt: '>', ge: '≥', reais: 'ℝ',
   eof: 'fim da fórmula',
 }
 
@@ -110,6 +125,22 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
         continue
       }
       push('subscr', v, ini, i)
+      continue
+    }
+    // número: 2, 10, 0.5 (um nome que começa com dígito não existe)
+    if (/[0-9]/.test(c)) {
+      const ini = i
+      while (i < n && /[0-9]/.test(texto[i])) i++
+      if (texto[i] === '.' && /[0-9]/.test(texto[i + 1] ?? '')) {
+        i++
+        while (i < n && /[0-9]/.test(texto[i])) i++
+      }
+      push('num', texto.slice(ini, i), ini, i)
+      continue
+    }
+    if (c === 'ℝ') {
+      push('reais', c, i, i + 1)
+      i++
       continue
     }
     if (ehCharDeNome(c)) {

@@ -7,6 +7,7 @@ interface Rascunho {
   termo: string
   tipo: TipoSimbolo
   aridade: number
+  numerico: boolean
 }
 
 /**
@@ -16,7 +17,7 @@ interface Rascunho {
 export function ConfirmarNomes({ propostas }: { propostas: PropostaFicha[] }) {
   const est = useEstado()
   const [rasc, setRasc] = useState<Record<string, Rascunho>>({})
-  const r = (p: PropostaFicha): Rascunho => rasc[p.simbolo] ?? { termo: '', tipo: p.tipo, aridade: p.aridade }
+  const r = (p: PropostaFicha): Rascunho => rasc[p.simbolo] ?? { termo: '', tipo: p.tipo, aridade: p.aridade, numerico: !!p.numerico }
   const mudar = (p: PropostaFicha, m: Partial<Rascunho>) => setRasc((x) => ({ ...x, [p.simbolo]: { ...r(p), ...m } }))
 
   const paraEntrada = (p: PropostaFicha): EntradaDicionario => {
@@ -28,6 +29,7 @@ export function ConfirmarNomes({ propostas }: { propostas: PropostaFicha[] }) {
       tipo: x.tipo,
       aridade: x.tipo === 'constante' ? 0 : x.aridade,
       definicao: '',
+      ...(x.numerico && x.tipo !== 'predicado' ? { numerico: true } : {}),
     }
   }
 
@@ -72,6 +74,12 @@ export function ConfirmarNomes({ propostas }: { propostas: PropostaFicha[] }) {
                       value={x.aridade}
                       onInput={(e) => mudar(p, { aridade: Number((e.target as HTMLInputElement).value) || 0 })}
                     />
+                  </label>
+                )}
+                {x.tipo !== 'predicado' && (
+                  <label class="aridade" title="O valor é um número real (entra em contas e comparações)">
+                    <input type="checkbox" checked={x.numerico} onChange={(e) => mudar(p, { numerico: (e.target as HTMLInputElement).checked })} />
+                    número
                   </label>
                 )}
                 <span class="suave">

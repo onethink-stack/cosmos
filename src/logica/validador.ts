@@ -1,5 +1,5 @@
 import type { EntradaDicionario, TipoSimbolo } from '../dados/tipos'
-import type { Diag, Formula, Span, Termo } from './ast'
+import { ORDEM, type Diag, type Formula, type Span, type Termo } from './ast'
 import { checarParenteses, lex } from './lexer'
 import { ErroSintaxe, parseTokens } from './parser'
 import { nomeParecido } from './distancia'
@@ -14,9 +14,13 @@ export interface ResultadoValidacao {
 
 const DESC_TIPO: Record<TipoSimbolo, string> = { constante: 'constante', predicado: 'predicado', funcao: 'função' }
 
-function descrever(tipo: TipoSimbolo, aridade: number): string {
-  return tipo === 'constante' ? 'constante' : `${DESC_TIPO[tipo]} de aridade ${aridade}`
+function descrever(tipo: TipoSimbolo, aridade: number, numerico?: boolean): string {
+  const base = tipo === 'constante' ? 'constante' : `${DESC_TIPO[tipo]} de aridade ${aridade}`
+  return numerico ? `${base} numérica` : base
 }
+
+/** número ou objeto (null = ainda não se sabe: nome sem ficha) */
+type Sorte = 'num' | 'obj' | null
 
 export interface OpcoesValidacao {
   /** avisar (E12/E13) sobre nomes sem ficha no dicionário */
@@ -64,17 +68,17 @@ export function checarFichas(ast: Formula, dic: Map<string, EntradaDicionario>):
   for (const u of usosDeNomes(ast)) {
     if (dic.has(u.nome) || vistos.has(u.nome)) continue
     vistos.add(u.nome)
-    const ficha = { simbolo: u.nome, tipo: u.tipo, aridade: u.aridade }
+    const ficha = { simbolo: u.nome, tipo: u.tipo, aridade: u.aridade, ...(u.numerico && u.tipo !== 'predicado' ? { numerico: true } : {}) }
     const parecido = nomeParecido(u.nome, dic.keys())
     if (parecido)
       diags.push({ codigo: 'E13', nivel: 'aviso', pos: u.pos, end: u.end, ficha, sugestao: parecido, msg: `'${u.nome}' não está no dicionário. Você quis dizer '${parecido}'?` })
     else
-      diags.push({ codigo: 'E12', nivel: 'aviso', pos: u.pos, end: u.end, ficha, msg: `'${u.nome}' não declarado no dicionário (seria ${descrever(u.tipo, u.aridade)})` })
+      diags.push({ codigo: 'E12', nivel: 'aviso', pos: u.pos, end: u.end, ficha, msg: `'${u.nome}' não declarado no dicionário (seria ${descrever(u.tipo, u.aridade, ficha.numerico)})` })
   }
   return diags
 }
 
-/** Checagens que dependem da árvore inteira: E4, E5, E6, E9, E10, E11. */
+/** Checagens que dependem da árvore inteira: E4, E5, E6, E9, E10, E11, E15. */
 export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario>): Diag[] {
   const diags: Diag[] = []
   const add = (codigo: Diag['codigo'], nivel: Diag['nivel'], msg: string, span: Span) =>
@@ -96,7 +100,42 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       add('E10', 'erro', `'${nome}' é usado como ${descrever(u.tipo, u.aridade)} e também como ${descrever(tipo, aridade)}`, span)
   }
 
-  const termo = (t: Termo, escopo: string[], permiteConj: boolean): void => {
+  // variáveis de ∀x∈ℝ / ∃x∈ℝ são números; as outras, objetos
+  let reais: string[] = []
+  const sorteDoNome = (nome: string, escopo: string[]): Sorte => {
+    if (escopo.includes(nome)) return reais.includes(nome) ? 'num' : 'obj'
+    const d = dic.get(nome)
+    return d ? (d.numerico ? 'num' : 'obj') : null
+  }
+  /** a sorte que o termo tem por si (sem olhar onde está) */
+  const sorte = (t: Termo, escopo: string[]): Sorte => {
+    switch (t.k) {
+      case 'num':
+      case 'arit':
+      case 'neg':
+        return 'num'
+      case 'nome':
+        return sorteDoNome(t.nome, escopo)
+      case 'app':
+        return escopo.includes(t.fn) ? null : sorteDoNome(t.fn, [])
+      default:
+        return 'obj'
+    }
+  }
+  const DESC_SORTE = { num: 'número', obj: 'objeto' }
+  const conferirSorte = (t: Termo, tem: Sorte, esperado: Sorte, escopo: string[]) => {
+    if (!tem || !esperado || tem === esperado) return
+    const nome = t.k === 'nome' ? t.nome : t.k === 'app' ? t.fn : null
+    let dica = ''
+    if (nome && !escopo.includes(nome))
+      dica = esperado === 'num' ? ` Se '${nome}' é um número, marque "número" na ficha dele no dicionário.` : ` '${nome}' está no dicionário como número.`
+    else if (nome && esperado === 'num') dica = ` Para '${nome}' ser número, quantifique com ∀${nome}∈ℝ ou ∃${nome}∈ℝ.`
+    add('E15', 'erro', `${nome ? `'${nome}'` : 'Este termo'} é ${DESC_SORTE[tem]}, mas aqui precisa ser ${DESC_SORTE[esperado]}.${dica}`, t)
+  }
+
+  /** `esperado`: o lugar pede número ou objeto (null = qualquer um) */
+  const termo = (t: Termo, escopo: string[], permiteConj: boolean, esperado: Sorte = 'obj'): void => {
+    conferirSorte(t, sorte(t, escopo), esperado, escopo)
     switch (t.k) {
       case 'nome':
         if (escopo.includes(t.nome)) return
@@ -104,11 +143,15 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
           add('E6', 'aviso', `'${t.nome}' aparece fora do escopo do seu quantificador; aqui é uma constante livre`, t)
         registrar(t.nome, 'constante', 0, t)
         return
-      case 'app':
+      case 'app': {
         if (escopo.includes(t.fn)) add('E10', 'erro', `'${t.fn}' é variável quantificada e não pode ser usada como função`, t)
         else registrar(t.fn, 'funcao', t.args.length, t)
-        t.args.forEach((a) => termo(a, escopo, false))
+        // função numérica recebe números; as outras, objetos
+        const s = sorte(t, escopo)
+        const num = s === 'num' || (s === null && esperado === 'num')
+        t.args.forEach((a) => termo(a, escopo, false, num ? 'num' : 'obj'))
         return
+      }
       case 'inter':
       case 'uniao':
         if (!permiteConj)
@@ -116,7 +159,16 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         termo(t.l, escopo, permiteConj)
         termo(t.r, escopo, permiteConj)
         return
+      case 'arit':
+        termo(t.l, escopo, false, 'num')
+        termo(t.r, escopo, false, 'num')
+        return
+      case 'neg':
+        termo(t.t, escopo, false, 'num')
+        return
       case 'vazio':
+      case 'num':
+      case 'reais':
         return
     }
   }
@@ -128,12 +180,33 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         else registrar(f.nome, 'predicado', f.args.length, f)
         f.args.forEach((a) => termo(a, escopo, false))
         return
-      case 'rel':
+      case 'rel': {
         if (f.op === '≠' && termosIguais(f.l, f.r))
           add('E9', 'erro', 'Contradição imediata: um termo diferente de si mesmo (t ≠ t) é sempre falso', f)
+        if (ORDEM.includes(f.op)) {
+          termo(f.l, escopo, false, 'num')
+          termo(f.r, escopo, false, 'num')
+          return
+        }
+        if (f.op === '=' || f.op === '≠') {
+          // os dois lados do mesmo tipo: número com número, objeto com objeto
+          const sl = sorte(f.l, escopo)
+          const sr = sorte(f.r, escopo)
+          if (sl && sr && sl !== sr) {
+            add('E15', 'erro', `Igualdade entre ${DESC_SORTE[sl]} e ${DESC_SORTE[sr]}: os dois lados precisam ser do mesmo tipo`, f)
+            termo(f.l, escopo, false, null)
+            termo(f.r, escopo, false, null)
+            return
+          }
+          const esperado: Sorte = sl === 'num' || sr === 'num' ? 'num' : sl === 'obj' || sr === 'obj' ? 'obj' : null
+          termo(f.l, escopo, false, esperado)
+          termo(f.r, escopo, false, esperado)
+          return
+        }
         termo(f.l, escopo, f.op === '⊆')
-        termo(f.r, escopo, f.op !== '=' && f.op !== '≠')
+        termo(f.r, escopo, true)
         return
+      }
       case 'not':
       case 'nec':
       case 'pos':
@@ -163,8 +236,14 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
           )
         if (escopo.includes(f.v))
           add('E5', 'aviso', `'${f.v}' já está quantificada num escopo externo; este quantificador esconde o anterior`, vSpan)
-        if (f.dom) termo(f.dom, escopo, true)
+        const antes = reais
+        if (f.dom?.k === 'reais') reais = [...reais, f.v]
+        else {
+          if (reais.includes(f.v)) reais = reais.filter((x) => x !== f.v)
+          if (f.dom) termo(f.dom, escopo, true)
+        }
         formula(f.corpo, [...escopo, f.v])
+        reais = antes
         return
       }
       case 'const':

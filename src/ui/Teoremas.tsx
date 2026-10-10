@@ -5,7 +5,7 @@ import { assinatura, useVerificacao } from '../dados/verificacao'
 import { limiteTexto } from '../motor/avaliar'
 import { inativasDoContexto } from '../dados/cadeia'
 import { tarefaDoContexto, type Tarefa } from '../motor/tarefas'
-import { ConfirmacaoZ3 } from './ConfirmacaoZ3'
+import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { LeisQueFaltam } from './LeisQueFaltam'
 import { ArvorePassos, formulasDosGrupos, ModeloVisual } from './ResultadoVerificacao'
 
@@ -141,6 +141,14 @@ export function Teoremas({ teoremas, tarefas, pronto }: { teoremas: FormulaDeNot
                   {res.tipo === 'premissas-contraditorias' && <div class="erro-texto">As leis e fatos já se contradizem: resolva isso primeiro.</div>}
                   {res.tipo === 'grande-demais' && <div class="aviso-texto">Grande demais para o motor finito (o Z3, se ligado, pode decidir).</div>}
                   {res.tipo === 'formula-invalida' && <div class="erro-texto">Fórmula inválida.</div>}
+                  {res.tipo === 'aritmetica' && (
+                    <div>
+                      <span class="estado-teorema">🔢 Com números</span> <span class="suave">— conferido pelo Z3</span>
+                      {!desatualizado && (
+                        <ConferenciaNumerica grupos={geral.grupos} formula={t.texto} inativas={inativasDoContexto(est.notas, geral.chave)} />
+                      )}
+                    </div>
+                  )}
                   <div class="suave res-meta">
                     {r!.ms < 1000 ? `${r!.ms} ms` : `${(r!.ms / 1000).toFixed(1)} s`}
                     {desatualizado && <span class="selo aviso"> desatualizado — as notas mudaram</span>}

@@ -9,6 +9,8 @@ export interface EntradaDicionario {
   tipo: TipoSimbolo
   aridade: number
   definicao: string
+  /** constante ou função com valor numérico (número real); uma função numérica recebe números */
+  numerico?: boolean
 }
 
 /** teorema: não é premissa; o app confere se segue das leis e fatos ativos */

@@ -1,6 +1,7 @@
 import type { EntradaDicionario } from '../dados/tipos'
 import { expandir } from '../logica/acucar'
 import type { Formula } from '../logica/ast'
+import { temAritmetica, usosDeNomes } from '../logica/termos'
 import { validar } from '../logica/validador'
 import { Aterrador, ehModal, GrandeDemais, type ProblemaCNF } from './aterrar'
 import { Avaliador, type PassoExplicacao } from './avaliar'
@@ -66,15 +67,51 @@ export interface FormulaPronta {
   texto: string
   original: Formula
   expandida: Formula
+  /** usa números (contas, <, ≤, ∀x∈ℝ ou nomes numéricos): só o Z3 lê */
+  aritmetica: boolean
 }
 
-export function analisar(textos: string[], dicionario: EntradaDicionario[]): FormulaPronta[] {
+/** Nomes do dicionário que são números (constantes e funções numéricas). */
+export const nomesNumericos = (dicionario: EntradaDicionario[]) => new Set(dicionario.filter((e) => e.numerico).map((e) => e.simbolo))
+
+/**
+ * Analisa e expande as fórmulas válidas. Fórmulas com números ficam de fora
+ * (o motor finito não lê números), a não ser com `comNumeros` (para o Z3).
+ */
+export function analisar(textos: string[], dicionario: EntradaDicionario[], comNumeros = false): FormulaPronta[] {
   const r: FormulaPronta[] = []
+  const numericos = nomesNumericos(dicionario)
   for (const texto of textos) {
     const v = validar(texto, dicionario)
-    if (v.ast && v.ok) r.push({ texto, original: v.ast, expandida: expandir(v.ast) })
+    if (!v.ast || !v.ok) continue
+    const aritmetica = temAritmetica(v.ast, (n) => numericos.has(n))
+    if (aritmetica && !comNumeros) continue
+    r.push({ texto, original: v.ast, expandida: expandir(v.ast), aritmetica })
   }
   return r
+}
+
+/**
+ * Só as fórmulas ligadas ao alvo por nomes em comum (direta ou indiretamente).
+ * Números e objetos são tipos separados, então leis sobre outros nomes não
+ * mudam se o alvo segue (desde que não se contradigam, o que é conferido à
+ * parte). Deixa o Z3 livre das leis que não têm nada a ver com a conta.
+ */
+export function relevantes(formulas: FormulaPronta[], alvo: FormulaPronta): FormulaPronta[] {
+  const nomes = (f: FormulaPronta) => new Set(usosDeNomes(f.original).map((u) => u.nome))
+  const cada = formulas.map((f) => ({ f, ns: nomes(f) }))
+  const ligados = nomes(alvo)
+  const dentro = new Set<number>()
+  for (let mudou = true; mudou; ) {
+    mudou = false
+    cada.forEach((x, i) => {
+      if (dentro.has(i) || ![...x.ns].some((n) => ligados.has(n))) return
+      dentro.add(i)
+      x.ns.forEach((n) => ligados.add(n))
+      mudou = true
+    })
+  }
+  return cada.filter((_, i) => dentro.has(i)).map((x) => x.f)
 }
 
 /** Analisa e expande as fórmulas de um grupo. Fórmulas com erro são ignoradas. */
@@ -283,6 +320,8 @@ export type ResultadoPergunta =
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
   | { tipo: 'formula-invalida' }
+  /** a fórmula usa números: o motor finito não decide; o Z3 decide */
+  | { tipo: 'aritmetica' }
 
 export const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
 
@@ -298,7 +337,7 @@ export function perguntar(
   progresso?: Progresso,
 ): ResultadoPergunta {
   const [phi] = analisar([formula], dicionario)
-  if (!phi) return { tipo: 'formula-invalida' }
+  if (!phi) return analisar([formula], dicionario, true).length ? { tipo: 'aritmetica' } : { tipo: 'formula-invalida' }
   const prontos: GrupoPronto[] = grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
   const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
 

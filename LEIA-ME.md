@@ -43,6 +43,8 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   tempo de cada checagem e o tempo total. Medido: o que pesa é o tempo das
   provas (um teorema com extensionalidade leva 4 s com 8 objetos, 24 s com
   12 e 160 s com 17 num PC), não a memória.
+- **Salvamento automático**: a nota é salva sozinha pouco depois de você
+  parar de digitar, ao sair dela e ao esconder o app.
 - **Segundo plano e avisos**: o motor continua trabalhando enquanto você usa
   as outras telas (um indicador no topo mostra o que ele está fazendo), e
   salvar uma nota não cancela uma reação em andamento. Ao terminar, aparece
@@ -55,6 +57,21 @@ contradições. Sem IA e sem servidor: todos os dados ficam no aparelho.
   verdade, mas uma lei sobre o necessário (□) pode contradizê-la.
 - O motor normal vale "até N objetos" (e até K mundos, com lógica modal): é um
   indício forte, não prova. Com o **Z3** ligado, a resposta vira prova.
+
+## Números
+
+A linguagem também faz contas com números reais: `+ − · / ^`, comparações
+`< ≤ > ≥` e quantificadores sobre os reais `∀x∈ℝ`, `∃x∈ℝ` (no teclado: ℝ,
++, −, ·, /, ^, <, ≤, >, ≥). Constantes e funções numéricas são marcadas como
+**número** na ficha do dicionário (o app deduz pelo uso: `k · 2 > c` propõe
+`k` e `c` como números). Número e objeto não se misturam (erro **E15**).
+
+Fórmulas com números não entram no motor finito (ele não faz contas): quem
+confere é o **Z3**, para quaisquer valores. Teoremas com números aparecem
+com "🔢 Com números" em Teoremas e na Reação em cadeia; se não seguem, o app
+testa as leis e fatos desativados e mostra os que fariam seguir (botão
+"Aprovar: ativar esta nota"). O Z3 recebe só as leis ligadas ao teorema por
+nomes em comum.
 
 ## Sistemas prontos
 

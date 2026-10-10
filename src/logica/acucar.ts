@@ -58,6 +58,9 @@ export function expandir(f: Formula): Formula {
             const zt: Termo = { k: 'nome', nome: z, ...sp(f) }
             return { k: 'forall', v: z, vPos: f.pos, corpo: { k: 'imp', l: mem(zt, f.l, f), r: mem(zt, f.r, f), ...sp(f) }, ...sp(f) }
           }
+          // <, ≤, >, ≥: números, ficam como estão (só o Z3 lê)
+          default:
+            return f
         }
       // eslint-disable-next-line no-fallthrough
       case 'pred':
@@ -76,7 +79,8 @@ export function expandir(f: Formula): Formula {
       case 'forall':
       case 'exists': {
         const corpo = ex(f.corpo)
-        if (!f.dom) return { ...f, corpo }
+        // ∀x∈ℝ: a variável é um número real; fica marcada no domínio
+        if (!f.dom || f.dom.k === 'reais') return { ...f, corpo }
         const v: Termo = { k: 'nome', nome: f.v, pos: f.vPos, end: f.vPos + f.v.length }
         const guarda = mem(v, f.dom, f.dom)
         return {

@@ -21,6 +21,8 @@ export interface PropostaFicha {
   simbolo: string
   tipo: TipoSimbolo
   aridade: number
+  /** usado como número (numa conta ou comparação) */
+  numerico?: boolean
   /** usos incompatíveis entre as fórmulas (ex.: constante numa, função noutra) */
   conflito: string | null
   /** ids das notas onde aparece */
@@ -47,6 +49,7 @@ export function deduzirFichas(formulas: { texto: string; notaId: string }[], dic
         props.set(u.nome, p)
       }
       p.usos.add(desc(u.tipo, u.aridade))
+      if (u.numerico && u.tipo !== 'predicado') p.numerico = true
       if (!p.notas.includes(notaId)) p.notas.push(notaId)
     }
   }

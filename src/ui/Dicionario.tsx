@@ -57,7 +57,10 @@ export function Dicionario() {
           ) : (
             <li class="ficha" onClick={() => setEditando({ ...e })}>
               <code class="simbolo">{e.simbolo}</code>
-              <span class="ficha-tipo">{e.tipo === 'constante' ? 'constante' : `${NOME_TIPO[e.tipo]}/${e.aridade}`}</span>
+              <span class="ficha-tipo">
+                {e.tipo === 'constante' ? 'constante' : `${NOME_TIPO[e.tipo]}/${e.aridade}`}
+                {e.numerico ? ' · número' : ''}
+              </span>
               <span class="ficha-termo">{e.termo !== e.simbolo ? e.termo : ''}</span>
               {e.definicao && <div class="ficha-def">{e.definicao}</div>}
             </li>
@@ -85,7 +88,13 @@ function FormFicha({ entrada, onFechar }: { entrada: EntradaDicionario; onFechar
     ev.preventDefault()
     setTentou(true)
     if (erro) return
-    await est.salvarEntradas({ ...e, simbolo: e.simbolo.trim(), termo: e.termo.trim() || e.simbolo.trim(), aridade: e.tipo === 'constante' ? 0 : e.aridade })
+    await est.salvarEntradas({
+      ...e,
+      simbolo: e.simbolo.trim(),
+      termo: e.termo.trim() || e.simbolo.trim(),
+      aridade: e.tipo === 'constante' ? 0 : e.aridade,
+      numerico: e.tipo !== 'predicado' && !!e.numerico ? true : undefined,
+    })
     onFechar()
   }
 
@@ -126,6 +135,12 @@ function FormFicha({ entrada, onFechar }: { entrada: EntradaDicionario; onFechar
         )}
       </div>
       {e.tipo === 'predicado' && e.aridade === 0 && <p class="suave">Predicado de aridade 0 = proposição: pode ser usado sozinho como fórmula (ex.: P ∧ Q).</p>}
+      {e.tipo !== 'predicado' && (
+        <label class="alternar">
+          <input type="checkbox" checked={!!e.numerico} onChange={(x) => mudar({ numerico: (x.target as HTMLInputElement).checked })} />
+          É um número real (entra em contas: +, −, ·, /, ^ e comparações &lt;, ≤){e.tipo === 'funcao' ? '; a função recebe números' : ''}
+        </label>
+      )}
       <label class="campo-rotulo">
         Definição
         <textarea rows={3} value={e.definicao} onInput={(x) => mudar({ definicao: (x.target as HTMLTextAreaElement).value })} />

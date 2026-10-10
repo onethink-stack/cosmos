@@ -259,8 +259,13 @@ export function canonica(f: Formula): string {
         return { ...t, args: t.args.map((a) => termo(a, env)) }
       case 'inter':
       case 'uniao':
+      case 'arit':
         return { ...t, l: termo(t.l, env), r: termo(t.r, env) }
+      case 'neg':
+        return { ...t, t: termo(t.t, env) }
       case 'vazio':
+      case 'num':
+      case 'reais':
         return t
     }
   }

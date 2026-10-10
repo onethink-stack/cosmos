@@ -32,7 +32,7 @@ export function Perguntar({ tarefas, pronto }: { tarefas: Tarefa[]; pronto: bool
 
   const criarFicha = async (f: NonNullable<Diag['ficha']>) => {
     if (estado.dicionario.some((e) => e.simbolo === f.simbolo)) return
-    await estado.salvarEntradas({ id: '', termo: f.simbolo, simbolo: f.simbolo, tipo: f.tipo, aridade: f.aridade, definicao: '' })
+    await estado.salvarEntradas({ id: '', termo: f.simbolo, simbolo: f.simbolo, tipo: f.tipo, aridade: f.aridade, definicao: '', ...(f.numerico ? { numerico: true } : {}) })
   }
 
   const perguntar = () => {
@@ -240,6 +240,16 @@ function RespostaPergunta({
       return (
         <div class="resultado res-erro">
           <strong>Fórmula inválida</strong>
+          {meta}
+        </div>
+      )
+    case 'aritmetica':
+      return (
+        <div class="resultado">
+          <strong>Fórmula com números</strong>
+          {cabeca}
+          <p>O motor finito não faz contas; quem responde é o Z3, para quaisquer valores dos números.</p>
+          {!desatualizado && <ConfirmacaoZ3 tipo="numeros" formulas={formulasDosGrupos(grupos)} negar={r.formula} />}
           {meta}
         </div>
       )

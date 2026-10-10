@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useReducer } from 'preact/hooks'
 import type { EntradaDicionario } from './tipos'
-import { analisar, nao } from '../motor/motor'
+import { analisar, nao, nomesNumericos, relevantes } from '../motor/motor'
 import { checarZ3, TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
 import { gravarConfig, lerConfig } from './db'
 
@@ -167,7 +167,11 @@ class EstadoZ3 {
    * Checa no Z3 se `formulas` (mais ¬negar, se dado) têm modelo. Uma checagem
    * por vez; o resultado fica guardado pela chave.
    */
-  confirmar(chave: string, formulas: string[], dicionario: EntradaDicionario[], negar?: string) {
+  /**
+   * `soRelevantes`: só as fórmulas ligadas por nomes à negada (ou a `foco`),
+   * para o Z3 não se perder em leis que não têm nada a ver.
+   */
+  confirmar(chave: string, formulas: string[], dicionario: EntradaDicionario[], negar?: string, soRelevantes = false, foco?: string) {
     if (this.confirmacoes.has(chave)) return
     this.confirmacoes.set(chave, { estado: 'rodando' })
     this.avisar()
@@ -175,13 +179,14 @@ class EstadoZ3 {
       const ini = Date.now()
       try {
         const api = await this.carregar()
-        const fs = analisar(formulas, dicionario).map((x) => x.expandida)
-        if (negar !== undefined) {
-          const [phi] = analisar([negar], dicionario)
-          if (!phi) throw new Error('fórmula inválida')
-          fs.push(nao(phi.expandida))
-        }
-        const resultado = await checarZ3(api, fs, TEMPO_Z3_MS)
+        let prontas = analisar(formulas, dicionario, true)
+        const [phi] = negar !== undefined ? analisar([negar], dicionario, true) : []
+        if (negar !== undefined && !phi) throw new Error('fórmula inválida')
+        const [centro] = phi ? [phi] : foco !== undefined ? analisar([foco], dicionario, true) : []
+        if (centro && soRelevantes) prontas = relevantes(prontas, centro)
+        const fs = prontas.map((x) => x.expandida)
+        if (phi) fs.push(nao(phi.expandida))
+        const resultado = await checarZ3(api, fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
         this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
       } catch (e) {
         this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })

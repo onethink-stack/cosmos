@@ -12,7 +12,7 @@
 // Node), para poder ser testado fora do navegador.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Formula, Termo } from '../logica/ast'
+import { ORDEM, type Formula, type Termo } from '../logica/ast'
 
 export type ResultadoZ3 = 'sat' | 'unsat' | 'unknown'
 
@@ -20,18 +20,25 @@ export const TEMPO_Z3_MS = 20_000
 
 type Expr = any
 
-let contexto: { api: any; ctx: any } | null = null
 let contador = 0
 
+/**
+ * Um contexto novo por checagem: reaproveitar o mesmo contexto depois de
+ * checagens interrompidas pelo tempo limite fazia o Z3 (WebAssembly) quebrar
+ * em problemas com números e quantificadores.
+ */
 function obterContexto(api: any) {
-  if (!contexto || contexto.api !== api) contexto = { api, ctx: new api.Context('caderno') }
-  return contexto.ctx
+  return new api.Context('caderno')
 }
 
-/** As fórmulas têm modelo? (todas afirmadas no mundo real) */
-export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3_MS): Promise<ResultadoZ3> {
+/**
+ * As fórmulas têm modelo? (todas afirmadas no mundo real). `numericos`: nomes
+ * de constantes e funções que são números reais (funções numéricas recebem
+ * números e não variam com o mundo, como a matemática).
+ */
+export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3_MS, numericos: Set<string> = new Set()): Promise<ResultadoZ3> {
   const ctx = obterContexto(api)
-  const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver } = ctx
+  const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real } = ctx
   const Obj = Sort.declare('Obj')
   const Mundo = Sort.declare('Mundo')
   const B = Bool.sort()
@@ -63,16 +70,49 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
     return acessos.get(agente)
   }
   const nova = (base: string, sort: any) => Const(`${base}!${++contador}`, sort)
+  const reaisC = new Map<string, Expr>()
+  const reaisF = new Map<string, any>()
+  const constanteReal = (nome: string) => {
+    if (!reaisC.has(nome)) reaisC.set(nome, Real.const(`n:${nome}`))
+    return reaisC.get(nome)
+  }
+  const funcaoReal = (nome: string, aridade: number) => {
+    const k = `${nome}/${aridade}`
+    if (!reaisF.has(k)) reaisF.set(k, Funcao.declare(`fn:${k}`, ...Array(aridade).fill(Real.sort()), Real.sort()))
+    return reaisF.get(k)
+  }
+  const potencia = (base: Expr, exp: Termo, env: Map<string, Expr>, w: Expr): Expr => {
+    // expoente inteiro pequeno: multiplicações (o Z3 decide melhor assim)
+    if (exp.k === 'num' && /^\d+$/.test(exp.valor) && Number(exp.valor) <= 12) {
+      const n = Number(exp.valor)
+      if (n === 0) return Real.val(1)
+      let r = base
+      for (let i = 1; i < n; i++) r = r.mul(base)
+      return r
+    }
+    return base.pow(termo(exp, env, w))
+  }
 
   const termo = (t: Termo, env: Map<string, Expr>, w: Expr): Expr => {
     switch (t.k) {
       case 'nome':
-        return env.get(t.nome) ?? constante(t.nome)
+        return env.get(t.nome) ?? (numericos.has(t.nome) ? constanteReal(t.nome) : constante(t.nome))
       case 'vazio':
         usaVazio = true
         return constante('∅')
       case 'app':
+        if (numericos.has(t.fn)) return funcaoReal(t.fn, t.args.length).call(...t.args.map((a) => termo(a, env, w)))
         return funcao(t.fn, t.args.length).call(w, ...t.args.map((a) => termo(a, env, w)))
+      case 'num':
+        return Real.val(t.valor)
+      case 'neg':
+        return termo(t.t, env, w).neg()
+      case 'arit': {
+        const l = termo(t.l, env, w)
+        if (t.op === '^') return potencia(l, t.r, env, w)
+        const r = termo(t.r, env, w)
+        return t.op === '+' ? l.add(r) : t.op === '−' ? l.sub(r) : t.op === '·' ? l.mul(r) : l.div(r)
+      }
       default:
         throw new Error('⋂/⋃ deveriam ter sido expandidos antes do Z3')
     }
@@ -93,6 +133,10 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
         if (f.op === '∈' || f.op === '∉') {
           const e = pertence.call(w, l, termo(f.r, env, w))
           return f.op === '∈' ? e : Not(e)
+        }
+        if (ORDEM.includes(f.op)) {
+          const r = termo(f.r, env, w)
+          return f.op === '<' ? l.lt(r) : f.op === '≤' ? l.le(r) : f.op === '>' ? l.gt(r) : l.ge(r)
         }
         throw new Error('⊆ deveria ter sido expandido antes do Z3')
       }
@@ -118,8 +162,8 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
       }
       case 'forall':
       case 'exists': {
-        if (f.dom) throw new Error('∀x∈S deveria ter sido expandido antes do Z3')
-        const x = nova(f.v, Obj)
+        if (f.dom && f.dom.k !== 'reais') throw new Error('∀x∈S deveria ter sido expandido antes do Z3')
+        const x = f.dom ? Real.const(`${f.v}!${++contador}`) : nova(f.v, Obj)
         const env2 = new Map(env)
         env2.set(f.v, x)
         const corpo = formula(f.corpo, env2, w)

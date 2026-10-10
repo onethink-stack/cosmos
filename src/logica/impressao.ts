@@ -1,4 +1,8 @@
-import type { Formula, Termo } from './ast'
+import type { Formula, OpArit, Termo } from './ast'
+
+const NIVEL_ARIT: Record<OpArit, number> = { '+': 1, '−': 1, '·': 2, '/': 2, '^': 4 }
+/** nível de precedência de um termo (conta mais fraca = menor; átomos = 9) */
+const nivelTermo = (t: Termo) => (t.k === 'arit' ? NIVEL_ARIT[t.op] : t.k === 'neg' ? 3 : 9)
 
 const SUB_INV: Record<string, string> = {
   a: 'ₐ', e: 'ₑ', o: 'ₒ', x: 'ₓ', h: 'ₕ', k: 'ₖ', l: 'ₗ', m: 'ₘ', n: 'ₙ', p: 'ₚ', s: 'ₛ',
@@ -21,6 +25,24 @@ export function imprimirTermo(t: Termo): string {
       return t.nome
     case 'vazio':
       return '∅'
+    case 'num':
+      return t.valor
+    case 'reais':
+      return 'ℝ'
+    case 'neg': {
+      const p = nivelTermo(t.t) < 4 ? `(${imprimirTermo(t.t)})` : imprimirTermo(t.t)
+      return `−${p}`
+    }
+    case 'arit': {
+      const n = NIVEL_ARIT[t.op]
+      // + e · associam à esquerda; ^ à direita; − e / precisam de parênteses à direita no mesmo nível
+      const lado = (x: Termo, dir: boolean) => {
+        const m = nivelTermo(x)
+        const paren = t.op === '^' ? (dir ? m < n : m <= n) : m < n || (dir && m === n && (t.op === '−' || t.op === '/' || x.k === 'arit'))
+        return paren ? `(${imprimirTermo(x)})` : imprimirTermo(x)
+      }
+      return t.op === '^' ? `${lado(t.l, false)}^${lado(t.r, true)}` : `${lado(t.l, false)} ${t.op} ${lado(t.r, true)}`
+    }
     case 'app': {
       const a = t.args[0]
       if (t.subscrito && t.args.length === 1 && a.k === 'nome') {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks'
-import { foraDaCadeia, pedidoDaCadeia } from '../dados/cadeia'
+import { foraDaCadeia, inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
 import { salvarDeduzida } from '../dados/deduzida'
 import { estado, useEstado } from '../dados/estado'
 import { usePerfil } from '../dados/perfil'
@@ -8,6 +8,7 @@ import { assinaturaCadeia, useVerificacao, type RodadaCadeia } from '../dados/ve
 import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
+import { ConferenciaNumerica } from './ConfirmacaoZ3'
 import { CartaoLei } from './LeisQueFaltam'
 import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
@@ -313,6 +314,7 @@ const nomeResultado = (t: EstadoTeorema) =>
     'premissas-contraditorias': 'leis contraditórias',
     'grande-demais': 'grande demais',
     'formula-invalida': 'fórmula inválida',
+    aritmetica: '🔢 com números (Z3)',
   })[t.resultado.tipo]
 
 function Relatorio({
@@ -329,7 +331,8 @@ function Relatorio({
   const seguem = rel.teoremas.filter((t) => t.resultado.tipo === 'segue')
   const naoSeguem = rel.teoremas.filter((t) => t.resultado.tipo === 'nao-segue')
   const contradizem = rel.teoremas.filter((t) => t.resultado.tipo === 'contradiz')
-  const outros = rel.teoremas.filter((t) => !['segue', 'nao-segue', 'contradiz'].includes(t.resultado.tipo))
+  const numericos = rel.teoremas.filter((t) => t.resultado.tipo === 'aritmetica')
+  const outros = rel.teoremas.filter((t) => !['segue', 'nao-segue', 'contradiz', 'aritmetica'].includes(t.resultado.tipo))
   const geracoes = [...new Set(seguem.map((t) => t.geracao ?? 1))].sort((a, b) => a - b)
   const independentes = rel.leis.filter((l) => l.tipo === 'independente')
   const decorrem = rel.leis.filter((l) => l.tipo === 'decorre')
@@ -443,6 +446,26 @@ function Relatorio({
                       <div class="suave">
                         o contrário segue de <Links ids={t.resultado.notas} />
                       </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {numericos.length > 0 && (
+            <div class="geracao">
+              <div class="geracao-titulo">Com números — conferidos pelo Z3 (para quaisquer valores)</div>
+              <ul class="lista-cadeia">
+                {numericos.map((t) => (
+                  <li>
+                    <Link id={t.id} /> <span class="formula-inline">{t.formula}</span>
+                    {!travado && (
+                      <ConferenciaNumerica
+                        grupos={grupos}
+                        formula={t.formula}
+                        inativas={inativasDoContexto(estado.notas, rel.chave)}
+                        onAtivada={(nome) => onAprovada(nome)}
+                      />
                     )}
                   </li>
                 ))}

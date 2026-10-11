@@ -2,8 +2,9 @@ import { useAvisos } from '../dados/avisos'
 import { descreverPerfil, detectarPerfil, MEMORIA_ABA, nucleosDisponiveis, PERFIS, usePerfil, type IdPerfil } from '../dados/perfil'
 import { estimarEspecificacao, memoriaTexto, quantidadeTexto, type Especificacao as Espec } from '../dados/especificacao'
 import { useEstado } from '../dados/estado'
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { useVerificacao, verificacao, type Ocupacao } from '../dados/verificacao'
+import { useAgenda } from '../dados/segundoPlano'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
   verificar: 'verificando',
@@ -243,5 +244,35 @@ function Especificacao() {
         </>
       )}
     </details>
+  )
+}
+
+/**
+ * O que o modo automático vai fazer: rodar daqui a pouco, esperar o motor,
+ * ou nada (está em dia). `ligado`: a opção automática deste lado está ligada;
+ * `emDia`: o último resultado ainda vale para as notas como estão.
+ */
+export function StatusAutomatico({ ligado, emDia, rodandoAgora }: { ligado: boolean; emDia: boolean; rodandoAgora: boolean }) {
+  const ag = useAgenda()
+  const [, tique] = useState(0)
+  useEffect(() => {
+    if (!ag.proximoEm) return
+    const id = setInterval(() => tique((x) => x + 1), 1000)
+    return () => clearInterval(id)
+  }, [ag.proximoEm])
+  if (!ligado) return null
+  const texto = rodandoAgora
+    ? 'rodando agora.'
+    : ag.esperando
+      ? `esperando ${ag.esperando} terminar.`
+      : ag.proximoEm && !emDia
+        ? `começa em ${Math.max(1, Math.ceil((ag.proximoEm - Date.now()) / 1000))} s (espera as notas pararem de mudar).`
+        : emDia
+          ? 'em dia — as notas não mudaram desde o último resultado; roda de novo quando mudarem.'
+          : 'vai rodar assim que o motor ficar livre.'
+  return (
+    <p class="suave status-automatico" aria-live="polite">
+      <b>Automático:</b> {texto}
+    </p>
   )
 }

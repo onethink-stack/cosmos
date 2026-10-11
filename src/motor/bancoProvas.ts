@@ -76,13 +76,23 @@ function pedido<T>(r: IDBRequest<T>): Promise<T> {
   })
 }
 
-function abrirDb(): Promise<IDBDatabase> {
+/**
+ * Abre o banco. Se alguém pedir para apagá-lo ("Limpar o banco"), esta
+ * conexão se fecha na hora (senão a exclusão fica esperando e trava quem
+ * abrir o banco depois). `aoFechar`: avisado quando isso acontece.
+ */
+async function abrirDb(aoFechar?: () => void): Promise<IDBDatabase> {
   const abrir = indexedDB.open(NOME_BANCO, 1)
   abrir.onupgradeneeded = () => {
     for (const loja of [LOJA, LOJA_Z3])
       if (!abrir.result.objectStoreNames.contains(loja)) abrir.result.createObjectStore(loja, { keyPath: 'chave' })
   }
-  return pedido(abrir)
+  const db = await pedido(abrir)
+  db.onversionchange = () => {
+    db.close()
+    aoFechar?.()
+  }
+  return db
 }
 
 export interface RespostaZ3Guardada {
@@ -95,27 +105,33 @@ export interface RespostaZ3Guardada {
 export async function lerZ3Guardados(): Promise<RespostaZ3Guardada[]> {
   if (typeof indexedDB === 'undefined') return []
   const db = await abrirDb()
-  return (await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).getAll())) as RespostaZ3Guardada[]
+  try {
+    return (await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).getAll())) as RespostaZ3Guardada[]
+  } finally {
+    db.close()
+  }
 }
 
 let dbZ3: Promise<IDBDatabase> | null = null
 export function guardarZ3(r: RespostaZ3Guardada) {
   if (typeof indexedDB === 'undefined') return
-  dbZ3 ??= abrirDb()
-  void dbZ3.then((db) => db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).put(r)).catch(() => {})
+  dbZ3 ??= abrirDb(() => (dbZ3 = null))
+  void dbZ3.then((db) => db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).put(r)).catch(() => (dbZ3 = null))
 }
 
 /** Abre o banco guardado no aparelho e carrega tudo na memória. */
 export async function abrirBancoProvas(): Promise<BancoProvas> {
   if (typeof indexedDB === 'undefined') return bancoNaMemoria()
-  const db = await abrirDb()
+  // apagado de fora: daqui em diante fica só na memória
+  let aberto = true
+  const db = await abrirDb(() => (aberto = false))
   const todas = (await pedido(db.transaction(LOJA).objectStore(LOJA).getAll())) as Prova[]
   const m = new Map<string, Prova>()
   for (const p of todas) if (p.chave.startsWith(`${VERSAO_MOTOR}|`)) m.set(p.chave, p)
   const estatisticas: EstatisticasBanco = { entradas: m.size, acertos: 0, parciais: 0, faltas: 0 }
 
   const enxugar = () => {
-    if (m.size <= MAX_ENTRADAS) return
+    if (m.size <= MAX_ENTRADAS || !aberto) return
     const velhas = [...m.values()].sort((a, b) => a.usadoEm - b.usadoEm).slice(0, Math.ceil(MAX_ENTRADAS / 10))
     const loja = db.transaction(LOJA, 'readwrite').objectStore(LOJA)
     for (const p of velhas) {
@@ -133,6 +149,7 @@ export async function abrirBancoProvas(): Promise<BancoProvas> {
     guardar: (p) => {
       m.set(p.chave, p)
       estatisticas.entradas = m.size
+      if (!aberto) return
       try {
         db.transaction(LOJA, 'readwrite').objectStore(LOJA).put(p)
       } catch {
@@ -144,6 +161,7 @@ export async function abrirBancoProvas(): Promise<BancoProvas> {
     limpar: async () => {
       m.clear()
       estatisticas.entradas = 0
+      if (!aberto) return
       await pedido(db.transaction(LOJA, 'readwrite').objectStore(LOJA).clear())
       await pedido(db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).clear())
     },

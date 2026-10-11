@@ -13,7 +13,7 @@ import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
 import { CartaoLei } from './LeisQueFaltam'
 import { ModoCadeia } from './Modelo'
 import { SeloGrau } from './SeloGrau'
-import { ConfigPerfil, ConfigSegundoPlano } from './SegundoPlano'
+import { ConfigPerfil, ConfigSegundoPlano, StatusAutomatico } from './SegundoPlano'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
 
 const NOME_ETAPA: Record<RelatorioCadeia['etapa'], string> = {
@@ -75,6 +75,11 @@ export function Cadeia() {
       </p>
       <ConfigPerfil />
       <ConfigSegundoPlano />
+      <StatusAutomatico
+        ligado={pf.automatico}
+        emDia={!!atual && !desatualizada && !atual.interrompida && (atual.terminada || !!atual.baseTerminada)}
+        rodandoAgora={ocupado}
+      />
       {ver.interrompida && !ver.ocupado && (
         <div class="interrompida">
           A rodada {ver.interrompida.numero} ({ver.interrompida.motivo}) parou no meio — o app foi fechado ou pausado pelo sistema.{' '}
@@ -316,6 +321,12 @@ function Nivel({ rel }: { rel: RelatorioCadeia }) {
           {' '}
           · o Z3 provou {ap.provadasZ3} de {ap.conclusoes} conclusões para qualquer número de objetos
         </span>
+      )}
+      {!!ap?.sairam?.length && (
+        <div class="suave">
+          Ao aprofundar, {ap.sairam.length === 1 ? 'uma conclusão secundária caiu e saiu' : `${ap.sairam.length} conclusões secundárias caíram e saíram`}{' '}
+          da lista (sem refazer a rodada): {ap.sairam.join('; ')}.
+        </div>
       )}
       {ap?.virada && (
         <div class="aviso-texto">

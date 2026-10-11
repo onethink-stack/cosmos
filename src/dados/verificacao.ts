@@ -334,7 +334,9 @@ class Verificacao {
     await bancoAtual()?.limpar()
     await new Promise<void>((ok) => {
       const r = indexedDB.deleteDatabase('caderno-provas')
-      r.onsuccess = r.onerror = r.onblocked = () => ok()
+      r.onsuccess = r.onerror = () => ok()
+      // as conexões abertas se fecham sozinhas ao ver o pedido; se alguma demorar, segue assim mesmo
+      r.onblocked = () => setTimeout(ok, 2000)
     })
     this.banco = { entradas: 0, acertos: 0, parciais: 0, faltas: 0 }
     z3.esquecerTudo()
@@ -416,7 +418,12 @@ class Verificacao {
     const assinatura = assinaturaModelo(notas, dicionario, pastas)
     // recomeçar o mesmo modelo que parou no meio conta como tentativa
     const tentativas = antes && antes.assinatura === assinatura && antes.interrompida ? antes.tentativas + 1 : 0
-    this.modelo = { motivo, relatorio: null, erro: null, ms: 0, terminada: false, tentativas, assinatura, pastas, quando: Date.now() }
+    // a classificação de antes (da última execução que terminou), para o aviso dizer só o que mudou
+    const anterior =
+      antes?.relatorio?.situacao === 'pronto'
+        ? Object.fromEntries(antes.relatorio.itens.map((i) => [i.id, i.classe]))
+        : antes?.anterior
+    this.modelo = { motivo, relatorio: null, erro: null, ms: 0, terminada: false, tentativas, assinatura, pastas, quando: Date.now(), anterior }
     this.gravarModelo(true)
     const pf = perfil.atual
     this.ocupado = 'modelo'
@@ -487,7 +494,8 @@ class Verificacao {
   }
 
   /** Para o trabalho atual. `avisar` = pedido do usuário (também descarta o que esperava a vez). */
-  cancelar(avisar = true) {
+  /** `motivo`: por que o aprofundamento parou (quando só ele estava rodando) */
+  cancelar(avisar = true, motivo = 'parado antes do limite') {
     if (this.rodando && this.worker) {
       this.worker.terminate()
       this.worker = null
@@ -504,7 +512,7 @@ class Verificacao {
                 terminada: true,
                 relatorios: atual.relatorios.map((r) =>
                   r.aprimoramento && r.aprimoramento.situacao !== 'feito'
-                    ? { ...r, aprimoramento: { ...r.aprimoramento, situacao: 'feito', parouPor: 'parado antes do limite' } }
+                    ? { ...r, aprimoramento: { ...r.aprimoramento, situacao: 'feito', parouPor: motivo } }
                     : r,
                 ),
               }
@@ -633,7 +641,11 @@ class Verificacao {
           this.fila.unshift(() => {
             const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
             if (pronto && pedido.contextos.length)
-              this.iniciarCadeia(pedido, estado.dicionario, `aprimoramento — com ${virada.N} objetos, ${virada.descricao}: deixou de valer`, false, 0, virada)
+              this.iniciarCadeia(pedido, estado.dicionario, `aprimoramento — com ${virada.N} objetos, ${virada.descricao}: deixou de valer`, false, 0, {
+                // pelo menos 2 tamanhos acima do nível da rodada (cair de novo no seguinte custaria outra volta)
+                N: Math.max(virada.N, (atual?.relatorios[0]?.aprimoramento?.de.N ?? virada.N) + 2),
+                K: virada.K,
+              })
           })
         }
       }

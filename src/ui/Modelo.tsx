@@ -17,6 +17,7 @@ import { useVerificacao } from '../dados/verificacao'
 import { consistenciaZ3, itensComZ3, pedirZ3DoModelo, z3Pendentes } from '../dados/modeloZ3'
 import { disponibilidadeZ3, useZ3 } from '../dados/z3'
 import { faseZ3DoModelo } from '../dados/segundoPlano'
+import { StatusAutomatico } from './SegundoPlano'
 import { limiteTexto } from '../motor/avaliar'
 import { MAX_RODADAS_MODELO, PREFIXO_ADOTADA, type Classe, type EventoModelo, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
 import type { Nota } from '../dados/tipos'
@@ -130,6 +131,7 @@ export function Modelo() {
         <input type="checkbox" checked={cfg.automatico} onChange={(e) => cfg.definirAutomatico((e.target as HTMLInputElement).checked)} />
         Rodar sozinho sempre que as notas dessas pastas mudarem, e avisar o que achou
       </label>
+      <StatusAutomatico ligado={cfg.automatico} emDia={!!exec && exec.terminada && !exec.interrompida && exec.assinatura === assinatura} rodandoAgora={ocupado} />
 
       <div class="barra-acoes">
         {ocupado ? (
@@ -231,6 +233,7 @@ function Nivel({ final }: { final: NonNullable<RelatorioModelo['final']> }) {
           {r.aprimoramento?.parouPor && ` — ${r.aprimoramento.parouPor}`}
           {!!r.aprimoramento?.provadasZ3 &&
             ` · o Z3 provou ${r.aprimoramento.provadasZ3} de ${r.aprimoramento.conclusoes} conclusões para qualquer número de objetos`}
+          {!!r.aprimoramento?.sairam?.length && ` · saíram da lista ao aprofundar: ${r.aprimoramento.sairam.join('; ')}`}
         </li>
       ))}
     </ul>

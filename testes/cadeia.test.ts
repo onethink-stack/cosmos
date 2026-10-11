@@ -91,4 +91,13 @@ describe('aprimoramento automático', () => {
     expect(rel.aprimoramento!.virada).toMatchObject({ N: 5 })
     expect(rel.N).toBe(4)
   })
+
+  it('uma consequência que cai num cenário maior só sai da lista (a rodada não é refeita)', async () => {
+    // com 1 objeto, "existe algo com P" obriga P(c); com 2 já não
+    const rel = await rodarAprimorando([g('L1', '∃x P(x)'), g('L2', 'Q(c)')], [], 1)
+    expect(rel.aprimoramento!.virada).toBeUndefined()
+    expect(rel.aprimoramento!.sairam!.some((x) => x.includes('P(c)'))).toBe(true)
+    expect(rel.consequencias!.some((q) => q.formula === 'P(c)')).toBe(false)
+    expect(rel.aprimoramento!.parouPor).not.toContain('Z3')
+  })
 })

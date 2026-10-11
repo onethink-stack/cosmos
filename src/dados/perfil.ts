@@ -37,28 +37,28 @@ export const PERFIS: Perfil[] = [
   {
     id: 'celular-simples',
     nome: 'Celular simples (até 3 GB)',
-    Ninicial: 5,
+    Ninicial: 6,
     Kinicial: 2,
     limites: { N: 8, K: 3, limite: 500_000, tempoChecagemMs: 15_000, orcamentoMs: 2 * MIN },
   },
   {
     id: 'celular',
     nome: 'Celular (4 GB ou mais)',
-    Ninicial: 6,
+    Ninicial: 8,
     Kinicial: 3,
     limites: { N: 10, K: 4, limite: 1_000_000, tempoChecagemMs: 30_000, orcamentoMs: 5 * MIN },
   },
   {
     id: 'pc8',
     nome: 'PC com 8 GB',
-    Ninicial: 8,
+    Ninicial: 10,
     Kinicial: 3,
     limites: { N: 14, K: 5, limite: 3_000_000, tempoChecagemMs: 90_000, orcamentoMs: 20 * MIN },
   },
   {
     id: 'pc16',
     nome: 'PC com 16 GB ou mais',
-    Ninicial: 8,
+    Ninicial: 10,
     Kinicial: 3,
     limites: { N: 18, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 5 * MIN, orcamentoMs: 60 * MIN },
   },
@@ -68,21 +68,21 @@ export const PERFIS: Perfil[] = [
   {
     id: 'exp200',
     nome: 'Experimental: até 200 objetos',
-    Ninicial: 8,
+    Ninicial: 10,
     Kinicial: 3,
     limites: { N: 200, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 30 * MIN, orcamentoMs: 8 * 60 * MIN },
   },
   {
     id: 'exp500',
     nome: 'Experimental: até 500 objetos',
-    Ninicial: 8,
+    Ninicial: 10,
     Kinicial: 3,
     limites: { N: 500, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 60 * MIN, orcamentoMs: 24 * 60 * MIN },
   },
   {
     id: 'exp1000',
     nome: 'Experimental: até 1000 objetos',
-    Ninicial: 8,
+    Ninicial: 10,
     Kinicial: 3,
     limites: { N: 1000, K: 6, limite: LIMITE_NAVEGADOR, tempoChecagemMs: 2 * 60 * MIN, orcamentoMs: 72 * 60 * MIN },
   },
@@ -112,12 +112,13 @@ export function nucleosDisponiveis(): number {
 
 /**
  * Com vários workers aprofundando ao mesmo tempo, cada um fica com uma parte
- * da memória (perto de 40% da do aparelho, dividida entre eles).
+ * da memória (perto de 40% da do aparelho, no máximo 3 GB, dividida entre eles).
  */
 export function limitePorWorker(limite: number, workers: number): number {
   if (workers <= 1) return limite
   const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Navigator & { deviceMemory?: number }
-  const bytes = (nav.deviceMemory ?? 4) * 1e9 * 0.4
+  // a aba inteira (todos os workers juntos) fica abaixo de uns 3 GB
+  const bytes = Math.min((nav.deviceMemory ?? 4) * 1e9 * 0.4, 3e9)
   return Math.min(limite, Math.max(300_000, Math.floor(bytes / workers / BYTES_POR_CLAUSULA)))
 }
 

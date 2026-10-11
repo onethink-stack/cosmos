@@ -384,7 +384,9 @@ export async function rodarModelo(
         titulo: 'Aprimoramento',
         detalhe: `com ${virada.N} objetos, ${virada.descricao}: deixou de valer. As rodadas recomeçam nesse nível.`,
       })
-      nivel = { ...nivel, N: Math.max(nivel.N, virada.N), K: Math.max(nivel.K, virada.K) }
+      // recomeça pelo menos 2 tamanhos acima (cair de novo no tamanho seguinte custaria outra volta)
+      const teto = p.aprimorar?.N ?? virada.N
+      nivel = { ...nivel, N: Math.min(teto, Math.max(virada.N, nivel.N + 2)), K: Math.max(nivel.K, virada.K) }
       provados.clear()
       r.situacao = 'rodadas'
       r.itens = []

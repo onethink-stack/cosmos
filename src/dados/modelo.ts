@@ -22,6 +22,8 @@ export interface ExecucaoModelo {
   assinatura: string
   pastas: string[]
   quando: number
+  /** a classificação da execução anterior (id → classe), para avisar só o que mudou */
+  anterior?: Record<string, string>
 }
 
 /**

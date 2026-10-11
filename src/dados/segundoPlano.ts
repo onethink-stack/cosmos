@@ -6,16 +6,54 @@ import { avisos } from './avisos'
 import { estado } from './estado'
 import { perfil } from './perfil'
 import { limiteTexto } from '../motor/avaliar'
-import { verificacao, assinaturaCadeia, type Conclusao } from './verificacao'
+import { useEffect, useReducer } from 'preact/hooks'
+import { verificacao, assinaturaCadeia, type Conclusao, type Ocupacao } from './verificacao'
 import { formulasDoApoio, prepararCadeia } from './cadeia'
 import { preparar } from './premissas'
 import { chaveZ3, z3 } from './z3'
 import { assinaturaModelo, configModelo, notasDoModelo } from './modelo'
+import type { Nota } from './tipos'
 import type { Classe } from '../motor/modelo'
 import { completarComZ3 } from './modeloZ3'
 
 /** espera depois da última mudança nas notas antes de rodar a reação sozinha */
 const ESPERA_AUTOMATICA_MS = 20_000
+
+/** O que o modo automático está fazendo agora (para a tela mostrar). */
+class Agenda {
+  /** quando o automático confere de novo (ms), se marcado */
+  proximoEm: number | null = null
+  /** por que está esperando (o motor ocupado com outra coisa), se está */
+  esperando: string | null = null
+  private ouvintes = new Set<() => void>()
+  assinar(fn: () => void) {
+    this.ouvintes.add(fn)
+    return () => {
+      this.ouvintes.delete(fn)
+    }
+  }
+  mudar(m: Partial<Pick<Agenda, 'proximoEm' | 'esperando'>>) {
+    Object.assign(this, m)
+    this.ouvintes.forEach((f) => f())
+  }
+}
+export const agenda = new Agenda()
+
+export function useAgenda(): Agenda {
+  const [, forcar] = useReducer((x: number) => x + 1, 0)
+  useEffect(() => agenda.assinar(() => forcar(undefined)), [])
+  return agenda
+}
+
+const NOME_OCUPACAO: Record<Ocupacao, string> = {
+  verificar: 'a verificação',
+  perguntar: 'uma pergunta',
+  descobrir: 'a busca de consequências',
+  teoremas: 'a conferência dos teoremas',
+  lacunas: 'a busca da lei que falta',
+  cadeia: 'a reação em cadeia',
+  modelo: 'o segundo modelo',
+}
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
@@ -27,6 +65,9 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
       const r = ver.rodadas.at(-1)
       if (!r || r.interrompida) return null
       const aps = r.relatorios.filter((x) => x.aprimoramento)
+      const automatica = r.motivo.startsWith('automático')
+      // a rodada automática avisa uma vez só, no fim (já aprofundada), e só se trouxe novidade
+      if (c.parcial && automatica) return null
       // fim do aprimoramento (a rodada em si já foi avisada)
       if (!c.parcial && aps.length) {
         const virada = aps.find((x) => x.aprimoramento!.virada)
@@ -36,9 +77,10 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
             corpo: `${virada.aprimoramento!.parouPor}. Refazendo a rodada com ${virada.aprimoramento!.virada!.N} objetos.`,
             rota: '#/cadeia',
           }
-        if (r.motivo.startsWith('automático')) return null // rodada automática sem mudança: sem aviso
-        const niveis = aps.map((x) => `${x.rotulo}: até ${limiteTexto(x.N, x.K)}`).join(' · ')
-        return { titulo: `Aprimoramento da rodada ${r.numero} terminado`, corpo: `Tudo confirmado — ${niveis}.`, rota: '#/cadeia' }
+        if (!automatica) {
+          const niveis = aps.map((x) => `${x.rotulo}: até ${limiteTexto(x.N, x.K)}`).join(' · ')
+          return { titulo: `Aprimoramento da rodada ${r.numero} terminado`, corpo: `Tudo confirmado — ${niveis}.`, rota: '#/cadeia' }
+        }
       }
       if (r.erro) return { titulo: `Reação em cadeia — rodada ${r.numero}`, corpo: `Falha no motor: ${r.erro}`, rota: '#/cadeia' }
       const partes: string[] = []
@@ -71,10 +113,11 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
             // passou a seguir, ou é um teorema novo que já segue
             if ((!a || a.resultado.tipo !== 'segue') && t.resultado.tipo === 'segue') novos++
           }
-      // rodada automática: só avisa se apareceu algo novo
-      if (r.motivo.startsWith('automático')) {
-        const sugAntes = ant ? ant.relatorios.reduce((s, x) => s + x.sugestoes.length, 0) : 0
-        if (!conflitos && !novos && sugestoes <= sugAntes) return null
+      // rodada automática: só avisa se apareceu algo novo (uma lei sugerida que não havia, um teorema que passou a seguir, um conflito)
+      if (automatica) {
+        const antes = new Set(ant?.relatorios.flatMap((x) => x.sugestoes.map((s) => s.lei.formula)) ?? [])
+        const sugNovas = r.relatorios.flatMap((x) => x.sugestoes).filter((s) => !antes.has(s.lei.formula)).length
+        if (!conflitos && !novos && !sugNovas) return null
       }
       if (conflitos) partes.push(`⚠ ${plural(conflitos, 'contradição', 'contradições')}`)
       if (novos) partes.push(`${plural(novos, 'teorema novo seguindo', 'teoremas novos seguindo')}`)
@@ -96,9 +139,10 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
       const rel = m.relatorio
       if (!rel) return null
       const conta = (c: Classe) => rel.itens.filter((i) => i.classe === c).length
-      const decisoes = rel.eventos.filter((e) => e.tipo !== 'aviso').length
-      // rodada automática sem nenhuma decisão nova: sem aviso
-      if (m.motivo.startsWith('automático') && !decisoes && !conta('refutado') && !conta('conflito')) return null
+      // o que mudou desde a execução anterior (itens novos ou com outra classe)
+      const mudaram = m.anterior ? rel.itens.filter((i) => m.anterior![i.id] !== i.classe).length : rel.itens.length
+      // execução automática em que nada mudou: sem aviso
+      if (m.motivo.startsWith('automático') && m.anterior && !mudaram) return null
       const partes = [
         conta('provado') && `${plural(conta('provado'), 'provado', 'provados')}`,
         conta('tese') && `${plural(conta('tese'), 'tese aberta', 'teses abertas')}`,
@@ -110,7 +154,9 @@ export function resumoDaConclusao(c: Conclusao): { titulo: string; corpo: string
       ].filter(Boolean)
       return {
         titulo: `Segundo modelo pronto (${plural(rel.rodada, 'rodada', 'rodadas')})`,
-        corpo: partes.length ? partes.join(' · ') : 'Nada a classificar.',
+        corpo:
+          (m.anterior ? `${plural(mudaram, 'mudança', 'mudanças')} desde a última vez · ` : '') +
+          (partes.length ? partes.join(' · ') : 'Nada a classificar.'),
         rota: '#/modelo',
       }
     }
@@ -208,14 +254,47 @@ export function iniciarSegundoPlano() {
   const agendar = () => {
     if (espera) clearTimeout(espera)
     espera = setTimeout(rodarSePreciso, ESPERA_AUTOMATICA_MS)
+    agenda.mudar({ proximoEm: Date.now() + ESPERA_AUTOMATICA_MS })
   }
   const rodarSePreciso = () => {
     espera = null
+    agenda.mudar({ proximoEm: null, esperando: null })
     if (!estado.carregado || !verificacao.configCarregada) return
     if (!perfil.automatico && !configModelo.automatico) return
-    if (verificacao.ocupado) return agendar() // tenta de novo quando o motor estiver livre
-    if (perfil.automatico && !verificacao.interrompida && cadeiaSePreciso()) return
-    if (configModelo.automatico) modeloSePreciso()
+    if (verificacao.ocupado) {
+      // um trabalho que ficou velho (as notas mudaram), ou a cadeia só aprofundando
+      // enquanto o segundo modelo precisa rodar, dá lugar; o resto termina antes
+      const motivo = deveCeder()
+      if (!motivo) {
+        agenda.mudar({ esperando: NOME_OCUPACAO[verificacao.ocupado] })
+        return agendar()
+      }
+      verificacao.cancelar(false, motivo)
+    }
+    if (perfil.automatico && cadeiaSePreciso()) return
+    if (configModelo.automatico) {
+      const m = modeloPendente()
+      if (m) verificacao.iniciarModelo(m.notas, m.pastas, estado.dicionario, m.motivo)
+    }
+  }
+  /** o trabalho em andamento pode ser parado para o automático rodar? (devolve o motivo, ou null) */
+  const deveCeder = (): string | null => {
+    if (verificacao.ocupado === 'cadeia') {
+      const r = verificacao.rodadas.at(-1)
+      if (!r) return null
+      const { pedido, pronto } = prepararCadeia(estado.notas, estado.dicionario)
+      if (perfil.automatico && pronto && r.assinatura !== assinaturaCadeia(pedido, estado.dicionario)) return 'parado: as notas mudaram'
+      // a rodada já acabou e só aprofunda: o segundo modelo aprofunda as mesmas conclusões (e o banco guarda o que já foi feito)
+      if (r.baseTerminada && configModelo.automatico && modeloPendente())
+        return 'deu a vez ao segundo modelo, que aprofunda as mesmas conclusões (o que já foi conferido fica no banco)'
+      return null
+    }
+    if (verificacao.ocupado === 'modelo') {
+      const m = verificacao.modelo
+      const p = modeloPendente()
+      if (m && p && configModelo.automatico && m.assinatura !== assinaturaModelo(p.notas, estado.dicionario, p.pastas)) return 'parado: as notas mudaram'
+    }
+    return null
   }
   /** a reação em cadeia automática; true se começou uma rodada */
   const cadeiaSePreciso = (): boolean => {
@@ -231,21 +310,36 @@ export function iniciarSegundoPlano() {
     avisouNomes = ''
     if (!pedido.contextos.length) return false
     const ultima = verificacao.rodadas.at(-1)
-    if (ultima && ultima.assinatura === assinaturaCadeia(pedido, estado.dicionario) && !ultima.interrompida) return false
-    verificacao.continuarCadeia(ultima ? 'automático: as notas mudaram' : 'automático: primeira rodada')
+    const assinatura = assinaturaCadeia(pedido, estado.dicionario)
+    // uma rodada que parou no meio (app fechado) não trava o automático: se as notas
+    // mudaram, começa outra; se não, é retomada (até 2 vezes; depois espera o botão Retomar)
+    const p = verificacao.interrompida
+    if (p) {
+      if (ultima?.assinatura === assinatura && p.tentativas >= 2) return false
+      verificacao.descartarInterrompida()
+    }
+    if (ultima && ultima.assinatura === assinatura && !ultima.interrompida) return false
+    verificacao.continuarCadeia(
+      ultima?.interrompida && ultima.assinatura === assinatura
+        ? `${ultima.motivo.replace(/ \(retomada\)$/, '')} (retomada)`
+        : ultima
+          ? 'automático: as notas mudaram'
+          : 'automático: primeira rodada',
+      p && ultima?.assinatura === assinatura ? p.tentativas + 1 : 0,
+    )
     return true
   }
-  /** o segundo modelo automático: roda de novo quando as notas das pastas mudam (ou ele parou no meio sem ser pelo usuário) */
-  const modeloSePreciso = () => {
+  /** o segundo modelo precisa rodar? (as notas das pastas mudaram, ou ele parou no meio sem ser pelo usuário) */
+  const modeloPendente = (): { notas: Nota[]; pastas: string[]; motivo: string } | null => {
     const { pastas } = configModelo
     const notas = notasDoModelo(estado.notas, pastas)
-    if (!notas.length || !preparar(notas, estado.dicionario).pronto) return
+    if (!notas.length || !preparar(notas, estado.dicionario).pronto) return null
     const m = verificacao.modelo
     if (m && m.assinatura === assinaturaModelo(notas, estado.dicionario, pastas)) {
-      if (!m.interrompida || m.interrompida === 'usuario' || m.tentativas >= 2) return
-      return verificacao.iniciarModelo(notas, pastas, estado.dicionario, `${m.motivo.replace(/ \(retomado\)$/, '')} (retomado)`)
+      if (!m.interrompida || m.interrompida === 'usuario' || m.tentativas >= 2) return null
+      return { notas, pastas, motivo: `${m.motivo.replace(/ \(retomado\)$/, '')} (retomado)` }
     }
-    verificacao.iniciarModelo(notas, pastas, estado.dicionario, m ? 'automático: as notas mudaram' : 'automático: primeira vez')
+    return { notas, pastas, motivo: m ? 'automático: as notas mudaram' : 'automático: primeira vez' }
   }
   let notasAntes = estado.notas
   let dicAntes = estado.dicionario
@@ -258,7 +352,10 @@ export function iniciarSegundoPlano() {
   perfil.assinar(() => perfil.automatico && agendar())
   configModelo.assinar(() => configModelo.automatico && agendar())
   verificacao.assinar(() => {
-    if (verificacao.configCarregada && !espera && !verificacao.ocupado && (perfil.automatico || configModelo.automatico)) agendar()
+    if (!verificacao.configCarregada || espera || !(perfil.automatico || configModelo.automatico)) return
+    // motor livre, ou a cadeia já terminou a rodada e só aprofunda (o segundo modelo pode querer a vez)
+    const soAprofundando = verificacao.ocupado === 'cadeia' && !!verificacao.rodadas.at(-1)?.baseTerminada && configModelo.automatico
+    if (!verificacao.ocupado || soAprofundando) agendar()
   })
 
   verificacao.assinar(() => void ajustarTela())

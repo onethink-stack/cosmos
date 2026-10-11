@@ -90,6 +90,8 @@ export interface EstadoAprimoramento {
   virada?: { N: number; K: number; descricao: string }
   /** conclusões que o Z3 provou para qualquer tamanho (não precisam ser aprofundadas) */
   provadasZ3?: number
+  /** conclusões leves que caíram num cenário maior e saíram do relatório (sem refazer a rodada) */
+  sairam?: string[]
   /** checagens rodando ao mesmo tempo */
   paralelo?: number
   ms: number
@@ -205,6 +207,12 @@ interface ConclusaoLimitada {
   descricao: string
   /** fórmulas que não podem ter modelo para a conclusão continuar valendo */
   formulas: Formula[]
+  /**
+   * Se cair num cenário maior, o que fazer: as "leves" (uma consequência,
+   * uma sugestão fechando um teorema, o apoio de um teorema na cadeia) só
+   * saem do relatório; as outras mudam o resultado da rodada (que é refeita).
+   */
+  leve?: (rel: RelatorioCadeia) => void
 }
 
 /** Junta as conclusões do relatório que dependem do tamanho dos cenários. */
@@ -236,7 +244,18 @@ function conclusoesLimitadas(c: ContextoCadeia, rel: RelatorioCadeia, dicionario
       const lemas = (t.apoio ?? []).filter((id) => teorema.has(id))
       if (lemas.length) {
         const fs = lemas.map((id) => formulaDe(teorema.get(id)!.formula)).filter((f): f is Formula => !!f)
-        cs.push({ descricao: `a cadeia de "${rotulo(t.id)}"`, formulas: [...dosGrupos(t.apoio!), ...fs, nao(phi)] })
+        cs.push({
+          descricao: `a cadeia de "${rotulo(t.id)}"`,
+          formulas: [...dosGrupos(t.apoio!), ...fs, nao(phi)],
+          // o teorema continua seguindo das leis (outra conclusão); só o atalho pelos teoremas anteriores cai
+          leve: (r) => {
+            const x = r.teoremas.find((y) => y.id === t.id)
+            if (x?.resultado.tipo === 'segue') {
+              x.apoio = x.resultado.notas
+              x.geracao = 1
+            }
+          },
+        })
       }
     } else if (t.resultado.tipo === 'contradiz') cs.push({ descricao: `as leis contradizem "${rotulo(t.id)}"`, formulas: [...premissas, phi] })
   }
@@ -249,12 +268,26 @@ function conclusoesLimitadas(c: ContextoCadeia, rel: RelatorioCadeia, dicionario
     if (!lei) continue
     for (const id of s.fecha) {
       const phi = formulaDe(teorema.get(id)?.formula ?? '')
-      if (phi) cs.push({ descricao: `a lei sugerida "${s.lei.nome}" fecha "${rotulo(id)}"`, formulas: [...premissas, lei, nao(phi)] })
+      if (phi)
+        cs.push({
+          descricao: `a lei sugerida "${s.lei.nome}" fecha "${rotulo(id)}"`,
+          formulas: [...premissas, lei, nao(phi)],
+          leve: (r) => {
+            const x = r.sugestoes.find((y) => y.lei.formula === s.lei.formula)
+            if (x) x.fecha = x.fecha.filter((f) => f !== id)
+            r.sugestoes = r.sugestoes.filter((y) => y.fecha.length)
+          },
+        })
     }
   }
   for (const q of rel.consequencias ?? []) {
     const f = formulaDe(q.formula)
-    if (f) cs.push({ descricao: `a consequência ${q.formula}`, formulas: [...premissas, nao(f)] })
+    if (f)
+      cs.push({
+        descricao: `a consequência ${q.formula}`,
+        formulas: [...premissas, nao(f)],
+        leve: (r) => (r.consequencias = (r.consequencias ?? []).filter((y) => y.formula !== q.formula)),
+      })
   }
   return cs
 }
@@ -279,18 +312,27 @@ async function aprofundar(
   const todas = conclusoesLimitadas(c, rel, dicionario)
   // o Z3 tenta provar cada uma para qualquer tamanho; as que ele prova saem do aprofundamento
   const provadas = todas.length && ajudaZ3 ? ajudaZ3(todas.map((x) => x.formulas)) : new Set<number>()
+  /** as leves que caíram: saíram do relatório */
+  const caidas = new Set<number>()
+  const sairam: string[] = []
   let cs = todas
   const paralelo = poolAtual().tamanho
   const atualizar = (m: Partial<EstadoAprimoramento>) => {
-    rel.aprimoramento = { ...rel.aprimoramento!, ...m, conclusoes: todas.length, provadasZ3: provadas.size, paralelo, ms: Date.now() - ini }
+    rel.aprimoramento = { ...rel.aprimoramento!, ...m, conclusoes: todas.length, provadasZ3: provadas.size, sairam: [...sairam], paralelo, ms: Date.now() - ini }
     enviar()
   }
   /** tira as que o Z3 já provou; true se não sobrou nenhuma */
   const semAsProvadas = async () => {
     await darVez() // deixa chegar as respostas do Z3
-    cs = todas.filter((_, i) => !provadas.has(i))
+    cs = todas.filter((_, i) => !provadas.has(i) && !caidas.has(i))
     if (cs.length) return false
-    atualizar({ situacao: 'feito', parouPor: 'o Z3 provou todas as conclusões que dependiam do tamanho: valem para qualquer número de objetos' })
+    atualizar({
+      situacao: 'feito',
+      parouPor:
+        provadas.size && !caidas.size
+          ? 'o Z3 provou todas as conclusões que dependiam do tamanho: valem para qualquer número de objetos'
+          : `nenhuma conclusão que sobrou depende do tamanho${provadas.size ? ' (o Z3 provou as outras para qualquer número de objetos)' : ''}`,
+    })
     return true
   }
   if (!todas.length) {
@@ -323,7 +365,16 @@ async function aprofundar(
     } catch (e) {
       return `falha num worker do motor com ${N} objetos (${(e as Error).message})`
     }
-    const i = rs.findIndex((r) => r.status === 'modelo')
+    // as leves que caíram saem do relatório; a rodada só é refeita se caiu uma que muda o resultado
+    rs.forEach((r, k) => {
+      const leve = cs[k].leve
+      if (r.status !== 'modelo' || !leve) return
+      leve(rel)
+      caidas.add(todas.indexOf(cs[k]))
+      sairam.push(`com ${tamanhoTexto(r.n, r.modelo.mundos)}, ${cs[k].descricao}: deixou de valer`)
+    })
+    if (caidas.size) atualizar({})
+    const i = rs.findIndex((r, k) => r.status === 'modelo' && !cs[k].leve)
     if (i >= 0) {
       const r = rs[i] as Extract<BuscaFaixa, { status: 'modelo' }>
       atualizar({
@@ -350,7 +401,7 @@ async function aprofundar(
         return false
       }
       rel.K = k
-      for (const c of cs) registrarSemModelo(c.formulas, rel.N, k)
+      for (const c of cs) if (!caidas.has(todas.indexOf(c))) registrarSemModelo(c.formulas, rel.N, k)
       atualizar({})
     }
   // um objeto a mais por vez
@@ -364,7 +415,7 @@ async function aprofundar(
     }
     rel.N = n
     // fica no banco de provas: a próxima rodada começa daqui
-    for (const c of cs) registrarSemModelo(c.formulas, n, modal ? rel.K : 1)
+    for (const c of cs) if (!caidas.has(todas.indexOf(c))) registrarSemModelo(c.formulas, n, modal ? rel.K : 1)
     atualizar({})
   }
   atualizar({ situacao: 'feito', parouPor: `chegou ao limite do aparelho (${lim.N} objetos${modal ? `, ${lim.K} mundos` : ''})` })

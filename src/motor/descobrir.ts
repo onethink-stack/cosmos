@@ -14,7 +14,20 @@ import { renomear } from '../logica/nomes'
 import { usosDeNomes } from '../logica/termos'
 import { ehModal } from './aterrar'
 import { Avaliador } from './avaliar'
-import { analisar, buscarModelo, minimizarRapido, nao, type Grupo, type GrupoPronto, type Modelo, type OpcoesMotor, type Progresso } from './motor'
+import {
+  analisar,
+  buscarModelo,
+  minimizarRapido,
+  nao,
+  registrarSemModelo,
+  sabidoNoBanco,
+  type Grupo,
+  type GrupoPronto,
+  type Modelo,
+  type OpcoesMotor,
+  type Progresso,
+} from './motor'
+import { emParalelo, poolAtual } from './paralelo'
 
 export interface Consequencia {
   formula: string
@@ -39,6 +52,8 @@ export type ResultadoDescoberta =
       incertas: number
       /** havia mais candidatas que o limite; só as primeiras foram testadas */
       truncado: boolean
+      /** candidatas que ficaram sem testar porque o tempo da etapa acabou */
+      semTempo?: number
     }
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
@@ -155,6 +170,120 @@ export function descobrir(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
   })
   const K = premissas.some(ehModal) ? op.K : 1
   return { tipo: 'consequencias', N: op.N, K, itens, testadas: vivas.length, jaNasNotas, incertas, truncado }
+}
+
+export interface PrazosDescoberta {
+  /** cada checagem desiste depois disso (a candidata fica sem decisão) */
+  checagemMs: number
+  /** a etapa inteira: as candidatas que não couberem no tempo ficam sem testar */
+  totalMs: number
+  /** tamanho do problema em cada worker (a memória é dividida entre eles) */
+  limite: number
+}
+
+/**
+ * Como `descobrir`, para a reação em cadeia: as candidatas são testadas em
+ * lotes, uma por núcleo (um mundo achado num lote derruba candidatas do lote
+ * seguinte), cada checagem com prazo, e a etapa inteira também. O que não
+ * coube no tempo fica sem testar, e a cadeia segue — uma candidata difícil não
+ * prende mais a rodada.
+ */
+export async function descobrirComPrazo(
+  grupos: Grupo[],
+  dicionario: EntradaDicionario[],
+  op: OpcoesMotor,
+  prazos: PrazosDescoberta,
+  progresso?: Progresso,
+): Promise<ResultadoDescoberta> {
+  const prontos: GrupoPronto[] = grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
+  const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+  if (!premissas.length) return { tipo: 'vazio' }
+  const fim = Date.now() + prazos.totalMs
+  const restante = () => Math.max(1000, Math.min(prazos.checagemMs, fim - Date.now()))
+  const comPrazo = (): OpcoesMotor => ({ ...op, prazo: Date.now() + restante() })
+
+  progresso?.('conferindo se as notas são consistentes')
+  const base = buscarModelo(premissas, comPrazo())
+  if (base.status === 'grande-demais') return { tipo: 'grande-demais', n: base.n }
+  if (base.status === 'sem-modelo') return { tipo: 'premissas-contraditorias', N: op.N }
+
+  const { candidatas, truncado } = gerarCandidatas(premissas, dicionario.map((e) => e.simbolo))
+  const escritas = new Set(prontos.flatMap((x) => x.itens.map((i) => imprimir(i.original))))
+  const avaliadores = [new Avaliador(base.modelo)]
+  const vivas = candidatas.map((c) => ({ c, pronta: analisar([c.formula], dicionario)[0] })).filter((x) => !!x.pronta)
+  const valeEmTodos = (f: Formula) => avaliadores.every((av) => av.avaliar(f))
+  const negada = (v: (typeof vivas)[number]) => [...premissas, nao(v.pronta.expandida)]
+
+  const confirmadas: typeof vivas = []
+  let incertas = 0
+  let semTempo = 0
+  let feitas = 0
+  const ns = Array.from({ length: op.N }, (_, i) => i + 1)
+  const ks = Array.from({ length: Math.max(1, op.K) }, (_, i) => i + 1)
+  const lote = Math.max(1, poolAtual().tamanho)
+  let fila = vivas
+  for (;;) {
+    // um mundo conhecido já derruba a candidata; o banco de provas já pode saber a resposta
+    const pendentes: typeof vivas = []
+    for (const v of fila) {
+      if (!valeEmTodos(v.pronta.original)) continue
+      const sabido = sabidoNoBanco(negada(v), op)
+      if (sabido?.status === 'modelo') avaliadores.push(new Avaliador(sabido.modelo))
+      else if (sabido?.status === 'sem-modelo') confirmadas.push(v)
+      else pendentes.push(v)
+    }
+    // o que o banco respondeu pode ter derrubado outras
+    fila = pendentes.filter((v) => valeEmTodos(v.pronta.original))
+    if (!fila.length) break
+    if (Date.now() >= fim) {
+      semTempo = fila.length
+      break
+    }
+    const agora = fila.slice(0, lote)
+    fila = fila.slice(lote)
+    progresso?.(`testando candidatas (${feitas + 1}${agora.length > 1 ? `–${feitas + agora.length}` : ''} de até ${vivas.length}): ${agora[0].c.formula}`)
+    const rs = await emParalelo(agora, (v) => ({ tipo: 'faixa', formulas: negada(v), ns, ks, limite: prazos.limite, prazoMs: restante() }))
+    rs.forEach((r, i) => {
+      if (r.status === 'modelo') avaliadores.push(new Avaliador(r.modelo))
+      else if (r.status === 'sem-modelo') {
+        confirmadas.push(agora[i])
+        registrarSemModelo(negada(agora[i]), op.N, r.K)
+      } else incertas++
+    })
+    feitas += agora.length
+  }
+
+  // na ordem das candidatas (o resultado não depende de qual resposta chegou antes)
+  const ordem = new Map(vivas.map((v, i) => [v, i]))
+  confirmadas.sort((a, b) => ordem.get(a)! - ordem.get(b)!)
+  // separa o que já está escrito nas notas; tira o que vale sempre (sem precisar de nota)
+  const jaEscritas = confirmadas.filter((v) => escritas.has(imprimir(v.pronta.original)))
+  const relevantes = confirmadas.filter((v) => !jaEscritas.includes(v) && buscarModelo([nao(v.pronta.expandida)], comPrazo()).status !== 'sem-modelo')
+  const enxutas = tirarObvias(
+    relevantes.map((v) => v.c),
+    jaEscritas.map((v) => v.c),
+  )
+  const porFormula = new Map(relevantes.map((v) => [v.c.formula, v]))
+
+  // as notas de onde cada uma vem, várias ao mesmo tempo (com prazo, uma checagem
+  // que não decide mantém a nota: a origem pode sair maior, nunca errada)
+  let origens = 0
+  if (enxutas.length) progresso?.(`procurando as notas de origem (0/${enxutas.length})`)
+  const notas = await emParalelo(
+    enxutas,
+    (c) => ({
+      tipo: 'minimizar',
+      grupos: prontos.map((x) => x.g),
+      fixas: [nao(porFormula.get(c.formula)!.pronta.expandida)],
+      dicionario,
+      op: { ...op, limite: prazos.limite },
+      prazoMs: Math.max(5000, restante()),
+    }),
+    () => progresso?.(`procurando as notas de origem (${++origens}/${enxutas.length})`),
+  )
+  const itens: Consequencia[] = enxutas.map((c, k) => ({ formula: c.formula, descricao: c.descricao, notas: notas[k] }))
+  const K = premissas.some(ehModal) ? op.K : 1
+  return { tipo: 'consequencias', N: op.N, K, itens, testadas: vivas.length - semTempo, jaNasNotas: jaEscritas.length, incertas, truncado, semTempo }
 }
 
 /**

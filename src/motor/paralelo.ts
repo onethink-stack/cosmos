@@ -8,7 +8,7 @@ import type { EntradaDicionario } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { estadoDaLei, type EstadoLei } from './cadeia'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
-import { buscarNaFaixa, perguntar, type BuscaFaixa, type Grupo, type OpcoesMotor, type ResultadoPergunta } from './motor'
+import { analisar, buscarNaFaixa, minimizarRapido, perguntar, type BuscaFaixa, type Grupo, type OpcoesMotor, type ResultadoPergunta } from './motor'
 
 export type Trabalho =
   /** procura modelo só nesses tamanhos (o aprofundamento); `prazoMs` conta a partir de quando começa */
@@ -17,6 +17,8 @@ export type Trabalho =
   | { tipo: 'lacunas'; grupos: Grupo[]; inativas: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
   /** a lei decorre das outras ou é independente? */
   | { tipo: 'lei'; grupos: Grupo[]; alvo: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
+  /** os grupos necessários para `fixas` não ter modelo (ids); cada checagem com prazo, que conta de quando começa */
+  | { tipo: 'minimizar'; grupos: Grupo[]; fixas: Formula[]; dicionario: EntradaDicionario[]; op: OpcoesMotor; prazoMs?: number }
 
 export type ResultadoDe<T extends Trabalho> = T['tipo'] extends 'faixa'
   ? BuscaFaixa
@@ -24,7 +26,9 @@ export type ResultadoDe<T extends Trabalho> = T['tipo'] extends 'faixa'
     ? ResultadoPergunta
     : T['tipo'] extends 'lacunas'
       ? ResultadoLacunas
-      : EstadoLei
+      : T['tipo'] extends 'minimizar'
+        ? string[]
+        : EstadoLei
 
 export function executarTrabalho(t: Trabalho): unknown {
   switch (t.tipo) {
@@ -36,6 +40,11 @@ export function executarTrabalho(t: Trabalho): unknown {
       return procurarLeis(t.grupos, t.inativas, t.formula, t.dicionario, t.op)
     case 'lei':
       return estadoDaLei(t.grupos, t.alvo, t.dicionario, t.op)
+    case 'minimizar': {
+      const prontos = t.grupos.map((g) => ({ g, itens: analisar(g.formulas, t.dicionario) })).filter((x) => x.itens.length)
+      const op = t.prazoMs ? { ...t.op, prazo: Date.now() + t.prazoMs } : t.op
+      return minimizarRapido(prontos, t.fixas, op, 0).map((x) => x.g.id)
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
-import { reacaoEmCadeia, type RelatorioCadeia } from '../src/motor/cadeia'
+import { prazosAuxiliares, reacaoEmCadeia, type RelatorioCadeia } from '../src/motor/cadeia'
 import { OPCOES_PADRAO } from '../src/motor/motor'
 
 const op = { ...OPCOES_PADRAO, N: 5 }
@@ -64,6 +64,15 @@ describe('reação em cadeia', () => {
     const { rel } = await rodar([g('L1', 'P(c)'), g('L2', '¬P(c)')], [t('T1', 'Q(c)')])
     expect(rel.consistencia?.tipo).toBe('sem-modelo')
     expect(rel.teoremas).toEqual([])
+  })
+})
+
+describe('prazos das etapas auxiliares', () => {
+  it('cada etapa leva de 1 a 5 minutos (um quarto do orçamento), cada checagem até 30 s, e a memória do worker', () => {
+    const celular = { N: 8, K: 3, limite: 500_000, tempoChecagemMs: 15_000, orcamentoMs: 2 * 60_000 }
+    expect(prazosAuxiliares(celular, OPCOES_PADRAO)).toEqual({ totalMs: 60_000, checagemMs: 15_000, limite: 500_000 })
+    const pc = { N: 18, K: 6, limite: 1_000_000, tempoChecagemMs: 5 * 60_000, orcamentoMs: 60 * 60_000 }
+    expect(prazosAuxiliares(pc, { ...OPCOES_PADRAO, limite: 5_000_000 })).toEqual({ totalMs: 5 * 60_000, checagemMs: 30_000, limite: 1_000_000 })
   })
 })
 

@@ -18,7 +18,7 @@ import type { EntradaDicionario } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { ehModal } from './aterrar'
 import { Avaliador, tamanhoTexto } from './avaliar'
-import { descobrir, type Consequencia } from './descobrir'
+import { descobrirComPrazo, type Consequencia, type PrazosDescoberta } from './descobrir'
 import { darVez, emParalelo, poolAtual } from './paralelo'
 import { canonica, type LeiSugerida, type ResultadoLacunas } from './lacunas'
 import {
@@ -145,6 +145,8 @@ export interface RelatorioCadeia {
   consequencias: Consequencia[] | null
   /** consequências que já estavam escritas como teorema */
   consequenciasJaTeorema: number
+  /** candidatas a consequência que ficaram sem decisão (o prazo de cada checagem, ou o da etapa, acabou) */
+  consequenciasSemDecisao?: number
   /** aprimoramento automático (N e K acima sobem conforme as conclusões são reconferidas) */
   aprimoramento: EstadoAprimoramento | null
   /** ids das leis e fatos que entraram nesta rodada (para dizer o que é novo na seguinte) */
@@ -180,7 +182,7 @@ export async function reacaoEmCadeia(
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
   for (const [k, c] of pedido.contextos.entries()) {
     const rel = relatorios[k]
-    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida)
+    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida, pedido.aprimorar)
     rel.etapa = 'fim'
     if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
@@ -448,6 +450,7 @@ async function rodarContexto(
   enviar: () => void,
   progresso: Progresso,
   rapida = false,
+  lim?: LimitesAprimoramento,
 ): Promise<void> {
   const paralelo = poolAtual().tamanho
   const vez = (n: number) => (paralelo > 1 && n > 1 ? `, ${Math.min(paralelo, n)} ao mesmo tempo` : '')
@@ -455,6 +458,12 @@ async function rodarContexto(
   const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
   const teoremas = c.teoremas.map((t) => ({ t, pronta: analisar([t.formula], dicionario)[0] }))
   rel.K = [...premissas, ...teoremas.flatMap((x) => (x.pronta ? [x.pronta.expandida] : []))].some(ehModal) ? op.K : 1
+  // a consistência (1) e cada teorema (3) são o resultado: vão até o fim. O resto
+  // explica e completa (redundância, a cadeia de provas, conflitos, leis que
+  // faltam, consequências): cada etapa dessas tem prazo, e o que não couber fica
+  // sem decisão — sempre do lado seguro, nunca uma conclusão a mais
+  const aux = prazosAuxiliares(lim, op)
+  const ateFimDaEtapa = (): OpcoesMotor => ({ ...op, prazo: Date.now() + aux.totalMs })
 
   // 1. consistência
   rel.etapa = 'consistencia'
@@ -465,13 +474,15 @@ async function rodarContexto(
 
   // 2. leis batendo umas com as outras
   rel.etapa = 'leis'
+  enviar()
   if (prontos.length >= 2 && !rapida) {
     const leis: (EstadoLei | undefined)[] = []
     let feitas = 0
+    const etapa2 = ateFimDaEtapa()
     progresso(`batendo cada lei com as outras (0/${prontos.length}${vez(prontos.length)})`)
     await emParalelo(
       prontos,
-      (alvo) => ({ tipo: 'lei', grupos: c.grupos, alvo: alvo.g.id, dicionario, op }),
+      (alvo) => ({ tipo: 'lei', grupos: c.grupos, alvo: alvo.g.id, dicionario, op: etapa2 }),
       (i, r) => {
         leis[i] = r
         rel.leis = leis.filter((x): x is EstadoLei => !!x)
@@ -483,6 +494,7 @@ async function rodarContexto(
 
   // 3. cada teorema (vários ao mesmo tempo)
   rel.etapa = 'teoremas'
+  enviar()
   {
     const estados: (EstadoTeorema | undefined)[] = []
     let feitos = 0
@@ -502,11 +514,13 @@ async function rodarContexto(
 
   // 4. a cadeia: teoremas que seguem de teoremas já provados
   rel.etapa = 'cadeia'
+  enviar()
   const provados = rel.teoremas
     .map((e, ordem) => ({ e, ordem, pronta: teoremas.find((x) => x.t.id === e.id)!.pronta }))
     .filter((x) => x.e.resultado.tipo === 'segue' && x.pronta)
     .sort((a, b) => apoioDireto(a.e) - apoioDireto(b.e) || a.ordem - b.ordem)
   const geracao = new Map<string, number>()
+  const fim4 = ateFimDaEtapa().prazo!
   provados.forEach((x, k) => {
     const lemas: GrupoPronto[] = provados
       .slice(0, k)
@@ -515,7 +529,9 @@ async function rodarContexto(
     if (lemas.length && !rapida) {
       progresso(`montando a cadeia (${k + 1}/${provados.length}): ${x.e.formula}`)
       // as leis vêm primeiro na ordem de remoção: onde um teorema anterior basta, ele fica no lugar delas
-      apoio = minimizarRapido([...prontos, ...lemas], [nao(x.pronta!.expandida)], op).map((g) => g.g.id)
+      // com prazo: uma checagem que não decide mantém a nota (o apoio pode sair maior, nunca insuficiente)
+      const prazo = Math.min(fim4, Date.now() + aux.checagemMs)
+      apoio = minimizarRapido([...prontos, ...lemas], [nao(x.pronta!.expandida)], { ...op, prazo }).map((g) => g.g.id)
     }
     const g = 1 + Math.max(0, ...apoio.map((id) => geracao.get(id) ?? 0))
     geracao.set(x.e.id, g)
@@ -526,21 +542,25 @@ async function rodarContexto(
 
   // 5. os que não seguem se contradizem entre si (junto com as leis)?
   rel.etapa = 'juntos'
+  enviar()
   const abertos = rel.teoremas
     .map((e) => ({ e, pronta: teoremas.find((x) => x.t.id === e.id)!.pronta }))
     .filter((x) => x.e.resultado.tipo === 'nao-segue' && x.pronta)
   if (abertos.length >= 2) {
     progresso('conferindo se os teoremas que não seguem se contradizem entre si')
     const fs = [...premissas, ...abertos.map((x) => x.pronta!.expandida)]
-    if (buscarModelo(fs, op).status === 'sem-modelo') {
+    const etapa5 = ateFimDaEtapa()
+    // sem decisão no prazo: o conflito não é afirmado
+    if (buscarModelo(fs, etapa5).status === 'sem-modelo') {
       const grupos = abertos.map((x) => ({ g: { id: x.e.id, rotulo: x.e.formula, formulas: [x.e.formula] }, itens: [x.pronta!] }))
-      rel.conflitoTeoremas = minimizarRapido(grupos, premissas, op, 1).map((g) => g.g.id)
+      rel.conflitoTeoremas = minimizarRapido(grupos, premissas, etapa5, 1).map((g) => g.g.id)
     }
     enviar()
   }
 
   // 6. leis que fechariam os que faltam
   rel.etapa = 'lacunas'
+  enviar()
   // as leis que fecham cada teorema aberto, juntadas pela forma (a mesma lei pode fechar vários)
   const juntar = (rs: (ResultadoLacunas | undefined)[]) => {
     const m = new Map<string, SugestaoCadeia>()
@@ -558,10 +578,11 @@ async function rodarContexto(
   }
   const lacunas: (ResultadoLacunas | undefined)[] = []
   let feitas = 0
+  const etapa6 = ateFimDaEtapa()
   if (abertos.length) progresso(`procurando a lei que falta (0/${abertos.length}${vez(abertos.length)})`)
   await emParalelo(
     abertos,
-    (x) => ({ tipo: 'lacunas', grupos: c.grupos, inativas, formula: x.e.formula, dicionario, op }),
+    (x) => ({ tipo: 'lacunas', grupos: c.grupos, inativas, formula: x.e.formula, dicionario, op: etapa6 }),
     (i, r) => {
       lacunas[i] = r
       rel.sugestoes = ordenar([...juntar(lacunas).values()])
@@ -573,25 +594,29 @@ async function rodarContexto(
   const porForma = juntar(lacunas)
   // cada lei sugerida fecha também outros teoremas abertos?
   const sugestoes = [...porForma.values()]
+  const fimFecha = ateFimDaEtapa().prazo!
   sugestoes.forEach((s, i) => {
     const p = analisar([s.lei.formula], dicionario)[0]
     if (!p) return
     for (const x of abertos) {
-      if (s.fecha.includes(x.e.id)) continue
+      if (s.fecha.includes(x.e.id) || Date.now() > fimFecha) continue
       const contra = x.e.resultado.tipo === 'nao-segue' ? x.e.resultado.mundo.modelo : null
       if (contra && new Avaliador(contra).avaliar(p.original)) continue // vale no contraexemplo: não fecha
       progresso(`a lei "${s.lei.nome}" fecha outros teoremas? (${i + 1}/${sugestoes.length})`)
-      if (buscarModelo([...premissas, p.expandida, nao(x.pronta!.expandida)], op).status === 'sem-modelo') s.fecha.push(x.e.id)
+      const prazo = Math.min(fimFecha, Date.now() + aux.checagemMs)
+      if (buscarModelo([...premissas, p.expandida, nao(x.pronta!.expandida)], { ...op, prazo }).status === 'sem-modelo') s.fecha.push(x.e.id)
     }
   })
   rel.sugestoes = ordenar(sugestoes)
   enviar()
 
-  // 7. consequências novas
+  // 7. consequências novas (com prazo: uma candidata difícil não prende a rodada)
   rel.etapa = 'consequencias'
   if (prontos.length && !rapida) {
-    const d = descobrir(c.grupos, dicionario, op, progresso)
+    enviar()
+    const d = await descobrirComPrazo(c.grupos, dicionario, op, aux, progresso)
     if (d.tipo === 'consequencias') {
+      rel.consequenciasSemDecisao = d.incertas + (d.semTempo ?? 0)
       const jaTeorema = new Set(teoremas.flatMap((x) => (x.pronta ? [canonica(x.pronta.original)] : [])))
       const novas = d.itens.filter((it) => {
         const p = analisar([it.formula], dicionario)[0]
@@ -600,6 +625,19 @@ async function rodarContexto(
       rel.consequencias = novas
       rel.consequenciasJaTeorema = d.itens.length - novas.length
     } else rel.consequencias = []
+  }
+}
+
+/**
+ * Quanto cada etapa auxiliar da rodada pode levar: um quarto do orçamento do
+ * aprimoramento (entre 1 e 5 minutos), cada checagem até 30 s (o que passa
+ * disso é aprofundamento, não a rodada) e a memória dividida entre os workers.
+ */
+export function prazosAuxiliares(lim: LimitesAprimoramento | undefined, op: OpcoesMotor): PrazosDescoberta {
+  return {
+    totalMs: Math.min(5 * 60_000, Math.max(60_000, (lim?.orcamentoMs ?? 8 * 60_000) / 4)),
+    checagemMs: Math.min(lim?.tempoChecagemMs ?? 30_000, 30_000),
+    limite: Math.min(op.limite, lim?.limite ?? op.limite),
   }
 }
 

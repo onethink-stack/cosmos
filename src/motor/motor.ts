@@ -22,6 +22,11 @@ export interface OpcoesMotor {
   limite: number
   /** maior número de mundos testado quando há □, ◇ ou B[…] */
   K: number
+  /**
+   * hora (Date.now()) em que a busca desiste: o resultado fica sem decisão
+   * (como "grande demais"), nunca "sem modelo". Sem prazo, vai até o fim.
+   */
+  prazo?: number
 }
 
 export const OPCOES_PADRAO: OpcoesMotor = { N: 8, limite: 2_000_000, K: 3 }
@@ -194,6 +199,7 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
   for (let n = 1; n <= op.N; n++) {
     for (let k = 1; k <= K; k++) {
       if (n <= jaN && k <= jaK) continue // já provado sem modelo
+      if (op.prazo && Date.now() > op.prazo) return { status: 'grande-demais', n }
       progresso?.(`testando ${n} objeto${n > 1 ? 's' : ''}${K > 1 ? ` e ${k} mundo${k > 1 ? 's' : ''}` : ''}`)
       let p: ProblemaCNF
       try {
@@ -204,7 +210,9 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
         if (e instanceof GrandeDemais) return { status: 'grande-demais', n }
         throw e
       }
-      const r = resolver(p.nVars, p.clausulas)
+      const r = resolver(p.nVars, p.clausulas, op.prazo ? { prazo: op.prazo } : {})
+      // o prazo acabou no meio: não decidiu (e nada vai para o banco)
+      if (r.sat === null) return { status: 'grande-demais', n }
       if (r.sat) {
         const modelo = lerModelo(n, k, p, r.valores)
         banco?.guardar({ chave, status: 'modelo', n, modelo, K, usadoEm: Date.now() })
@@ -214,6 +222,17 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
   }
   if (banco) guardarSemModelo(banco, chave, op.N, K, jaN, jaK)
   return { status: 'sem-modelo', K }
+}
+
+/** O que o banco de provas já decide sobre o conjunto até N (e K), sem rodar nada; null se não sabe. */
+export function sabidoNoBanco(formulas: Formula[], op: OpcoesMotor): Busca | null {
+  const banco = bancoAtual()
+  if (!banco) return null
+  const K = formulas.some(ehModal) ? Math.max(1, op.K) : 1
+  const s = conhecido(banco.obter(chaveProva(formulas)))
+  if (s?.modelo && s.modelo.n <= op.N && (s.modelo.modelo.mundos ?? 1) <= K) return { status: 'modelo', n: s.modelo.n, modelo: s.modelo.modelo }
+  if (s && op.N <= s.semN && K <= s.semK) return { status: 'sem-modelo', K }
+  return null
 }
 
 /** O que o banco sabe: um modelo, e/ou até onde não há modelo (N objetos, K mundos). */

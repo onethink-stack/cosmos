@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { validar } from '../src/logica/validador'
-import { descobrir, gerarCandidatas } from '../src/motor/descobrir'
-import { OPCOES_PADRAO, perguntar, prepararFormulas, type Grupo } from '../src/motor/motor'
+import { descobrir, descobrirComPrazo, gerarCandidatas } from '../src/motor/descobrir'
+import { buscarModelo, OPCOES_PADRAO, perguntar, prepararFormulas, type Grupo } from '../src/motor/motor'
 
 const dic = (...xs: [string, EntradaDicionario['tipo'], number?][]): EntradaDicionario[] =>
   xs.map(([s, tipo, aridade = 0]) => ({ id: s, termo: s, simbolo: s, tipo, aridade, definicao: '' }))
@@ -90,5 +90,32 @@ describe('descobrir consequências', () => {
 
   it('sem notas', () => {
     expect(descobrir([], [], OPCOES_PADRAO).tipo).toBe('vazio')
+  })
+})
+
+describe('descobrir com prazo (a etapa 7 da reação em cadeia)', () => {
+  const folgado = { checagemMs: 30_000, totalMs: 120_000, limite: OPCOES_PADRAO.limite }
+
+  it('acha as mesmas consequências, com as mesmas notas de origem, que a busca sem prazo', async () => {
+    const sem = consequencias(grupos(AX), DIC)
+    const com = await descobrirComPrazo(grupos(AX), DIC, OPCOES_PADRAO, folgado)
+    if (com.tipo !== 'consequencias') throw new Error(com.tipo)
+    expect(com.itens).toEqual(sem.itens)
+    expect(com.semTempo).toBe(0)
+  }, 60_000)
+
+  it('sem tempo: termina na hora, sem dar como consequência nada que não foi provado', async () => {
+    const ini = Date.now()
+    const r = await descobrirComPrazo(grupos(AX), DIC, OPCOES_PADRAO, { ...folgado, totalMs: 0 })
+    expect(Date.now() - ini).toBeLessThan(5_000)
+    if (r.tipo !== 'consequencias') throw new Error(r.tipo)
+    expect(r.semTempo).toBeGreaterThan(0)
+    for (const it of r.itens) expect(perguntar(grupos(AX), it.formula, DIC, OPCOES_PADRAO).tipo, it.formula).toBe('segue')
+  }, 60_000)
+
+  it('uma checagem que passa do prazo fica sem decisão, nunca "sem modelo"', () => {
+    const fs = prepararFormulas(['∀x (P(x) ⟹ Q(x))', 'P(a)', '¬Q(a)'], [])
+    expect(buscarModelo(fs, OPCOES_PADRAO).status).toBe('sem-modelo')
+    expect(buscarModelo(fs, { ...OPCOES_PADRAO, prazo: Date.now() - 1 }).status).toBe('grande-demais')
   })
 })

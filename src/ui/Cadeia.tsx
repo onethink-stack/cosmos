@@ -580,6 +580,12 @@ function Relatorio({
           )}
         </>
       )}
+      {!!rel.consequenciasSemDecisao && rel.etapa === 'fim' && (
+        <p class="suave">
+          {rel.consequenciasSemDecisao} candidata{rel.consequenciasSemDecisao > 1 ? 's' : ''} a consequência ficou sem decisão: a checagem passou do
+          tempo desta etapa. A rodada seguiu assim mesmo; a próxima aproveita o que já foi provado.
+        </p>
+      )}
     </div>
   )
 }

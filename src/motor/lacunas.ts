@@ -226,7 +226,8 @@ export function procurarLeis(
   // as que equivalem ao teorema vão para o fim (são "assumir o próprio teorema")
   const comEquivalencia = suficientes.map((v) => {
     progresso?.(`comparando com o teorema: ${v.c.nome}`)
-    const equivalente = buscarModelo([...premissas, phi.expandida, nao(v.pronta.expandida)], op).status === 'sem-modelo'
+    // sem decisão (prazo, tamanho) conta como equivalente: na dúvida, não é sugerida como lei nova
+    const equivalente = buscarModelo([...premissas, phi.expandida, nao(v.pronta.expandida)], op).status !== 'modelo'
     return { ...v, equivalente }
   })
   const ordenadas = [...comEquivalencia.filter((v) => !v.equivalente), ...comEquivalencia.filter((v) => v.equivalente)].slice(0, MAX_SUGESTOES)

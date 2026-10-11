@@ -337,3 +337,12 @@ details.explicacao p { margin: 6px 0; }
 .lista-constantes .alternar { align-items: flex-start; }
 .passos-tptp { margin: 6px 0 10px; padding-left: 20px; }
 .passos-tptp li { margin: 3px 0; }
+
+/* histórico */
+.lista-historico { list-style: none; padding: 0; margin: 8px 0; }
+.lista-historico .achado { border-left: 3px solid var(--borda); padding: 6px 10px; margin: 10px 0; background: var(--superficie); border-radius: var(--raio); }
+.lista-historico .achado > div { margin-top: 3px; }
+.achado-ok { border-left-color: var(--ok) !important; }
+.achado-nao { border-left-color: var(--erro) !important; }
+.achado-incerto { border-left-color: var(--aviso) !important; }
+.achado-decisao { border-left-color: var(--destaque) !important; }

@@ -9,6 +9,7 @@ import { abrirBancoProvas, bancoAtual, bancoNaMemoria, definirBanco, type Estati
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
+import { achadosDaCadeia, achadosDoModelo, historico } from './historico'
 import { z3 } from './z3'
 import { K_ABSOLUTO, limitePorWorker, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
 import type { Formula } from '../logica/ast'
@@ -223,6 +224,11 @@ class Verificacao {
     this.interrompida = null
     void gravarConfig('cadeiaPendente', null).catch(() => {})
     this.avisar()
+  }
+
+  /** O que a rodada concluiu vai para o histórico (que não se perde quando vêm rodadas novas). */
+  private registrarCadeia(r: RodadaCadeia) {
+    historico.registrar(achadosDaCadeia(r.relatorios, estado.notas), `cadeia:${this.iniciadoEm}:${r.numero}`)
   }
 
   /** Grava as rodadas (no máximo a cada 3 s enquanto roda; sempre no começo e no fim). */
@@ -459,6 +465,7 @@ class Verificacao {
   atualizarModelo(quando: number, relatorio: RelatorioModelo) {
     if (!this.modelo || this.modelo.quando !== quando) return
     this.modelo = { ...this.modelo, relatorio }
+    if (relatorio.situacao === 'pronto') historico.registrar(achadosDoModelo(relatorio), `modelo:${quando}`)
     this.gravarModelo(true)
     this.avisar()
   }
@@ -506,6 +513,8 @@ class Verificacao {
     }
     if (this.ocupado === 'cadeia') {
       const atual = this.rodadas.at(-1)
+      // o que a rodada já decidiu antes de parar fica no histórico
+      if (atual) this.registrarCadeia(atual)
       if (atual && !atual.terminada)
         this.rodadas = [
           ...this.rodadas.slice(0, -1),
@@ -557,6 +566,8 @@ class Verificacao {
       this.gravarCadeia()
       // a rodada em si acabou; o aprimoramento segue (avisa já o resultado da rodada)
       const agora = this.rodadas.at(-1)
+      // da rodada pronta em diante, cada conclusão nova (continuação, aprofundamento) vai para o histórico
+      if (agora && (agora.baseTerminada || (r.tipo === 'cadeia' && r.relatorios.length && r.relatorios.every((x) => x.etapa === 'fim')))) this.registrarCadeia(agora)
       if (r.tipo === 'cadeia' && agora && !agora.baseTerminada && r.relatorios.length && r.relatorios.every((x) => x.etapa === 'fim')) {
         this.rodadas = [...this.rodadas.slice(0, -1), { ...agora, baseTerminada: true }]
         void gravarConfig('cadeiaPendente', null).catch(() => {})
@@ -569,6 +580,7 @@ class Verificacao {
     } else if (r.tipo === 'modelo' || (r.tipo === 'erro' && this.ocupado === 'modelo')) {
       if (this.modelo)
         this.modelo = r.tipo === 'modelo' ? { ...this.modelo, relatorio: r.relatorio, ms: r.ms } : { ...this.modelo, erro: r.msg }
+      if (r.tipo === 'modelo' && r.relatorio.situacao === 'pronto' && this.modelo) historico.registrar(achadosDoModelo(r.relatorio), `modelo:${this.modelo.quando}`)
       this.gravarModelo()
     } else if (r.tipo === 'teorema') {
       const t = this.pendentes.get(r.chave)!
@@ -636,6 +648,7 @@ class Verificacao {
       if (tipo === 'cadeia') {
         const atual = this.rodadas.at(-1)
         if (atual) this.rodadas = [...this.rodadas.slice(0, -1), { ...atual, terminada: true, baseTerminada: true }]
+        if (atual) this.registrarCadeia(atual)
         void gravarConfig('cadeiaPendente', null).catch(() => {})
         this.gravarCadeia(true)
         // o aprimoramento achou uma conclusão que cai num cenário maior: refaz a rodada nesse nível (com limite)

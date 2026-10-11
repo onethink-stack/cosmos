@@ -1,4 +1,5 @@
 import { notaVazia } from './estado'
+import { achadoValido, type Achado } from './historico'
 import { COMPARTIMENTOS, type Compartimento, type EntradaDicionario, type Grau, type Nota, type TipoSimbolo } from './tipos'
 
 export const DIAS_LEMBRETE = 7
@@ -11,10 +12,12 @@ export interface Backup {
   notas: Nota[]
   dicionario: EntradaDicionario[]
   config: { N?: number }
+  /** o histórico do que a reação em cadeia e o segundo modelo concluíram (backups antigos não têm) */
+  historico?: Achado[]
 }
 
-export function criarBackup(notas: Nota[], dicionario: EntradaDicionario[], N: number, agora = new Date()): Backup {
-  return { app: 'caderno-logico', versao: 1, exportadoEm: agora.toISOString(), notas, dicionario, config: { N } }
+export function criarBackup(notas: Nota[], dicionario: EntradaDicionario[], N: number, agora = new Date(), historico: Achado[] = []): Backup {
+  return { app: 'caderno-logico', versao: 1, exportadoEm: agora.toISOString(), notas, dicionario, config: { N }, historico }
 }
 
 export function nomeArquivo(agora = new Date()): string {
@@ -92,10 +95,13 @@ export function lerBackup(conteudo: string): { ok: true; backup: Backup; avisos:
 
   const cfg = (o.config ?? {}) as { N?: unknown }
   const N = typeof cfg.N === 'number' && cfg.N >= 1 ? cfg.N : undefined
+  const historico = Array.isArray(o.historico) ? o.historico.filter(achadoValido) : []
+  if (Array.isArray(o.historico) && historico.length < o.historico.length)
+    avisos.push(`${o.historico.length - historico.length} item(ns) do histórico ignorado(s): incompletos.`)
   return {
     ok: true,
     avisos,
-    backup: { app: 'caderno-logico', versao: 1, exportadoEm: texto(o.exportadoEm), notas, dicionario, config: { N } },
+    backup: { app: 'caderno-logico', versao: 1, exportadoEm: texto(o.exportadoEm), notas, dicionario, config: { N }, historico },
   }
 }
 

@@ -63,6 +63,7 @@ export function Cadeia() {
   const desatualizada = !!atual && atual.assinatura !== assinaturaCadeia(pedido, est.dicionario)
 
   const nada = !pedido.contextos.length
+  const ficou = atual && !ocupado ? oQueFicou(atual) : null
   return (
     <section class="cadeia">
       <ModoCadeia atual="cadeia" />
@@ -103,14 +104,27 @@ export function Cadeia() {
             </button>
           </>
         ) : (
-          <button
-            type="button"
-            class="primario"
-            disabled={!p.pronto || nada || !!ver.ocupado}
-            onClick={() => ver.iniciarCadeia(pedido, est.dicionario, 'início', true)}
-          >
-            {ver.rodadas.length ? 'Recomeçar a reação' : 'Iniciar a reação em cadeia'}
-          </button>
+          <>
+            {ficou && (
+              <button
+                type="button"
+                class="primario"
+                disabled={!p.pronto || nada || !!ver.ocupado}
+                title="Uma rodada nova que aproveita tudo o que já foi provado (fica no banco de provas): segue de onde a anterior parou"
+                onClick={() => ver.continuarCadeia(`continuada de onde parou (${ficou})`)}
+              >
+                Continuar de onde parou
+              </button>
+            )}
+            <button
+              type="button"
+              class={ficou ? '' : 'primario'}
+              disabled={!p.pronto || nada || !!ver.ocupado}
+              onClick={() => ver.iniciarCadeia(pedido, est.dicionario, 'início', true)}
+            >
+              {ver.rodadas.length ? 'Recomeçar a reação' : 'Iniciar a reação em cadeia'}
+            </button>
+          </>
         )}
         <span class="suave">
           {pf.aprimorar
@@ -118,6 +132,14 @@ export function Cadeia() {
             : `cenários até ${limiteTexto(pf.atual.Ninicial, pf.atual.Kinicial)}`}
         </span>
       </div>
+      {ficou && (
+        <p class="suave">
+          A última rodada {ficou}. “Continuar de onde parou” faz uma rodada nova que aproveita o que já foi provado.
+        </p>
+      )}
+      <p class="suave">
+        Tudo o que as rodadas concluem fica guardado no <a href="#/historico">histórico</a>, mesmo depois de rodadas novas.
+      </p>
       {!p.pronto && <p class="erro-texto">Confirme antes os nomes sem ficha, em Contradições.</p>}
       {nada && <p class="suave">Não há leis, fatos ou teoremas ativos com fórmula.</p>}
 
@@ -146,6 +168,20 @@ export function Cadeia() {
       })}
     </section>
   )
+}
+
+/** O que a última rodada deixou pela metade (para oferecer "continuar de onde parou"), ou null. */
+function oQueFicou(r: RodadaCadeia): string | null {
+  if (r.interrompida) return 'parou no meio'
+  if (r.erro) return 'parou por uma falha no motor'
+  if (!r.terminada && !r.baseTerminada) return null
+  const semDecisao = r.relatorios.reduce((s, x) => s + x.teoremas.filter((t) => t.resultado.tipo === 'tempo').length, 0)
+  if (semDecisao) return `deixou ${semDecisao} teorema${semDecisao > 1 ? 's' : ''} sem decisão`
+  const ap = r.relatorios.map((x) => x.aprimoramento).find((a) => a?.situacao === 'feito' && a.parouPor && /tempo|passou de|parado|falha|grande demais/.test(a.parouPor))
+  if (r.terminada && ap) return `parou de aprofundar (${ap.parouPor})`
+  const candidatas = r.relatorios.reduce((s, x) => s + (x.consequenciasSemDecisao ?? 0), 0)
+  if (r.terminada && candidatas) return `deixou ${candidatas} candidata${candidatas > 1 ? 's' : ''} a consequência sem decisão`
+  return null
 }
 
 function Fora({ fora }: { fora: ReturnType<typeof foraDaCadeia> }) {

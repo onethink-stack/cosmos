@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks'
 import { corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
+import { historico } from '../dados/historico'
 import { useVersao } from '../dados/versao'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
@@ -10,6 +11,7 @@ import { Dicionario } from './Dicionario'
 import { EditorNota } from './EditorNota'
 import { LembreteBackup } from './LembreteBackup'
 import { ListaNotas } from './ListaNotas'
+import { Historico } from './Historico'
 import { Modelo } from './Modelo'
 import { Mundo } from './Mundo'
 import { PainelContradicoes } from './PainelContradicoes'
@@ -25,6 +27,7 @@ export function App() {
     // depois de carregar: notas das bibliotecas com o defeito de escopo (já corrigido) são consertadas
     void estado.carregar().then(() => corrigirNotasDasBibliotecas())
     void verificacao.carregarConfig()
+    void historico.carregar()
     void z3.carregarConfig()
     void z3.carregarGuardados()
   }, [])
@@ -58,6 +61,9 @@ export function App() {
             <a href="#/mundo" class={aba === 'mundo' ? 'ativo' : ''}>
               Mundo
             </a>
+            <a href="#/historico" class={aba === 'historico' ? 'ativo' : ''}>
+              Histórico
+            </a>
           </nav>
         </div>
       </header>
@@ -90,6 +96,8 @@ export function App() {
           <Modelo />
         ) : rota.tela === 'mundo' ? (
           <Mundo />
+        ) : rota.tela === 'historico' ? (
+          <Historico />
         ) : (
           <PainelContradicoes />
         )}

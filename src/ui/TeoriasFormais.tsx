@@ -3,6 +3,7 @@ import { estado, useEstado } from '../dados/estado'
 import { notasDaTeoria, TEORIAS, type Teoria } from '../dados/teorias'
 import { importarTptp, type ImportacaoTptp } from '../dados/tptp'
 import { textosDoArquivo } from '../dados/arquivos'
+import { BibliotecaTptp } from './BibliotecaTptp'
 
 /** Teorias formais: a biblioteca embutida e arquivos do TPTP. */
 export function TeoriasFormais() {
@@ -14,6 +15,7 @@ export function TeoriasFormais() {
         escolhendo a pasta da teoria junto com a sua no segundo modelo, ele bate as suas leis contra ela.
       </p>
       <Biblioteca />
+      <BibliotecaTptp />
       <Tptp />
     </>
   )

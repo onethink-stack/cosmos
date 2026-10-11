@@ -141,11 +141,20 @@ export const TEORIAS: Teoria[] = [
  * atualiza, não duplica. Um símbolo que já existe com outro sentido ganha um
  * sufixo (e as fórmulas são trocadas junto).
  */
-export function notasDaTeoria(t: Teoria, dicionario: EntradaDicionario[]): { fichas: EntradaDicionario[]; notas: Nota[] } {
+/**
+ * Ajusta uma teoria vinda de fora ao dicionário do caderno: um símbolo que já
+ * existe igual é o mesmo; com outro sentido, ganha um sufixo (e as fórmulas
+ * são trocadas junto); uma variável com o nome de um símbolo do dicionário
+ * vira outra (senão seria quantificar uma constante). `trocar` aplica isso.
+ */
+export function adaptarAoDicionario(
+  fichasDaTeoria: Omit<EntradaDicionario, 'id'>[],
+  dicionario: EntradaDicionario[],
+): { fichas: EntradaDicionario[]; trocar: (formula: string) => string; nomes: Map<string, string> } {
   const troca = new Map<string, string>()
   const usados = new Map(dicionario.map((e) => [e.simbolo, e]))
   const fichas: EntradaDicionario[] = []
-  for (const f of t.fichas) {
+  for (const f of fichasDaTeoria) {
     const e = usados.get(f.simbolo)
     if (e && e.tipo === f.tipo && e.aridade === f.aridade) continue // já existe igual: usa a mesma
     let s = f.simbolo
@@ -162,7 +171,6 @@ export function notasDaTeoria(t: Teoria, dicionario: EntradaDicionario[]): { fic
   const palavra = (de: string) => new RegExp(`(?<![\\p{L}\\p{N}])${de}(?![\\p{L}\\p{N}])`, 'gu')
   const trocar = (formula: string) => {
     let r = [...troca].reduce((acc, [de, para]) => acc.replace(palavra(de), para), formula)
-    // variáveis com o nome de um símbolo do dicionário viram outras (senão seria quantificar uma constante)
     for (const v of new Set([...r.matchAll(/[∀∃]([\p{L}][\p{L}\p{N}]*)/gu)].map((m) => m[1])))
       if (usados.has(v)) {
         let i = 1
@@ -171,6 +179,12 @@ export function notasDaTeoria(t: Teoria, dicionario: EntradaDicionario[]): { fic
       }
     return r
   }
+  const nomes = new Map(fichasDaTeoria.map((f) => [f.simbolo, troca.get(f.simbolo) ?? f.simbolo]))
+  return { fichas, trocar, nomes }
+}
+
+export function notasDaTeoria(t: Teoria, dicionario: EntradaDicionario[]): { fichas: EntradaDicionario[]; notas: Nota[] } {
+  const { fichas, trocar } = adaptarAoDicionario(t.fichas, dicionario)
   const agora = new Date().toISOString()
   const nota = (k: number, compartimento: 'lei' | 'teorema', titulo: string, formula: string): Nota => ({
     ...notaVazia(compartimento),

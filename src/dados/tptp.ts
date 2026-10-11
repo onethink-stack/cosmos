@@ -370,7 +370,12 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
     }
     return out
   }
-  const dicionarioComNovas = [...dicionario, ...fichas.map((e) => ({ ...e, id: e.simbolo }))]
+  // validar com o dicionário inteiro a cada fórmula seria lento em teorias com milhares de
+  // símbolos: cada fórmula leva só as fichas dos nomes que usa
+  const porSimbolo = new Map([...dicionario, ...fichas.map((e) => ({ ...e, id: e.simbolo }))].map((e) => [e.simbolo, e]))
+  const dicionarioDe = (texto: string) => [
+    ...new Set([...texto.matchAll(/[\p{L}][\p{L}\p{N}]*/gu)].map((m) => m[0]).filter((n) => porSimbolo.has(n))),
+  ].map((n) => porSimbolo.get(n)!)
   const agora = new Date().toISOString()
   const notas: Nota[] = []
   for (const x of formulas) {
@@ -382,7 +387,7 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
       const vs = [...livres(x.formula)]
       const f: F = vs.length ? { k: 'quant', q: '!', vars: vs, f: x.formula } : x.formula
       const texto = traduzir(f, new Map())
-      const v = validar(texto, dicionarioComNovas)
+      const v = validar(texto, dicionarioDe(texto))
       if (!v.ok) {
         avisos.push(`${x.nome}: a tradução não ficou válida (${v.diags.find((d) => d.nivel === 'erro')?.msg ?? 'erro'})`)
         continue

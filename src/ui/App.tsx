@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks'
 import { corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
+import { useVersao } from '../dados/versao'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
 import { Backup } from './Backup'
@@ -18,6 +19,7 @@ import { Sistemas } from './Sistemas'
 
 export function App() {
   const est = useEstado()
+  const ver = useVersao()
   const rota = useRota()
   useEffect(() => {
     // depois de carregar: notas das bibliotecas com o defeito de escopo (já corrigido) são consertadas
@@ -62,6 +64,11 @@ export function App() {
       <AvisosNaTela />
       <main>
         {est.erroBanco && <div class="faixa-erro">{est.erroBanco}</div>}
+        {ver.nova && (
+          <div class="faixa-versao">
+            Há uma versão nova do Caderno. <button type="button" onClick={() => location.reload()}>Atualizar agora</button>
+          </div>
+        )}
         {rota.tela !== 'backup' && <LembreteBackup />}
         {!est.carregado ? (
           <p class="suave">Carregando…</p>

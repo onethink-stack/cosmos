@@ -149,6 +149,8 @@ export interface RelatorioCadeia {
   consequenciasJaTeorema: number
   /** candidatas a consequência que ficaram sem decisão (o prazo de cada checagem, ou o da etapa, acabou) */
   consequenciasSemDecisao?: number
+  /** teoremas que não decidiram no prazo da rodada e continuam sendo conferidos, com mais tempo (ids) */
+  continuando?: string[]
   /** aprimoramento automático (N e K acima sobem conforme as conclusões são reconferidas) */
   aprimoramento: EstadoAprimoramento | null
   /** ids das leis e fatos que entraram nesta rodada (para dizer o que é novo na seguinte) */
@@ -192,6 +194,9 @@ export async function reacaoEmCadeia(
   // aprimoramento: as conclusões que dependem do tamanho são reconferidas em cenários maiores
   const lim = pedido.aprimorar
   if (!lim) return
+  // antes, os teoremas que não decidiram no prazo da rodada: continuam de onde pararam, com mais tempo
+  for (const [k, c] of pedido.contextos.entries())
+    await terminarTeoremas(c, relatorios[k], dicionario, op, lim, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3)
   const ini = Date.now()
   for (let k = 0; k < pedido.contextos.length; k++) {
     const c = pedido.contextos[k]
@@ -204,6 +209,87 @@ export async function reacaoEmCadeia(
       return
     }
   }
+}
+
+const faixa = (de: number, ate: number) => Array.from({ length: Math.max(0, ate - de + 1) }, (_, i) => de + i)
+
+/**
+ * Os teoremas que não decidiram no prazo da rodada continuam aqui, depois que
+ * ela já está pronta: a busca recomeça do tamanho em que parou, vários ao mesmo
+ * tempo, cada um com o tempo inteiro do aprimoramento do aparelho. O resultado
+ * de cada um entra no relatório assim que sai.
+ */
+async function terminarTeoremas(
+  c: ContextoCadeia,
+  rel: RelatorioCadeia,
+  dicionario: EntradaDicionario[],
+  op: OpcoesMotor,
+  lim: LimitesAprimoramento,
+  enviar: () => void,
+  progresso: Progresso,
+  ajudaZ3?: AjudaZ3,
+): Promise<void> {
+  if (rel.consistencia?.tipo !== 'consistente') return
+  const pendentes = rel.teoremas.filter((e) => e.resultado.tipo === 'tempo')
+  if (!pendentes.length) return
+  const premissas = c.grupos.flatMap((g) => analisar(g.formulas, dicionario).map((i) => i.expandida))
+  const phis = pendentes.map((e) => analisar([e.formula], dicionario)[0])
+  // com o Z3 ligado, ele tenta ao mesmo tempo provar cada um para qualquer número de objetos
+  const provadasZ3 = ajudaZ3?.(phis.map((p) => (p ? [...premissas, nao(p.expandida)] : []))) ?? new Set<number>()
+  const ks = faixa(1, Math.max(1, rel.K))
+  const ate = Date.now() + lim.orcamentoMs
+  const resta = () => Math.max(1000, ate - Date.now())
+  let feitos = 0
+  rel.continuando = pendentes.map((e) => e.id)
+  const aviso = () => progresso(`conferindo com mais tempo os teoremas que não decidiram na rodada (${feitos}/${pendentes.length})`)
+  aviso()
+  enviar()
+  const decididos = new Set<string>()
+  const decidir = (e: EstadoTeorema, resultado: ResultadoPergunta) => {
+    if (decididos.has(e.id)) return
+    decididos.add(e.id)
+    rel.teoremas = rel.teoremas.map((x) => (x.id === e.id ? { ...x, resultado, ...(resultado.tipo === 'segue' ? { apoio: resultado.notas, geracao: 1 } : {}) } : x))
+    rel.continuando = rel.continuando?.filter((id) => id !== e.id)
+    feitos++
+    aviso()
+    enviar()
+  }
+  const notasDe = async (fixas: Formula[]) =>
+    (await poolAtual().rodar({ tipo: 'minimizar', grupos: c.grupos, fixas, dicionario, op: { ...op, limite: lim.limite }, prazoMs: Math.min(resta(), lim.tempoChecagemMs) })) as string[]
+  /** espera o Z3 provar o i-ésimo (devolve true), ou `fim` acontecer (false) */
+  const peloZ3 = (i: number, fim: Promise<unknown>) =>
+    new Promise<boolean>((ok) => {
+      let acabou = false
+      void fim.finally(() => ((acabou = true), ok(false)))
+      const ver = () => (provadasZ3.has(i) ? ok(true) : !acabou && Date.now() < ate && setTimeout(ver, 2000))
+      ver()
+    })
+  await Promise.all(
+    pendentes.map(async (e, i) => {
+      const phi = phis[i]
+      if (!phi || e.resultado.tipo !== 'tempo') return
+      const negada = nao(phi.expandida)
+      try {
+        // até n−1 já não havia cenário em que o teorema falha: recomeça do n
+        const desde = e.resultado.fase === 'contra' ? e.resultado.n : 1
+        const busca = poolAtual().rodar({ tipo: 'faixa', formulas: [...premissas, negada], ns: faixa(desde, op.N), ks, limite: lim.limite, prazoMs: resta() }) as Promise<BuscaFaixa>
+        if (await peloZ3(i, busca)) return decidir(e, { tipo: 'segue', N: op.N, K: rel.K, notas: await notasDe([negada]) })
+        const contra = await busca
+        if (contra.status === 'tempo' || contra.status === 'grande-demais') return decidir(e, { tipo: 'tempo', n: contra.n, fase: 'contra' })
+        if (contra.status === 'sem-modelo') return decidir(e, { tipo: 'segue', N: op.N, K: contra.K, notas: await notasDe([negada]) })
+        // há cenário em que falha: segue não; as leis o contradizem, ou não decidem?
+        const mundo = { n: contra.n, modelo: contra.modelo, passos: new Avaliador(contra.modelo).explicar(phi.original) }
+        const afavor = (await poolAtual().rodar({ tipo: 'faixa', formulas: [...premissas, phi.expandida], ns: faixa(1, op.N), ks, limite: lim.limite, prazoMs: resta() })) as BuscaFaixa
+        if (afavor.status === 'sem-modelo') return decidir(e, { tipo: 'contradiz', N: op.N, K: afavor.K, notas: await notasDe([phi.expandida]), mundo })
+        decidir(e, { tipo: 'nao-segue', N: op.N, mundo })
+      } catch {
+        // um worker quebrou: o teorema fica como estava (não decidiu a tempo)
+        decidir(e, e.resultado)
+      }
+    }),
+  )
+  rel.continuando = undefined
+  enviar()
 }
 
 /** Uma conclusão que vale "em todos os cenários até N" (logo, pode mudar num cenário maior). */

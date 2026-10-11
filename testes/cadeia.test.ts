@@ -69,7 +69,7 @@ describe('reação em cadeia', () => {
 })
 
 describe('prazo de cada checagem principal', () => {
-  it('um teorema que não decide no prazo fica "não decidiu a tempo", e a rodada termina', async () => {
+  it('um teorema que não decide no prazo da rodada: a rodada termina, e ele continua com mais tempo até decidir', async () => {
     definirBanco(bancoNaMemoria())
     try {
       const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
@@ -78,13 +78,25 @@ describe('prazo de cada checagem principal', () => {
         grupos.flatMap((x) => analisar(x.formulas, dic).map((i) => i.expandida)),
         op,
       )
-      let ultimo: RelatorioCadeia[] = []
-      // prazo já vencido: nenhuma checagem nova decide
-      const lim = { N: 5, K: 1, limite: 1_000_000, tempoChecagemMs: -1, orcamentoMs: 1 }
-      await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas: [t('T1', 'Q(c)')] }], inativas: [], aprimorar: lim }, dic, op, (r) => (ultimo = r))
-      expect(ultimo[0].etapa).toBe('fim')
-      expect(ultimo[0].consistencia?.tipo).toBe('consistente')
-      expect(ultimo[0].teoremas[0].resultado.tipo).toBe('tempo')
+      const relatorios: RelatorioCadeia[][] = []
+      // na rodada, o prazo de cada checagem já vencido; depois, um minuto para continuar
+      const lim = { N: 5, K: 1, limite: 1_000_000, tempoChecagemMs: -1, orcamentoMs: 60_000 }
+      await reacaoEmCadeia(
+        { contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas: [t('T1', 'Q(c)'), t('T2', 'R(c)')] }], inativas: [], aprimorar: lim },
+        dic,
+        op,
+        (r) => relatorios.push(r),
+      )
+      // a rodada fechou com os dois sem decisão, e eles foram continuados
+      const fimDaRodada = relatorios.find((r) => r[0].etapa === 'fim')![0]
+      expect(fimDaRodada.consistencia?.tipo).toBe('consistente')
+      expect(fimDaRodada.teoremas.map((x) => x.resultado.tipo)).toEqual(['tempo', 'tempo'])
+      expect(relatorios.some((r) => r[0].continuando?.length === 2)).toBe(true)
+      // no fim, cada um com a resposta certa
+      const ultimo = relatorios.at(-1)![0]
+      expect(ultimo.continuando).toBeUndefined()
+      expect(ultimo.teoremas.find((x) => x.id === 'T1:0')!.resultado.tipo).toBe('segue')
+      expect(ultimo.teoremas.find((x) => x.id === 'T2:0')!.resultado.tipo).toBe('nao-segue')
     } finally {
       definirBanco(null)
     }

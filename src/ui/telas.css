@@ -61,6 +61,8 @@ textarea:not(.campo-texto) { resize: vertical; }
 .busca { margin: 0 0 8px; }
 
 .faixa-erro { background: var(--erro-fundo); color: var(--texto); padding: 8px 12px; border-radius: var(--raio); margin: 8px 0; }
+.faixa-versao { background: var(--aviso-fundo); color: var(--texto); padding: 8px 12px; border-radius: var(--raio); margin: 8px 0; }
+.faixa-versao button { margin-left: 8px; }
 .erro-texto { color: var(--erro); font-size: .9rem; margin: 4px 0; }
 .aviso-texto { color: var(--aviso); font-size: .9rem; margin: 4px 0; }
 

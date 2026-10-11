@@ -196,11 +196,16 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
     return { status: 'sem-modelo', K }
   }
   if (banco) banco.estatisticas[jaN ? 'parciais' : 'faltas']++
+  // o prazo acabou no tamanho n: até n-1 não havia modelo — fica no banco, e a próxima tentativa começa dali
+  const semTempo = (n: number): Busca => {
+    if (banco && n - 1 > jaN) guardarSemModelo(banco, chave, n - 1, K, jaN, jaK)
+    return { status: 'grande-demais', n, tempo: true }
+  }
 
   for (let n = 1; n <= op.N; n++) {
     for (let k = 1; k <= K; k++) {
       if (n <= jaN && k <= jaK) continue // já provado sem modelo
-      if (op.prazo && Date.now() > op.prazo) return { status: 'grande-demais', n, tempo: true }
+      if (op.prazo && Date.now() > op.prazo) return semTempo(n)
       progresso?.(`testando ${n} objeto${n > 1 ? 's' : ''}${K > 1 ? ` e ${k} mundo${k > 1 ? 's' : ''}` : ''}`)
       let p: ProblemaCNF
       try {
@@ -213,7 +218,7 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
       }
       const r = resolver(p.nVars, p.clausulas, op.prazo ? { prazo: op.prazo } : {})
       // o prazo acabou no meio: não decidiu (e nada vai para o banco)
-      if (r.sat === null) return { status: 'grande-demais', n, tempo: true }
+      if (r.sat === null) return semTempo(n)
       if (r.sat) {
         const modelo = lerModelo(n, k, p, r.valores)
         banco?.guardar({ chave, status: 'modelo', n, modelo, K, usadoEm: Date.now() })
@@ -397,8 +402,12 @@ export type ResultadoPergunta =
   /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
-  /** a checagem passou do prazo com n objetos: até n−1 nenhum mundo decidiu (nem contraexemplo) */
-  | { tipo: 'tempo'; n: number }
+  /**
+   * a checagem passou do prazo com n objetos: até n−1 nenhum mundo decidiu (nem
+   * contraexemplo). `fase`: 'base' = conferindo se as notas são consistentes;
+   * 'contra' = procurando o cenário em que a fórmula falha (até n−1 não há)
+   */
+  | { tipo: 'tempo'; n: number; fase?: 'base' | 'contra' }
   | { tipo: 'formula-invalida' }
   /** a fórmula usa números: o motor finito não decide; o Z3 decide */
   | { tipo: 'aritmetica' }
@@ -426,12 +435,12 @@ export function perguntar(
 
   progresso?.('conferindo se as notas são consistentes')
   const base = buscarModelo(premissas, op)
-  if (base.status === 'grande-demais') return base.tempo ? { tipo: 'tempo', n: base.n } : { tipo: 'grande-demais', n: base.n }
+  if (base.status === 'grande-demais') return base.tempo ? { tipo: 'tempo', n: base.n, fase: 'base' } : { tipo: 'grande-demais', n: base.n }
   if (base.status === 'sem-modelo') return { tipo: 'premissas-contraditorias', N: op.N }
 
   progresso?.('procurando um mundo onde as notas valem e a fórmula falha')
   const contra = buscarModelo([...premissas, nao(phi.expandida)], op)
-  if (contra.status === 'grande-demais') return contra.tempo ? { tipo: 'tempo', n: contra.n } : { tipo: 'grande-demais', n: contra.n }
+  if (contra.status === 'grande-demais') return contra.tempo ? { tipo: 'tempo', n: contra.n, fase: 'contra' } : { tipo: 'grande-demais', n: contra.n }
   // com prazo, achar as notas de origem ganha um tempo próprio (uma checagem que não
   // decide mantém a nota: a lista pode sair maior, nunca insuficiente)
   const opNotas = op.prazo ? { ...op, prazo: Math.max(op.prazo, Date.now() + PRAZO_MINIMO_NOTAS_MS) } : op

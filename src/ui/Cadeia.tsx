@@ -529,7 +529,15 @@ function Relatorio({
           )}
           {outros.map((t) => (
             <p class="aviso-texto">
-              <Link id={t.id} />: {nomeResultado(t)}
+              <Link id={t.id} />:{' '}
+              {rel.continuando?.includes(t.id) ? (
+                <>
+                  <span class="girando" aria-hidden="true" /> conferindo com mais tempo
+                  {t.resultado.tipo === 'tempo' && t.resultado.n > 1 && ` (sem contraexemplo até ${t.resultado.n - 1} objetos; continua do ${t.resultado.n})`}…
+                </>
+              ) : (
+                nomeResultado(t)
+              )}
             </p>
           ))}
         </>

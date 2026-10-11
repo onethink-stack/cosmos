@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto'
-import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { biblioteca, conversa, notasDaBiblioteca, operadoresDoCaderno, procurar } from '../src/dados/biblioteca'
 import { notaVazia } from '../src/dados/estado'
@@ -37,11 +36,16 @@ const linhas = [
   },
   { tipo: 'teoria', id: 'BIO999+0', pasta: 'raiz', dominio: 'Biology', descricao: 'huge ontology', formulas: [], fichas: [], avisos: 0, grande: 9160 },
 ]
-const pacote = () => new File([gzipSync(Buffer.from(linhas.map((l) => JSON.stringify(l)).join('\n')))], 'biblioteca-tptp.jsonl.gz')
+/** o pacote compactado como o montador grava (gzip) */
+const pacote = async () => {
+  const texto = new Blob([linhas.map((l) => JSON.stringify(l)).join('\n')])
+  const gz = await new Response(texto.stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()
+  return new File([gz], 'biblioteca-tptp.jsonl.gz')
+}
 
 describe('biblioteca TPTP no aparelho', () => {
   it('abre o pacote compactado e guarda o catálogo e as teorias', async () => {
-    await biblioteca.abrirPacote(pacote())
+    await biblioteca.abrirPacote(await pacote())
     expect(biblioteca.catalogo.map((t) => t.id).sort()).toEqual(['BIO999+0', 'GRP999-0', 'SET999+0'])
     expect(biblioteca.catalogo.find((t) => t.id === 'BIO999+0')!.nFormulas).toBe(9160)
     expect((await biblioteca.teoria('SET999+0'))!.formulas.length).toBe(2)

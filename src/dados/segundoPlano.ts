@@ -11,8 +11,8 @@ import { verificacao, assinaturaCadeia, type Conclusao, type Ocupacao } from './
 import { formulasDoApoio, prepararCadeia } from './cadeia'
 import { preparar } from './premissas'
 import { chaveZ3, z3 } from './z3'
-import { assinaturaModelo, configModelo, notasDoModelo } from './modelo'
-import type { Nota } from './tipos'
+import { assinaturaModelo, configModelo } from './modelo'
+import { entradaDoModelo, mundo, type EntradaModelo } from './mundo'
 import type { Classe } from '../motor/modelo'
 import { completarComZ3 } from './modeloZ3'
 
@@ -239,6 +239,7 @@ export function iniciarSegundoPlano() {
   void avisos.carregarConfig()
   void perfil.carregarConfig()
   void configModelo.carregar()
+  void mundo.carregar()
 
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)
@@ -274,7 +275,7 @@ export function iniciarSegundoPlano() {
     if (perfil.automatico && cadeiaSePreciso()) return
     if (configModelo.automatico) {
       const m = modeloPendente()
-      if (m) verificacao.iniciarModelo(m.notas, m.pastas, estado.dicionario, m.motivo)
+      if (m) verificacao.iniciarModelo(m.entrada, estado.dicionario, m.motivo)
     }
   }
   /** o trabalho em andamento pode ser parado para o automático rodar? (devolve o motivo, ou null) */
@@ -292,7 +293,8 @@ export function iniciarSegundoPlano() {
     if (verificacao.ocupado === 'modelo') {
       const m = verificacao.modelo
       const p = modeloPendente()
-      if (m && p && configModelo.automatico && m.assinatura !== assinaturaModelo(p.notas, estado.dicionario, p.pastas)) return 'parado: as notas mudaram'
+      if (m && p && configModelo.automatico && m.assinatura !== assinaturaModelo(p.entrada.notas, estado.dicionario, p.entrada.pastas, p.entrada.marcaDados))
+        return 'parado: as notas ou os dados mudaram'
     }
     return null
   }
@@ -330,16 +332,15 @@ export function iniciarSegundoPlano() {
     return true
   }
   /** o segundo modelo precisa rodar? (as notas das pastas mudaram, ou ele parou no meio sem ser pelo usuário) */
-  const modeloPendente = (): { notas: Nota[]; pastas: string[]; motivo: string } | null => {
-    const { pastas } = configModelo
-    const notas = notasDoModelo(estado.notas, pastas)
-    if (!notas.length || !preparar(notas, estado.dicionario).pronto) return null
+  const modeloPendente = (): { entrada: EntradaModelo; motivo: string } | null => {
+    const entrada = entradaDoModelo(estado.notas, configModelo.pastas, estado.dicionario, mundo.conjuntos, configModelo.usarDados)
+    if (!entrada.notas.length || !preparar(entrada.notas, estado.dicionario).pronto) return null
     const m = verificacao.modelo
-    if (m && m.assinatura === assinaturaModelo(notas, estado.dicionario, pastas)) {
+    if (m && m.assinatura === assinaturaModelo(entrada.notas, estado.dicionario, entrada.pastas, entrada.marcaDados)) {
       if (!m.interrompida || m.interrompida === 'usuario' || m.tentativas >= 2) return null
-      return { notas, pastas, motivo: `${m.motivo.replace(/ \(retomado\)$/, '')} (retomado)` }
+      return { entrada, motivo: `${m.motivo.replace(/ \(retomado\)$/, '')} (retomado)` }
     }
-    return { notas, pastas, motivo: m ? 'automático: as notas mudaram' : 'automático: primeira vez' }
+    return { entrada, motivo: m ? 'automático: as notas ou os dados mudaram' : 'automático: primeira vez' }
   }
   let notasAntes = estado.notas
   let dicAntes = estado.dicionario
@@ -351,6 +352,7 @@ export function iniciarSegundoPlano() {
   })
   perfil.assinar(() => perfil.automatico && agendar())
   configModelo.assinar(() => configModelo.automatico && agendar())
+  mundo.assinar(() => mundo.carregado && configModelo.automatico && agendar())
   verificacao.assinar(() => {
     if (!verificacao.configCarregada || espera || !(perfil.automatico || configModelo.automatico)) return
     // motor livre, ou a cadeia já terminou a rodada e só aprofunda (o segundo modelo pode querer a vez)

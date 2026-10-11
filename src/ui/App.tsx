@@ -9,6 +9,7 @@ import { EditorNota } from './EditorNota'
 import { LembreteBackup } from './LembreteBackup'
 import { ListaNotas } from './ListaNotas'
 import { Modelo } from './Modelo'
+import { Mundo } from './Mundo'
 import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
@@ -50,6 +51,9 @@ export function App() {
             <a href="#/cadeia" class={aba === 'cadeia' ? 'ativo' : ''}>
               Cadeia
             </a>
+            <a href="#/mundo" class={aba === 'mundo' ? 'ativo' : ''}>
+              Mundo
+            </a>
           </nav>
         </div>
       </header>
@@ -75,6 +79,8 @@ export function App() {
           <Cadeia />
         ) : rota.tela === 'modelo' ? (
           <Modelo />
+        ) : rota.tela === 'mundo' ? (
+          <Mundo />
         ) : (
           <PainelContradicoes />
         )}

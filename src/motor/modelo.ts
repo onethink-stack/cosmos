@@ -17,10 +17,13 @@
 import { inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
 import { contextoDoTeorema } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
+import type { Formula } from '../logica/ast'
 import { canonica } from '../logica/canonica'
 import { limiteTexto, tamanhoTexto } from './avaliar'
 import { reacaoEmCadeia, type AjudaZ3, type ContextoCadeia, type LimitesAprimoramento, type RelatorioCadeia } from './cadeia'
 import { analisar, buscarModelo, nao, type OpcoesMotor } from './motor'
+import { testarNosDados, type ConjuntoDados, type VereditoDados } from './dados'
+import { oQueObservar, type Observacao } from './observar'
 
 /** começo do id das leis que o modelo cria (sem ":", que marca fórmula de teorema) */
 export const PREFIXO_ADOTADA = 'modelo-'
@@ -33,13 +36,20 @@ const MAX_REFEITAS = 2
 const MAX_TENTATIVAS = 6
 
 export interface PedidoModelo {
-  /** cópia das notas das pastas escolhidas */
+  /** cópia das notas das pastas escolhidas (com as leis induzidas dos dados, e sem as que os dados derrubaram) */
   notas: Nota[]
   /** limites do aparelho: o ponto fixo é aprofundado até eles */
   aprimorar?: LimitesAprimoramento
   /** tempo máximo das rodadas (o aprimoramento final tem o seu) */
   orcamentoMs: number
+  /** dados do mundo: leis adotadas não podem contradizê-los; teses são conferidas neles */
+  dados?: ConjuntoDados[]
+  /** leis que os dados derrubaram antes de começar (id → por quê) */
+  desativadasPelosDados?: Record<string, string>
 }
+
+/** começo do id das leis induzidas dos dados (entram na cópia como leis de grau M) */
+export const PREFIXO_INDUZIDA = 'induzida-'
 
 export type TipoEvento = 'desativou' | 'refutou' | 'ativou' | 'adotou' | 'provou' | 'aviso'
 
@@ -81,6 +91,8 @@ export type Classe =
   | 'incerto'
   /** consequência nova, que não estava escrita */
   | 'descoberta'
+  /** lei induzida dos dados (hipótese: grau M) */
+  | 'induzida'
 
 export interface ItemModelo {
   /** id da nota, "nota:índice" (fórmula de teorema) ou "consequencia:conjunto:k" */
@@ -95,6 +107,10 @@ export interface ItemModelo {
   /** de onde vem (ids de notas e de teoremas): para o grau herdado */
   apoio?: string[]
   geracao?: number
+  /** o que os dados do mundo dizem (vale em k casos, ou o contraexemplo observado) */
+  dados?: string
+  /** o que observar para decidir (teses) */
+  observar?: Observacao[]
 }
 
 export interface RelatorioModelo {
@@ -193,6 +209,15 @@ export async function rodarModelo(
   }
   const mudar = (id: string, m: Partial<Nota>) => (notas = notas.map((n) => (n.id === id ? { ...n, ...m } : n)))
   const evento = (e: Omit<EventoModelo, 'rodada'>) => eventos.push({ ...e, rodada: r.rodada })
+  const dados = p.dados ?? []
+  /** a fórmula (já pronta) é contradita pelo que foi observado? */
+  const contraOsDados = (f: Formula) => dados.some((c) => testarNosDados(f, c)?.tipo === 'falha')
+  for (const [id, motivo] of Object.entries(p.desativadasPelosDados ?? {})) {
+    const n = nota(id)
+    desativadas.set(id, motivo)
+    for (const f of analisar(n?.formulas ?? [], dicionario, true)) proibidas.add(canonica(f.original))
+    evento({ tipo: 'desativou', conjunto: 'Dados do mundo', notaId: id, titulo: n?.titulo || 'Sem título', detalhe: motivo })
+  }
 
   for (let refeitas = 0; ; refeitas++) {
     // rodadas até o ponto fixo
@@ -287,6 +312,7 @@ export async function rodarModelo(
           if (boas.length && s.fecha.length < boas[0].s.fecha.length) break
           const L = analisar([s.lei.formula], dicionario)[0]
           if (!L || proibidas.has(canonica(L.original))) continue
+          if (contraOsDados(L.expandida)) continue // o mundo observado já a derruba
           if (++tentativas > MAX_TENTATIVAS) break
           progresso(`rodada ${r.rodada} · ${c.rotulo}: a lei "${s.lei.nome}" refuta algum teorema aberto?`)
           const refuta = abertos.find(
@@ -396,8 +422,72 @@ export async function rodarModelo(
   }
 
   r.itens = classificar(notas, r.final ?? [], dicionario, nivel, { criadas, ativadas, desativadas, refutados, titulo })
+  // o mundo: o que os dados dizem de cada item, e o que observar para decidir as teses
+  progresso('conferindo nos dados e procurando o que observar')
+  r.itens = comOMundo(r.itens, notas, r.final ?? [], dicionario, nivel, dados)
   r.situacao = 'pronto'
   mandar()
+}
+
+/** O que os dados dizem de uma fórmula: o primeiro conjunto que a contradiz, ou o que mais a apoia. */
+export function vereditoDosDados(formulas: string[], dicionario: EntradaDicionario[], dados: ConjuntoDados[]): (VereditoDados & { texto: string }) | null {
+  const fs = analisar(formulas, dicionario, true).map((x) => x.expandida)
+  if (!fs.length || !dados.length) return null
+  let melhor: (VereditoDados & { texto: string }) | null = null
+  for (const f of fs)
+    for (const c of dados) {
+      const v = testarNosDados(f, c)
+      if (!v) continue
+      const onde = v.modo === 'casos' ? 'casos medidos' : 'objetos observados'
+      if (v.tipo === 'falha')
+        return {
+          ...v,
+          texto: `os dados contradizem: ${v.contra.slice(0, 3).join(', ')}${v.contra.length > 3 ? ` e mais ${v.contra.length - 3}` : ''} (“${c.nome}”)`,
+        }
+      if (v.tipo === 'vale' && (!melhor || melhor.tipo !== 'vale' || v.conferidos > melhor.conferidos))
+        melhor = {
+          ...v,
+          texto: `vale nos ${v.conferidos} ${onde} de “${c.nome}”${v.desconhecidos ? ` (${v.desconhecidos} sem dado)` : ''}`,
+        }
+      if (v.tipo === 'incerto' && !melhor) melhor = { ...v, texto: `os dados de “${c.nome}” não decidem (falta observar)` }
+    }
+  return melhor
+}
+
+/** Cada item com o que os dados dizem dele; as teses que continuam abertas ganham o que observar. */
+function comOMundo(itens: ItemModelo[], notas: Nota[], finais: RelatorioCadeia[], dicionario: EntradaDicionario[], op: OpcoesMotor, dados: ConjuntoDados[]): ItemModelo[] {
+  const contextos = pedidoDaCadeia(notas, dicionario).contextos
+  return itens.map((it0) => {
+    const it = { ...it0 }
+    const nota = it.notaId ? notas.find((n) => n.id === it.notaId) : undefined
+    const formulas = nota && nota.compartimento !== 'teorema' ? nota.formulas.filter((f) => f.trim()) : [it.formula]
+    const v = vereditoDosDados(formulas, dicionario, dados)
+    if (v) {
+      // a explicação já diz o que os dados dizem (lei derrubada por eles): não repete
+      if (!it.explicacao.includes(v.texto)) it.dados = v.texto
+      const ehTese = it.classe === 'tese' || it.classe === 'conflito' || it.classe === 'numerico'
+      if (v.tipo === 'falha' && (ehTese || it.classe === 'provado' || it.classe === 'descoberta')) {
+        const vinha = it.classe === 'provado' || it.classe === 'descoberta'
+        it.classe = 'refutado'
+        it.explicacao = vinha
+          ? `segue das leis, mas ${v.texto} — então alguma das leis de onde vem está errada`
+          : `${v.texto} — observado no mundo`
+      } else if (v.tipo === 'vale' && ehTese) {
+        const f = analisar([it.formula], dicionario, true)[0]?.original
+        if (f?.k === 'exists') {
+          it.classe = 'provado'
+          it.explicacao = `observado: ${v.texto} (um exemplo basta para uma tese de "existe")`
+        } else it.dados = `${v.texto} — apoia, mas não prova (faltam os não observados)`
+      }
+    }
+    if (it.classe === 'tese' || it.classe === 'conflito' || it.classe === 'numerico') {
+      const ctx = contextos.find((c) => c.chave === it.chave)
+      const t = finais.find((r) => r.chave === it.chave)?.teoremas.find((x) => x.id === it.id)
+      const contra = t?.resultado.tipo === 'nao-segue' ? t.resultado.mundo : undefined
+      if (ctx) it.observar = oQueObservar(ctx.grupos, it.formula, dicionario, op, contra)
+    }
+    return it
+  })
 }
 
 interface Decisoes {
@@ -423,7 +513,9 @@ function classificar(notas: Nota[], finais: RelatorioCadeia[], dicionario: Entra
     if (n.compartimento !== 'teorema') {
       const item = (classe: Classe, explicacao: string, apoio?: string[]) =>
         itens.push({ ...base, id: n.id, formula: formulas.join(' ; '), classe, explicacao, apoio })
-      if (d.criadas.has(n.id)) {
+      if (n.id.startsWith(PREFIXO_INDUZIDA)) {
+        item(n.ativa ? 'induzida' : 'desativada', n.ativa ? n.texto.split('\n')[0] : (d.desativadas.get(n.id) ?? ''))
+      } else if (d.criadas.has(n.id)) {
         item(n.ativa ? 'adotada' : 'desativada', n.ativa ? 'lei criada pelo modelo (grau D: é uma decisão do modelo)' : (d.desativadas.get(n.id) ?? ''))
       } else if (d.desativadas.has(n.id)) item('desativada', d.desativadas.get(n.id)!)
       else if (n.ativa) {

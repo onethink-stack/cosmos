@@ -2,15 +2,8 @@ import { useEffect, useMemo, useState } from 'preact/hooks'
 import { todasAsTags } from '../dados/filtro'
 import { grauHerdado, type GrauHerdado } from '../dados/grau'
 import { estado, useEstado } from '../dados/estado'
-import {
-  assinaturaModelo,
-  escreverComoTeorema,
-  levarParaOCaderno,
-  mudancasParaOCaderno,
-  notasDoModelo,
-  useConfigModelo,
-  type ExecucaoModelo,
-} from '../dados/modelo'
+import { assinaturaModelo, escreverComoTeorema, levarParaOCaderno, mudancasParaOCaderno, useConfigModelo, type ExecucaoModelo } from '../dados/modelo'
+import { entradaDoModelo, mundo, useMundo } from '../dados/mundo'
 import { usePerfil } from '../dados/perfil'
 import { preparar } from '../dados/premissas'
 import { useVerificacao } from '../dados/verificacao'
@@ -19,7 +12,7 @@ import { disponibilidadeZ3, useZ3 } from '../dados/z3'
 import { faseZ3DoModelo } from '../dados/segundoPlano'
 import { StatusAutomatico } from './SegundoPlano'
 import { limiteTexto } from '../motor/avaliar'
-import { MAX_RODADAS_MODELO, PREFIXO_ADOTADA, type Classe, type EventoModelo, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
+import { MAX_RODADAS_MODELO, PREFIXO_ADOTADA, PREFIXO_INDUZIDA, type Classe, type EventoModelo, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
 import type { Nota } from '../dados/tipos'
 
 /** Troca entre a reação em cadeia (você aprova) e o segundo modelo (automático). */
@@ -45,6 +38,7 @@ const SECOES: { classe: Classe; titulo: string; descricao: string; aberta?: bool
   { classe: 'refutado', titulo: 'Refutados', descricao: 'as leis implicam o contrário (o modelo desativou)', aberta: true },
   { classe: 'numerico', titulo: 'Com números', descricao: 'o motor finito não decide; o Z3 decide' },
   { classe: 'adotada', titulo: 'Leis adotadas pelo modelo', descricao: 'criadas para fechar teoremas; grau D (decisão do modelo)', aberta: true },
+  { classe: 'induzida', titulo: 'Leis induzidas dos dados', descricao: 'valem em tudo o que foi observado; hipóteses (grau M)', aberta: true },
   { classe: 'ativada', titulo: 'Leis ativadas pelo modelo', descricao: 'estavam desativadas e fecham teoremas', aberta: true },
   { classe: 'desativada', titulo: 'Desativadas pelo modelo', descricao: 'entravam em contradição', aberta: true },
   { classe: 'lei', titulo: 'Leis', descricao: 'premissas ativas, consistentes' },
@@ -59,6 +53,7 @@ const COR: Partial<Record<Classe, string>> = {
   descoberta: 'segue',
   adotada: 'segue',
   ativada: 'segue',
+  induzida: 'segue',
   refutado: 'contradiz',
   conflito: 'contradiz',
   desativada: 'contradiz',
@@ -88,9 +83,19 @@ export function Modelo() {
   const cfg = useConfigModelo()
   const pf = usePerfil()
   const tags = useMemo(() => todasAsTags(est.notas), [est.notas])
-  const notas = useMemo(() => notasDoModelo(est.notas, cfg.pastas), [est.notas, cfg.pastas])
-  const pronto = useMemo(() => preparar(notas, est.dicionario), [notas, est.dicionario]).pronto
-  const assinatura = useMemo(() => assinaturaModelo(notas, est.dicionario, cfg.pastas), [notas, est.dicionario, cfg.pastas])
+  const mu = useMundo()
+  const entrada = useMemo(
+    () => entradaDoModelo(est.notas, cfg.pastas, est.dicionario, mu.conjuntos, cfg.usarDados),
+    [est.notas, cfg.pastas, est.dicionario, mu.conjuntos, cfg.usarDados],
+  )
+  const notas = entrada.notas.filter((n) => !n.id.startsWith(PREFIXO_INDUZIDA))
+  const pronto = useMemo(() => preparar(entrada.notas, est.dicionario), [entrada, est.dicionario]).pronto
+  const assinatura = useMemo(
+    () => assinaturaModelo(entrada.notas, est.dicionario, cfg.pastas, entrada.marcaDados),
+    [entrada, est.dicionario, cfg.pastas],
+  )
+  const induzidas = entrada.notas.length - notas.length
+  const derrubadas = Object.keys(entrada.desativadasPelosDados).length
   const ocupado = ver.ocupado === 'modelo'
   const [esperando, setEsperando] = useState(false)
   const exec = ver.modelo
@@ -131,6 +136,17 @@ export function Modelo() {
         <input type="checkbox" checked={cfg.automatico} onChange={(e) => cfg.definirAutomatico((e.target as HTMLInputElement).checked)} />
         Rodar sozinho sempre que as notas dessas pastas mudarem, e avisar o que achou
       </label>
+      <label class="alternar">
+        <input type="checkbox" checked={cfg.usarDados} onChange={(e) => cfg.definirUsarDados((e.target as HTMLInputElement).checked)} />
+        Usar os dados do mundo (<a href="#/mundo">{mu.conjuntos.length ? `${mu.conjuntos.length} conjunto${mu.conjuntos.length > 1 ? 's' : ''}` : 'nenhum ainda'}</a>): leis que o observado
+        derruba saem, leis que os dados sugerem entram como hipótese (grau M), e as teses são conferidas no observado
+      </label>
+      {cfg.usarDados && entrada.dados.length > 0 && (
+        <p class="suave">
+          Dos dados destas pastas: {induzidas} lei{induzidas === 1 ? '' : 's'} induzida{induzidas === 1 ? '' : 's'} entra{induzidas === 1 ? '' : 'm'}
+          {derrubadas > 0 && `; ${derrubadas} lei${derrubadas > 1 ? 's' : ''} sai${derrubadas > 1 ? 'em' : ''} (o observado contradiz)`}.
+        </p>
+      )}
       <StatusAutomatico ligado={cfg.automatico} emDia={!!exec && exec.terminada && !exec.interrompida && exec.assinatura === assinatura} rodandoAgora={ocupado} />
 
       <div class="barra-acoes">
@@ -154,8 +170,8 @@ export function Modelo() {
               setEsperando(!!ver.ocupado)
               ver.quandoLivre(() => {
                 setEsperando(false)
-                const agora = notasDoModelo(estado.notas, cfg.pastas)
-                ver.iniciarModelo(agora, cfg.pastas, estado.dicionario, 'iniciado por você')
+                const agora = entradaDoModelo(estado.notas, cfg.pastas, estado.dicionario, mundo.conjuntos, cfg.usarDados)
+                ver.iniciarModelo(agora, estado.dicionario, 'iniciado por você')
               })
             }}
           >
@@ -333,6 +349,17 @@ function Classificacao({ rel: rel0, pastas, travado }: { rel: RelatorioModelo; p
                     {it.geracao && it.geracao > 1 && ` · geração ${it.geracao}`}
                   </div>
                   {graus.get(it.id) && <GrauNoModelo g={graus.get(it.id)!} titulo={titulo} />}
+                  {it.dados && <div class="dados-item">🌍 {it.dados}</div>}
+                  {!!it.observar?.length && (
+                    <div class="observar">
+                      <b>O que observar para decidir:</b>
+                      <ul>
+                        {it.observar.map((o) => (
+                          <li class={`obs-${o.efeito}`}>{o.texto}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {it.classe === 'descoberta' &&
                     (escritas.has(it.id) ? (
                       <p class="status-ok">✓ escrita como teorema no caderno</p>
@@ -366,7 +393,12 @@ function Classificacao({ rel: rel0, pastas, travado }: { rel: RelatorioModelo; p
               {mudancas.map((m) => (
                 <li>
                   <b>{m.tipo === 'criar' ? 'criar lei' : m.tipo === 'ativar' ? 'ativar' : 'desativar'}</b> “{m.nota.titulo || 'Sem título'}”
-                  {m.tipo === 'criar' && <span class="suave"> (grau D, {[...pastas, 'segundo-modelo'].map((p) => `#${p}`).join(' ')})</span>}
+                  {m.tipo === 'criar' && (
+                    <span class="suave">
+                      {' '}
+                      (grau {m.nota.grau}, {[...new Set([...pastas, 'segundo-modelo', ...(m.nota.tags.includes('induzida') ? m.nota.tags : [])])].map((p) => `#${p}`).join(' ')})
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

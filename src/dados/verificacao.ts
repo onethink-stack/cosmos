@@ -13,7 +13,8 @@ import { z3 } from './z3'
 import { K_ABSOLUTO, limitePorWorker, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
 import type { Formula } from '../logica/ast'
 import { disponibilidadeZ3 } from './z3'
-import type { EntradaDicionario, Nota } from './tipos'
+import type { EntradaDicionario } from './tipos'
+import type { EntradaModelo } from './mundo'
 import { assinaturaModelo, type ExecucaoModelo } from './modelo'
 import type { RelatorioModelo } from '../motor/modelo'
 
@@ -412,10 +413,11 @@ class Verificacao {
    * Roda o segundo modelo sobre uma cópia das notas: rodadas que desativam,
    * ativam e adotam leis sozinhas até o ponto fixo, e depois a classificação.
    */
-  iniciarModelo(notas: Nota[], pastas: string[], dicionario: EntradaDicionario[], motivo: string) {
+  iniciarModelo(entrada: EntradaModelo, dicionario: EntradaDicionario[], motivo: string) {
+    const { notas, pastas } = entrada
     const antes = this.modelo
     this.cancelar(false)
-    const assinatura = assinaturaModelo(notas, dicionario, pastas)
+    const assinatura = assinaturaModelo(notas, dicionario, pastas, entrada.marcaDados)
     // recomeçar o mesmo modelo que parou no meio conta como tentativa
     const tentativas = antes && antes.assinatura === assinatura && antes.interrompida ? antes.tentativas + 1 : 0
     // a classificação de antes (da última execução que terminou), para o aviso dizer só o que mudou
@@ -442,6 +444,8 @@ class Verificacao {
         notas,
         aprimorar: perfil.aprimorar ? { ...pf.limites, limite: limitePorWorker(pf.limites.limite, perfil.paralelo) } : undefined,
         orcamentoMs: pf.limites.orcamentoMs,
+        dados: entrada.dados,
+        desativadasPelosDados: entrada.desativadasPelosDados,
       },
       paralelo: perfil.paralelo,
     }

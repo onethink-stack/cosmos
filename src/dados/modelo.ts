@@ -2,7 +2,7 @@
 // e o "levar para o caderno" (o modelo nunca mexe no caderno sozinho).
 
 import { useEffect, useReducer } from 'preact/hooks'
-import { PREFIXO_ADOTADA, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
+import { PREFIXO_ADOTADA, PREFIXO_INDUZIDA, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
 import { gravarConfig, lerConfig } from './db'
 import { estado, notaVazia } from './estado'
 import type { EntradaDicionario, Nota } from './tipos'
@@ -38,8 +38,9 @@ export function notasDoModelo(notas: Nota[], pastas: string[]): Nota[] {
 }
 
 /** Muda se uma nota que entra no modelo, as pastas ou o dicionário mudarem. */
-export function assinaturaModelo(notas: Nota[], dicionario: EntradaDicionario[], pastas: string[]): string {
+export function assinaturaModelo(notas: Nota[], dicionario: EntradaDicionario[], pastas: string[], marcaDados = ''): string {
   return JSON.stringify([
+    marcaDados,
     pastas,
     notas.map((n) => [n.id, n.ativa, n.compartimento, n.formulas, n.titular, n.grau]),
     dicionario.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico]),
@@ -51,6 +52,8 @@ class ConfigModelo {
   pastas: string[] = []
   /** rodar sozinho quando as notas dessas pastas mudarem */
   automatico = false
+  /** usar os dados do mundo (leis induzidas, conferência das teses) */
+  usarDados = true
   private ouvintes = new Set<() => void>()
 
   assinar(fn: () => void) {
@@ -67,6 +70,7 @@ class ConfigModelo {
     try {
       this.pastas = (await lerConfig<string[]>('modeloPastas')) ?? []
       this.automatico = (await lerConfig<boolean>('modeloAutomatico')) ?? false
+      this.usarDados = (await lerConfig<boolean>('modeloUsarDados')) ?? true
     } catch {
       /* sem banco */
     }
@@ -86,6 +90,12 @@ class ConfigModelo {
   definirAutomatico(v: boolean) {
     this.automatico = v
     void gravarConfig('modeloAutomatico', v).catch(() => {})
+    this.mudou()
+  }
+
+  definirUsarDados(v: boolean) {
+    this.usarDados = v
+    void gravarConfig('modeloUsarDados', v).catch(() => {})
     this.mudou()
   }
 }
@@ -117,7 +127,7 @@ export function mudancasParaOCaderno(rel: RelatorioModelo, notas: Nota[]): Mudan
   for (const m of rel.notas) {
     const itens = porNota.get(m.id) ?? []
     const motivo = itens[0]?.explicacao ?? ''
-    if (m.id.startsWith(PREFIXO_ADOTADA)) {
+    if (m.id.startsWith(PREFIXO_ADOTADA) || m.id.startsWith(PREFIXO_INDUZIDA)) {
       if (m.ativa) ms.push({ tipo: 'criar', nota: m, motivo })
       continue
     }
@@ -143,7 +153,8 @@ export async function levarParaOCaderno(ms: MudancaCaderno[], pastas: string[]) 
   const data = new Date().toLocaleDateString('pt-BR')
   for (const m of ms) {
     if (m.tipo === 'criar') {
-      await estado.salvarNota({ ...m.nota, id: '', tags: etiquetas(pastas) })
+      const induzida = m.nota.id.startsWith(PREFIXO_INDUZIDA)
+      await estado.salvarNota({ ...m.nota, id: '', tags: induzida ? [...new Set([...etiquetas(pastas), ...m.nota.tags])] : etiquetas(pastas) })
       continue
     }
     const atual = estado.nota(m.nota.id)

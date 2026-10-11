@@ -311,3 +311,24 @@ details.explicacao p { margin: 6px 0; }
 .levar-caderno ul { margin: 6px 0 10px; padding-left: 20px; }
 .diario-modelo { margin: 10px 0; }
 .diario-modelo > summary { cursor: pointer; }
+.dados-item { font-size: .85rem; margin-top: 3px; }
+.observar { font-size: .85rem; margin-top: 4px; }
+.observar ul { margin: 2px 0 0; padding-left: 18px; }
+.observar li.obs-confirma::marker { content: '✓ '; color: var(--ok); }
+.observar li.obs-refuta::marker { content: '✗ '; color: var(--erro); }
+.observar li.obs-medir::marker { content: '📏 '; }
+.mundo h3 { margin-top: 22px; }
+.importar-tabela, .cartao-conjunto, .base-publica { margin: 10px 0; padding: 8px 12px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
+.importar-tabela > summary, .cartao-conjunto > summary, .base-publica > summary { cursor: pointer; }
+.tabela-colada { width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: .85rem; margin: 6px 0; }
+.campos-linha { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
+.campos-linha .campo-rotulo { flex: 1 1 150px; }
+.tabela-colunas { width: 100%; border-collapse: collapse; font-size: .85rem; margin: 8px 0; display: block; overflow-x: auto; }
+.tabela-colunas th, .tabela-colunas td { border-bottom: 1px solid var(--borda); padding: 4px 6px; text-align: left; vertical-align: top; }
+.tabela-colunas select { max-width: 210px; }
+.conteudo-conjunto h4 { margin: 10px 0 4px; }
+.lista-classes, .lista-teorias, .lista-constantes { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+.lista-teorias > li { padding: 8px 10px; border: 1px solid var(--borda); border-radius: var(--raio); }
+.lista-teorias button.mini { margin: 6px 0 0; }
+.lista-classes button { text-align: left; width: 100%; }
+.lista-constantes .alternar { align-items: flex-start; }

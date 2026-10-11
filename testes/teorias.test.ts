@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CODATA, constantesComoFatos } from '../src/dados/codata'
 import { notasDaTeoria, TEORIAS } from '../src/dados/teorias'
 import { importarTptp, lerTptp } from '../src/dados/tptp'
+import { lerTar } from '../src/dados/arquivos'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { validar } from '../src/logica/validador'
 import { OPCOES_PADRAO, perguntar } from '../src/motor/motor'
@@ -84,5 +85,44 @@ describe('constantes físicas', () => {
     expect(fatos.find((f) => f.formulas[0].startsWith('cLuz'))!.formulas[0]).toBe('cLuz = 299792458')
     expect(fatos.find((f) => f.formulas[0].startsWith('gNewton'))!.formulas[0]).toBe('gNewton = 0.000000000066743')
     expect(fatos.find((f) => f.formulas[0].startsWith('nAvogadro'))!.formulas[0]).toBe('nAvogadro = 602214076000000000000000')
+  })
+})
+
+describe('arquivos compactados do TPTP', () => {
+  /** um .tar mínimo (ustar) com os arquivos dados */
+  const tar = (arqs: { nome: string; texto: string }[]) => {
+    const enc = new TextEncoder()
+    const blocos: Uint8Array[] = []
+    for (const a of arqs) {
+      const dados = enc.encode(a.texto)
+      const h = new Uint8Array(512)
+      h.set(enc.encode(a.nome), 0)
+      h.set(enc.encode(dados.length.toString(8).padStart(11, '0')), 124)
+      h[156] = 48 // '0': arquivo comum
+      h.set(enc.encode('ustar'), 257)
+      blocos.push(h, dados, new Uint8Array((512 - (dados.length % 512)) % 512))
+    }
+    blocos.push(new Uint8Array(1024))
+    const total = new Uint8Array(blocos.reduce((s, b) => s + b.length, 0))
+    let i = 0
+    for (const b of blocos) {
+      total.set(b, i)
+      i += b.length
+    }
+    return total
+  }
+
+  it('lê os arquivos de dentro de um .tar', () => {
+    const r = lerTar(tar([{ nome: 'TPTPWorld/TPTP/Axioms/ABC001+0.ax', texto: 'fof(a, axiom, p(c)).' }, { nome: 'B.p', texto: 'x'.repeat(700) }]))
+    expect(r.map((x) => x.nome)).toEqual(['ABC001+0.ax', 'B.p'])
+    expect(r[0].texto).toBe('fof(a, axiom, p(c)).')
+    expect(r[1].texto.length).toBe(700)
+  })
+
+  it('o include de um arquivo aberto junto não gera aviso', () => {
+    const texto = "% === arquivo: P.p ===\ninclude('Axioms/ABC001+0.ax').\nfof(c, conjecture, p(c)).\n% === arquivo: ABC001+0.ax ===\nfof(a, axiom, p(c))."
+    const { formulas, avisos } = lerTptp(texto)
+    expect(formulas.map((f) => f.nome)).toEqual(['c', 'a'])
+    expect(avisos).toEqual([])
   })
 })

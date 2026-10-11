@@ -332,3 +332,5 @@ details.explicacao p { margin: 6px 0; }
 .lista-teorias button.mini { margin: 6px 0 0; }
 .lista-classes button { text-align: left; width: 100%; }
 .lista-constantes .alternar { align-items: flex-start; }
+.passos-tptp { margin: 6px 0 10px; padding-left: 20px; }
+.passos-tptp li { margin: 3px 0; }

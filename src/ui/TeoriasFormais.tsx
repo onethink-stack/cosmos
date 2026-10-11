@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks'
 import { estado, useEstado } from '../dados/estado'
 import { notasDaTeoria, TEORIAS, type Teoria } from '../dados/teorias'
 import { importarTptp, type ImportacaoTptp } from '../dados/tptp'
+import { textosDoArquivo } from '../dados/arquivos'
 
 /** Teorias formais: a biblioteca embutida e arquivos do TPTP. */
 export function TeoriasFormais() {
@@ -78,9 +79,20 @@ function Tptp() {
       setErro((e as Error).message)
     }
   }
+  /** um ou vários arquivos (o problema e os axiomas que ele inclui); .tgz do TPTP abre direto */
   const abrirArquivo = async (e: Event) => {
-    const f = (e.target as HTMLInputElement).files?.[0]
-    if (f) ler(await f.text(), f.name)
+    const fs = [...((e.target as HTMLInputElement).files ?? [])]
+    if (!fs.length) return
+    try {
+      const textos = (await Promise.all(fs.map(textosDoArquivo))).flat().filter((x) => /\.(p|ax|tptp|txt)$/i.test(x.nome) || !/\./.test(x.nome))
+      if (!textos.length) throw new Error('nenhum arquivo .p ou .ax dentro')
+      ler(
+        textos.map((x) => `% === arquivo: ${x.nome} ===\n${x.texto}`).join('\n'),
+        textos.map((x) => x.nome).join(' + '),
+      )
+    } catch (x) {
+      setErro(`Não deu para abrir: ${(x as Error).message}`)
+    }
   }
   const baixar = async () => {
     setErro(null)
@@ -89,7 +101,9 @@ function Tptp() {
       if (!r.ok) throw new Error(`o site respondeu ${r.status}`)
       ler(await r.text(), url.slice(url.lastIndexOf('/') + 1) || url)
     } catch (e) {
-      setErro(`Não deu para baixar (${(e as Error).message}). Muitos sites não deixam outro site ler os arquivos deles: baixe o arquivo e abra aqui.`)
+      setErro(
+        `Não deu para baixar (${(e as Error).message}). O tptp.org e muitos outros sites não deixam outro site ler os arquivos deles: use o Download do site e abra o arquivo aqui (o .tgz abre direto).`,
+      )
     }
   }
   const importar = async () => {
@@ -110,13 +124,30 @@ function Tptp() {
         <b>TPTP</b> <span class="suave">— a biblioteca de problemas dos provadores automáticos (milhares de teorias, em FOF/CNF)</span>
       </summary>
       <p class="suave">
-        Abra um arquivo .p ou .ax baixado de tptp.org (ou cole o texto). Axiomas viram leis; conjecturas e teoremas viram teoremas, que o
-        motor confere. Lê FOF e CNF; arquivos incluídos (include) precisam ser abertos também.
+        Axiomas viram leis; conjecturas e teoremas viram teoremas, que o motor confere. Lê FOF e CNF (não lê TFF/THF, com tipos).
       </p>
+      <ol class="suave passos-tptp">
+        <li>
+          Abra a biblioteca:{' '}
+          <a href="https://seetptp.tptp.org/?folder=TPTPWorld/TPTP/Axioms/" target="_blank" rel="noopener">
+            axiomas
+          </a>{' '}
+          (teorias: SET = conjuntos, GRP = grupos, MGT = gestão, KRS = conhecimento…) ou{' '}
+          <a href="https://seetptp.tptp.org/?folder=TPTPWorld/TPTP/Problems/" target="_blank" rel="noopener">
+            problemas
+          </a>{' '}
+          (cada um com a sua conjectura). Os nomes com “+” são em FOF; com “-”, em CNF.
+        </li>
+        <li>
+          Abra um arquivo e toque em <b>Download</b> — vem compactado (.tgz) e o app abre assim mesmo. Se o problema tiver “include”, baixe
+          também o arquivo de axiomas que ele cita e escolha os dois de uma vez aqui.
+        </li>
+        <li>Ou: selecione o texto do arquivo na página, copie e cole na caixa abaixo.</li>
+      </ol>
       <div class="campos-linha">
         <label class="campo-rotulo">
           Abrir arquivo
-          <input type="file" accept=".p,.ax,.tptp,.txt" onChange={abrirArquivo} />
+          <input type="file" multiple accept=".p,.ax,.tptp,.txt,.tgz,.gz,.tar" onChange={abrirArquivo} />
         </label>
         <label class="campo-rotulo">
           Pasta
@@ -124,7 +155,13 @@ function Tptp() {
         </label>
       </div>
       <div class="barra-acoes">
-        <input type="url" class="busca" placeholder="ou o endereço do arquivo (https://…)" value={url} onInput={(e) => setUrl((e.target as HTMLInputElement).value)} />
+        <input
+          type="url"
+          class="busca"
+          placeholder="ou o endereço de um arquivo de texto (o tptp.org não deixa: use o Download)"
+          value={url}
+          onInput={(e) => setUrl((e.target as HTMLInputElement).value)}
+        />
         <button type="button" disabled={!url.trim()} onClick={() => void baixar()}>
           Baixar
         </button>

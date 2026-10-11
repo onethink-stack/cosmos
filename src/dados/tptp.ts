@@ -181,6 +181,8 @@ export interface FormulaTptp {
 /** Lê as fórmulas do arquivo; o que não entende vai para `avisos`. */
 export function lerTptp(texto: string): { formulas: FormulaTptp[]; avisos: string[] } {
   const avisos: string[] = []
+  // arquivos abertos juntos (marcados ao juntar): um include deles não precisa de aviso
+  const abertos = new Set([...texto.matchAll(/^% === arquivo: (.+?) ===$/gm)].map((m) => m[1].trim()))
   const formulas: FormulaTptp[] = []
   // uma declaração por vez: até o ponto final de nível zero
   const declaracoes = texto.replace(/\r/g, '').split(/(?<=\))\s*\.\s*(?=\n|$|%|[a-z])/)
@@ -190,7 +192,9 @@ export function lerTptp(texto: string): { formulas: FormulaTptp[]; avisos: strin
     const m = d.match(/^(fof|cnf|tff|thf|tcf|include)\s*\(/)
     if (!m) continue
     if (m[1] === 'include') {
-      avisos.push(`${d.replace(/\s+/g, ' ')}: arquivos incluídos não são lidos — abra-os também`)
+      const arquivo = d.match(/include\s*\(\s*'([^']+)'/)?.[1] ?? ''
+      if (!abertos.has(arquivo.slice(arquivo.lastIndexOf('/') + 1)))
+        avisos.push(`${d.replace(/\s+/g, ' ')}: este arquivo incluído não foi aberto — abra-o junto (pode escolher vários arquivos de uma vez)`)
       continue
     }
     if (m[1] !== 'fof' && m[1] !== 'cnf') {

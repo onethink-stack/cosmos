@@ -268,16 +268,29 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
         break
     }
   }
-  formulas.forEach((x) => percorrer(x.formula))
+  // fórmulas com milhares de termos encadeados estouram a pilha (e o motor não daria conta delas)
+  const lidas = formulas.filter((x) => {
+    try {
+      percorrer(x.formula)
+      return true
+    } catch {
+      avisos.push(`${x.nome}: fórmula longa demais para o caderno`)
+      return false
+    }
+  })
   // nome no caderno de cada símbolo: o mesmo se já existir igual; senão, um livre
   const nomeNoCaderno = new Map<string, string>()
   const ocupados = new Set(existentes.keys())
   const fichas: EntradaDicionario[] = []
+  // proposição (predicado sem argumentos): a linguagem não tem; vira predicado de um
+  // lugar aplicado a uma constante só para isso, p ⟶ p(mundo). É exato: como o
+  // predicado só aparece aplicado a ela, vale o mesmo que valia com p
+  const proposicao = (u: { tipo: string; aridade: number }) => u.tipo === 'predicado' && u.aridade === 0
   for (const [s, u] of usos) {
-    if (u.tipo === 'predicado' && u.aridade === 0) continue // proposição solta: tratada abaixo
+    const aridade = proposicao(u) ? 1 : u.aridade
     const base = nomeDoSimbolo(s)
     const e = existentes.get(base)
-    if (e && e.tipo === u.tipo && e.aridade === u.aridade) {
+    if (e && e.tipo === u.tipo && e.aridade === aridade) {
       nomeNoCaderno.set(s, base)
       continue
     }
@@ -285,7 +298,14 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
     for (let i = 2; ocupados.has(nome); i++) nome = `${base}${i}`
     ocupados.add(nome)
     nomeNoCaderno.set(s, nome)
-    fichas.push({ id: '', simbolo: nome, termo: s.replace(/^"|"$/g, ''), tipo: u.tipo, aridade: u.aridade, definicao: `Do TPTP (${origem}).` })
+    const definicao = proposicao(u) ? `Do TPTP (${origem}): proposição; ${nome}(mundo) quer dizer que ela vale.` : `Do TPTP (${origem}).`
+    fichas.push({ id: '', simbolo: nome, termo: s.replace(/^"|"$/g, ''), tipo: u.tipo, aridade, definicao })
+  }
+  let mundo = 'mundo'
+  if ([...usos.values()].some(proposicao) && existentes.get(mundo)?.tipo !== 'constante') {
+    for (let i = 2; ocupados.has(mundo); i++) mundo = `mundo${i}`
+    ocupados.add(mundo)
+    fichas.push({ id: '', simbolo: mundo, termo: 'mundo', tipo: 'constante', aridade: 0, definicao: 'Onde valem as proposições do TPTP: p(mundo) quer dizer que p vale.' })
   }
   const simbolos = new Set([...ocupados])
   /** variável do TPTP → nome livre em minúscula */
@@ -307,15 +327,18 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
         return f.v ? `(∀${v} (${v} = ${v}))` : `¬(∀${v} (${v} = ${v}))`
       }
       case 'atomo':
-        if (!f.args.length) throw new Error(`proposição sem argumentos (${f.p}) não é aceita`)
+        if (!f.args.length) return `${nomeNoCaderno.get(f.p)}(${mundo})`
         return `${nomeNoCaderno.get(f.p)}(${f.args.map((a) => termo(a, env)).join(', ')})`
       case 'igual':
         return `${termo(f.l, env)} ${f.neg ? '≠' : '='} ${termo(f.r, env)}`
       case 'nao':
         return `¬(${traduzir(f.f, env)})`
       case 'bin': {
-        const l = traduzir(f.l, env)
-        const r = traduzir(f.r, env)
+        // quantificador como lado de um conectivo vai entre parênteses: na linguagem do
+        // caderno o escopo vai até o fim, e "∃x (A) ⟹ B" seria lido "∃x (A ⟹ B)"
+        const lado = (g: F) => (g.k === 'quant' ? `(${traduzir(g, env)})` : traduzir(g, env))
+        const l = lado(f.l)
+        const r = lado(f.r)
         switch (f.op) {
           case '&':
             return `(${l} ∧ ${r})`
@@ -378,15 +401,27 @@ export function importarTptp(texto: string, origem: string, pasta: string, dicio
   ].map((n) => porSimbolo.get(n)!)
   const agora = new Date().toISOString()
   const notas: Nota[] = []
-  for (const x of formulas) {
-    if (x.papel === 'negated_conjecture') {
-      avisos.push(`${x.nome}: conjectura negada (refutação em CNF) não é importada — importe a conjectura original, se houver`)
-      continue
-    }
+  const fechada = (f: F): F => {
+    const vs = [...livres(f)]
+    return vs.length ? { k: 'quant', q: '!', vars: vs, f } : f
+  }
+  // em CNF a conjectura vem negada (o provador procura a contradição): as
+  // cláusulas negadas voltam juntas como um teorema, "não valem todas juntas"
+  const negadas = lidas.filter((x) => x.papel === 'negated_conjecture')
+  const lista = lidas.filter((x) => x.papel !== 'negated_conjecture')
+  // "e" de muitas cláusulas em árvore equilibrada (encadeado, ficaria fundo demais)
+  const todas = (fs: F[]): F => (fs.length === 1 ? fs[0] : { k: 'bin', op: '&', l: todas(fs.slice(0, fs.length >> 1)), r: todas(fs.slice(fs.length >> 1)) })
+  if (negadas.length)
+    lista.push({
+      nome: 'conjectura',
+      papel: 'conjecture',
+      linguagem: negadas[0].linguagem,
+      formula: { k: 'nao', f: todas(negadas.map((x) => fechada(x.formula))) },
+      original: `% a conjectura negada (${negadas.map((x) => x.nome).join(', ')}) não vale:\n${negadas.map((x) => x.original).join('\n')}`,
+    })
+  for (const x of lista) {
     try {
-      const vs = [...livres(x.formula)]
-      const f: F = vs.length ? { k: 'quant', q: '!', vars: vs, f: x.formula } : x.formula
-      const texto = traduzir(f, new Map())
+      const texto = traduzir(fechada(x.formula), new Map())
       const v = validar(texto, dicionarioDe(texto))
       if (!v.ok) {
         avisos.push(`${x.nome}: a tradução não ficou válida (${v.diags.find((d) => d.nivel === 'erro')?.msg ?? 'erro'})`)

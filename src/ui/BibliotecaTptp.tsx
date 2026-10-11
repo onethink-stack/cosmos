@@ -5,11 +5,13 @@ import {
   MAX_FORMULAS_NO_CADERNO,
   notasDaBiblioteca,
   operadoresDoCaderno,
+  pastaDaTeoria,
   procurar,
   useBiblioteca,
   type ItemCatalogo,
 } from '../dados/biblioteca'
 import { estado, useEstado } from '../dados/estado'
+import { ProblemasTptp } from './ProblemasTptp'
 
 /** quantas teorias aparecem de uma vez na busca */
 const MOSTRAR = 40
@@ -51,8 +53,12 @@ export function BibliotecaTptp() {
     setErro(null)
     setFeito(null)
     try {
-      await biblioteca.abrirPacote(f)
-      setFeito(`${biblioteca.catalogo.length} teorias guardadas neste aparelho.`)
+      const formato = await biblioteca.abrirPacote(f)
+      setFeito(
+        formato === 'problemas-tptp'
+          ? `${biblioteca.problemas.length.toLocaleString('pt-BR')} problemas guardados neste aparelho.`
+          : `${biblioteca.catalogo.length.toLocaleString('pt-BR')} teorias guardadas neste aparelho.`,
+      )
     } catch (x) {
       setErro(`Não deu para abrir o pacote: ${(x as Error).message}`)
     }
@@ -75,29 +81,34 @@ export function BibliotecaTptp() {
       <summary>
         <b>Biblioteca TPTP no aparelho</b>{' '}
         <span class="suave">
-          — {bib.catalogo.length ? `${bib.catalogo.length} teorias, ${totalFormulas.toLocaleString('pt-BR')} fórmulas` : 'todas as teorias de axiomas do TPTP de uma vez'}
+          —{' '}
+          {bib.catalogo.length
+            ? `${bib.catalogo.length.toLocaleString('pt-BR')} teorias, ${totalFormulas.toLocaleString('pt-BR')} fórmulas${bib.problemas.length ? `; ${bib.problemas.length.toLocaleString('pt-BR')} problemas` : ''}`
+            : 'todas as teorias de axiomas do TPTP de uma vez'}
         </span>
       </summary>
       {!bib.catalogo.length && !bib.abrindo && (
         <p class="suave">
           O site do TPTP só deixa baixar até 250 MB por vez. O pacote da biblioteca junta todas as teorias de axiomas (as que o app lê, em FOF
           e CNF) já traduzidas, num arquivo só. Abra-o aqui uma vez: ele fica guardado neste aparelho, e daí você procura e carrega no
-          caderno só a teoria que interessa.
+          caderno só a teoria que interessa. O pacote dos problemas (problemas-tptp) traz as conjecturas com a resposta conhecida; abra-o
+          também.
         </p>
       )}
       <label class="campo-rotulo">
-        {bib.catalogo.length ? 'Abrir outro pacote (substitui)' : 'Abrir o pacote (biblioteca-tptp.jsonl.gz)'}
+        {bib.catalogo.length ? 'Abrir outro pacote (substitui o do mesmo tipo)' : 'Abrir o pacote (biblioteca-tptp ou problemas-tptp .jsonl.gz)'}
         <input type="file" accept=".gz,.jsonl" disabled={!!bib.abrindo} onChange={(e) => void abrir(e)} />
       </label>
       {bib.abrindo && (
         <p class="suave" aria-live="polite">
-          <span class="girando" aria-hidden="true" /> guardando… {bib.abrindo.feitas} de {bib.abrindo.total} teorias
+          <span class="girando" aria-hidden="true" /> guardando… {bib.abrindo.feitas.toLocaleString('pt-BR')} de{' '}
+          {bib.abrindo.total.toLocaleString('pt-BR')} {bib.abrindo.formato === 'problemas-tptp' ? 'problemas' : 'teorias'}
         </p>
       )}
       {erro && <p class="erro-texto">{erro}</p>}
       {feito && <p class="status-ok">✓ {feito}</p>}
 
-      {bib.catalogo.length > 0 && !bib.abrindo && (
+      {(bib.catalogo.length > 0 || bib.problemas.length > 0) && !bib.abrindo && (
         <>
           {conversam.length > 0 && (
             <>
@@ -109,7 +120,7 @@ export function BibliotecaTptp() {
               </ul>
             </>
           )}
-          <h4>Procurar</h4>
+          <h4>Procurar teorias</h4>
           <div class="barra-acoes">
             <input
               type="search"
@@ -136,10 +147,13 @@ export function BibliotecaTptp() {
               <ItemTeoria t={t} conversa={conversa(t, est.dicionario, operadores)} onCarregar={() => void carregar(t)} />
             ))}
           </ul>
+          <ProblemasTptp />
           <button
             type="button"
             class="discreto perigo"
-            onClick={() => confirm('Apagar a biblioteca deste aparelho? As teorias já carregadas no caderno ficam.') && void biblioteca.apagar()}
+            onClick={() =>
+              confirm('Apagar a biblioteca deste aparelho (teorias e problemas)? O que já foi carregado no caderno fica.') && void biblioteca.apagar()
+            }
           >
             Apagar a biblioteca do aparelho
           </button>
@@ -151,8 +165,7 @@ export function BibliotecaTptp() {
 
 function ItemTeoria({ t, conversa: c, onCarregar }: { t: ItemCatalogo; conversa: { comuns: string[]; pontes: string[] }; onCarregar: () => void }) {
   const est = useEstado()
-  const pasta = `tptp-${t.id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-  const ja = est.notas.some((n) => n.tags.includes(pasta))
+  const ja = est.notas.some((n) => n.tags.includes(pastaDaTeoria(t.id)))
   const grande = !!t.grande || t.nFormulas > MAX_FORMULAS_NO_CADERNO
   return (
     <li>

@@ -14,7 +14,13 @@ describe('biblioteca de teorias', () => {
     it(`${t.nome}: fórmulas válidas e teoremas conferidos`, () => {
       const { fichas, notas } = notasDaTeoria(t, [])
       const dic = comId(fichas)
-      for (const n of notas) for (const f of n.formulas) expect(validar(f, dic).ok, `${n.titulo}: ${f}`).toBe(true)
+      for (const n of notas)
+        for (const f of n.formulas) {
+          const v = validar(f, dic)
+          expect(v.ok, `${n.titulo}: ${f}`).toBe(true)
+          // E14: "∃x (…) ⟹ P" — o quantificador pegaria o resto da fórmula
+          expect(v.diags.map((d) => d.codigo), `${n.titulo}: ${f}`).not.toContain('E14')
+        }
       const grupos = notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
       for (const n of notas.filter((x) => x.compartimento === 'teorema')) {
         // o grupo não comutativo menor tem 6 elementos
@@ -23,7 +29,8 @@ describe('biblioteca de teorias', () => {
         const esperado = /\(não|Não há/.test(n.titulo) ? 'nao-segue' : 'segue'
         expect(r.tipo, `${t.nome} — ${n.titulo}`).toBe(esperado)
       }
-    })
+      // grupos com 6 elementos: ~2,5 s sozinho; com a suíte inteira, passava dos 5 s padrão
+    }, 30_000)
 
   it('um símbolo já usado com outro sentido ganha sufixo, e variáveis não colidem com constantes', () => {
     const dic: EntradaDicionario[] = [
@@ -68,6 +75,43 @@ tff(t, type, n: $int).`
       { ...OPCOES_PADRAO, N: 4 },
     )
     expect(res.tipo).toBe('segue')
+  })
+
+  it('a conjectura negada do CNF volta como teorema, e o motor confere', () => {
+    // problema em CNF: a ordem é transitiva e irreflexiva; a conjectura (negada) diz que há um par simétrico
+    const cnf = `cnf(t, axiom, ~r(X,Y) | ~r(Y,Z) | r(X,Z)).
+cnf(i, axiom, ~r(X,X)).
+cnf(n1, negated_conjecture, r(a,b)).
+cnf(n2, negated_conjecture, r(b,a)).`
+    const r = importarTptp(cnf, 'cnf.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    const conj = r.notas.find((n) => n.compartimento === 'teorema')!
+    expect(conj.titulo).toBe('conjectura (conjecture)')
+    expect(conj.formulas[0]).toBe('¬((r(a, b) ∧ r(b, a)))')
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    expect(perguntar(leis, conj.formulas[0], comId(r.fichas), { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('segue')
+  })
+
+  it('proposições (sem argumentos) viram p(mundo), e a conclusão continua a mesma', () => {
+    const r = importarTptp('fof(a, axiom, p => q).\nfof(b, axiom, p | r).\nfof(c, axiom, ~r).\nfof(d, conjecture, q).', 'prop.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    expect(r.notas[0].formulas[0]).toBe('(p(mundo) ⟹ q(mundo))')
+    expect(r.fichas.find((f) => f.simbolo === 'mundo')?.tipo).toBe('constante')
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    const conj = r.notas.find((n) => n.compartimento === 'teorema')!
+    expect(perguntar(leis, conj.formulas[0], comId(r.fichas), { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('segue')
+    // sem o ~r, não segue
+    expect(perguntar(leis.slice(0, 2), conj.formulas[0], comId(r.fichas), { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('nao-segue')
+  })
+
+  it('quantificador ao lado de um conectivo ganha parênteses (o escopo não engole o resto)', () => {
+    // "(? [X] : p(X)) => r(c)": se existe algum p, então r(c) — e não "existe x tal que p(x) ⟹ r(c)"
+    const r = importarTptp(['fof(a, axiom, (? [X] : p(X)) => r(c)).', 'fof(b, axiom, p(d)).', 'fof(c, conjecture, r(c)).'].join('\n'), 'escopo.p', 'tptp', [])
+    expect(r.notas[0].formulas[0]).toBe('((∃x (p(x))) ⟹ r(c))')
+    const dic = comId(r.fichas)
+    for (const n of r.notas) expect(validar(n.formulas[0], dic).diags.map((d) => d.codigo)).not.toContain('E14')
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    expect(perguntar(leis, 'r(c)', dic, { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('segue')
   })
 
   it('variáveis não viram constantes do dicionário', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mudancasParaOCaderno, notasDoModelo } from '../src/dados/modelo'
 import type { EntradaDicionario, Nota } from '../src/dados/tipos'
-import { rodarModelo, type RelatorioModelo } from '../src/motor/modelo'
+import { comOTptp, rodarModelo, type RelatorioModelo } from '../src/motor/modelo'
 import { OPCOES_PADRAO } from '../src/motor/motor'
 
 const op = { ...OPCOES_PADRAO, N: 4 }
@@ -124,6 +124,44 @@ describe('segundo modelo', () => {
     ])
     expect(classe(final, 'cabe')).toBe('compativel')
     expect(classe(final, 'nao-cabe')).toBe('incompativel')
+  })
+})
+
+describe('problemas do TPTP no segundo modelo', () => {
+  const doProblema = (sabe?: string) => ({ tags: ['tptp-problema-x', 'tptp', ...(sabe ? [`tptp-sabe-${sabe}`] : [])] })
+
+  it('não inventa lei para fechar uma conjectura do TPTP, e diz o que se sabe dela', async () => {
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], doProblema('nao-segue'))])
+    expect(final.notas.filter((n) => n.id.startsWith('modelo-'))).toEqual([])
+    const it = final.itens.find((i) => i.id === 'T1:0')!
+    expect(it.classe).toBe('tese')
+    expect(it.tptp).toEqual({ texto: 'o TPTP confirma: não segue', discorda: false })
+  })
+
+  it('teorema conhecido: confirma o que o motor provou, e avisa quando o motor discorda', async () => {
+    const { final } = await rodar([
+      nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))'], doProblema()),
+      nota('L2', 'lei', ['P(a)'], doProblema()),
+      nota('T1', 'teorema', ['Q(a)'], doProblema('segue')),
+      // conjectura que o "TPTP" diz seguir, mas não segue destas leis: tradução ou motor errado
+      nota('T2', 'teorema', ['R(a)'], doProblema('segue')),
+    ])
+    const t1 = final.itens.find((i) => i.id === 'T1:0')!
+    expect(t1.classe).toBe('provado')
+    expect(t1.tptp!.texto).toContain('o TPTP confirma')
+    const t2 = final.itens.find((i) => i.id === 'T2:0')!
+    expect(t2.classe).toBe('tese')
+    expect(t2.tptp!.discorda).toBe(true)
+  })
+
+  it('o que o motor não decide e o TPTP provou passa a provado, se os axiomas do problema estão todos ativos', () => {
+    const item = { id: 'T1:0', notaId: 'T1', chave: 'geral', titulo: 'T1', formula: 'Q(a)', classe: 'incerto' as const, explicacao: 'grande demais ou com erro' }
+    const notas = [nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], doProblema('segue'))]
+    expect(comOTptp([item], notas)[0].classe).toBe('provado')
+    // sem um axioma do problema, a prova dos provadores não vale mais
+    const semAxioma = comOTptp([item], [{ ...notas[0], ativa: false }, notas[1]])[0]
+    expect(semAxioma.classe).toBe('incerto')
+    expect(semAxioma.tptp!.texto).toContain('sem o axioma desativado')
   })
 })
 

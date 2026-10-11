@@ -312,6 +312,7 @@ details.explicacao p { margin: 6px 0; }
 .diario-modelo { margin: 10px 0; }
 .diario-modelo > summary { cursor: pointer; }
 .dados-item { font-size: .85rem; margin-top: 3px; }
+.dados-item.discorda { color: var(--erro); font-weight: 600; }
 .observar { font-size: .85rem; margin-top: 4px; }
 .observar ul { margin: 2px 0 0; padding-left: 18px; }
 .observar li.obs-confirma::marker { content: '✓ '; color: var(--ok); }

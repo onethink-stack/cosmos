@@ -6,8 +6,13 @@
 //
 // Pacote: texto com uma linha JSON por teoria (compactado em .gz), lido aos
 // poucos (um pacote de centenas de MB não passa inteiro pela memória).
+//
+// O pacote dos Problemas (problemas-tptp) vai no mesmo banco: cada problema
+// traz a conjectura, o que os provadores já sabem dela (o "Status") e quais
+// teorias da biblioteca ele inclui; ao carregar, as teorias entram junto.
 
 import { useEffect, useReducer } from 'preact/hooks'
+import { ETIQUETA_TPTP, SABE, type Sabe } from './conhecido'
 import { notaVazia } from './estado'
 import { adaptarAoDicionario } from './teorias'
 import type { EntradaDicionario, Nota } from './tipos'
@@ -37,17 +42,43 @@ export interface TeoriaTptp {
 /** O que fica no catálogo (sem as fórmulas). */
 export type ItemCatalogo = Omit<TeoriaTptp, 'formulas'> & { nFormulas: number }
 
+/** Um problema do TPTP: as fórmulas dele (as das teorias incluídas ficam na biblioteca). */
+export interface ProblemaTptp {
+  /** nome do arquivo sem .p, ex. "SET002+4" */
+  id: string
+  dominio: string
+  titulo: string
+  ingles: string
+  /** o Status do TPTP (Theorem, CounterSatisfiable, Unsatisfiable…) */
+  status: string
+  sabe: Sabe
+  /** dificuldade atual no TPTP: fração dos provadores que não resolvem (0 a 1) */
+  dificuldade: number | null
+  /** as teorias da biblioteca que entram junto (todas as fórmulas, ou só as de `so`) */
+  inclui: { id: string; so?: string[] }[]
+  formulas: FormulaDaTeoria[]
+  fichas: Omit<EntradaDicionario, 'id' | 'definicao'>[]
+  /** quantas fórmulas ao todo, com as das teorias incluídas */
+  nFormulas: number
+  grande?: boolean
+  /** por que não dá para carregar (alguma parte o caderno não lê: a resposta conhecida poderia mudar) */
+  incompleto?: string
+}
+
+export type ItemProblema = Omit<ProblemaTptp, 'formulas' | 'fichas'>
+
 /** teorias maiores que isto não entram inteiras no caderno (o motor confere tudo junto) */
 export const MAX_FORMULAS_NO_CADERNO = 400
 
 const NOME_DB = 'caderno-biblioteca'
 
+const LOJAS = ['catalogo', 'teorias', 'catalogoProblemas', 'problemas']
+
 function abrirDb(): Promise<IDBDatabase> {
   return new Promise((ok, falha) => {
-    const r = indexedDB.open(NOME_DB, 1)
+    const r = indexedDB.open(NOME_DB, 2)
     r.onupgradeneeded = () => {
-      r.result.createObjectStore('catalogo', { keyPath: 'id' })
-      r.result.createObjectStore('teorias', { keyPath: 'id' })
+      for (const loja of LOJAS) if (!r.result.objectStoreNames.contains(loja)) r.result.createObjectStore(loja, { keyPath: 'id' })
     }
     r.onsuccess = () => {
       const db = r.result
@@ -64,11 +95,19 @@ const pedido = <T>(r: IDBRequest<T>) =>
     r.onerror = () => falha(r.error)
   })
 
+/** os dois pacotes: onde cada um guarda o catálogo e os itens inteiros */
+const PACOTES = {
+  'biblioteca-tptp': { catalogo: 'catalogo', itens: 'teorias', linha: 'teoria', total: 'teorias' },
+  'problemas-tptp': { catalogo: 'catalogoProblemas', itens: 'problemas', linha: 'problema', total: 'problemas' },
+} as const
+type Formato = keyof typeof PACOTES
+
 class Biblioteca {
   catalogo: ItemCatalogo[] = []
+  problemas: ItemProblema[] = []
   carregado = false
-  /** abrindo um pacote: quantas teorias já entraram */
-  abrindo: { feitas: number; total: number } | null = null
+  /** abrindo um pacote: quantos itens já entraram */
+  abrindo: { feitas: number; total: number; formato: Formato | null } | null = null
   private ouvintes = new Set<() => void>()
 
   assinar(fn: () => void) {
@@ -85,43 +124,53 @@ class Biblioteca {
     try {
       const db = await abrirDb()
       this.catalogo = (await pedido(db.transaction('catalogo').objectStore('catalogo').getAll())) as ItemCatalogo[]
+      this.problemas = (await pedido(db.transaction('catalogoProblemas').objectStore('catalogoProblemas').getAll())) as ItemProblema[]
       db.close()
     } catch {
       this.catalogo = []
+      this.problemas = []
     }
     this.carregado = true
     this.mudou()
   }
 
   /**
-   * Lê o pacote (.jsonl ou .jsonl.gz) aos poucos e guarda cada teoria.
-   * Substitui o que havia.
+   * Lê o pacote (.jsonl ou .jsonl.gz) aos poucos e guarda cada teoria (ou
+   * cada problema). Substitui o que havia do mesmo tipo. Devolve o tipo.
    */
-  async abrirPacote(arquivo: File) {
+  async abrirPacote(arquivo: File): Promise<Formato> {
     const db = await abrirDb()
-    await pedido(db.transaction('catalogo', 'readwrite').objectStore('catalogo').clear())
-    await pedido(db.transaction('teorias', 'readwrite').objectStore('teorias').clear())
-    this.abrindo = { feitas: 0, total: 0 }
+    let formato: Formato | null = null
+    let feitas = 0
+    let total = 0
+    this.abrindo = { feitas, total, formato }
     this.mudou()
     const inicio = new Uint8Array(await arquivo.slice(0, 2).arrayBuffer())
     const bruto: ReadableStream<BufferSource> = arquivo.stream()
     const fluxo: ReadableStream<BufferSource> = inicio[0] === 0x1f && inicio[1] === 0x8b ? bruto.pipeThrough(new DecompressionStream('gzip')) : bruto
     const leitor = fluxo.pipeThrough(new TextDecoderStream()).getReader()
     let resto = ''
-    let lote: TeoriaTptp[] = []
+    let lote: (TeoriaTptp | ProblemaTptp)[] = []
     const gravar = async () => {
-      if (!lote.length) return
-      const tx = db.transaction(['catalogo', 'teorias'], 'readwrite')
+      if (!lote.length || !formato) return
+      const { catalogo, itens } = PACOTES[formato]
+      const tx = db.transaction([catalogo, itens], 'readwrite')
       for (const t of lote) {
-        tx.objectStore('teorias').put(t)
-        const { formulas, ...cat } = t
-        tx.objectStore('catalogo').put({ ...cat, nFormulas: t.grande ?? formulas.length })
+        tx.objectStore(itens).put(t)
+        if ('nFormulas' in t) {
+          const { formulas: _, fichas: __, ...cat } = t
+          tx.objectStore(catalogo).put(cat)
+        } else {
+          const { formulas, ...cat } = t
+          tx.objectStore(catalogo).put({ ...cat, nFormulas: t.grande ?? formulas.length })
+        }
       }
       await new Promise<void>((ok, falha) => {
         tx.oncomplete = () => ok()
         tx.onerror = () => falha(tx.error)
       })
-      this.abrindo = { feitas: this.abrindo!.feitas + lote.length, total: this.abrindo!.total }
+      feitas += lote.length
+      this.abrindo = { feitas, total, formato }
       lote = []
       this.mudou()
     }
@@ -129,11 +178,17 @@ class Biblioteca {
       if (!l.trim()) return
       const o = JSON.parse(l)
       if (o.tipo === 'cabecalho') {
-        if (o.formato !== 'biblioteca-tptp') throw new Error('este arquivo não é um pacote da biblioteca TPTP do Caderno')
-        this.abrindo = { feitas: 0, total: o.teorias }
-      } else if (o.tipo === 'teoria') {
+        if (!(o.formato in PACOTES)) throw new Error('este arquivo não é um pacote da biblioteca TPTP do Caderno')
+        formato = o.formato as Formato
+        const { catalogo, itens, total: campoTotal } = PACOTES[formato]
+        await pedido(db.transaction(catalogo, 'readwrite').objectStore(catalogo).clear())
+        await pedido(db.transaction(itens, 'readwrite').objectStore(itens).clear())
+        total = o[campoTotal]
+        this.abrindo = { feitas, total, formato }
+        this.mudou()
+      } else if (formato && o.tipo === PACOTES[formato].linha) {
         delete o.tipo
-        lote.push(o as TeoriaTptp)
+        lote.push(o)
         if (lote.length >= 50) await gravar()
       }
     }
@@ -154,7 +209,9 @@ class Biblioteca {
       db.close()
       this.abrindo = null
     }
+    if (!formato) throw new Error('este arquivo não é um pacote da biblioteca TPTP do Caderno')
     await this.carregar()
+    return formato
   }
 
   async teoria(id: string): Promise<TeoriaTptp | undefined> {
@@ -166,9 +223,19 @@ class Biblioteca {
     }
   }
 
-  /** Apaga a biblioteca do aparelho (as teorias já carregadas no caderno ficam). */
+  async problema(id: string): Promise<ProblemaTptp | undefined> {
+    const db = await abrirDb()
+    try {
+      return (await pedido(db.transaction('problemas').objectStore('problemas').get(id))) as ProblemaTptp | undefined
+    } finally {
+      db.close()
+    }
+  }
+
+  /** Apaga a biblioteca do aparelho, teorias e problemas (o que já foi carregado no caderno fica). */
   async apagar() {
     this.catalogo = []
+    this.problemas = []
     this.mudou()
     await new Promise<void>((ok) => {
       const r = indexedDB.deleteDatabase(NOME_DB)
@@ -203,6 +270,18 @@ export function procurar(catalogo: ItemCatalogo[], busca: string, dominio: strin
   })
 }
 
+/** Procura problemas por nome, área, título, texto ou pelo que se sabe deles. */
+export function procurarProblemas(problemas: ItemProblema[], busca: string, dominio: string | null, sabe: Sabe | null): ItemProblema[] {
+  const termos = sem(busca).split(/\s+/).filter(Boolean)
+  return problemas.filter((p) => {
+    if (dominio && p.dominio !== dominio) return false
+    if (sabe && p.sabe !== sabe) return false
+    if (!termos.length) return true
+    const alvo = sem(`${p.id} ${p.dominio} ${p.titulo} ${p.ingles} ${p.inclui.map((i) => i.id).join(' ')}`)
+    return termos.every((x) => alvo.includes(x))
+  })
+}
+
 /** Pontes entre nomes do TPTP e símbolos da própria linguagem (∈, ⊆). */
 const PONTES: { simbolo: string; aridade: number; operador: string; formula: (p: string) => string; leitura: string }[] = [
   { simbolo: 'member', aridade: 2, operador: '∈', formula: (p) => `∀x ∀y (${p}(x, y) ⟺ x ∈ y)`, leitura: 'member(x, y) é o mesmo que x ∈ y' },
@@ -231,13 +310,16 @@ export const operadoresDoCaderno = (notas: Nota[]) => new Set(['∈', '⊆'].fil
  * As notas e fichas de uma teoria da biblioteca, ajustadas ao dicionário; com
  * as leis-ponte (member ↔ ∈, subset ↔ ⊆) quando o caderno usa ∈ e ⊆.
  */
-export function notasDaBiblioteca(t: TeoriaTptp, dicionario: EntradaDicionario[], usaOperadores: Set<string>): { fichas: EntradaDicionario[]; notas: Nota[] } {
-  const fonte = `TPTP (seetptp.tptp.org): Axioms/${t.pasta === 'raiz' ? '' : `${t.pasta}/`}${t.id}.ax`
+export function notasDaBiblioteca(
+  t: TeoriaTptp,
+  dicionario: EntradaDicionario[],
+  usaOperadores: Set<string>,
+  { pasta = pastaDaTeoria(t.id), fonte = `TPTP (seetptp.tptp.org): Axioms/${t.pasta === 'raiz' ? '' : `${t.pasta}/`}${t.id}.ax` } = {},
+): { fichas: EntradaDicionario[]; notas: Nota[] } {
   const { fichas, trocar, nomes } = adaptarAoDicionario(
     t.fichas.map((f) => ({ ...f, definicao: `Do TPTP: ${t.id} (${t.dominio}).` })),
     dicionario,
   )
-  const pasta = `tptp-${t.id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   const agora = new Date().toISOString()
   const notas: Nota[] = t.formulas.map((f) => {
     const teorema = ['conjecture', 'theorem', 'lemma', 'corollary'].includes(f.papel)
@@ -268,4 +350,66 @@ export function notasDaBiblioteca(t: TeoriaTptp, dicionario: EntradaDicionario[]
         atualizadaEm: agora,
       })
   return { fichas, notas }
+}
+
+/** a pasta (etiqueta) de uma teoria da biblioteca no caderno */
+export const pastaDaTeoria = (id: string) => `tptp-${id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+/** a pasta de um problema: separada da das teorias (um problema leva as teorias que inclui) */
+export const pastaDoProblema = (id: string) => `tptp-problema-${id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+
+/**
+ * As notas de um problema: as fórmulas das teorias que ele inclui (da
+ * biblioteca no aparelho) e as dele, numa pasta só. A conjectura leva o que o
+ * TPTP sabe dela (etiqueta e texto), para o segundo modelo comparar.
+ * `faltam`: teorias incluídas que não estão no aparelho (abra o pacote da biblioteca).
+ */
+export async function notasDoProblema(
+  p: ProblemaTptp,
+  dicionario: EntradaDicionario[],
+  usaOperadores: Set<string>,
+): Promise<{ fichas: EntradaDicionario[]; notas: Nota[]; faltam: string[] }> {
+  const faltam: string[] = []
+  const formulas: FormulaDaTeoria[] = []
+  const fichas = new Map<string, TeoriaTptp['fichas'][number]>()
+  const nomes = new Set<string>()
+  const juntar = (f: FormulaDaTeoria) => {
+    let nome = f.nome
+    for (let i = 2; nomes.has(nome); i++) nome = `${f.nome}_${i}`
+    nomes.add(nome)
+    formulas.push({ ...f, nome })
+  }
+  for (const inc of p.inclui) {
+    const t = await biblioteca.teoria(inc.id)
+    if (!t) {
+      faltam.push(inc.id)
+      continue
+    }
+    for (const f of t.formulas) if (!inc.so || inc.so.includes(f.nome)) juntar(f)
+    for (const f of t.fichas) if (!fichas.has(f.simbolo)) fichas.set(f.simbolo, f)
+  }
+  // as fórmulas do próprio problema (pelo nome, depois de juntar): a conjectura leva o que se sabe
+  const doProblema = new Map<string, string>()
+  for (const f of p.formulas) {
+    juntar(f)
+    doProblema.set(formulas[formulas.length - 1].nome, f.papel)
+  }
+  for (const f of p.fichas) if (!fichas.has(f.simbolo)) fichas.set(f.simbolo, f)
+  if (faltam.length) return { fichas: [], notas: [], faltam }
+  const pasta = pastaDoProblema(p.id)
+  const r = notasDaBiblioteca(
+    { id: p.id, pasta: 'problema', dominio: p.dominio, descricao: p.titulo, formulas, fichas: [...fichas.values()], avisos: 0 },
+    dicionario,
+    usaOperadores,
+    { pasta, fonte: `TPTP v9.3.0: Problems/${p.id.slice(0, 3)}/${p.id}.p` },
+  )
+  const sabe = `${SABE[p.sabe].longo} (Status ${p.status} no TPTP${p.dificuldade != null ? `; dificuldade ${p.dificuldade}` : ''})`
+  for (const n of r.notas) {
+    const nome = n.id.slice(pasta.length + 1)
+    if (!doProblema.has(nome)) continue
+    if (doProblema.get(nome) === 'conjecture') {
+      n.tags.push(`${ETIQUETA_TPTP}${p.sabe}`)
+      n.texto = `${p.titulo}${p.ingles ? `\n${p.ingles}` : ''}\n\nO que se sabe: ${sabe}.`
+    } else n.texto = `${p.dominio}: ${p.titulo}`
+  }
+  return { ...r, faltam }
 }

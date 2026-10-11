@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
-import { biblioteca, conversa, notasDaBiblioteca, operadoresDoCaderno, procurar } from '../src/dados/biblioteca'
+import { biblioteca, conversa, notasDaBiblioteca, notasDoProblema, operadoresDoCaderno, pastaDoProblema, procurar, procurarProblemas } from '../src/dados/biblioteca'
 import { notaVazia } from '../src/dados/estado'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { validar } from '../src/logica/validador'
@@ -81,6 +81,50 @@ describe('biblioteca TPTP no aparelho', () => {
     const { fichas, notas } = notasDaBiblioteca((await biblioteca.teoria('SET999+0'))!, dic, new Set())
     expect(fichas.map((f) => f.simbolo)).toContain('member2')
     expect(notas[0].formulas[0]).toContain('member2(x, a)')
+  })
+
+  it('abre o pacote dos problemas sem apagar as teorias, e procura pelo que se sabe', async () => {
+    const problemas = [
+      { tipo: 'cabecalho', formato: 'problemas-tptp', versao: 1, problemas: 2 },
+      {
+        tipo: 'problema',
+        id: 'SET998+1',
+        dominio: 'Set Theory',
+        titulo: 'Subsets both ways have the same members',
+        ingles: '',
+        status: 'Theorem',
+        sabe: 'segue',
+        dificuldade: 0.1,
+        inclui: [{ id: 'SET999+0', so: ['subset_def'] }],
+        formulas: [{ nome: 'mesmos', papel: 'conjecture', texto: '∀a ∀b (((subset(a, b) ∧ subset(b, a)) ⟹ ∀x ((member(x, a) ⟺ member(x, b)))))' }],
+        fichas: [],
+        nFormulas: 2,
+      },
+      { tipo: 'problema', id: 'XYZ001+1', dominio: 'Outra', titulo: 'x', ingles: '', status: 'Open', sabe: 'aberto', dificuldade: null, inclui: [{ id: 'XYZ000+0' }], formulas: [], fichas: [], nFormulas: 1 },
+    ]
+    const gz = await new Response(new Blob([problemas.map((l) => JSON.stringify(l)).join('\n')]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()
+    expect(await biblioteca.abrirPacote(new File([gz], 'problemas-tptp.jsonl.gz'))).toBe('problemas-tptp')
+    expect(biblioteca.catalogo.length).toBe(3)
+    expect(biblioteca.problemas.map((p) => p.id).sort()).toEqual(['SET998+1', 'XYZ001+1'])
+    expect(procurarProblemas(biblioteca.problemas, '', null, 'segue').map((p) => p.id)).toEqual(['SET998+1'])
+    expect(procurarProblemas(biblioteca.problemas, 'both ways', null, null).map((p) => p.id)).toEqual(['SET998+1'])
+  })
+
+  it('carrega o problema com as fórmulas escolhidas da teoria incluída; a conjectura leva o que se sabe', async () => {
+    const p = (await biblioteca.problema('SET998+1'))!
+    const { fichas, notas, faltam } = await notasDoProblema(p, [], new Set())
+    expect(faltam).toEqual([])
+    // da SET999+0 só entra a subset_def (o problema escolheu), não a conjectura dela
+    expect(notas.map((n) => n.titulo)).toEqual(['subset_def (SET998+1)', 'mesmos (SET998+1)'])
+    expect(notas.every((n) => n.tags.includes(pastaDoProblema('SET998+1')))).toBe(true)
+    const conj = notas.find((n) => n.compartimento === 'teorema')!
+    expect(conj.tags).toContain('tptp-sabe-segue')
+    expect(conj.texto).toContain('os provadores provaram')
+    const dic = fichas.map((e) => ({ ...e, id: e.simbolo }))
+    const leis = notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    expect(perguntar(leis, conj.formulas[0], dic, { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('segue')
+    // a teoria incluída precisa estar no aparelho
+    expect((await notasDoProblema((await biblioteca.problema('XYZ001+1'))!, [], new Set())).faltam).toEqual(['XYZ000+0'])
   })
 
   it('recusa um arquivo que não é pacote', async () => {

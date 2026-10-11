@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
+import { ETIQUETA_TPTP } from '../dados/conhecido'
 import { todasAsTags } from '../dados/filtro'
 import { grauHerdado, type GrauHerdado } from '../dados/grau'
 import { estado, useEstado } from '../dados/estado'
@@ -82,7 +83,8 @@ export function Modelo() {
   const ver = useVerificacao()
   const cfg = useConfigModelo()
   const pf = usePerfil()
-  const tags = useMemo(() => todasAsTags(est.notas), [est.notas])
+  // a etiqueta do que o TPTP sabe de uma conjectura não é pasta
+  const tags = useMemo(() => todasAsTags(est.notas).filter((t) => !t.startsWith(ETIQUETA_TPTP)), [est.notas])
   const mu = useMundo()
   const entrada = useMemo(
     () => entradaDoModelo(est.notas, cfg.pastas, est.dicionario, mu.conjuntos, cfg.usarDados),
@@ -350,6 +352,7 @@ function Classificacao({ rel: rel0, pastas, travado }: { rel: RelatorioModelo; p
                   </div>
                   {graus.get(it.id) && <GrauNoModelo g={graus.get(it.id)!} titulo={titulo} />}
                   {it.dados && <div class="dados-item">🌍 {it.dados}</div>}
+                  {it.tptp && <div class={it.tptp.discorda ? 'dados-item discorda' : 'dados-item'}>📚 {it.tptp.texto}</div>}
                   {!!it.observar?.length && (
                     <div class="observar">
                       <b>O que observar para decidir:</b>

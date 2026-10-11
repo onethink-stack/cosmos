@@ -1,4 +1,5 @@
 import { useEffect } from 'preact/hooks'
+import { corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
@@ -19,7 +20,8 @@ export function App() {
   const est = useEstado()
   const rota = useRota()
   useEffect(() => {
-    void estado.carregar()
+    // depois de carregar: notas das bibliotecas com o defeito de escopo (já corrigido) são consertadas
+    void estado.carregar().then(() => corrigirNotasDasBibliotecas())
     void verificacao.carregarConfig()
     void z3.carregarConfig()
     void z3.carregarGuardados()

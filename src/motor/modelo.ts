@@ -15,6 +15,7 @@
 // tocado: o resultado só vai para ele se o usuário levar.
 
 import { inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
+import { SABE, sabeDaNota } from '../dados/conhecido'
 import { contextoDoTeorema } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
@@ -111,6 +112,8 @@ export interface ItemModelo {
   dados?: string
   /** o que observar para decidir (teses) */
   observar?: Observacao[]
+  /** conjectura de um problema do TPTP: o que os provadores já sabem, comparado com o que o motor achou */
+  tptp?: { texto: string; discorda: boolean }
 }
 
 export interface RelatorioModelo {
@@ -301,7 +304,10 @@ export async function rodarModelo(
           .filter((t) => t.resultado.tipo === 'nao-segue')
           .map((t) => ({ t, f: analisar([t.formula], dicionario)[0] }))
           .filter((x) => !!x.f)
-        if (!abertos.length || !rc.sugestoes.length) continue
+        // conjecturas de problemas do TPTP: o que se sabe delas não muda com uma lei
+        // inventada, então o modelo não as fecha adotando leis (mas não adota lei que as refute)
+        const doTptp = new Set(abertos.filter((x) => sabeDaNota(notas.find((n) => n.id === x.t.notaId)?.tags ?? [])).map((x) => x.t.id))
+        if (!abertos.some((x) => !doTptp.has(x.t.id)) || !rc.sugestoes.length) continue
         const premissas = analisar(
           c.grupos.flatMap((g) => g.formulas),
           dicionario,
@@ -311,6 +317,7 @@ export async function rodarModelo(
         let tentativas = 0
         for (const s of rc.sugestoes) {
           if (s.lei.equivalente) continue // seria assumir o próprio teorema
+          if (s.fecha.every((id) => doTptp.has(id))) continue
           if (s.lei.notaId && desativadas.has(s.lei.notaId)) continue
           if (boas.length && s.fecha.length < boas[0].s.fecha.length) break
           const L = analisar([s.lei.formula], dicionario)[0]
@@ -428,6 +435,7 @@ export async function rodarModelo(
   // o mundo: o que os dados dizem de cada item, e o que observar para decidir as teses
   progresso('conferindo nos dados e procurando o que observar')
   r.itens = comOMundo(r.itens, notas, r.final ?? [], dicionario, nivel, dados)
+  r.itens = comOTptp(r.itens, notas)
   r.situacao = 'pronto'
   mandar()
 }
@@ -488,6 +496,71 @@ function comOMundo(itens: ItemModelo[], notas: Nota[], finais: RelatorioCadeia[]
       const t = finais.find((r) => r.chave === it.chave)?.teoremas.find((x) => x.id === it.id)
       const contra = t?.resultado.tipo === 'nao-segue' ? t.resultado.mundo : undefined
       if (ctx) it.observar = oQueObservar(ctx.grupos, it.formula, dicionario, op, contra)
+    }
+    return it
+  })
+}
+
+/**
+ * Conjecturas de problemas do TPTP: o que os provadores já sabem (para todos
+ * os tamanhos de mundo) ao lado do que o motor achou (até um limite). Um
+ * teorema conhecido que o motor só confere até N, ou nem confere, passa a
+ * provado — se os axiomas do problema continuam todos ativos (mais leis não
+ * desfazem uma prova; menos, sim). Discordância é aviso: tradução ou motor.
+ */
+export function comOTptp(itens: ItemModelo[], notas: Nota[]): ItemModelo[] {
+  return itens.map((it0) => {
+    const nota = it0.notaId ? notas.find((n) => n.id === it0.notaId) : undefined
+    const sabe = nota?.compartimento === 'teorema' ? sabeDaNota(nota.tags) : undefined
+    if (!nota || !sabe) return it0
+    const it = { ...it0 }
+    const pasta = nota.tags.find((t) => t.startsWith('tptp-problema-'))
+    const desativados = notas.filter((n) => n.compartimento === 'lei' && !!pasta && n.tags.includes(pasta) && !n.ativa)
+    const inteiros = !desativados.length
+    const semAxioma = `sem ${desativados.length === 1 ? 'o axioma desativado' : `os ${desativados.length} axiomas desativados`}`
+    const contra = it.classe === 'tese' || it.classe === 'conflito' || it.classe === 'refutado'
+    const avisar = (texto: string, discorda = false) => (it.tptp = { texto, discorda })
+    switch (sabe) {
+      case 'segue':
+        if (it.classe === 'provado') avisar('o TPTP confirma: os provadores provaram que segue em todos os tamanhos, não só até o limite')
+        else if (contra)
+          avisar(
+            inteiros
+              ? 'discorda do TPTP: os provadores provaram que segue. Confira a tradução — ou é um erro do motor'
+              : `os provadores provaram que segue com todos os axiomas do problema; ${semAxioma}, pode mesmo não seguir`,
+            inteiros,
+          )
+        else if (inteiros) {
+          avisar(`provado pelos provadores do TPTP; o motor sozinho não decidiu (${it.explicacao})`)
+          it.classe = 'provado'
+          it.explicacao = 'os provadores do TPTP provaram que segue dos axiomas do problema, em todos os tamanhos'
+        } else avisar(`os provadores provaram que segue com todos os axiomas do problema (aqui, ${semAxioma})`)
+        break
+      case 'nao-segue':
+        if (it.classe === 'provado') {
+          const deFora = (it.apoio ?? []).filter((id) => !notas.find((n) => n.id === id.split(':')[0])?.tags.includes(pasta ?? ''))
+          avisar(
+            deFora.length
+              ? 'o TPTP sabe que não segue só dos axiomas do problema; aqui segue porque há outras leis no conjunto'
+              : 'o TPTP sabe que não segue: o contraexemplo é maior que o limite conferido (ou infinito)',
+          )
+        }
+        else if (it.classe === 'tese') avisar('o TPTP confirma: não segue')
+        else avisar('o TPTP sabe que não segue dos axiomas do problema')
+        break
+      case 'contraditorio':
+        avisar('o TPTP sabe que os axiomas deste problema se contradizem')
+        break
+      case 'aberto':
+      case 'desconhecido':
+        avisar(
+          it.classe === 'tese'
+            ? `${SABE[sabe].longo} — e o motor achou um cenário onde a conjectura falha: confira, pode ser novidade`
+            : SABE[sabe].longo,
+        )
+        break
+      default:
+        avisar(SABE[sabe].longo)
     }
     return it
   })

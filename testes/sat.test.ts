@@ -68,7 +68,8 @@ describe('resolvedor SAT', () => {
     }
     expect(sat).toBeGreaterThan(10)
     expect(unsat).toBeGreaterThan(10)
-  })
+    // ~4 s sozinho num PC; com a suíte inteira rodando junto passava dos 5 s padrão
+  }, 30_000)
 
   it('limpa as cláusulas aprendidas em buscas longas e continua certo', () => {
     const { nVars, cs } = pombos(7)

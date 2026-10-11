@@ -97,7 +97,7 @@ export const TEORIAS: Teoria[] = [
     ],
     teoremas: [
       { titulo: 'Euclidiana', formula: '∀x ∀y ∀z (Equiv(x, y) ∧ Equiv(x, z) ⟹ Equiv(y, z))' },
-      { titulo: 'Classes iguais ou separadas', formula: '∀x ∀y (∃z (Equiv(x, z) ∧ Equiv(y, z)) ⟹ Equiv(x, y))' },
+      { titulo: 'Classes iguais ou separadas', formula: '∀x ∀y ((∃z (Equiv(x, z) ∧ Equiv(y, z))) ⟹ Equiv(x, y))' },
     ],
   },
   {
@@ -115,7 +115,7 @@ export const TEORIAS: Teoria[] = [
       { titulo: 'G3 — Inverso', formula: '∀x (op(inv(x), x) = neutro ∧ op(x, inv(x)) = neutro)' },
     ],
     teoremas: [
-      { titulo: 'O neutro é único', formula: '∀e (∀x (op(e, x) = x) ⟹ e = neutro)' },
+      { titulo: 'O neutro é único', formula: '∀e ((∀x (op(e, x) = x)) ⟹ e = neutro)' },
       { titulo: 'Cancelamento', formula: '∀x ∀y ∀z (op(x, y) = op(x, z) ⟹ y = z)' },
       { titulo: 'O inverso do inverso', formula: '∀x (inv(inv(x)) = x)' },
       // até 5 elementos todo grupo é comutativo: o motor só acha o contraexemplo a partir de 6 objetos

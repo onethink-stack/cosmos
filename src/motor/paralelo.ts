@@ -13,7 +13,8 @@ import { analisar, buscarNaFaixa, minimizarRapido, perguntar, type BuscaFaixa, t
 export type Trabalho =
   /** procura modelo só nesses tamanhos (o aprofundamento); `prazoMs` conta a partir de quando começa */
   | { tipo: 'faixa'; formulas: Formula[]; ns: number[]; ks: number[]; limite: number; prazoMs?: number }
-  | { tipo: 'perguntar'; grupos: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
+  /** `prazoMs`: cada teorema desiste depois disso (fica "não decidiu a tempo"); conta de quando começa */
+  | { tipo: 'perguntar'; grupos: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor; prazoMs?: number }
   | { tipo: 'lacunas'; grupos: Grupo[]; inativas: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
   /** a lei decorre das outras ou é independente? */
   | { tipo: 'lei'; grupos: Grupo[]; alvo: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
@@ -35,7 +36,7 @@ export function executarTrabalho(t: Trabalho): unknown {
     case 'faixa':
       return buscarNaFaixa(t.formulas, t.ns, t.ks, t.limite, t.prazoMs ? Date.now() + t.prazoMs : undefined)
     case 'perguntar':
-      return perguntar(t.grupos, t.formula, t.dicionario, t.op)
+      return perguntar(t.grupos, t.formula, t.dicionario, t.prazoMs ? { ...t.op, prazo: Date.now() + t.prazoMs } : t.op)
     case 'lacunas':
       return procurarLeis(t.grupos, t.inativas, t.formula, t.dicionario, t.op)
     case 'lei':

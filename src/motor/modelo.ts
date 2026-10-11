@@ -240,7 +240,7 @@ export async function rodarModelo(
         const c: ContextoCadeia = ordenar({ ...c0, teoremas: c0.teoremas.filter((t) => !provados.has(t.id)) }, notas, criadas, true)
         let rel: RelatorioCadeia | null = null
         await reacaoEmCadeia(
-          { contextos: [c], inativas: inativasDoContexto(notas, c.chave), rapida: true },
+          { contextos: [c], inativas: inativasDoContexto(notas, c.chave), rapida: true, limites: p.aprimorar },
           dicionario,
           nivel,
           (rs) => (rel = rs[0]),
@@ -264,7 +264,10 @@ export async function rodarModelo(
           continue
         }
         if (rc.consistencia?.tipo === 'grande-demais') {
-          evento({ tipo: 'aviso', conjunto: c.rotulo, titulo: c.rotulo, detalhe: 'o conjunto é grande demais para este aparelho; ficou como está' })
+          const detalhe = rc.consistencia.tempo
+            ? `a consistência não foi decidida a tempo (com ${rc.consistencia.n} objetos); ficou como está`
+            : 'o conjunto é grande demais para este aparelho; ficou como está'
+          evento({ tipo: 'aviso', conjunto: c.rotulo, titulo: c.rotulo, detalhe })
           continue
         }
 
@@ -567,6 +570,11 @@ function classificar(notas: Nota[], finais: RelatorioCadeia[], dicionario: Entra
           return item('refutado', `as leis implicam o contrário (${de(t.resultado.notas)}), em todos os mundos até ${nivel}`)
         case 'aritmetica':
           return item('numerico', 'usa números: o motor finito não decide; o Z3 decide (ligue-o em Contradições)')
+        case 'tempo':
+          return item(
+            'incerto',
+            `não decidiu a tempo: ${t.resultado.n > 1 ? `até ${t.resultado.n - 1} objeto${t.resultado.n > 2 ? 's' : ''} não há cenário onde falhe; com ` : 'com '}${t.resultado.n} a checagem passou do prazo do aparelho`,
+          )
         case 'premissas-contraditorias':
           return item('incerto', 'as leis do conjunto se contradizem')
         default:

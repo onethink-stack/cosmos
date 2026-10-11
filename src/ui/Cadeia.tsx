@@ -344,6 +344,7 @@ const nomeResultado = (t: EstadoTeorema) =>
     contradiz: '✗ contradiz as leis',
     'premissas-contraditorias': 'leis contraditórias',
     'grande-demais': 'grande demais',
+    tempo: `⏱ não decidiu a tempo${t.resultado.tipo === 'tempo' && t.resultado.n > 1 ? ` (sem contraexemplo até ${t.resultado.n - 1} objetos)` : ''}`,
     'formula-invalida': 'fórmula inválida',
     aritmetica: '🔢 com números (Z3)',
   })[t.resultado.tipo]
@@ -400,7 +401,15 @@ function Relatorio({
           </p>
         </div>
       )}
-      {c?.tipo === 'grande-demais' && <p class="aviso-texto">Grande demais para o motor finito (com {c.n} objetos). Diminua N.</p>}
+      {c?.tipo === 'grande-demais' &&
+        (c.tempo ? (
+          <p class="aviso-texto">
+            A consistência não foi decidida a tempo (a checagem passou do prazo com {c.n} objetos). A rodada parou aqui; ela recomeça quando as notas
+            mudarem.
+          </p>
+        ) : (
+          <p class="aviso-texto">Grande demais para o motor finito (com {c.n} objetos). Diminua N.</p>
+        ))}
 
       {rel.leis.length > 0 && (
         <details class="explicacao" open={decorrem.length > 0}>

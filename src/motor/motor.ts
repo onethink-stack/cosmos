@@ -48,14 +48,15 @@ export type Busca =
   | { status: 'modelo'; n: number; modelo: Modelo }
   /** K: maior número de mundos testado (1 sem lógica modal) */
   | { status: 'sem-modelo'; K: number }
-  /** tamanho n ficou grande demais; até n-1 não havia modelo */
-  | { status: 'grande-demais'; n: number }
+  /** tamanho n ficou grande demais (ou, com `tempo`, o prazo acabou nele); até n-1 não havia modelo */
+  | { status: 'grande-demais'; n: number; tempo?: boolean }
 
 export type ResultadoMotor =
   | { tipo: 'vazio' }
   | { tipo: 'consistente'; n: number; modelo: Modelo }
   | { tipo: 'sem-modelo'; N: number; K: number; conflito: string[]; explicacoes: ExplicacaoConflito[] }
-  | { tipo: 'grande-demais'; n: number }
+  /** `tempo`: não foi o tamanho, foi o prazo da checagem que acabou com n objetos */
+  | { tipo: 'grande-demais'; n: number; tempo?: boolean }
 
 /** Por que uma nota é necessária ao conflito. */
 export type ExplicacaoConflito =
@@ -199,7 +200,7 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
   for (let n = 1; n <= op.N; n++) {
     for (let k = 1; k <= K; k++) {
       if (n <= jaN && k <= jaK) continue // já provado sem modelo
-      if (op.prazo && Date.now() > op.prazo) return { status: 'grande-demais', n }
+      if (op.prazo && Date.now() > op.prazo) return { status: 'grande-demais', n, tempo: true }
       progresso?.(`testando ${n} objeto${n > 1 ? 's' : ''}${K > 1 ? ` e ${k} mundo${k > 1 ? 's' : ''}` : ''}`)
       let p: ProblemaCNF
       try {
@@ -212,7 +213,7 @@ export function buscarModelo(formulas: Formula[], op: OpcoesMotor, progresso?: P
       }
       const r = resolver(p.nVars, p.clausulas, op.prazo ? { prazo: op.prazo } : {})
       // o prazo acabou no meio: não decidiu (e nada vai para o banco)
-      if (r.sat === null) return { status: 'grande-demais', n }
+      if (r.sat === null) return { status: 'grande-demais', n, tempo: true }
       if (r.sat) {
         const modelo = lerModelo(n, k, p, r.valores)
         banco?.guardar({ chave, status: 'modelo', n, modelo, K, usadoEm: Date.now() })
@@ -308,7 +309,9 @@ export function verificar(grupos: Grupo[], dicionario: EntradaDicionario[], op: 
 
   const r = buscarModelo(formulas(prontos), op, progresso)
   if (r.status === 'modelo') return { tipo: 'consistente', n: r.n, modelo: r.modelo }
-  if (r.status === 'grande-demais') return { tipo: 'grande-demais', n: r.n }
+  if (r.status === 'grande-demais') return { tipo: 'grande-demais', n: r.n, tempo: r.tempo }
+  // o prazo vale para decidir; o conflito mínimo vai até o fim (com notas a mais, sairia uma inocente)
+  op = { ...op, prazo: undefined }
 
   const conjunto = minimizarRapido(prontos, [], op, 1, (g, i) => progresso?.(`procurando o conflito mínimo: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`))
 
@@ -394,11 +397,16 @@ export type ResultadoPergunta =
   /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
+  /** a checagem passou do prazo com n objetos: até n−1 nenhum mundo decidiu (nem contraexemplo) */
+  | { tipo: 'tempo'; n: number }
   | { tipo: 'formula-invalida' }
   /** a fórmula usa números: o motor finito não decide; o Z3 decide */
   | { tipo: 'aritmetica' }
 
 export const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
+
+/** com prazo, o tempo mínimo para achar as notas de origem depois de decidir */
+const PRAZO_MINIMO_NOTAS_MS = 15_000
 
 /**
  * "A fórmula segue das notas?" — testa notas ∪ {¬φ} e notas ∪ {φ} em
@@ -418,14 +426,17 @@ export function perguntar(
 
   progresso?.('conferindo se as notas são consistentes')
   const base = buscarModelo(premissas, op)
-  if (base.status === 'grande-demais') return { tipo: 'grande-demais', n: base.n }
+  if (base.status === 'grande-demais') return base.tempo ? { tipo: 'tempo', n: base.n } : { tipo: 'grande-demais', n: base.n }
   if (base.status === 'sem-modelo') return { tipo: 'premissas-contraditorias', N: op.N }
 
   progresso?.('procurando um mundo onde as notas valem e a fórmula falha')
   const contra = buscarModelo([...premissas, nao(phi.expandida)], op)
-  if (contra.status === 'grande-demais') return { tipo: 'grande-demais', n: contra.n }
+  if (contra.status === 'grande-demais') return contra.tempo ? { tipo: 'tempo', n: contra.n } : { tipo: 'grande-demais', n: contra.n }
+  // com prazo, achar as notas de origem ganha um tempo próprio (uma checagem que não
+  // decide mantém a nota: a lista pode sair maior, nunca insuficiente)
+  const opNotas = op.prazo ? { ...op, prazo: Math.max(op.prazo, Date.now() + PRAZO_MINIMO_NOTAS_MS) } : op
   if (contra.status === 'sem-modelo') {
-    const notas = minimizarRapido(prontos, [nao(phi.expandida)], op, 0, (g, i) =>
+    const notas = minimizarRapido(prontos, [nao(phi.expandida)], opNotas, 0, (g, i) =>
       progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
     return { tipo: 'segue', N: op.N, K: contra.K, notas: notas.map((x) => x.g.id) }
@@ -435,7 +446,7 @@ export function perguntar(
   progresso?.('procurando um mundo onde as notas valem e a fórmula também')
   const afavor = buscarModelo([...premissas, phi.expandida], op)
   if (afavor.status === 'sem-modelo') {
-    const notas = minimizarRapido(prontos, [phi.expandida], op, 0, (g, i) =>
+    const notas = minimizarRapido(prontos, [phi.expandida], opNotas, 0, (g, i) =>
       progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
     )
     return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }

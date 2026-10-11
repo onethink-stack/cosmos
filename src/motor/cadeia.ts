@@ -62,6 +62,8 @@ export interface PedidoCadeia {
   aprimorar?: LimitesAprimoramento
   /** só consistência, teoremas, conflitos entre eles e leis que faltam (as rodadas do segundo modelo) */
   rapida?: boolean
+  /** os prazos do aparelho sem aprofundar (as rodadas do segundo modelo); com `aprimorar`, valem os dele */
+  limites?: LimitesAprimoramento
 }
 
 /** Até onde o aprimoramento automático pode ir (vem do perfil do aparelho). */
@@ -182,7 +184,7 @@ export async function reacaoEmCadeia(
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
   for (const [k, c] of pedido.contextos.entries()) {
     const rel = relatorios[k]
-    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida, pedido.aprimorar)
+    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida, pedido.aprimorar ?? pedido.limites)
     rel.etapa = 'fim'
     if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
@@ -464,11 +466,14 @@ async function rodarContexto(
   // sem decisão — sempre do lado seguro, nunca uma conclusão a mais
   const aux = prazosAuxiliares(lim, op)
   const ateFimDaEtapa = (): OpcoesMotor => ({ ...op, prazo: Date.now() + aux.totalMs })
+  // a consistência e cada teorema também têm prazo (o de cada checagem do perfil):
+  // um teorema difícil fica "não decidiu a tempo" e a rodada segue, em vez de parar nele
+  const prazoChecagem = lim?.tempoChecagemMs ?? PRAZO_CHECAGEM_SEM_PERFIL_MS
 
   // 1. consistência
   rel.etapa = 'consistencia'
   progresso('conferindo se as leis e fatos são consistentes')
-  rel.consistencia = verificar(c.grupos, dicionario, op, progresso)
+  rel.consistencia = verificar(c.grupos, dicionario, { ...op, prazo: Date.now() + prazoChecagem }, progresso)
   enviar()
   if (rel.consistencia.tipo === 'sem-modelo' || rel.consistencia.tipo === 'grande-demais') return
 
@@ -501,7 +506,7 @@ async function rodarContexto(
     if (teoremas.length) progresso(`conferindo os teoremas (0/${teoremas.length}${vez(teoremas.length)})`)
     await emParalelo(
       teoremas,
-      ({ t }) => ({ tipo: 'perguntar', grupos: c.grupos, formula: t.formula, dicionario, op }),
+      ({ t }) => ({ tipo: 'perguntar', grupos: c.grupos, formula: t.formula, dicionario, op, prazoMs: prazoChecagem }),
       (i, resultado) => {
         const { t } = teoremas[i]
         estados[i] = { id: t.id, notaId: t.notaId, formula: t.formula, resultado }
@@ -640,6 +645,9 @@ export function prazosAuxiliares(lim: LimitesAprimoramento | undefined, op: Opco
     limite: Math.min(op.limite, lim?.limite ?? op.limite),
   }
 }
+
+/** sem perfil (testes, aprimoramento desligado): quanto cada checagem principal pode levar */
+const PRAZO_CHECAGEM_SEM_PERFIL_MS = 120_000
 
 /** quantas notas o teorema usa direto das leis (menos = mais básico; entra antes na cadeia) */
 const apoioDireto = (e: EstadoTeorema) => (e.resultado.tipo === 'segue' ? e.resultado.notas.length : 99)

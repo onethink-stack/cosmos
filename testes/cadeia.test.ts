@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { prazosAuxiliares, reacaoEmCadeia, type RelatorioCadeia } from '../src/motor/cadeia'
-import { OPCOES_PADRAO } from '../src/motor/motor'
+import { bancoNaMemoria, definirBanco } from '../src/motor/bancoProvas'
+import { analisar, buscarModelo, OPCOES_PADRAO, perguntar } from '../src/motor/motor'
 
 const op = { ...OPCOES_PADRAO, N: 5 }
 const ficha = (simbolo: string, tipo: EntradaDicionario['tipo'], aridade = 0): EntradaDicionario => ({
@@ -64,6 +65,35 @@ describe('reação em cadeia', () => {
     const { rel } = await rodar([g('L1', 'P(c)'), g('L2', '¬P(c)')], [t('T1', 'Q(c)')])
     expect(rel.consistencia?.tipo).toBe('sem-modelo')
     expect(rel.teoremas).toEqual([])
+  })
+})
+
+describe('prazo de cada checagem principal', () => {
+  it('um teorema que não decide no prazo fica "não decidiu a tempo", e a rodada termina', async () => {
+    definirBanco(bancoNaMemoria())
+    try {
+      const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
+      // a consistência já está no banco de provas; o teorema teria de ser conferido de novo
+      buscarModelo(
+        grupos.flatMap((x) => analisar(x.formulas, dic).map((i) => i.expandida)),
+        op,
+      )
+      let ultimo: RelatorioCadeia[] = []
+      // prazo já vencido: nenhuma checagem nova decide
+      const lim = { N: 5, K: 1, limite: 1_000_000, tempoChecagemMs: -1, orcamentoMs: 1 }
+      await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas: [t('T1', 'Q(c)')] }], inativas: [], aprimorar: lim }, dic, op, (r) => (ultimo = r))
+      expect(ultimo[0].etapa).toBe('fim')
+      expect(ultimo[0].consistencia?.tipo).toBe('consistente')
+      expect(ultimo[0].teoremas[0].resultado.tipo).toBe('tempo')
+    } finally {
+      definirBanco(null)
+    }
+  })
+
+  it('sem tempo, a pergunta nunca responde "segue" nem "não segue"', () => {
+    const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
+    expect(perguntar(grupos, 'Q(c)', dic, op).tipo).toBe('segue')
+    expect(perguntar(grupos, 'Q(c)', dic, { ...op, prazo: Date.now() - 1 }).tipo).toBe('tempo')
   })
 })
 

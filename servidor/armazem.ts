@@ -33,6 +33,13 @@ export function abrir(arquivo: string): DatabaseSync {
       id TEXT PRIMARY KEY, pedido TEXT NOT NULL, inicio INTEGER NOT NULL, fim INTEGER,
       situacao TEXT NOT NULL, eventos TEXT NOT NULL, seq INTEGER NOT NULL, geracao INTEGER NOT NULL
     );
+    -- o banco de verdades: os teoremas do gerador, com as leis de onde vêm (apoio:
+    -- "nota~resumo das fórmulas", então o teorema só vale enquanto essas leis forem as mesmas)
+    CREATE TABLE IF NOT EXISTS verdades (
+      chave TEXT PRIMARY KEY, formula TEXT NOT NULL, peso INTEGER NOT NULL, prof INTEGER NOT NULL,
+      apoio TEXT NOT NULL, pais TEXT NOT NULL, usos INTEGER NOT NULL DEFAULT 0, superado_por TEXT, criado INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
   `)
   return db
 }

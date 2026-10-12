@@ -14,6 +14,7 @@ export type Rota =
   | { tela: 'modelo' }
   | { tela: 'mundo' }
   | { tela: 'historico' }
+  | { tela: 'verdades' }
 
 let visitas = 0
 
@@ -42,6 +43,8 @@ export function lerRota(hash: string): Rota {
       return { tela: 'mundo' }
     case 'historico':
       return { tela: 'historico' }
+    case 'verdades':
+      return { tela: 'verdades' }
     default:
       return { tela: 'notas' }
   }

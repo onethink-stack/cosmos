@@ -19,6 +19,7 @@ export default defineConfig({
         'motor-worker': 'servidor/motor-worker.ts',
         'sub-worker': 'servidor/sub-worker.ts',
         'z3-worker': 'servidor/z3-worker.ts',
+        'gerador-worker': 'servidor/gerador-worker.ts',
       },
       output: { format: 'es', entryFileNames: '[name].js', chunkFileNames: '[name]-[hash].js' },
     },

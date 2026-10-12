@@ -18,6 +18,7 @@ import { PainelContradicoes } from './PainelContradicoes'
 import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
 import { Sistemas } from './Sistemas'
+import { Verdades } from './Verdades'
 
 export function App() {
   const est = useEstado()
@@ -61,6 +62,9 @@ export function App() {
             <a href="#/mundo" class={aba === 'mundo' ? 'ativo' : ''}>
               Mundo
             </a>
+            <a href="#/verdades" class={aba === 'verdades' ? 'ativo' : ''}>
+              Verdades
+            </a>
             <a href="#/historico" class={aba === 'historico' ? 'ativo' : ''}>
               Histórico
             </a>
@@ -98,6 +102,8 @@ export function App() {
           <Mundo />
         ) : rota.tela === 'historico' ? (
           <Historico />
+        ) : rota.tela === 'verdades' ? (
+          <Verdades />
         ) : (
           <PainelContradicoes />
         )}

@@ -15,9 +15,13 @@ import { availableParallelism, constants, setPriority, totalmem } from 'node:os'
 import type { DatabaseSync } from 'node:sqlite'
 import type { Formula } from '../src/logica/ast'
 import { resumo } from '../src/logica/resumo'
+import type { EntradaDicionario } from '../src/dados/tipos'
 import type { LimitesAprimoramento } from '../src/motor/cadeia'
+import type { Grupo } from '../src/motor/motor'
+import type { EventoGerador } from '../src/motor/saturacao'
 import type { PedidoMotor, RespostaMotor } from '../src/motor/tarefas'
 import type { ResultadoZ3 } from '../src/motor/z3'
+import type { PedidoGerador, RespostaGerador } from './gerador-worker'
 import { arquivoDoMotor, WorkerParecido } from './adaptador'
 import { abrir, arquivoPadrao, respostasZ3 } from './armazem'
 
@@ -328,6 +332,168 @@ async function provarNoZ3(t: Trabalho, pedido: number, conjuntos: Formula[][], a
   if (ainda()) w!.postMessage({ tipo: 'z3-fim', pedido })
 }
 
+// ---------------------------------------------------------------- gerador (o banco de verdades)
+
+/** "nota~resumo das fórmulas": o teorema só vale enquanto a nota tiver as mesmas fórmulas */
+const identidadeDe = (g: Grupo) => `${g.id}~${resumo(g.formulas.join('\n'))}`
+const notaDe = (identidade: string) => identidade.slice(0, identidade.lastIndexOf('~'))
+
+interface EstadoGerador {
+  assinatura: string
+  grupos: Grupo[]
+  dicionario: EntradaDicionario[]
+  identidades: Set<string>
+  /** o andamento: tamanho, combinações feitas, esperando, guardadas */
+  andamento: Omit<Extract<RespostaGerador, { tipo: 'estado' }>, 'tipo'> | null
+  saturadoAte: number | null
+  fim: 'contradicao' | 'esgotou' | null
+  contradicao: string[] | null
+  ignoradas: { nota: string; motivo: string }[]
+}
+
+let ger: EstadoGerador | null = null
+let geradorW: WorkerParecido | null = null
+
+function lerConfig<T>(chave: string): T | null {
+  const r = db.prepare('SELECT valor FROM config WHERE chave = ?').get(chave) as { valor: string } | undefined
+  return r ? (JSON.parse(r.valor) as T) : null
+}
+const gravarConfig = (chave: string, valor: unknown) => void db.prepare('INSERT OR REPLACE INTO config (chave, valor) VALUES (?, ?)').run(chave, JSON.stringify(valor))
+
+const valida = (apoio: string[]) => !!ger && apoio.every((a) => ger!.identidades.has(a))
+
+/** As leis do caderno mudaram (ou o motor ligou): o gerador recomeça sobre elas, sem repetir o que já está no banco. */
+function iniciarGerador(grupos: Grupo[], dicionario: EntradaDicionario[]): boolean {
+  const assinatura = resumo(JSON.stringify([grupos.map((g) => [g.id, g.formulas]), dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])]))
+  if (ger?.assinatura === assinatura && geradorW) return false
+  const comIdentidade = grupos.map((g) => ({ ...g, id: identidadeDe(g) }))
+  ger = {
+    assinatura,
+    grupos,
+    dicionario,
+    identidades: new Set(comIdentidade.map((g) => g.id)),
+    andamento: null,
+    saturadoAte: null,
+    fim: null,
+    contradicao: null,
+    ignoradas: [],
+  }
+  gravarConfig('gerador', { grupos, dicionario })
+  // o que já está no banco e continua valendo não sai de novo
+  const emitidos = (db.prepare('SELECT chave, apoio FROM verdades').all() as { chave: string; apoio: string }[])
+    .filter((r) => valida(JSON.parse(r.apoio)))
+    .map((r) => r.chave)
+  geradorW?.terminate()
+  const w = new WorkerParecido(arquivoDoMotor('gerador-worker'), undefined, { maxOldGenerationSizeMb: 1536 })
+  w.onmessage = ({ data }) => receberDoGerador(data as RespostaGerador)
+  w.onerror = (e) => {
+    if (geradorW !== w) return
+    geradorW = null
+    log(`o gerador caiu (${e.message}); recomeça em 30 s`)
+    const g = ger
+    setTimeout(() => {
+      if (ger === g && !geradorW && g) {
+        g.assinatura = ''
+        iniciarGerador(g.grupos, g.dicionario)
+      }
+    }, 30_000)
+  }
+  geradorW = w
+  w.postMessage({ tipo: 'iniciar', grupos: comIdentidade, dicionario, emitidos } satisfies PedidoGerador)
+  log(`gerador: ${grupos.length} leis e fatos, ${emitidos.length} teoremas já no banco`)
+  return true
+}
+
+function receberDoGerador(r: RespostaGerador) {
+  if (!ger) return
+  if (r.tipo === 'estado') ger.andamento = { peso: r.peso, escolhidas: r.escolhidas, geradas: r.geradas, esperando: r.esperando, guardadas: r.guardadas }
+  else if (r.tipo === 'ignoradas') ger.ignoradas = r.ignoradas.map((x) => ({ ...x, nota: notaDe(x.nota) }))
+  else if (r.tipo === 'saturou') ger.saturadoAte = r.peso
+  else if (r.tipo === 'fim') {
+    ger.fim = r.motivo
+    log(r.motivo === 'esgotou' ? 'gerador: tudo até o tamanho máximo já foi gerado' : 'gerador: as leis se contradizem')
+  } else gravarEventos(r.eventos)
+}
+
+function gravarEventos(eventos: EventoGerador[]) {
+  const inserir = db.prepare(
+    `INSERT INTO verdades (chave, formula, peso, prof, apoio, pais, criado) VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(chave) DO UPDATE SET formula = excluded.formula, peso = excluded.peso, prof = excluded.prof,
+       apoio = excluded.apoio, pais = excluded.pais, superado_por = NULL`,
+  )
+  const usar = db.prepare('UPDATE verdades SET usos = usos + 1 WHERE chave = ?')
+  db.exec('BEGIN')
+  try {
+    let ultimo: string | null = null
+    for (const e of eventos) {
+      if (e.tipo === 'teorema') {
+        inserir.run(e.t.chave, e.t.formula, e.t.peso, e.t.prof, JSON.stringify(e.t.apoio), JSON.stringify(e.t.pais), Date.now())
+        ultimo = e.t.chave
+      } else if (e.tipo === 'uso') usar.run(e.chave)
+      // superado pelo teorema que acabou de sair (o mais geral)
+      else if (e.tipo === 'superado' && ultimo) db.prepare('UPDATE verdades SET superado_por = ? WHERE chave = ?').run(ultimo, e.chave)
+      else if (e.tipo === 'contradicao' && ger) ger.contradicao = e.apoio.map(notaDe)
+    }
+    db.exec('COMMIT')
+  } catch (x) {
+    db.exec('ROLLBACK')
+    throw x
+  }
+}
+
+interface Verdade {
+  chave: string
+  formula: string
+  peso: number
+  prof: number
+  apoio: string[]
+  pais: { chave: string; formula: string }[]
+  usos: number
+  criado: number
+}
+
+/** Os teoremas que valem com as leis de agora, sem os superados por um mais geral que também vale. */
+function verdades(ordem: string, limite: number, busca: string): { total: number; itens: Verdade[] } {
+  type Linha = { chave: string; formula: string; peso: number; prof: number; apoio: string; pais: string; usos: number; superado_por: string | null; criado: number }
+  const todas = db.prepare('SELECT * FROM verdades').all() as Linha[]
+  const validas = new Map<string, Linha>()
+  for (const r of todas) if (valida(JSON.parse(r.apoio))) validas.set(r.chave, r)
+  let lista = [...validas.values()].filter((r) => !(r.superado_por && validas.has(r.superado_por)))
+  const total = lista.length
+  if (busca) lista = lista.filter((r) => r.formula.toLowerCase().includes(busca.toLowerCase()))
+  lista.sort((a, b) =>
+    ordem === 'curtos' ? a.peso - b.peso || b.usos - a.usos : ordem === 'novos' ? b.criado - a.criado : b.usos - a.usos || a.peso - b.peso,
+  )
+  const itens = lista.slice(0, limite).map((r) => ({
+    chave: r.chave,
+    formula: r.formula,
+    peso: r.peso,
+    prof: r.prof,
+    apoio: (JSON.parse(r.apoio) as string[]).map(notaDe),
+    pais: (JSON.parse(r.pais) as string[]).flatMap((k) => {
+      const p = validas.get(k)
+      return p ? [{ chave: k, formula: p.formula }] : []
+    }),
+    usos: r.usos,
+    criado: r.criado,
+  }))
+  return { total, itens }
+}
+
+function estadoGerador() {
+  if (!ger) return { ligado: false }
+  return {
+    ligado: true,
+    rodando: !!geradorW && !ger.fim,
+    leis: ger.grupos.length,
+    andamento: ger.andamento,
+    saturadoAte: ger.saturadoAte,
+    fim: ger.fim,
+    contradicao: ger.contradicao,
+    ignoradas: ger.ignoradas,
+  }
+}
+
 // ---------------------------------------------------------------- HTTP
 
 function log(s: string) {
@@ -416,6 +582,19 @@ const servidor = createServer(async (req, res) => {
   try {
     if (req.method === 'GET' && url.pathname === '/estado') return json(res, 200, estado(), cors)
     if (req.method === 'GET' && url.pathname === '/') return pagina(res)
+    if (url.pathname === '/gerador') {
+      if (req.method === 'GET') return json(res, 200, estadoGerador(), cors)
+      if (req.method === 'POST') {
+        if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { erro: 'esperava JSON' }, cors)
+        const { grupos, dicionario } = (await lerCorpo(req)) as { grupos: Grupo[]; dicionario: EntradaDicionario[] }
+        return json(res, 200, { mudou: iniciarGerador(grupos, dicionario) }, cors)
+      }
+    }
+    if (req.method === 'GET' && url.pathname === '/verdades') {
+      const ordem = url.searchParams.get('ordem') ?? 'uteis'
+      const limite = Math.min(2000, Number(url.searchParams.get('limite')) || 300)
+      return json(res, 200, { gerador: estadoGerador(), ...verdades(ordem, limite, url.searchParams.get('busca') ?? '') }, cors)
+    }
     if (req.method === 'POST' && url.pathname === '/trabalho') {
       if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { erro: 'esperava JSON' }, cors)
       const t = pedir((await lerCorpo(req)) as PedidoMotor)
@@ -471,6 +650,9 @@ servidor.listen(PORTA, '127.0.0.1', () => {
     log('retomando o trabalho que estava rodando quando o motor parou')
     comecar(t)
   }
+  // o gerador volta a trabalhar sobre as últimas leis que o app mandou
+  const g = lerConfig<{ grupos: Grupo[]; dicionario: EntradaDicionario[] }>('gerador')
+  if (g) iniciarGerador(g.grupos, g.dicionario)
 })
 
 // fechar com Ctrl+C: o trabalho fica marcado como "rodando" e recomeça na próxima vez

@@ -271,6 +271,10 @@ details.explicacao p { margin: 6px 0; }
 .lista-cadeia > li { padding: 6px 10px; border-left: 3px solid var(--borda); background: var(--superficie-2); border-radius: 4px; overflow-wrap: anywhere; }
 .lista-cadeia > li.segue { border-left-color: var(--ok); }
 .lista-cadeia > li.nao-segue, .lista-cadeia > li.contradiz { border-left-color: var(--erro); }
+
+/* banco de verdades */
+.verdades-controles { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 8px 0; }
+.verdades-controles input[type="search"] { min-width: 200px; }
 .explicacao.em-linha { display: inline; }
 .explicacao.em-linha > summary { display: inline; cursor: pointer; color: var(--ok); }
 .explicacao.em-linha[open] { display: block; }

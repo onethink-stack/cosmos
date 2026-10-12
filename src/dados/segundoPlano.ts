@@ -16,6 +16,7 @@ import { entradaDoModelo, mundo, type EntradaModelo } from './mundo'
 import type { Classe } from '../motor/modelo'
 import { completarComZ3 } from './modeloZ3'
 import { motorFundo } from './motorFundo'
+import { verdades } from './verdades'
 
 /** espera depois da última mudança nas notas antes de rodar a reação sozinha */
 const ESPERA_AUTOMATICA_MS = 20_000
@@ -242,6 +243,10 @@ export function iniciarSegundoPlano() {
   void configModelo.carregar()
   void mundo.carregar()
   void motorFundo.carregarConfig()
+  // o gerador do motor de fundo trabalha sempre sobre as leis de agora
+  estado.assinar(() => verdades.agendarEnvio())
+  // (desligou: quando voltar, manda de novo — ele pode ter sido reiniciado)
+  motorFundo.assinar(() => (motorFundo.conectado ? verdades.agendarEnvio() : verdades.esquecerEnvio()))
 
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)

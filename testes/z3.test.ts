@@ -3,7 +3,7 @@ import { init, killThreads } from 'z3-solver'
 import { importarTptp } from '../src/dados/tptp'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { analisar, nao, nomesNumericos, prepararFormulas } from '../src/motor/motor'
-import { checarZ3 } from '../src/motor/z3'
+import { checarZ3, checarZ3ComNucleo } from '../src/motor/z3'
 import { validar } from '../src/logica/validador'
 import { expandir } from '../src/logica/acucar'
 
@@ -225,4 +225,45 @@ tff(c, conjecture, ?[L: lista]: ($lesseq(tam(L), 0) & par(tam(L)))).`)
     const produto = importarTptp('tff(q, type, q: $rat).\ntff(a, axiom, $product(q, q) = 2).', 'q.p', 'tptp', [])
     expect(produto.avisos.join()).toContain('ℚ ≠ ℝ')
   })
+})
+
+describe('Z3: prova para qualquer tamanho, com o núcleo (as leis que a prova usou)', () => {
+  const G: EntradaDicionario[] = [
+    { id: 'op', termo: 'op', simbolo: 'op', tipo: 'funcao', aridade: 2, definicao: '' },
+    { id: 'inv', termo: 'inv', simbolo: 'inv', tipo: 'funcao', aridade: 1, definicao: '' },
+    { id: 'neutro', termo: 'neutro', simbolo: 'neutro', tipo: 'constante', aridade: 0, definicao: '' },
+    { id: 'P', termo: 'P', simbolo: 'P', tipo: 'predicado', aridade: 1, definicao: '' },
+  ]
+  const leis = [
+    '∀x ∀y ∀z (op(op(x, y), z) = op(x, op(y, z)))',
+    '∀x (op(neutro, x) = x ∧ op(x, neutro) = x)',
+    '∀x (op(inv(x), x) = neutro ∧ op(x, inv(x)) = neutro)',
+    // uma lei que não tem nada a ver: não pode entrar no núcleo
+    '∀x (P(x) ⟹ P(x))',
+  ]
+  const provar = async (phi: string) => {
+    const fs = leis.map((l) => prepararFormulas([l], G)[0])
+    return checarZ3ComNucleo(api, [...fs, nao(expandir(validar(phi, G).ast!))], 20_000, new Set(), [0, 1, 2, 3, null])
+  }
+
+  it('o inverso do inverso: provado, e o núcleo não tem a lei que não tem nada a ver', async () => {
+    const r = await provar('∀x (inv(inv(x)) = x)')
+    expect(r.resultado).toBe('unsat')
+    expect(r.nucleo ?? []).not.toContain(3)
+    expect(r.nucleo!.length).toBeGreaterThan(0)
+  }, 60_000)
+
+  it('cancelamento: provado (vale também em grupos infinitos)', async () => {
+    const r = await provar('∀x ∀y ∀z (op(x, y) = op(x, z) ⟹ y = z)')
+    expect(r.resultado).toBe('unsat')
+    expect(r.nucleo ?? []).not.toContain(3)
+  }, 60_000)
+})
+
+describe('Z3: o que só vale em cenários finitos não é provado', () => {
+  it('injetiva ⟹ sobrejetiva: vale em todo cenário finito, mas o Z3 não prova (falha nos naturais)', async () => {
+    const S: EntradaDicionario[] = [{ id: 's', termo: 's', simbolo: 's', tipo: 'funcao', aridade: 1, definicao: '' }]
+    const r = await checarZ3(api, [...prepararFormulas(['∀x ∀y (s(x) = s(y) ⟹ x = y)'], S), nao(expandir(validar('∀y ∃x (s(x) = y)', S).ast!))], 5000)
+    expect(r).not.toBe('unsat')
+  }, 60_000)
 })

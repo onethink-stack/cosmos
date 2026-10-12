@@ -41,6 +41,12 @@ export function abrir(arquivo: string): DatabaseSync {
     );
     CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
   `)
+  // as notas que a prova usou (núcleo): coluna nova num banco que já existia
+  try {
+    db.exec('ALTER TABLE z3 ADD COLUMN nucleo TEXT')
+  } catch {
+    /* já tem */
+  }
   return db
 }
 
@@ -84,10 +90,14 @@ export function bancoSqlite(db: DatabaseSync): BancoProvas {
 
 /** Respostas do Z3 guardadas (sat/unsat; "não sei" não fica: pode dar certo com mais tempo). */
 export function respostasZ3(db: DatabaseSync) {
-  const ler = db.prepare('SELECT resultado FROM z3 WHERE chave = ?')
-  const gravar = db.prepare('INSERT OR REPLACE INTO z3 (chave, resultado, ms) VALUES (?, ?, ?)')
+  const ler = db.prepare('SELECT resultado, nucleo FROM z3 WHERE chave = ?')
+  const gravar = db.prepare('INSERT OR REPLACE INTO z3 (chave, resultado, ms, nucleo) VALUES (?, ?, ?, ?)')
   return {
-    obter: (chave: string) => (ler.get(chave) as { resultado: 'sat' | 'unsat' } | undefined)?.resultado,
-    guardar: (chave: string, resultado: 'sat' | 'unsat', ms: number) => void gravar.run(chave, resultado, ms),
+    obter: (chave: string): { resultado: 'sat' | 'unsat'; nucleo: number[] | null } | undefined => {
+      const r = ler.get(chave) as { resultado: 'sat' | 'unsat'; nucleo: string | null } | undefined
+      return r && { resultado: r.resultado, nucleo: r.nucleo ? (JSON.parse(r.nucleo) as number[]) : null }
+    },
+    guardar: (chave: string, resultado: 'sat' | 'unsat', ms: number, nucleo: number[] | null = null) =>
+      void gravar.run(chave, resultado, ms, nucleo ? JSON.stringify(nucleo) : null),
   }
 }

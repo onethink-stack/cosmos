@@ -7,7 +7,7 @@ import { usePerfil } from '../dados/perfil'
 import { preparar } from '../dados/premissas'
 import { podeManterAcordado } from '../dados/acordado'
 import { assinaturaCadeia, useVerificacao, type PacienciaHoras, type RodadaCadeia } from '../dados/verificacao'
-import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
+import { estadoEfetivo, type EstadoTeorema, type PedidoCadeia, type RelatorioCadeia } from '../motor/cadeia'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
 import { ConferenciaNumerica, ConfirmacaoZ3 } from './ConfirmacaoZ3'
@@ -489,11 +489,13 @@ function Relatorio({
   travado: boolean
   onAprovada: (nome: string) => void
 }) {
-  const seguem = rel.teoremas.filter((t) => t.resultado.tipo === 'segue')
-  const naoSeguem = rel.teoremas.filter((t) => t.resultado.tipo === 'nao-segue')
-  const contradizem = rel.teoremas.filter((t) => t.resultado.tipo === 'contradiz')
-  const numericos = rel.teoremas.filter((t) => t.resultado.tipo === 'aritmetica')
-  const outros = rel.teoremas.filter((t) => !['segue', 'nao-segue', 'contradiz', 'aritmetica'].includes(t.resultado.tipo))
+  // o que o Z3 decidiu (para qualquer tamanho) passa na frente do que o motor finito viu (até N)
+  const tipo = (t: EstadoTeorema) => estadoEfetivo(t).tipo
+  const seguem = rel.teoremas.filter((t) => tipo(t) === 'segue')
+  const naoSeguem = rel.teoremas.filter((t) => tipo(t) === 'nao-segue')
+  const contradizem = rel.teoremas.filter((t) => tipo(t) === 'contradiz')
+  const numericos = rel.teoremas.filter((t) => tipo(t) === 'aritmetica')
+  const outros = rel.teoremas.filter((t) => !['segue', 'nao-segue', 'contradiz', 'aritmetica'].includes(tipo(t)))
   const geracoes = [...new Set(seguem.map((t) => t.geracao ?? 1))].sort((a, b) => a - b)
   // grau herdado pela cadeia, geração por geração (visões não têm grau)
   const graus = new Map<string, GrauHerdado>()
@@ -594,17 +596,18 @@ function Relatorio({
                     <li class="segue">
                       ✓ <Link id={t.id} /> <span class="formula-inline">{t.formula}</span>
                       <div class="suave">
-                        {t.z3 === 'segue' ? (
-                          '⇐ todas as leis e fatos (provado pelo Z3, para qualquer número de objetos; ele não diz quais notas bastam)'
-                        ) : (
-                          <>
-                            ⇐{' '}
-                            {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
-                          </>
-                        )}
+                        ⇐ {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
                       </div>
+                      {t.z3 === 'segue' ? (
+                        <div class="status-ok">✓ provado: vale com qualquer número de objetos (inclusive infinito)</div>
+                      ) : (
+                        <div class="suave">
+                          vale em todos os cenários até {tamanhoTexto(rel.N)} — ainda sem prova para cenários maiores (só o Z3 prova para
+                          qualquer tamanho)
+                        </div>
+                      )}
                       {graus.get(t.id) && <SeloGrau g={graus.get(t.id)!} />}
-                      {!travado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDoApoio(t, rel, grupos)} negar={t.formula} />}
+                      {!travado && !t.z3 && <ConfirmacaoZ3 tipo="segue" formulas={formulasDoApoio(t, rel, grupos)} negar={t.formula} />}
                     </li>
                   ))}
               </ul>
@@ -617,7 +620,20 @@ function Relatorio({
                 {naoSeguem.map((t) => (
                   <li class="nao-segue">
                     ✗ <Link id={t.id} /> <span class="formula-inline">{t.formula}</span>
-                    {t.resultado.tipo === 'nao-segue' && (
+                    {t.z3 === 'nao-segue' && (
+                      <div class="suave">
+                        {t.resultado.tipo === 'segue'
+                          ? `valia em todos os cenários até ${tamanhoTexto(rel.N)}, mas o Z3 achou um cenário maior (ou infinito) em que as leis valem e ele falha: não segue`
+                          : 'o Z3 achou um cenário em que as leis valem e ele falha (grande demais para desenhar aqui)'}
+                      </div>
+                    )}
+                    {t.z3 === 'nao-contradiz' && (
+                      <div class="suave">
+                        as leis não o contradizem: o Z3 achou um cenário (maior que {tamanhoTexto(rel.N)}, ou infinito) em que as leis e ele valem
+                        juntos; e ele também não segue delas
+                      </div>
+                    )}
+                    {t.resultado.tipo === 'nao-segue' && !t.z3 && (
                       <details class="explicacao">
                         <summary>contraexemplo: as leis valem e o teorema falha</summary>
                         <ArvorePassos p={t.resultado.mundo.passos} />
@@ -640,6 +656,11 @@ function Relatorio({
                       <div class="suave">
                         o contrário segue de <Links ids={t.resultado.notas} />
                       </div>
+                    )}
+                    {t.z3 === 'contradiz' ? (
+                      <div class="status-ok">provado: vale com qualquer número de objetos</div>
+                    ) : (
+                      <div class="suave">em todos os cenários até {tamanhoTexto(rel.N)} — ainda sem prova para cenários maiores</div>
                     )}
                   </li>
                 ))}
@@ -674,8 +695,6 @@ function Relatorio({
                   <span class="girando" aria-hidden="true" /> conferindo com mais tempo
                   {t.resultado.tipo === 'tempo' && t.resultado.n > 1 && ` (sem contraexemplo até ${t.resultado.n - 1} objetos; continua do ${t.resultado.n})`}…
                 </>
-              ) : t.z3 === 'nao-segue' ? (
-                '✗ não segue: o Z3 achou um cenário em que as leis valem e ele falha (grande demais para desenhar aqui)'
               ) : rel.aParte?.teoremas.includes(t.id) && t.resultado.tipo === 'grande-demais' ? (
                 rel.aParte.z3 === 'rodando' ? (
                   <>

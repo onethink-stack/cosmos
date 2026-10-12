@@ -6,6 +6,7 @@
 
 import { useEffect, useReducer } from 'preact/hooks'
 import { prepararCadeia } from './cadeia'
+import { notaQueJaDiz } from './deduzida'
 import { estado, notaVazia } from './estado'
 import { ENDERECO_MOTOR, motorFundo } from './motorFundo'
 import type { Nota } from './tipos'
@@ -138,6 +139,8 @@ export function useVerdades(): Verdades {
 
 /** Guarda um teorema do banco como nota (teorema provado, com as notas de onde vem). */
 export function salvarVerdade(v: Verdade): Promise<Nota> {
+  const ja = notaQueJaDiz(v.formula, 'teorema', '')
+  if (ja) return Promise.resolve(ja)
   const titulos = v.apoio.map((id) => estado.nota(id)?.titulo || 'Sem título').join(', ')
   return estado.salvarNota({
     ...notaVazia('teorema'),

@@ -21,7 +21,7 @@ import type { EntradaDicionario, Nota } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { canonica } from '../logica/canonica'
 import { limiteTexto, tamanhoTexto } from './avaliar'
-import { reacaoEmCadeia, type AjudaZ3, type ContextoCadeia, type LimitesAprimoramento, type RelatorioCadeia } from './cadeia'
+import { estadoEfetivo, reacaoEmCadeia, type AjudaZ3, type ContextoCadeia, type LimitesAprimoramento, type RelatorioCadeia } from './cadeia'
 import { analisar, buscarModelo, nao, type OpcoesMotor } from './motor'
 import { testarNosDados, type ConjuntoDados, type VereditoDados } from './dados'
 import { oQueObservar, type Observacao } from './observar'
@@ -277,8 +277,10 @@ export async function rodarModelo(
         // 2. teoremas: refutados saem; os que passaram a seguir entram no diário
         for (const t of rc.teoremas) {
           const antes = ultimo.get(t.id)
-          ultimo.set(t.id, t.resultado.tipo)
-          if (t.resultado.tipo === 'segue') {
+          // o que o Z3 decidiu (qualquer tamanho) vale mais que o que o motor finito viu (até N)
+          const efetivo = estadoEfetivo(t).tipo
+          ultimo.set(t.id, efetivo)
+          if (efetivo === 'segue' && t.resultado.tipo === 'segue') {
             provados.add(t.id)
             if (antes && antes !== 'segue') {
               const de = t.resultado.notas.map(titulo)
@@ -290,9 +292,10 @@ export async function rodarModelo(
                 detalhe: `passou a seguir${de.length ? ` de ${lista(de)}` : ''}`,
               })
             }
-          } else if (t.resultado.tipo === 'contradiz') {
+          } else if (efetivo === 'contradiz' && t.resultado.tipo === 'contradiz') {
             const por = t.resultado.notas.map(titulo)
-            const motivo = `as leis implicam o contrário${por.length ? ` (${lista(por)})` : ''}, em todos os mundos até ${limiteTexto(nivel.N, rc.K)}`
+            const onde = t.z3 === 'contradiz' ? 'provado, com qualquer número de objetos' : `em todos os mundos até ${limiteTexto(nivel.N, rc.K)}`
+            const motivo = `as leis implicam o contrário${por.length ? ` (${lista(por)})` : ''}, ${onde}`
             refutados.set(t.id, motivo)
             mudar(t.notaId, { ativa: false })
             evento({ tipo: 'refutou', conjunto: c.rotulo, notaId: t.notaId, titulo: titulo(t.id), detalhe: motivo })
@@ -670,10 +673,14 @@ function classificar(notas: Nota[], finais: RelatorioCadeia[], dicionario: Entra
       if (d.refutados.has(id) && t?.resultado.tipo !== 'contradiz') return item('refutado', d.refutados.get(id)!)
       if (!t) return item('incerto', n.ativa ? 'não foi conferido' : 'a nota saiu porque outra fórmula dela foi refutada')
       const nivel = rel ? limiteTexto(rel.N, rel.K) : ''
+      // o Z3 achou um cenário (maior que os testados, ou infinito) em que as leis valem e ele falha
+      if (t.z3 === 'nao-segue' || t.z3 === 'nao-contradiz')
+        return item('tese', `não segue das leis: valia até ${nivel}, mas o Z3 achou um cenário maior (ou infinito) em que as leis valem e ele falha`)
       switch (t.resultado.tipo) {
         case 'segue': {
           const apoio = t.apoio?.length ? t.apoio : t.resultado.notas
-          return item('provado', `vale em todos os mundos até ${nivel}; ${apoio.length ? `vem de ${de(apoio)}` : 'vale sempre, sem precisar de lei'}`, {
+          const onde = t.z3 === 'segue' ? 'provado (vale com qualquer número de objetos)' : `vale em todos os mundos até ${nivel} (ainda sem prova para maiores)`
+          return item('provado', `${onde}; ${apoio.length ? `vem de ${de(apoio)}` : 'vale sempre, sem precisar de lei'}`, {
             apoio,
             geracao: t.geracao,
           })

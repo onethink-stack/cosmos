@@ -97,13 +97,45 @@ export function achadosDaCadeia(relatorios: RelatorioCadeia[], notas: Nota[]): N
     for (const t of rel.teoremas) {
       const titulo = notas.find((n) => n.id === t.notaId)?.titulo || 'Sem título'
       const res = t.resultado
-      if (res.tipo === 'segue') {
+      const ate = `em todos os cenários até ${rel.N} objeto${rel.N > 1 ? 's' : ''} (ainda sem prova para cenários maiores)`
+      // o Z3 achou um cenário (maior que os testados, ou infinito) em que as leis valem e ele falha
+      if (t.z3 === 'nao-segue' || t.z3 === 'nao-contradiz')
+        r.push({
+          ...base,
+          tipo: 'teorema',
+          resultado: 'nao-segue',
+          formula: t.formula,
+          titulo,
+          explicacao:
+            t.z3 === 'nao-contradiz'
+              ? 'não segue, e as leis também não o contradizem: o Z3 achou um cenário em que as leis e ele valem juntos'
+              : 'o Z3 achou um cenário (maior que os testados, ou infinito) em que as leis valem e ele falha',
+          notas: [],
+        })
+      else if (res.tipo === 'segue') {
         const apoio = t.apoio?.length ? t.apoio : res.notas
-        r.push({ ...base, tipo: 'teorema', resultado: 'segue', formula: t.formula, titulo, explicacao: apoio.length ? 'segue de' : 'vale sempre, sem precisar de lei', notas: comTitulos(apoio, notas) })
+        const como = t.z3 === 'segue' ? 'provado (vale com qualquer número de objetos)' : `segue ${ate}`
+        r.push({
+          ...base,
+          tipo: 'teorema',
+          resultado: 'segue',
+          formula: t.formula,
+          titulo,
+          explicacao: apoio.length ? `${como}; vem de` : `${como}, sem precisar de lei`,
+          notas: comTitulos(apoio, notas),
+        })
       } else if (res.tipo === 'nao-segue')
         r.push({ ...base, tipo: 'teorema', resultado: 'nao-segue', formula: t.formula, titulo, explicacao: `há um cenário com ${res.mundo.n} objeto${res.mundo.n > 1 ? 's' : ''} em que as leis valem e ele falha`, notas: [] })
       else if (res.tipo === 'contradiz')
-        r.push({ ...base, tipo: 'teorema', resultado: 'contradiz', formula: t.formula, titulo, explicacao: 'as leis implicam o contrário; vem de', notas: comTitulos(res.notas, notas) })
+        r.push({
+          ...base,
+          tipo: 'teorema',
+          resultado: 'contradiz',
+          formula: t.formula,
+          titulo,
+          explicacao: `as leis implicam o contrário${t.z3 === 'contradiz' ? ' (provado, qualquer número de objetos)' : ` ${ate}`}; vem de`,
+          notas: comTitulos(res.notas, notas),
+        })
       else if (res.tipo === 'tempo')
         r.push({
           ...base,

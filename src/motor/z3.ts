@@ -67,6 +67,52 @@ function liberacoes(api: any): Liberacoes {
  * números e não variam com o mundo, como a matemática).
  */
 export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3_MS, numericos: Set<string> = new Set()): Promise<ResultadoZ3> {
+  return (await checarZ3ComNucleo(api, formulas, tempoMs, numericos)).resultado
+}
+
+export interface RespostaComNucleo {
+  resultado: ResultadoZ3
+  /** sem modelo: os grupos que a prova usou (null se nenhum grupo foi marcado) */
+  nucleo: number[] | null
+}
+
+/**
+ * Como checarZ3, marcando de qual grupo (nota) vem cada fórmula: `grupos[i]`
+ * é o grupo da i-ésima (null = sem grupo, ex.: a negação do teorema). Se não
+ * houver modelo, devolve o núcleo — os grupos que a prova de fato usou —, em
+ * vez de "todas as notas".
+ */
+export async function checarZ3ComNucleo(
+  api: any,
+  formulas: Formula[],
+  tempoMs = TEMPO_Z3_MS,
+  numericos: Set<string> = new Set(),
+  grupos?: (number | null)[],
+): Promise<RespostaComNucleo> {
+  // o Z3 é instável aqui: as mesmas leis às vezes saem em menos de 1 s marcando as
+  // notas e travam sem marcar, às vezes o contrário. Primeiro marcando, com prazo
+  // curto (se sair, já vem com as notas que a prova usou); senão, sem marcar
+  if (grupos?.some((g) => g !== null && g !== undefined)) {
+    const marcado = await checarUmaVez(api, formulas, Math.min(tempoMs, TEMPO_NUCLEO_MS), numericos, grupos)
+    if (marcado.resultado !== 'unknown') return marcado
+  }
+  const { resultado } = await checarUmaVez(api, formulas, tempoMs, numericos)
+  return { resultado, nucleo: null }
+}
+
+/** quanto tempo, no máximo, a tentativa marcando as notas (a que dá o núcleo da prova) */
+const TEMPO_NUCLEO_MS = 5000
+
+/** Uma checagem no Z3 (com as notas marcadas, se `grupos`). */
+export async function checarUmaVez(
+  api: any,
+  formulas: Formula[],
+  tempoMs: number,
+  numericos: Set<string>,
+  grupos?: (number | null)[],
+  /** opções do Z3 (ex.: smt.mbqi, smt.random_seed) */
+  opcoes: Record<string, string | number | boolean> = {},
+): Promise<RespostaComNucleo> {
   const espera = liberacoes(api)
   const ctx = obterContexto(api)
   const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real, IsInt } = ctx
@@ -214,8 +260,16 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
   }
 
   const solver = new Solver()
+  // (o Z3 às vezes fica preso numa fase em que não confere o prazo: quem o usa
+  // num worker o troca por outro se ele passar muito do prazo)
   solver.set('timeout', tempoMs)
-  for (const f of formulas) solver.add(formula(f, new Map(), w0))
+  for (const [k, v] of Object.entries(opcoes)) solver.set(k, v)
+  formulas.forEach((f, i) => {
+    const e = formula(f, new Map(), w0)
+    const g = grupos?.[i]
+    if (g === undefined || g === null) solver.add(e)
+    else solver.addAndTrack(e, Bool.const(`grupo!${g}`))
+  })
 
   if (usaVazio) {
     const w = nova('w', Mundo)
@@ -233,7 +287,14 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
   }
   espera.checando++
   try {
-    return (await solver.check()) as ResultadoZ3
+    const resultado = (await solver.check()) as ResultadoZ3
+    let nucleo: number[] | null = null
+    if (resultado === 'unsat' && grupos) {
+      const usados = new Set<number>()
+      for (const e of solver.unsatCore().values()) usados.add(Number(String(e).replace('grupo!', '')))
+      nucleo = [...usados].sort((a, b) => a - b)
+    }
+    return { resultado, nucleo }
   } finally {
     if (--espera.checando === 0) for (const liberar of espera.adiadas.splice(0)) liberar()
   }

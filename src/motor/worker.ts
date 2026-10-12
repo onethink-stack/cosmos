@@ -34,7 +34,9 @@ function ajustarParalelo(n: number, teto?: number) {
   }
 }
 
-type MensagemZ3 = { tipo: 'z3-resposta'; pedido: number; indice: number; resultado?: 'sat' | 'unsat' } | { tipo: 'z3-fim'; pedido: number; desligado?: boolean }
+type MensagemZ3 =
+  | { tipo: 'z3-resposta'; pedido: number; indice: number; resultado?: 'sat' | 'unsat'; nucleo?: number[] | null }
+  | { tipo: 'z3-fim'; pedido: number; desligado?: boolean }
 
 ctx.onmessage = async (e: MessageEvent<PedidoMotor | MensagemZ3>) => {
   const m = e.data
@@ -44,7 +46,10 @@ ctx.onmessage = async (e: MessageEvent<PedidoMotor | MensagemZ3>) => {
     if (m.tipo === 'z3-fim') {
       p.acabar({ desligado: m.desligado })
       respostasPorPedido.delete(m.pedido)
-    } else (m.resultado === 'sat' ? p.r.comModelo : p.r.semModelo).add(m.indice)
+    } else {
+      if (m.resultado !== 'sat' && m.nucleo) p.r.nucleos.set(m.indice, m.nucleo)
+      ;(m.resultado === 'sat' ? p.r.comModelo : p.r.semModelo).add(m.indice)
+    }
     return
   }
   banco ??= abrirBancoProvas()
@@ -52,12 +57,12 @@ ctx.onmessage = async (e: MessageEvent<PedidoMotor | MensagemZ3>) => {
     .catch(() => definirBanco(bancoNaMemoria()))
   await banco
   ajustarParalelo(m.paralelo ?? 1, m.limiteParalelo)
-  const ajudaZ3 = (conjuntos: Formula[][], ate?: number): RespostasZ3 => {
+  const ajudaZ3 = (conjuntos: Formula[][], ate?: number, grupos?: (number | null)[][]): RespostasZ3 => {
     const pedido = ++pedidosZ3
     let acabar: (x: { desligado?: boolean }) => void = () => {}
-    const r: RespostasZ3 = { semModelo: new Set(), comModelo: new Set(), fim: new Promise((ok) => (acabar = ok)) }
+    const r: RespostasZ3 = { semModelo: new Set(), comModelo: new Set(), nucleos: new Map(), fim: new Promise((ok) => (acabar = ok)) }
     respostasPorPedido.set(pedido, { r, acabar })
-    ctx.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}) } satisfies RespostaMotor)
+    ctx.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}), ...(grupos ? { grupos } : {}) } satisfies RespostaMotor)
     return r
   }
   await executarTarefas(m, (r: RespostaMotor) => ctx.postMessage(r), ajudaZ3)

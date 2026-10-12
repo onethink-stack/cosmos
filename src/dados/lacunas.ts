@@ -4,6 +4,7 @@
 import type { PassoExplicacao } from '../motor/avaliar'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { LeiSugerida } from '../motor/lacunas'
+import { notaQueJaDiz } from './deduzida'
 import { estado, notaVazia } from './estado'
 import type { Nota } from './tipos'
 
@@ -43,6 +44,9 @@ export function textoDaLei(s: LeiSugerida, teorema: string, N: number, K: number
   return partes.join('\n\n')
 }
 
+/** "Extensionalidade (sugestão — desativada)" ativada: o "— desativada" sai do título */
+export const semMarcaDesativada = (titulo: string) => titulo.replace(/\s*[—-]\s*desativada\)/i, ')').replace(/\s*\(desativada\)/i, '')
+
 /**
  * Aprova a sugestão: cria a nota de lei (numa visão, nota da mesma visão), ou
  * ativa a nota desativada de onde ela veio.
@@ -50,11 +54,13 @@ export function textoDaLei(s: LeiSugerida, teorema: string, N: number, K: number
 export async function aprovarLei(s: LeiSugerida, teorema: string, N: number, K: number, chave = 'geral'): Promise<Nota> {
   const titular = chave.startsWith('visao:') ? chave.slice('visao:'.length) : null
   const texto = textoDaLei(s, teorema, N, K)
-  const existente = s.notaId ? estado.nota(s.notaId) : undefined
+  // a nota de onde a sugestão veio, ou uma que já diz o mesmo (aprovar de novo não cria cópia)
+  const existente = (s.notaId ? estado.nota(s.notaId) : undefined) ?? notaQueJaDiz(s.formula, titular ? 'visao' : 'lei', titular ?? '')
   if (existente)
     return estado.salvarNota({
       ...existente,
       ativa: true,
+      titulo: semMarcaDesativada(existente.titulo),
       texto: [existente.texto.trim(), '— Ativada pela busca de leis que faltam —', texto].filter(Boolean).join('\n\n'),
     })
   return estado.salvarNota({

@@ -1,6 +1,6 @@
 import type { EntradaDicionario } from '../dados/tipos'
 import { expandir } from '../logica/acucar'
-import type { Formula } from '../logica/ast'
+import type { Formula, Termo } from '../logica/ast'
 import { temAritmetica, usosDeNomes } from '../logica/termos'
 import { validar } from '../logica/validador'
 import { Aterrador, ehModal, GrandeDemais, PREFIXO_SKOLEM, type ProblemaCNF } from './aterrar'
@@ -119,6 +119,87 @@ export function relevantes(formulas: FormulaPronta[], alvo: FormulaPronta): Form
     })
   }
   return cada.filter((_, i) => dentro.has(i)).map((x) => x.f)
+}
+
+/** a fórmula usa ∈ (ou ∅, que o motor define por ∈)? */
+function usaPertence(f: Formula): boolean {
+  const termo = (t: Termo): boolean => {
+    switch (t.k) {
+      case 'vazio':
+        return true
+      case 'app':
+        return t.args.some(termo)
+      case 'inter':
+      case 'uniao':
+      case 'arit':
+        return termo(t.l) || termo(t.r)
+      case 'neg':
+        return termo(t.t)
+      default:
+        return false
+    }
+  }
+  switch (f.k) {
+    case 'rel':
+      return f.op === '∈' || f.op === '∉' || termo(f.l) || termo(f.r)
+    case 'pred':
+      return f.args.some(termo)
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return usaPertence(f.f)
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return usaPertence(f.l) || usaPertence(f.r)
+    case 'forall':
+    case 'exists':
+      return !!f.dom || usaPertence(f.corpo)
+    default:
+      return false
+  }
+}
+
+/**
+ * Os nomes que a fórmula usa. ∈ e os operadores modais contam como nomes:
+ * a relação ∈ e os mundos são os mesmos para todas as notas.
+ */
+export function nomesDe(it: FormulaPronta): string[] {
+  return nomesDaFormula(it.expandida)
+}
+
+/** os nomes de uma fórmula já expandida (com ∈ e □ como nomes compartilhados) */
+export function nomesDaFormula(f: Formula): string[] {
+  const nomes = usosDeNomes(f).map((u) => u.nome)
+  if (usaPertence(f)) nomes.push('∈')
+  if (ehModal(f)) nomes.push('□')
+  return nomes
+}
+
+/**
+ * As notas ligadas às fórmulas-alvo por nomes em comum (direta ou
+ * indiretamente), mais as que não têm nome nenhum (ex.: "há no máximo 2
+ * objetos": falam do tamanho, que é de todos). As outras não mudam o que vale
+ * sobre os nomes do alvo — a não ser pelo número de objetos, por isso quem usa
+ * confere e, se preciso, volta a olhar todas.
+ */
+export function gruposRelevantes(prontos: GrupoPronto[], alvos: FormulaPronta[]): GrupoPronto[] {
+  const ligados = new Set(alvos.flatMap(nomesDe))
+  const nomesDoGrupo = prontos.map((x) => new Set(x.itens.flatMap(nomesDe)))
+  const dentro = new Set<number>()
+  nomesDoGrupo.forEach((ns, i) => ns.size === 0 && dentro.add(i))
+  for (let mudou = true; mudou; ) {
+    mudou = false
+    nomesDoGrupo.forEach((ns, i) => {
+      if (dentro.has(i) || ![...ns].some((n) => ligados.has(n))) return
+      dentro.add(i)
+      ns.forEach((n) => ligados.add(n))
+      mudou = true
+    })
+  }
+  return prontos.filter((_, i) => dentro.has(i))
 }
 
 /** Analisa e expande as fórmulas de um grupo. Fórmulas com erro são ignoradas. */
@@ -445,8 +526,8 @@ export function perguntar(
   // decide mantém a nota: a lista pode sair maior, nunca insuficiente)
   const opNotas = op.prazo ? { ...op, prazo: Math.max(op.prazo, Date.now() + PRAZO_MINIMO_NOTAS_MS) } : op
   if (contra.status === 'sem-modelo') {
-    const notas = minimizarRapido(prontos, [nao(phi.expandida)], opNotas, 0, (g, i) =>
-      progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
+    const notas = notasNecessarias(prontos, phi, [nao(phi.expandida)], opNotas, (g, i, n) =>
+      progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${n})`),
     )
     return { tipo: 'segue', N: op.N, K: contra.K, notas: notas.map((x) => x.g.id) }
   }
@@ -455,13 +536,33 @@ export function perguntar(
   progresso?.('procurando um mundo onde as notas valem e a fórmula também')
   const afavor = buscarModelo([...premissas, phi.expandida], op)
   if (afavor.status === 'sem-modelo') {
-    const notas = minimizarRapido(prontos, [phi.expandida], opNotas, 0, (g, i) =>
-      progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${prontos.length})`),
+    const notas = notasNecessarias(prontos, phi, [phi.expandida], opNotas, (g, i, n) =>
+      progresso?.(`procurando as notas que a contradizem: testando sem "${g.rotulo}" (${i + 1}/${n})`),
     )
     return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }
   }
   // grande demais ao procurar o mundo a favor: ainda assim sabemos que não segue
   return { tipo: 'nao-segue', N: op.N, mundo }
+}
+
+/**
+ * As notas necessárias para `fixas` não ter modelo, procuradas primeiro só
+ * entre as ligadas ao teorema pelos nomes (com centenas de notas, testar
+ * tirar uma por uma de todas estourava o prazo, e a lista saía com todas).
+ * Se as ligadas não bastarem (o tamanho do mundo também conta), olha todas.
+ */
+export function notasNecessarias(
+  prontos: GrupoPronto[],
+  phi: FormulaPronta,
+  fixas: Formula[],
+  op: OpcoesMotor,
+  aviso?: (g: Grupo, i: number, total: number) => void,
+): GrupoPronto[] {
+  const ligadas = gruposRelevantes(prontos, [phi])
+  const bastam =
+    ligadas.length < prontos.length && buscarModelo([...ligadas.flatMap((x) => x.itens.map((i) => i.expandida)), ...fixas], op).status === 'sem-modelo'
+  const base = bastam ? ligadas : prontos
+  return minimizarRapido(base, fixas, op, 0, (g, i) => aviso?.(g, i, base.length))
 }
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
-import { blocosIndependentes, prazosAuxiliares, reacaoEmCadeia, type AjudaZ3, type RelatorioCadeia } from '../src/motor/cadeia'
+import { blocosIndependentes, estadoEfetivo, prazosAuxiliares, reacaoEmCadeia, type AjudaZ3, type RelatorioCadeia } from '../src/motor/cadeia'
 import { bancoNaMemoria, definirBanco } from '../src/motor/bancoProvas'
 import { comTeto, definirPool, PoolLocal, semParalelo } from '../src/motor/paralelo'
 import { analisar, buscarModelo, OPCOES_PADRAO, perguntar } from '../src/motor/motor'
@@ -75,7 +75,7 @@ describe('conjunto grande demais para o motor finito', () => {
   const pesada = g('pesada', 'a ≠ b', 'b ≠ d', 'a ≠ d', 'H(a, b, d)', '∀x ∀y ∀z ∀w (H(x, y, z) ∧ H(y, z, w) ⟹ H(x, z, w))')
   const leves = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
   const opP = { ...op, limite: 300 }
-  const respostas = (sem: number[], com: number[]) => () => ({ semModelo: new Set(sem), comModelo: new Set(com), fim: Promise.resolve({}) })
+  const respostas = (sem: number[], com: number[]) => () => ({ semModelo: new Set(sem), comModelo: new Set(com), nucleos: new Map<number, number[]>(), fim: Promise.resolve({}) })
   const rodarP = async (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], ajudaZ3?: AjudaZ3) => {
     let ultimo: RelatorioCadeia[] = []
     await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [] }, dicP, opP, (r) => (ultimo = r), undefined, ajudaZ3)
@@ -194,7 +194,7 @@ describe('prazo de cada checagem principal', () => {
         op,
         (r) => relatorios.push(r),
         undefined,
-        (_conjuntos, ate) => (pedidosZ3.push(ate), { semModelo: new Set<number>(), comModelo: new Set<number>(), fim: Promise.resolve({}) }),
+        (_conjuntos, ate) => (pedidosZ3.push(ate), { semModelo: new Set<number>(), comModelo: new Set<number>(), nucleos: new Map<number, number[]>(), fim: Promise.resolve({}) }),
       )
       const ultimo = relatorios.at(-1)![0]
       expect(ultimo.teoremas.find((x) => x.id === 'T1:0')!.resultado.tipo).toBe('segue')
@@ -255,5 +255,76 @@ describe('aprimoramento automático', () => {
     expect(rel.aprimoramento!.sairam!.some((x) => x.includes('P(c)'))).toBe(true)
     expect(rel.consequencias!.some((q) => q.formula === 'P(c)')).toBe(false)
     expect(rel.aprimoramento!.parouPor).not.toContain('Z3')
+  })
+})
+
+describe('as notas de onde um teorema segue (o núcleo, não todas)', () => {
+  it('com dezenas de notas sem relação, a lista sai só com as necessárias, e rápido', () => {
+    const dicN = [...dic, ...Array.from({ length: 60 }, (_, i) => ficha(`X${i}`, 'predicado', 1)), ficha('d', 'constante')]
+    const outras = Array.from({ length: 60 }, (_, i) => g(`O${i}`, `∀x (X${i}(x) ⟹ X${(i + 1) % 60}(x))`, `X${i}(d)`))
+    const grupos = [...outras.slice(0, 30), g('L1', '∀x (P(x) ⟹ Q(x))'), ...outras.slice(30), g('L2', 'P(c)')]
+    const ini = Date.now()
+    const r = perguntar(grupos, 'Q(c)', dicN, { ...op, prazo: Date.now() + 60_000 })
+    expect(r).toMatchObject({ tipo: 'segue', notas: ['L1', 'L2'] })
+    expect(Date.now() - ini).toBeLessThan(20_000)
+  }, 60_000)
+})
+
+describe('o Z3 confere o "segue até N" do motor finito', () => {
+  // "s nunca leva dois objetos ao mesmo lugar ⟹ todo objeto é alcançado": vale em todo cenário finito, falha nos naturais (s(x) = x + 1)
+  const dicS = [...dic, ficha('s', 'funcao', 1)]
+  const injetiva = g('L1', '∀x ∀y (s(x) = s(y) ⟹ x = y)')
+  const sobrejetiva = t('T1', '∀y ∃x (s(x) = y)')
+  const rodarZ3 = async (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], ajudaZ3: AjudaZ3) => {
+    let ultimo: RelatorioCadeia[] = []
+    await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [] }, dicS, op, (r) => (ultimo = r), undefined, ajudaZ3)
+    return ultimo[0]
+  }
+  const z3Responde = (sem: number[], com: number[], nucleos: [number, number[]][] = []): AjudaZ3 => () => ({
+    semModelo: new Set(sem),
+    comModelo: new Set(com),
+    nucleos: new Map(nucleos),
+    fim: Promise.resolve({}),
+  })
+
+  it('o motor finito diz "segue" (até N) — e sem o Z3 isso não vira "provado"', async () => {
+    const rel = await rodarZ3([injetiva], [sobrejetiva], z3Responde([], []))
+    const t1 = rel.teoremas[0]
+    expect(t1.resultado.tipo).toBe('segue')
+    expect(estadoEfetivo(t1)).toEqual({ tipo: 'segue', provado: false })
+  })
+
+  it('o Z3 acha o cenário infinito: deixa de "seguir"', async () => {
+    const rel = await rodarZ3([injetiva], [sobrejetiva], z3Responde([], [0]))
+    expect(rel.teoremas[0].z3).toBe('nao-segue')
+    expect(estadoEfetivo(rel.teoremas[0]).tipo).toBe('nao-segue')
+  })
+
+  it('o Z3 prova: fica "provado", e as notas são as do núcleo da prova', async () => {
+    const leis = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)'), g('L3', '∀x (R(x) ⟹ S(x))')]
+    const rel = await rodarZ3(leis, [t('T1', 'Q(c)')], z3Responde([0], [], [[0, [0, 1]]]))
+    expect(rel.teoremas[0]).toMatchObject({ z3: 'segue', resultado: { tipo: 'segue', notas: ['L1', 'L2'] } })
+    expect(estadoEfetivo(rel.teoremas[0])).toEqual({ tipo: 'segue', provado: true })
+  })
+
+  it('o que não decidiu a tempo também vai para o Z3 (mesmo sem aprofundamento), e provado vira "segue" com o núcleo', async () => {
+    definirBanco(bancoNaMemoria())
+    try {
+      const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
+      buscarModelo(grupos.flatMap((x) => analisar(x.formulas, dic).map((i) => i.expandida)), op)
+      let ultimo: RelatorioCadeia[] = []
+      const limites = { N: 5, K: 1, limite: 1_000_000, tempoChecagemMs: -1, orcamentoMs: 0 }
+      await reacaoEmCadeia(
+        { contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas: [t('T1', 'Q(c)')] }], inativas: [], limites },
+        dicS,
+        op,
+        (r) => (ultimo = r),
+        undefined,
+        z3Responde([0], [], [[0, [0, 1]]]),
+      )
+      expect(ultimo[0].teoremas[0]).toMatchObject({ z3: 'segue', resultado: { tipo: 'segue', notas: ['L1', 'L2'] } })
+    } finally {
+      definirBanco(null)
+    }
   })
 })

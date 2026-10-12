@@ -8,17 +8,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { init } from 'z3-solver'
 import type { Formula } from '../logica/ast'
-import { checarZ3, type ResultadoZ3 } from './z3'
+import { checarZ3ComNucleo, type ResultadoZ3 } from './z3'
 
 export type PedidoZ3 =
   /** `base`: endereço da pasta z3/ (o worker não sabe onde o app está) */
   | { tipo: 'iniciar'; base: string }
-  | { tipo: 'checar'; id: number; formulas: Formula[]; tempoMs: number; numericos: string[] }
+  | { tipo: 'checar'; id: number; formulas: Formula[]; tempoMs: number; numericos: string[]; grupos?: (number | null)[] }
 
 export type RespostaZ3 =
   | { tipo: 'pronto' }
   | { tipo: 'erro'; msg: string }
-  | { tipo: 'resultado'; id: number; resultado: ResultadoZ3 }
+  | { tipo: 'resultado'; id: number; resultado: ResultadoZ3; nucleo: number[] | null }
   | { tipo: 'falha'; id: number; msg: string }
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope
@@ -49,8 +49,8 @@ ctx.onmessage = async (e: MessageEvent<PedidoZ3>) => {
   }
   try {
     if (!api) throw new Error('o Z3 não foi iniciado')
-    const resultado = await checarZ3(await api, m.formulas, m.tempoMs, new Set(m.numericos))
-    ctx.postMessage({ tipo: 'resultado', id: m.id, resultado } satisfies RespostaZ3)
+    const { resultado, nucleo } = await checarZ3ComNucleo(await api, m.formulas, m.tempoMs, new Set(m.numericos), m.grupos)
+    ctx.postMessage({ tipo: 'resultado', id: m.id, resultado, nucleo } satisfies RespostaZ3)
   } catch (x) {
     ctx.postMessage({ tipo: 'falha', id: m.id, msg: (x as Error).message || 'o Z3 falhou' } satisfies RespostaZ3)
   }

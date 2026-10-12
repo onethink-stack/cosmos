@@ -6,14 +6,14 @@
 import { parentPort } from 'node:worker_threads'
 import { init } from 'z3-solver'
 import type { Formula } from '../src/logica/ast'
-import { checarZ3 } from '../src/motor/z3'
+import { checarZ3ComNucleo } from '../src/motor/z3'
 
 const api: Promise<any> = init()
 
-parentPort!.on('message', async (m: { id: number; formulas: Formula[]; tempoMs: number; numericos: string[] }) => {
+parentPort!.on('message', async (m: { id: number; formulas: Formula[]; tempoMs: number; numericos: string[]; grupos?: (number | null)[] }) => {
   try {
-    const resultado = await checarZ3(await api, m.formulas, m.tempoMs, new Set(m.numericos))
-    parentPort!.postMessage({ id: m.id, resultado })
+    const { resultado, nucleo } = await checarZ3ComNucleo(await api, m.formulas, m.tempoMs, new Set(m.numericos), m.grupos)
+    parentPort!.postMessage({ id: m.id, resultado, nucleo })
   } catch (x) {
     parentPort!.postMessage({ id: m.id, erro: (x as Error).message || 'o Z3 falhou' })
   }

@@ -4,6 +4,8 @@
 import { useEffect, useReducer } from 'preact/hooks'
 import { PREFIXO_ADOTADA, PREFIXO_INDUZIDA, type ItemModelo, type RelatorioModelo } from '../motor/modelo'
 import { gravarConfig, lerConfig } from './db'
+import { notaQueJaDiz } from './deduzida'
+import { semMarcaDesativada } from './lacunas'
 import { estado, notaVazia } from './estado'
 import type { EntradaDicionario, Nota } from './tipos'
 
@@ -160,13 +162,20 @@ export async function levarParaOCaderno(ms: MudancaCaderno[], pastas: string[]) 
     const atual = estado.nota(m.nota.id)
     if (!atual) continue
     const linha = `— ${m.tipo === 'ativar' ? 'Ativada' : 'Desativada'} pelo segundo modelo em ${data}: ${m.motivo} —`
-    await estado.salvarNota({ ...atual, ativa: m.tipo === 'ativar', texto: [atual.texto.trim(), linha].filter(Boolean).join('\n\n') })
+    await estado.salvarNota({
+      ...atual,
+      ativa: m.tipo === 'ativar',
+      titulo: m.tipo === 'ativar' ? semMarcaDesativada(atual.titulo) : atual.titulo,
+      texto: [atual.texto.trim(), linha].filter(Boolean).join('\n\n'),
+    })
   }
 }
 
 /** Escreve uma consequência descoberta como teorema do caderno (no conjunto de onde veio). */
 export function escreverComoTeorema(it: ItemModelo, pastas: string[]): Promise<Nota> {
   const titular = it.chave.startsWith('visao:') ? it.chave.slice('visao:'.length) : ''
+  const ja = notaQueJaDiz(it.formula, 'teorema', titular)
+  if (ja) return Promise.resolve(ja)
   return estado.salvarNota({
     ...notaVazia('teorema'),
     titulo: it.titulo,

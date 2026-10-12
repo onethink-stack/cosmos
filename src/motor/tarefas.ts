@@ -54,7 +54,7 @@ export type RespostaMotor =
   | { id: number; tipo: 'banco'; estatisticas: EstatisticasBanco }
   /** o motor pede ao Z3 (na linha principal) para provar estes conjuntos sem limite de tamanho */
   /** `ate`: no modo de horas, até quando o Z3 insiste (tentativas cada vez mais longas) */
-  | { id: number; tipo: 'z3-pedido'; pedido: number; conjuntos: Formula[][]; ate?: number }
+  | { id: number; tipo: 'z3-pedido'; pedido: number; conjuntos: Formula[][]; ate?: number; grupos?: (number | null)[][] }
   | { id: number; tipo: 'fim' }
 
 /** `ajudaZ3`: como pedir provas ao Z3 (só no worker; nos testes e sem worker, não há) */

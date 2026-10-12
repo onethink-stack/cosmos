@@ -403,7 +403,7 @@ class Verificacao {
    * O motor pediu ao Z3 para provar conclusões sem limite de tamanho (com o
    * Z3 ligado): cada uma provada é avisada ao worker, que deixa de aprofundá-la.
    */
-  private async provarNoZ3(pedido: number, conjuntos: Formula[][], ate?: number) {
+  private async provarNoZ3(pedido: number, conjuntos: Formula[][], ate?: number, grupos?: (number | null)[][]) {
     const w = this.worker
     // o worker espera saber quando acabou (e se não há Z3 ligado)
     const fim = (desligado = false) => {
@@ -420,11 +420,11 @@ class Verificacao {
         if (!w || this.worker !== w) return // o trabalho foi cancelado
         if (decididos.has(indice) || !formulas.length) continue
         if (ate && Date.now() >= ate) return fim()
-        const r = await z3.provarFormulas(formulas, dicionario, tempo && ate ? Math.min(tempo, ate - Date.now()) : undefined)
-        // sem modelo (provado para qualquer tamanho) ou com modelo (o Z3 achou um cenário)
-        if (r === 'unsat' || r === 'sat') {
+        const r = await z3.provarFormulas(formulas, dicionario, tempo && ate ? Math.min(tempo, ate - Date.now()) : undefined, grupos?.[indice])
+        // sem modelo (provado para qualquer tamanho, com as notas que a prova usou) ou com modelo (o Z3 achou um cenário)
+        if (r && (r.resultado === 'unsat' || r.resultado === 'sat')) {
           decididos.add(indice)
-          if (this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice, resultado: r })
+          if (this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice, resultado: r.resultado, nucleo: r.nucleo })
         }
       }
       if (!ate || decididos.size >= conjuntos.filter((c) => c.length).length) return fim()
@@ -664,7 +664,7 @@ class Verificacao {
   private receber(r: RespostaMotor) {
     if (r.id !== this.pedido) return
     if (r.tipo === 'z3-pedido') {
-      void this.provarNoZ3(r.pedido, r.conjuntos, r.ate)
+      void this.provarNoZ3(r.pedido, r.conjuntos, r.ate, r.grupos)
       return
     }
     if (r.tipo === 'banco') {

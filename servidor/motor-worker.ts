@@ -16,7 +16,9 @@ import { abrir, bancoSqlite } from './armazem'
 const { arquivo, memoriaPorAuxiliarMb } = workerData as { arquivo: string; memoriaPorAuxiliarMb: number }
 definirBanco(bancoSqlite(abrir(arquivo)))
 
-type MensagemZ3 = { tipo: 'z3-resposta'; pedido: number; indice: number; resultado?: 'sat' | 'unsat' } | { tipo: 'z3-fim'; pedido: number; desligado?: boolean }
+type MensagemZ3 =
+  | { tipo: 'z3-resposta'; pedido: number; indice: number; resultado?: 'sat' | 'unsat'; nucleo?: number[] | null }
+  | { tipo: 'z3-fim'; pedido: number; desligado?: boolean }
 
 const respostasPorPedido = new Map<number, { r: RespostasZ3; acabar: (x: { desligado?: boolean }) => void }>()
 let pedidosZ3 = 0
@@ -41,16 +43,19 @@ parentPort!.on('message', async (m: PedidoMotor | MensagemZ3) => {
     if (m.tipo === 'z3-fim') {
       p.acabar({ desligado: m.desligado })
       respostasPorPedido.delete(m.pedido)
-    } else (m.resultado === 'sat' ? p.r.comModelo : p.r.semModelo).add(m.indice)
+    } else {
+      if (m.resultado !== 'sat' && m.nucleo) p.r.nucleos.set(m.indice, m.nucleo)
+      ;(m.resultado === 'sat' ? p.r.comModelo : p.r.semModelo).add(m.indice)
+    }
     return
   }
   ajustarParalelo(m.paralelo ?? 1, m.limiteParalelo)
-  const ajudaZ3 = (conjuntos: Formula[][], ate?: number): RespostasZ3 => {
+  const ajudaZ3 = (conjuntos: Formula[][], ate?: number, grupos?: (number | null)[][]): RespostasZ3 => {
     const pedido = ++pedidosZ3
     let acabar: (x: { desligado?: boolean }) => void = () => {}
-    const r: RespostasZ3 = { semModelo: new Set(), comModelo: new Set(), fim: new Promise((ok) => (acabar = ok)) }
+    const r: RespostasZ3 = { semModelo: new Set(), comModelo: new Set(), nucleos: new Map(), fim: new Promise((ok) => (acabar = ok)) }
     respostasPorPedido.set(pedido, { r, acabar })
-    parentPort!.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}) } satisfies RespostaMotor)
+    parentPort!.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}), ...(grupos ? { grupos } : {}) } satisfies RespostaMotor)
     return r
   }
   await executarTarefas(m, (r) => parentPort!.postMessage(r), ajudaZ3)

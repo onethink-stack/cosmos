@@ -3,6 +3,7 @@ import { salvarDeduzida } from '../dados/deduzida'
 import { estado, useEstado } from '../dados/estado'
 import type { Nota } from '../dados/tipos'
 import { assinatura, useVerificacao, type ResultadoDaPergunta } from '../dados/verificacao'
+import { chaveZ3, z3 } from '../dados/z3'
 import type { Diag } from '../logica/ast'
 import { validar } from '../logica/validador'
 import type { Tarefa } from '../motor/tarefas'
@@ -138,7 +139,9 @@ function RespostaPergunta({
   )
 
   const salvarComoNota = async (ids: string[]) => {
-    const nova = await salvarDeduzida(r.formula, r.chave, ids, r.N)
+    // vira lei só se o Z3 provou (para qualquer tamanho); conferida só até N, vira teorema
+    const provado = z3.consulta(chaveZ3(formulasDosGrupos(grupos, ids), r.formula, estado.dicionario))?.resultado === 'unsat'
+    const nova = await salvarDeduzida(r.formula, r.chave, ids, r.N, provado)
     setSalva(nova.id)
   }
 

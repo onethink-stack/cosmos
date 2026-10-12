@@ -107,6 +107,8 @@ export interface RespostaZ3Guardada {
   chave: string
   resultado: 'sat' | 'unsat'
   ms: number
+  /** as notas (índices) que a prova usou, quando foram marcadas */
+  nucleo?: number[]
 }
 
 /** Respostas do Z3 guardadas no aparelho (unknown não é guardado: pode dar certo noutra vez). */

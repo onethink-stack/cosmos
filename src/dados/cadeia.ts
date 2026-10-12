@@ -29,6 +29,7 @@ export function pedidoDaCadeia(notas: Nota[], dicionario: EntradaDicionario[]): 
         chave,
         rotulo: t.rotulo,
         grupos: t.grupos,
+        inativas: inativasDoContexto(notas, chave),
         teoremas: p.teoremas
           .filter((f) => (f.contexto ?? 'geral') === chave)
           .map((f) => ({ id: `${f.notaId}:${f.indice}`, notaId: f.notaId, rotulo: f.titulo || 'Sem título', formula: f.texto })),

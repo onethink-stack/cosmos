@@ -10,7 +10,7 @@ import type { Formula } from '../logica/ast'
 import { resumo } from '../logica/resumo'
 import { guardarZ3, lerZ3Guardados, PREFIXO_CHAVE_Z3 } from '../motor/bancoProvas'
 import { analisar, nao, nomesNumericos, relevantes } from '../motor/motor'
-import { TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
+import { TEMPO_Z3_MS, type RespostaComNucleo, type ResultadoZ3 } from '../motor/z3'
 import type { PedidoZ3, RespostaZ3 } from '../motor/z3worker'
 import { gravarConfig, lerConfig } from './db'
 
@@ -23,6 +23,8 @@ export interface Confirmacao {
   erro?: string
   /** o tempo que o Z3 teve (um "não sei" com pouco tempo pode ser tentado de novo com mais) */
   tempoMs?: number
+  /** sem modelo, com as notas marcadas: as que a prova usou */
+  nucleo?: number[] | null
 }
 
 /** Pode haver Z3 neste ambiente? Se não, por quê. */
@@ -43,10 +45,10 @@ const url = (f: string) => new URL(`./z3/${f}`, location.href).href
 
 /** o worker do Z3 é trocado por um novo depois de tantas checagens (solta a memória presa) */
 export const RECICLAR_Z3_A_CADA = 100
-/** sem resposta tanto tempo depois do prazo da checagem: o Z3 travou, e o worker é trocado */
-const FOLGA_VIGIA_MS = 60_000
+/** sem resposta depois do dobro do prazo da checagem e mais isto: o Z3 travou (ele às vezes ignora o prazo), e o worker é trocado */
+const FOLGA_VIGIA_MS = 15_000
 
-type Retorno = { resultado: ResultadoZ3 } | { erro: string }
+type Retorno = RespostaComNucleo | { erro: string }
 
 class EstadoZ3 {
   /** o usuário quer usar o Z3 (fica gravado) */
@@ -159,7 +161,7 @@ class EstadoZ3 {
         if (m.tipo === 'erro') return falha(new Error(m.msg))
         const fim = this.esperando.get(m.id)
         this.esperando.delete(m.id)
-        fim?.(m.tipo === 'resultado' ? { resultado: m.resultado } : { erro: m.msg })
+        fim?.(m.tipo === 'resultado' ? { resultado: m.resultado, nucleo: m.nucleo } : { erro: m.msg })
       }
       // o worker caiu (ex.: faltou memória): as checagens em curso falham e o próximo uso cria outro
       w.onerror = (e) => {
@@ -206,7 +208,7 @@ class EstadoZ3 {
    * Uma checagem no worker do Z3. Troca o worker antes, se ele já fez muitas;
    * se a checagem falhar (o Z3 quebrou ou travou), tenta mais uma vez num worker novo.
    */
-  private async checar(formulas: Formula[], tempoMs: number, numericos: Set<string>, tentativa = 0): Promise<ResultadoZ3> {
+  private async checar(formulas: Formula[], tempoMs: number, numericos: Set<string>, grupos?: (number | null)[], tentativa = 0): Promise<RespostaComNucleo> {
     if (this.checagensNoWorker >= RECICLAR_Z3_A_CADA) this.descartar()
     await this.carregar()
     const w = this.trabalhador!
@@ -216,17 +218,17 @@ class EstadoZ3 {
     const r = await new Promise<Retorno>((ok) => {
       const vigia = setTimeout(() => {
         if (this.esperando.has(id) && this.trabalhador === w) this.descartar('o Z3 não respondeu (travou) e foi reiniciado')
-      }, tempoMs + FOLGA_VIGIA_MS)
+      }, 2 * tempoMs + FOLGA_VIGIA_MS)
       this.esperando.set(id, (x) => {
         clearTimeout(vigia)
         ok(x)
       })
-      w.postMessage({ tipo: 'checar', id, formulas, tempoMs, numericos: [...numericos] } satisfies PedidoZ3)
+      w.postMessage({ tipo: 'checar', id, formulas, tempoMs, numericos: [...numericos], ...(grupos ? { grupos } : {}) } satisfies PedidoZ3)
     })
-    if ('resultado' in r) return r.resultado
+    if ('resultado' in r) return r
     // depois de uma falha o Z3 pode ter ficado num estado ruim: worker novo
     if (this.trabalhador === w) this.descartar()
-    if (tentativa === 0) return this.checar(formulas, tempoMs, numericos, 1)
+    if (tentativa === 0) return this.checar(formulas, tempoMs, numericos, grupos, 1)
     throw new Error(r.erro)
   }
 
@@ -234,7 +236,7 @@ class EstadoZ3 {
   async carregarGuardados() {
     try {
       for (const r of await lerZ3Guardados())
-        if (!this.confirmacoes.has(r.chave)) this.confirmacoes.set(r.chave, { estado: 'feito', resultado: r.resultado, ms: r.ms })
+        if (!this.confirmacoes.has(r.chave)) this.confirmacoes.set(r.chave, { estado: 'feito', resultado: r.resultado, ms: r.ms, nucleo: r.nucleo })
       this.avisar()
     } catch {
       /* sem banco */
@@ -267,8 +269,15 @@ class EstadoZ3 {
    * tamanho? Usado pelo aprofundamento: o que o Z3 prova não precisa ser
    * reconferido com mais objetos. Resposta guardada como as outras.
    */
-  async provarFormulas(formulas: Formula[], dicionario: EntradaDicionario[], tempoMs = TEMPO_APROFUNDAR_MS): Promise<ResultadoZ3 | null> {
-    const chave = `${PREFIXO_CHAVE_Z3}${resumo(`formulas:${JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))}`)}`
+  async provarFormulas(
+    formulas: Formula[],
+    dicionario: EntradaDicionario[],
+    tempoMs = TEMPO_APROFUNDAR_MS,
+    /** de qual nota vem cada fórmula: com isso, a resposta traz o núcleo (as notas que a prova usou) */
+    grupos?: (number | null)[],
+  ): Promise<RespostaComNucleo | null> {
+    const texto = JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))
+    const chave = `${PREFIXO_CHAVE_Z3}${resumo(`formulas:${texto}${grupos ? `|grupos:${JSON.stringify(grupos)}` : ''}`)}`
     const ja = this.confirmacoes.get(chave)
     // "não sei" com menos tempo do que agora: tenta de novo, com o tempo maior (modo de horas)
     const deNovo = ja?.estado === 'feito' && ja.resultado === 'unknown' && (ja.tempoMs ?? TEMPO_APROFUNDAR_MS) < tempoMs
@@ -277,16 +286,17 @@ class EstadoZ3 {
       this.fila = this.fila.then(async () => {
         const ini = Date.now()
         try {
-          const resultado = await this.checar(formulas, tempoMs, nomesNumericos(dicionario))
-          this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini, tempoMs })
-          if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
+          const { resultado, nucleo } = await this.checar(formulas, tempoMs, nomesNumericos(dicionario), grupos)
+          this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini, tempoMs, nucleo })
+          if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini, ...(nucleo ? { nucleo } : {}) })
         } catch (e) {
           this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
         }
         this.avisar()
       })
     }
-    return (await this.esperar(chave))?.resultado ?? null
+    const c = await this.esperar(chave)
+    return c?.resultado ? { resultado: c.resultado, nucleo: c.nucleo ?? null } : null
   }
 
   /** Resultado já calculado (ou em cálculo) para esta checagem. */
@@ -316,7 +326,7 @@ class EstadoZ3 {
         if (centro && soRelevantes) prontas = relevantes(prontas, centro)
         const fs = prontas.map((x) => x.expandida)
         if (phi) fs.push(nao(phi.expandida))
-        const resultado = await this.checar(fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
+        const { resultado } = await this.checar(fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
         this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
         // fica no banco de provas (não precisa provar de novo noutro dia)
         if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })

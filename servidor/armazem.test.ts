@@ -23,10 +23,12 @@ describe('armazém do motor de fundo (SQLite)', () => {
     expect(bancoSqlite(db).obter(chaveProva(outro))).toMatchObject({ status: 'modelo', n: 1 })
   })
 
-  it('as respostas do Z3 ficam guardadas (só sim/não)', () => {
+  it('as respostas do Z3 ficam guardadas (só sim/não), com as notas que a prova usou', () => {
     const z = respostasZ3(abrir(':memory:'))
     expect(z.obter('k')).toBeUndefined()
-    z.guardar('k', 'unsat', 12)
-    expect(z.obter('k')).toBe('unsat')
+    z.guardar('k', 'unsat', 12, [0, 2])
+    expect(z.obter('k')).toEqual({ resultado: 'unsat', nucleo: [0, 2] })
+    z.guardar('s', 'sat', 3)
+    expect(z.obter('s')).toEqual({ resultado: 'sat', nucleo: null })
   })
 })

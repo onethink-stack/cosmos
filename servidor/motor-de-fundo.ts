@@ -20,7 +20,7 @@ import type { LimitesAprimoramento } from '../src/motor/cadeia'
 import type { Grupo } from '../src/motor/motor'
 import type { EventoGerador } from '../src/motor/saturacao'
 import type { PedidoMotor, RespostaMotor } from '../src/motor/tarefas'
-import type { ResultadoZ3 } from '../src/motor/z3'
+import type { RespostaComNucleo, ResultadoZ3 } from '../src/motor/z3'
 import type { PedidoGerador, RespostaGerador } from './gerador-worker'
 import { arquivoDoMotor, WorkerParecido } from './adaptador'
 import { abrir, arquivoPadrao, respostasZ3 } from './armazem'
@@ -203,7 +203,7 @@ function parar(t: Trabalho) {
 function receber(r: RespostaMotor) {
   const t = atual
   if (!t || r.id !== t.pedido.id || t.situacao !== 'rodando') return
-  if (r.tipo === 'z3-pedido') return void provarNoZ3(t, r.pedido, r.conjuntos, r.ate)
+  if (r.tipo === 'z3-pedido') return void provarNoZ3(t, r.pedido, r.conjuntos, r.ate, r.grupos)
   registrar(t, r)
   if (r.tipo === 'fim') terminar(t, 'terminado')
 }
@@ -237,7 +237,7 @@ class Z3DoMotor {
   private w: WorkerParecido | null = null
   private feitas = 0
   private prox = 0
-  private esperando = new Map<number, (r: { resultado?: ResultadoZ3; erro?: string }) => void>()
+  private esperando = new Map<number, (r: { resultado?: ResultadoZ3; nucleo?: number[] | null; erro?: string }) => void>()
   private fila: Promise<unknown> = Promise.resolve()
 
   private descartar(motivo = 'reiniciado') {
@@ -253,7 +253,7 @@ class Z3DoMotor {
     this.descartar()
     const w = new WorkerParecido(arquivoDoMotor('z3-worker'))
     w.onmessage = ({ data }) => {
-      const m = data as { id: number; resultado?: ResultadoZ3; erro?: string }
+      const m = data as { id: number; resultado?: ResultadoZ3; nucleo?: number[] | null; erro?: string }
       const f = this.esperando.get(m.id)
       this.esperando.delete(m.id)
       f?.(m)
@@ -267,51 +267,53 @@ class Z3DoMotor {
   }
 
   /** uma checagem por vez; se o Z3 quebrar ou travar, tenta mais uma vez numa thread nova */
-  checar(formulas: Formula[], tempoMs: number, numericos: string[]): Promise<ResultadoZ3> {
-    const r = this.fila.then(() => this.uma(formulas, tempoMs, numericos, 0))
+  checar(formulas: Formula[], tempoMs: number, numericos: string[], grupos?: (number | null)[]): Promise<RespostaComNucleo> {
+    const r = this.fila.then(() => this.uma(formulas, tempoMs, numericos, grupos, 0))
     this.fila = r.catch(() => {})
     return r
   }
 
-  private async uma(formulas: Formula[], tempoMs: number, numericos: string[], tentativa: number): Promise<ResultadoZ3> {
+  private async uma(formulas: Formula[], tempoMs: number, numericos: string[], grupos: (number | null)[] | undefined, tentativa: number): Promise<RespostaComNucleo> {
     const w = this.obter()
     this.feitas++
     this.checagens++
     const id = ++this.prox
-    const r = await new Promise<{ resultado?: ResultadoZ3; erro?: string }>((ok) => {
+    const r = await new Promise<{ resultado?: ResultadoZ3; nucleo?: number[] | null; erro?: string }>((ok) => {
+      // o Z3 às vezes ignora o prazo: passou do dobro, travou
       const vigia = setTimeout(() => {
         if (this.esperando.has(id) && this.w === w) this.descartar('travou')
-      }, tempoMs + 60_000)
+      }, 2 * tempoMs + 15_000)
       this.esperando.set(id, (x) => {
         clearTimeout(vigia)
         ok(x)
       })
-      w.postMessage({ id, formulas, tempoMs, numericos })
+      w.postMessage({ id, formulas, tempoMs, numericos, ...(grupos ? { grupos } : {}) })
     })
-    if (r.resultado) return r.resultado
+    if (r.resultado) return { resultado: r.resultado, nucleo: r.nucleo ?? null }
     if (this.w === w) this.descartar()
-    if (tentativa === 0) return this.uma(formulas, tempoMs, numericos, 1)
-    return 'unknown'
+    if (tentativa === 0) return this.uma(formulas, tempoMs, numericos, grupos, 1)
+    return { resultado: 'unknown', nucleo: null }
   }
 }
 
 const z3 = new Z3DoMotor()
-const chaveZ3 = (fs: Formula[]) => `f:${resumo(JSON.stringify(fs, (k, v) => (k === 'pos' || k === 'end' ? undefined : v)))}`
+const chaveZ3 = (fs: Formula[], grupos?: (number | null)[]) =>
+  `f:${resumo(JSON.stringify(fs, (k, v) => (k === 'pos' || k === 'end' ? undefined : v)))}${grupos ? `:${resumo(JSON.stringify(grupos))}` : ''}`
 
 /** O motor pediu provas ao Z3: cada conjunto sem modelo (ou com) é avisado assim que sai; no fim, "z3-fim". */
-async function provarNoZ3(t: Trabalho, pedido: number, conjuntos: Formula[][], ate?: number) {
+async function provarNoZ3(t: Trabalho, pedido: number, conjuntos: Formula[][], ate?: number, grupos?: (number | null)[][]) {
   const w = motor
   const ainda = () => atual === t && t.situacao === 'rodando' && motor === w
   const numericos = t.pedido.dicionario.filter((e) => e.numerico).map((e) => e.simbolo)
   const decididos = new Set<number>()
-  const avisar = (indice: number, resultado: 'sat' | 'unsat') => {
+  const avisar = (indice: number, resultado: 'sat' | 'unsat', nucleo: number[] | null) => {
     decididos.add(indice)
-    if (ainda()) w!.postMessage({ tipo: 'z3-resposta', pedido, indice, resultado })
+    if (ainda()) w!.postMessage({ tipo: 'z3-resposta', pedido, indice, resultado, nucleo })
   }
   // o que já foi provado em outro dia vem do armazém
   conjuntos.forEach((fs, i) => {
-    const r = fs.length ? guardadasZ3.obter(chaveZ3(fs)) : undefined
-    if (r) avisar(i, r)
+    const r = fs.length ? guardadasZ3.obter(chaveZ3(fs, grupos?.[i])) : undefined
+    if (r) avisar(i, r.resultado, r.nucleo)
   })
   const tempos = ate ? TEMPOS_COM_PRAZO : [TEMPO_SEM_PRAZO]
   for (let nivel = 0; ; nivel++) {
@@ -321,10 +323,10 @@ async function provarNoZ3(t: Trabalho, pedido: number, conjuntos: Formula[][], a
       if (decididos.has(i) || !fs.length) continue
       if (ate && Date.now() >= ate) break
       const ini = Date.now()
-      const r = await z3.checar(fs, ate ? Math.min(tempo, Math.max(1000, ate - Date.now())) : tempo, numericos)
-      if (r === 'sat' || r === 'unsat') {
-        guardadasZ3.guardar(chaveZ3(fs), r, Date.now() - ini)
-        avisar(i, r)
+      const r = await z3.checar(fs, ate ? Math.min(tempo, Math.max(1000, ate - Date.now())) : tempo, numericos, grupos?.[i])
+      if (r.resultado === 'sat' || r.resultado === 'unsat') {
+        guardadasZ3.guardar(chaveZ3(fs, grupos?.[i]), r.resultado, Date.now() - ini, r.nucleo)
+        avisar(i, r.resultado, r.nucleo)
       }
     }
     if (!ate || Date.now() >= ate || decididos.size >= conjuntos.filter((c) => c.length).length) break

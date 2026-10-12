@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks'
-import { corrigirNotasDasBibliotecas } from '../dados/correcoes'
+import { avisos } from '../dados/avisos'
+import { corrigirConclusoes, corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
 import { historico } from '../dados/historico'
 import { useVersao } from '../dados/versao'
@@ -26,7 +27,18 @@ export function App() {
   const rota = useRota()
   useEffect(() => {
     // depois de carregar: notas das bibliotecas com o defeito de escopo (já corrigido) são consertadas
-    void estado.carregar().then(() => corrigirNotasDasBibliotecas())
+    void estado
+      .carregar()
+      .then(() => corrigirNotasDasBibliotecas())
+      .then(() => corrigirConclusoes())
+      .then((r) => {
+        const partes = [
+          r.viraramTeorema && `${r.viraramTeorema} deduzida${r.viraramTeorema > 1 ? 's' : ''} (conferidas só até N objetos) deixaram de ser lei e viraram teorema`,
+          r.copiasApagadas && `${r.copiasApagadas} cópia${r.copiasApagadas > 1 ? 's iguais foram apagadas' : ' igual foi apagada'}`,
+          r.vindasDeVisao && `${r.vindasDeVisao} lei${r.vindasDeVisao > 1 ? 's gerais' : ' geral'} que vinha${r.vindasDeVisao > 1 ? 'm' : ''} de uma visão foi${r.vindasDeVisao > 1 ? 'ram' : ''} desativada${r.vindasDeVisao > 1 ? 's' : ''}`,
+        ].filter(Boolean)
+        if (partes.length) avisos.avisar('Caderno consertado', `${partes.join('; ')}. O motivo ficou escrito em cada nota.`, '#/notas')
+      })
     void verificacao.carregarConfig()
     void historico.carregar()
     void z3.carregarConfig()

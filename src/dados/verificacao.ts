@@ -7,6 +7,7 @@ import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type
 import MotorWorker from '../motor/worker?worker&inline'
 import { abrirBancoProvas, bancoAtual, bancoNaMemoria, definirBanco, type EstatisticasBanco } from '../motor/bancoProvas'
 import { manterAcordado } from './acordado'
+import { motorFundo } from './motorFundo'
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
@@ -161,6 +162,10 @@ class Verificacao {
     return this.ocupado === 'perguntar'
   }
   private worker: Worker | null = null
+  /** o worker atual é o motor de fundo do PC */
+  private workerRemoto = false
+  /** a última rodada mandada ao motor de fundo (para voltar a acompanhá-la se o app for reaberto) */
+  private rodadaRemota: { numero: number; iniciadoEm: number; pedido: PedidoMotor } | null = null
   /** o worker falhou ao carregar neste navegador: daqui em diante roda na linha principal */
   private semWorker = false
   private pedidoAtual: PedidoMotor | null = null
@@ -234,6 +239,37 @@ class Verificacao {
     this.avisar()
   }
 
+  /**
+   * Com o motor de fundo ligado: a última rodada, se ficou rodando lá quando o
+   * app foi fechado (pela metade ou ainda aprofundando), volta a ser
+   * acompanhada, sem recomeçar — o mesmo pedido pega o trabalho que já existe
+   * lá (pronto ou não). Devolve true se voltou.
+   */
+  reatarNoMotorDeFundo(): boolean {
+    const s = this.rodadaRemota
+    const ultima = this.rodadas.at(-1)
+    if (!s || !ultima || ultima.numero !== s.numero || this.ocupado || !motorFundo.ativo) return false
+    if (ultima.terminada && !ultima.interrompida) return false
+    this.interrompida = null
+    this.rodadas = [...this.rodadas.slice(0, -1), { ...ultima, terminada: false, interrompida: undefined }]
+    this.ocupado = 'cadeia'
+    this.iniciadoEm = s.iniciadoEm
+    const id = ++this.pedido
+    this.dicionario = s.pedido.dicionario
+    this.pendentes = new Map()
+    this.rodando = { chave: 'cadeia', msg: 'acompanhando o motor de fundo do PC' }
+    const p = { ...s.pedido, id }
+    this.pedidoAtual = p
+    this.obterWorker()?.postMessage(p)
+    this.avisar()
+    return true
+  }
+
+  /** o trabalho atual roda no motor de fundo do PC */
+  get noMotorDeFundo() {
+    return !!this.ocupado && this.workerRemoto
+  }
+
   /** Esquece a rodada interrompida sem retomar. */
   descartarInterrompida() {
     this.interrompida = null
@@ -267,6 +303,7 @@ class Verificacao {
       const modelo = await lerConfig<ExecucaoModelo>('modeloUltimo')
       if (modelo && !this.modelo)
         this.modelo = modelo.terminada ? modelo : { ...modelo, terminada: true, interrompida: 'fechado' }
+      this.rodadaRemota = (await lerConfig<{ numero: number; iniciadoEm: number; pedido: PedidoMotor }>('motorFundoRodada')) ?? null
       const pendente = await lerConfig<CadeiaPendente | null>('cadeiaPendente')
       if (pendente && this.ocupado !== 'cadeia') {
         this.interrompida = pendente
@@ -306,8 +343,29 @@ class Verificacao {
   }
 
   private obterWorker(): Worker | null {
-    if (this.semWorker) return null
+    const remoto = motorFundo.ativo
+    // o motor de fundo ligou ou desligou: o worker de antes sai (se não está no meio de um trabalho)
+    if (this.worker && this.workerRemoto !== remoto && !this.rodando) {
+      this.worker.terminate()
+      this.worker = null
+    }
     if (this.worker) return this.worker
+    if (remoto) {
+      const w = motorFundo.criarWorker()
+      w.onmessage = (e: MessageEvent<RespostaMotor>) => this.receber(e.data)
+      // o motor de fundo caiu no meio: o mesmo trabalho continua aqui, no navegador
+      w.onerror = () => {
+        if (this.worker !== w) return
+        this.worker = null
+        const p = this.pedidoAtual
+        if (p && p.id === this.pedido && this.rodando) this.obterWorker()?.postMessage(p)
+      }
+      this.worker = w
+      this.workerRemoto = true
+      return w
+    }
+    if (this.semWorker) return null
+    this.workerRemoto = false
     try {
       this.worker = new MotorWorker()
       this.worker.onmessage = (e: MessageEvent<RespostaMotor>) => {
@@ -455,6 +513,10 @@ class Verificacao {
     }
     this.pedidoAtual = p
     const w = this.obterWorker()
+    if (w && this.workerRemoto) {
+      this.rodadaRemota = { numero, iniciadoEm: this.iniciadoEm, pedido: p }
+      void gravarConfig('motorFundoRodada', this.rodadaRemota).catch(() => {})
+    }
     if (w) w.postMessage(p)
     else this.rodarAqui(p)
   }

@@ -7,13 +7,17 @@
     "dev": "node scripts/copiar-z3.mjs && vite --host",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p servidor",
     "build": "tsc --noEmit && node scripts/copiar-z3.mjs && vite build --mode arquivo && node scripts/copiar-arquivo.mjs && vite build",
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",
     "build:tudo": "npm run build",
     "preview": "node scripts/copiar-z3.mjs && vite preview --host",
     "icones": "node scripts/gerar-icones.mjs",
-    "cifrar": "node --experimental-strip-types --no-warnings scripts/cifrar-sistema.ts"
+    "cifrar": "node --experimental-strip-types --no-warnings scripts/cifrar-sistema.ts",
+    "motor:montar": "vite build --config servidor/vite.config.ts --logLevel warn",
+    "motor": "npm run motor:montar && node --no-warnings servidor/dist/motor-de-fundo.js",
+    "motor:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File servidor/iniciar-com-o-windows.ps1",
+    "motor:windows:remover": "powershell -NoProfile -ExecutionPolicy Bypass -File servidor/iniciar-com-o-windows.ps1 -Remover"
   },
   "dependencies": {
     "preact": "^11.0.1",
@@ -21,6 +25,7 @@
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^22.20.5",
     "fake-indexeddb": "^6.2.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { useVerificacao, verificacao, type Ocupacao } from '../dados/verificacao'
 import { useAgenda } from '../dados/segundoPlano'
 import { RECICLAR_Z3_A_CADA, useZ3 } from '../dados/z3'
+import { useMotorFundo } from '../dados/motorFundo'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
   verificar: 'verificando',
@@ -100,6 +101,7 @@ export function ConfigPerfil() {
         conclusões em cenários cada vez maiores, um objeto por vez, até o limite deste aparelho. Se alguma conclusão cair num cenário maior,
         ela refaz a rodada nesse tamanho (no máximo 3 vezes seguidas).
       </p>
+      <MotorDeFundo />
       <label class="campo-rotulo">
         Aparelho
         <select value={pf.escolhido} onChange={(e) => pf.escolher((e.target as HTMLSelectElement).value as IdPerfil)}>
@@ -142,6 +144,35 @@ export function ConfigPerfil() {
       </label>
       <Banco />
     </details>
+  )
+}
+
+/** O motor de fundo do PC: ligado ou não, e o que ele tem para trabalhar. */
+function MotorDeFundo() {
+  const mf = useMotorFundo()
+  const c = mf.info?.capacidade
+  return (
+    <div class="banco-provas">
+      {mf.conectado && c ? (
+        <p class="suave">
+          <b>Motor de fundo do PC: ligado.</b> {mf.usar ? 'Os trabalhos do motor rodam lá' : 'Desligado aqui: os trabalhos rodam no navegador'} — fora do
+          navegador, sem o teto de memória da aba, com o Z3 sempre ligado e prioridade baixa (o PC continua leve). Usa {c.paralelo} de {c.nucleos}{' '}
+          núcleos e até {c.memoriaGB.toLocaleString('pt-BR')} GB; aprofunda até {c.N} objetos. Se o navegador fechar, o trabalho continua lá, e o
+          app volta a acompanhá-lo ao abrir.
+          {mf.info?.z3.checagens ? ` Z3 lá: ${mf.info.z3.checagens} checagens.` : ''}
+        </p>
+      ) : (
+        <p class="suave">
+          <b>Motor de fundo do PC: não encontrado.</b> Para trabalhos longos (milhares de leis, horas sem parar), ligue-o no PC: na pasta do
+          projeto, rode <code>npm run motor</code> e deixe a janela aberta. O app o encontra sozinho em poucos segundos (o navegador pode pedir
+          permissão para acessar este computador: aceite).
+        </p>
+      )}
+      <label class="alternar">
+        <input type="checkbox" checked={mf.usar} onChange={(e) => mf.definirUsar((e.target as HTMLInputElement).checked)} />
+        Usar o motor de fundo quando ele estiver ligado
+      </label>
+    </div>
   )
 }
 
@@ -296,9 +327,12 @@ export function StatusAutomatico({ ligado, emDia, rodandoAgora }: { ligado: bool
     const id = setInterval(() => tique((x) => x + 1), 1000)
     return () => clearInterval(id)
   }, [ag.proximoEm])
+  const ver = useVerificacao()
   if (!ligado) return null
   const texto = rodandoAgora
-    ? 'rodando agora.'
+    ? ver.noMotorDeFundo
+      ? 'rodando agora, no motor de fundo do PC (continua mesmo com o navegador fechado).'
+      : 'rodando agora.'
     : ag.esperando
       ? `esperando ${ag.esperando} terminar.`
       : ag.proximoEm && !emDia

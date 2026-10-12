@@ -15,6 +15,7 @@ import { assinaturaModelo, configModelo } from './modelo'
 import { entradaDoModelo, mundo, type EntradaModelo } from './mundo'
 import type { Classe } from '../motor/modelo'
 import { completarComZ3 } from './modeloZ3'
+import { motorFundo } from './motorFundo'
 
 /** espera depois da última mudança nas notas antes de rodar a reação sozinha */
 const ESPERA_AUTOMATICA_MS = 20_000
@@ -240,6 +241,7 @@ export function iniciarSegundoPlano() {
   void perfil.carregarConfig()
   void configModelo.carregar()
   void mundo.carregar()
+  void motorFundo.carregarConfig()
 
   verificacao.aoConcluir((c) => {
     const r = resumoDaConclusao(c)
@@ -367,8 +369,10 @@ export function iniciarSegundoPlano() {
   // retoma a reação em cadeia que o sistema interrompeu (no máximo 2 vezes seguidas)
   let retomou = false
   const tentarRetomar = () => {
-    if (retomou || !estado.carregado || !verificacao.configCarregada) return
+    if (retomou || !estado.carregado || !verificacao.configCarregada || !motorFundo.sondado) return
     retomou = true
+    // a rodada ficou rodando no motor de fundo do PC: volta a ser acompanhada, sem recomeçar
+    if (verificacao.reatarNoMotorDeFundo()) return
     const p = verificacao.interrompida
     if (!p || verificacao.ocupado) return
     if (p.tentativas >= 2) return // deixa o botão "Retomar" na tela da cadeia
@@ -377,6 +381,7 @@ export function iniciarSegundoPlano() {
   }
   estado.assinar(tentarRetomar)
   verificacao.assinar(tentarRetomar)
+  motorFundo.assinar(tentarRetomar)
 
   // tocar numa notificação: o service worker pede para abrir a tela do resultado
   navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {

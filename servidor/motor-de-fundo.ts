@@ -572,7 +572,9 @@ const servidor = createServer(async (req, res) => {
       ...cors,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      // as duas versões da permissão do Chrome para um site falar com este computador
       'Access-Control-Allow-Private-Network': 'true',
+      'Access-Control-Allow-Local-Network': 'true',
       'Access-Control-Max-Age': '600',
     })
     return res.end()

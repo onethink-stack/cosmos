@@ -162,16 +162,52 @@ function MotorDeFundo() {
           {mf.info?.z3.checagens ? ` Z3 lá: ${mf.info.z3.checagens} checagens.` : ''}
         </p>
       ) : (
-        <p class="suave">
-          <b>Motor de fundo do PC: não encontrado.</b> Para trabalhos longos (milhares de leis, horas sem parar), ligue-o no PC: na pasta do
-          projeto, rode <code>npm run motor</code> e deixe a janela aberta. O app o encontra sozinho em poucos segundos (o navegador pode pedir
-          permissão para acessar este computador: aceite).
-        </p>
+        <MotorNaoEncontrado />
       )}
       <label class="alternar">
         <input type="checkbox" checked={mf.usar} onChange={(e) => mf.definirUsar((e.target as HTMLInputElement).checked)} />
         Usar o motor de fundo quando ele estiver ligado
       </label>
+    </div>
+  )
+}
+
+/**
+ * O Caderno não achou o motor de fundo: ou ele está desligado, ou o navegador
+ * não deixa o site falar com este computador (permissão "Acesso à rede local").
+ */
+export function MotorNaoEncontrado() {
+  const mf = useMotorFundo()
+  const [procurando, setProcurando] = useState(false)
+  const procurar = async () => {
+    setProcurando(true)
+    await mf.sondar()
+    setProcurando(false)
+  }
+  return (
+    <div class="aviso-texto">
+      <p>
+        <b>Motor de fundo do PC: não encontrado.</b>{' '}
+        {mf.bloqueio === 'negado' ? (
+          <>
+            O navegador está <b>bloqueando</b> o Caderno de falar com este computador. Para liberar: clique no ícone à esquerda do endereço (o
+            cadeado ou ⚙) → <b>Configurações do site</b> → <b>Acesso à rede local</b> (ou "Apps e serviços neste dispositivo") →{' '}
+            <b>Permitir</b>. Depois recarregue a página.
+          </>
+        ) : (
+          <>
+            Se ele estiver ligado (o atalho "Caderno Lógico" da Área de Trabalho liga), clique abaixo: o navegador pode perguntar se o Caderno
+            pode acessar apps e serviços deste dispositivo — clique em <b>Permitir</b>.
+          </>
+        )}
+      </p>
+      <p class="suave">
+        Para ver se o motor está ligado, abra <a href="http://127.0.0.1:47390/" target="_blank" rel="noopener">http://127.0.0.1:47390</a>: se
+        aparecer "✓ Ligado neste PC", ele está bem, e o bloqueio é do navegador.
+      </p>
+      <button type="button" class="botao" disabled={procurando} onClick={() => void procurar()}>
+        {procurando ? 'Procurando…' : 'Procurar o motor de novo'}
+      </button>
     </div>
   )
 }

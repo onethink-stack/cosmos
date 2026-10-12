@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { estado, useEstado } from '../dados/estado'
 import { useMotorFundo } from '../dados/motorFundo'
 import { salvarVerdade, useVerdades, type Ordem, type Verdade } from '../dados/verdades'
+import { MotorNaoEncontrado } from './SegundoPlano'
 
 /** de quanto em quanto tempo a tela pergunta o que o gerador achou */
 const ATUALIZAR_A_CADA_MS = 5000
@@ -53,10 +54,14 @@ export function Verdades() {
       </p>
 
       {!mf.ativo ? (
-        <p class="aviso-texto">
-          O gerador roda no motor de fundo do PC, que {mf.conectado ? 'está desligado aqui (em Contradições → Capacidade do aparelho)' : 'não foi encontrado'}.
-          Ligue-o com o atalho "Caderno Lógico" da Área de Trabalho (ou <code>npm run motor</code> na pasta do projeto); o Caderno o acha sozinho.
-        </p>
+        mf.conectado ? (
+          <p class="aviso-texto">
+            O gerador roda no motor de fundo do PC, que está ligado mas desligado aqui: ligue "Usar o motor de fundo" em Contradições → Capacidade
+            do aparelho.
+          </p>
+        ) : (
+          <MotorNaoEncontrado />
+        )
       ) : (
         <Andamento g={g} total={v.total} />
       )}

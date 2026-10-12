@@ -33,6 +33,11 @@ class MotorFundo {
   /** já foi conferido ao menos uma vez (ligado ou não) */
   sondado = false
   info: EstadoServidor | null = null
+  /**
+   * o navegador não deixa o Caderno (um site) falar com este computador: a
+   * permissão "Acesso à rede local" foi negada, ou ainda não foi perguntada
+   */
+  bloqueio: 'negado' | 'perguntar' | null = null
   private ouvintes = new Set<() => void>()
   private relogio: ReturnType<typeof setInterval> | null = null
 
@@ -77,9 +82,12 @@ class MotorFundo {
       const r = await fetch(`${ENDERECO_MOTOR}/estado`, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
       this.info = r.ok ? ((await r.json()) as EstadoServidor) : null
       this.conectado = r.ok && this.info?.versao === 1
+      this.bloqueio = null
     } catch {
       this.conectado = false
       this.info = null
+      const p = await permissaoRedeLocal()
+      this.bloqueio = p === 'denied' ? 'negado' : p === 'prompt' ? 'perguntar' : null
     }
     this.sondado = true
     this.avisar()
@@ -95,6 +103,18 @@ class MotorFundo {
   criarWorker(): Worker {
     return new WorkerRemoto(this) as unknown as Worker
   }
+}
+
+/** A permissão do navegador para o site falar com este computador (o nome mudou entre versões do Chrome). */
+async function permissaoRedeLocal(): Promise<PermissionState | null> {
+  for (const nome of ['local-network-access', 'loopback-network', 'local-network']) {
+    try {
+      return (await navigator.permissions.query({ name: nome as PermissionName })).state
+    } catch {
+      /* este navegador não conhece esse nome */
+    }
+  }
+  return null
 }
 
 export const motorFundo = new MotorFundo()

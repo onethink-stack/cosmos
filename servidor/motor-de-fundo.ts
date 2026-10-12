@@ -368,6 +368,33 @@ function estado() {
   }
 }
 
+/** Aberto no navegador (http://127.0.0.1:47390): mostra que o motor está ligado e o que ele faz. */
+function pagina(res: ServerResponse) {
+  const e = estado()
+  const t = e.trabalho
+  const nomeTipo: Record<string, string> = { cadeia: 'reação em cadeia', modelo: 'segundo modelo', conferencia: 'conferência' }
+  const quando = (ms?: number) => (ms ? new Date(ms).toLocaleString('pt-BR') : '')
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const agora = t
+    ? t.situacao === 'rodando'
+      ? `Trabalhando agora: ${nomeTipo[t.tipo]}, desde ${quando(t.inicio)}${e.mensagem ? ` — ${esc(e.mensagem)}` : ''}.`
+      : `Último trabalho: ${nomeTipo[t.tipo]}, ${t.situacao} em ${quando(t.fim)}.`
+    : 'Nenhum trabalho ainda: abra o Caderno e rode a reação em cadeia.'
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+  res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="10"><title>Motor de fundo</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 16px;color:#222;background:#fafafa}
+h1{font-size:22px}.ok{color:#1a7f37;font-weight:600}a.botao{display:inline-block;margin-top:12px;padding:10px 16px;background:#2457c5;color:#fff;border-radius:8px;text-decoration:none}
+p.suave{color:#666;font-size:14px}</style></head><body>
+<h1>Motor de fundo do Caderno Lógico</h1>
+<p class="ok">✓ Ligado neste PC.</p>
+<p>${agora}</p>
+<p>Usa ${e.capacidade.paralelo} de ${e.capacidade.nucleos} núcleos e até ${e.capacidade.memoriaGB.toLocaleString('pt-BR')} GB, com prioridade baixa. Z3: ${e.z3.checagens} checagens nesta sessão.</p>
+<a class="botao" href="https://onethink-stack.github.io/cosmos/#/cadeia">Abrir o Caderno Lógico</a>
+<p class="suave">O motor não tem janela: ele trabalha escondido e o Caderno (no navegador) manda os trabalhos para cá. Esta página se atualiza sozinha a cada 10 s.</p>
+</body></html>`)
+}
+
 const servidor = createServer(async (req, res) => {
   const origem = req.headers.origin
   // só 127.0.0.1/localhost (um site que se passe por localhost manda outro Host) e só o app
@@ -388,6 +415,7 @@ const servidor = createServer(async (req, res) => {
   const partes = url.pathname.split('/').filter(Boolean)
   try {
     if (req.method === 'GET' && url.pathname === '/estado') return json(res, 200, estado(), cors)
+    if (req.method === 'GET' && url.pathname === '/') return pagina(res)
     if (req.method === 'POST' && url.pathname === '/trabalho') {
       if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { erro: 'esperava JSON' }, cors)
       const t = pedir((await lerCorpo(req)) as PedidoMotor)

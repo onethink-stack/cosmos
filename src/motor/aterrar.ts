@@ -145,6 +145,11 @@ export class Aterrador {
     readonly k = 1,
   ) {}
 
+  /** tamanho do circuito montado até aqui (o que conta para o limite) */
+  get tamanhoAtual(): number {
+    return this.tamanho
+  }
+
   // ---------- circuito ----------
   private nova(): number {
     return ++this.nVars

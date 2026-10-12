@@ -346,26 +346,30 @@ class Verificacao {
    * Z3 ligado): cada uma provada é avisada ao worker, que deixa de aprofundá-la.
    */
   private async provarNoZ3(pedido: number, conjuntos: Formula[][], ate?: number) {
-    if (!z3.ativo || !disponibilidadeZ3().ok) return
     const w = this.worker
+    // o worker espera saber quando acabou (e se não há Z3 ligado)
+    const fim = (desligado = false) => {
+      if (w && this.worker === w) w.postMessage({ tipo: 'z3-fim', pedido, ...(desligado ? { desligado } : {}) })
+    }
+    if (!z3.ativo || !disponibilidadeZ3().ok) return fim(true)
     const dicionario = this.dicionario
-    // uma tentativa curta para cada; no modo de horas, rodadas cada vez mais longas até o prazo
+    // uma tentativa curta para cada; com prazo, rodadas cada vez mais longas até ele
     const tempos = ate ? TEMPOS_Z3_HORAS : [undefined]
-    const provados = new Set<number>()
+    const decididos = new Set<number>()
     for (let nivel = 0; ; nivel++) {
       const tempo = tempos[Math.min(nivel, tempos.length - 1)]
       for (const [indice, formulas] of conjuntos.entries()) {
         if (!w || this.worker !== w) return // o trabalho foi cancelado
-        if (provados.has(indice) || !formulas.length) continue
-        if (ate && Date.now() >= ate) return
+        if (decididos.has(indice) || !formulas.length) continue
+        if (ate && Date.now() >= ate) return fim()
         const r = await z3.provarFormulas(formulas, dicionario, tempo && ate ? Math.min(tempo, ate - Date.now()) : undefined)
-        if (r === 'unsat') {
-          provados.add(indice)
-          if (this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice })
+        // sem modelo (provado para qualquer tamanho) ou com modelo (o Z3 achou um cenário)
+        if (r === 'unsat' || r === 'sat') {
+          decididos.add(indice)
+          if (this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice, resultado: r })
         }
-        if (r === 'sat') provados.add(indice) // tem modelo: o Z3 não vai provar
       }
-      if (!ate || provados.size >= conjuntos.filter((c) => c.length).length) return
+      if (!ate || decididos.size >= conjuntos.filter((c) => c.length).length) return fim()
     }
   }
 

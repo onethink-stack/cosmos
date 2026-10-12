@@ -80,7 +80,12 @@ export function LeisQueFaltam({
             </p>
           )}
           {res.tipo === 'premissas-contraditorias' && <p class="erro-texto">As leis e fatos já se contradizem: resolva isso primeiro.</p>}
-          {res.tipo === 'grande-demais' && <p class="aviso-texto">Grande demais para o motor finito (com {res.n} objetos). Diminua N.</p>}
+          {res.tipo === 'grande-demais' && (
+            <p class="aviso-texto">
+              Grande demais para o motor finito: com {res.n} objetos o problema passa do limite deste aparelho. Desative as notas mais pesadas, ou ligue
+              o Z3 (ele não tem esse limite).
+            </p>
+          )}
           {res.tipo === 'formula-invalida' && <p class="erro-texto">Fórmula inválida.</p>}
           {res.tipo === 'sugestoes' && (
             <>

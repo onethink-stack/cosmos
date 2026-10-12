@@ -5,6 +5,7 @@
 // livre; e as conclusões que só valem "até N objetos" vão também para o Z3 da
 // linha principal, que pode prová-las para qualquer tamanho.
 import type { Formula } from '../logica/ast'
+import type { RespostasZ3 } from './cadeia'
 import { abrirBancoProvas, bancoNaMemoria, definirBanco } from './bancoProvas'
 import { definirPool, PoolWorkers, poolAtual, semParalelo } from './paralelo'
 import SubTrabalho from './subtrabalho?worker&inline'
@@ -13,8 +14,8 @@ import { executarTarefas, type PedidoMotor, type RespostaMotor } from './tarefas
 const ctx = self as unknown as DedicatedWorkerGlobalScope
 let banco: Promise<void> | null = null
 
-/** pedidos ao Z3 esperando resposta: os índices provados vão entrando no conjunto */
-const provadasPorPedido = new Map<number, Set<number>>()
+/** pedidos ao Z3 esperando resposta: os índices vão entrando conforme o Z3 decide */
+const respostasPorPedido = new Map<number, { r: RespostasZ3; acabar: (x: { desligado?: boolean }) => void }>()
 let pedidosZ3 = 0
 
 /** Ajusta quantos workers auxiliares existem (1 = nenhum: tudo aqui). */
@@ -28,10 +29,17 @@ function ajustarParalelo(n: number) {
   }
 }
 
-ctx.onmessage = async (e: MessageEvent<PedidoMotor | { tipo: 'z3-resposta'; pedido: number; indice: number }>) => {
+type MensagemZ3 = { tipo: 'z3-resposta'; pedido: number; indice: number; resultado?: 'sat' | 'unsat' } | { tipo: 'z3-fim'; pedido: number; desligado?: boolean }
+
+ctx.onmessage = async (e: MessageEvent<PedidoMotor | MensagemZ3>) => {
   const m = e.data
   if ('tipo' in m) {
-    provadasPorPedido.get(m.pedido)?.add(m.indice)
+    const p = respostasPorPedido.get(m.pedido)
+    if (!p) return
+    if (m.tipo === 'z3-fim') {
+      p.acabar({ desligado: m.desligado })
+      respostasPorPedido.delete(m.pedido)
+    } else (m.resultado === 'sat' ? p.r.comModelo : p.r.semModelo).add(m.indice)
     return
   }
   banco ??= abrirBancoProvas()
@@ -39,12 +47,13 @@ ctx.onmessage = async (e: MessageEvent<PedidoMotor | { tipo: 'z3-resposta'; pedi
     .catch(() => definirBanco(bancoNaMemoria()))
   await banco
   ajustarParalelo(m.paralelo ?? 1)
-  const ajudaZ3 = (conjuntos: Formula[][], ate?: number) => {
+  const ajudaZ3 = (conjuntos: Formula[][], ate?: number): RespostasZ3 => {
     const pedido = ++pedidosZ3
-    const provadas = new Set<number>()
-    provadasPorPedido.set(pedido, provadas)
+    let acabar: (x: { desligado?: boolean }) => void = () => {}
+    const r: RespostasZ3 = { semModelo: new Set(), comModelo: new Set(), fim: new Promise((ok) => (acabar = ok)) }
+    respostasPorPedido.set(pedido, { r, acabar })
     ctx.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}) } satisfies RespostaMotor)
-    return provadas
+    return r
   }
   await executarTarefas(m, (r: RespostaMotor) => ctx.postMessage(r), ajudaZ3)
 }

@@ -392,6 +392,80 @@ function Nivel({ rel }: { rel: RelatorioCadeia }) {
   )
 }
 
+const milhares = (x: number) => x.toLocaleString('pt-BR')
+
+/** por que diminuir N não resolve: abaixo de n não há cenário com todas */
+const GrandeDemaisTexto = ({ n, limite, quais }: { n: number; limite?: number; quais: string }) => (
+  <>
+    Grande demais para o motor finito:{' '}
+    {n > 1
+      ? `até ${tamanhoTexto(n - 1)} não há cenário em que ${quais} valem todas juntas, e com ${n} o problema passa do limite`
+      : 'já com 1 objeto o problema passa do limite'}{' '}
+    deste aparelho{limite ? ` (${milhares(limite)})` : ''}.
+    {n > 1 && ` Ou elas se contradizem, ou precisam de ${n} objetos ou mais — por isso diminuir N não resolve.`}
+  </>
+)
+
+/** O conjunto inteiro passou do limite do motor finito: o que ficou à parte, o que pesa e o que o Z3 disse. */
+function APartePesada({ rel }: { rel: RelatorioCadeia }) {
+  const ap = rel.aParte!
+  // nada deu para separar: a rodada parou na consistência
+  const tudo = rel.consistencia?.tipo === 'grande-demais' && !rel.consistencia.tempo
+  const visao = rel.chave.startsWith('visao:')
+  const quais = visao ? 'as crenças desta visão' : 'as leis e fatos'
+  const fora = rel.teoremas.filter((t) => ap.teoremas.includes(t.id))
+  return (
+    <div class="explicacao">
+      {tudo ? (
+        <p class="aviso-texto">
+          <GrandeDemaisTexto n={ap.n} limite={ap.limite} quais={quais} />
+        </p>
+      ) : (
+        <p class="aviso-texto">
+          O conjunto inteiro passa do limite deste aparelho com {ap.n} objetos. {ap.notas.length === 1 ? 'Esta nota não tem' : 'Estas notas não têm'}{' '}
+          nenhum nome em comum com as outras e {ap.notas.length === 1 ? 'ficou' : 'ficaram'} à parte: <Links ids={ap.notas} />. A rodada seguiu com as
+          outras{fora.length ? `; os teoremas que usam nomes delas ficaram de fora` : ''}.
+        </p>
+      )}
+      {ap.z3 === 'rodando' && (
+        <p class="suave">
+          <span class="girando" aria-hidden="true" /> O Z3 está conferindo o conjunto inteiro, sem limite de tamanho
+          {fora.length ? `, e ${fora.length === 1 ? 'o teorema que ficou' : `os ${fora.length} teoremas que ficaram`} de fora` : ''}…
+        </p>
+      )}
+      {ap.z3 === 'consistente' && <p class="status-ok">✓ O Z3 achou um cenário em que todas valem juntas: {quais} são consistentes.</p>}
+      {ap.z3 === 'contraditorio' && (
+        <div class="resultado res-conflito">
+          <strong>O Z3 provou que {quais} se contradizem</strong>
+          <p>
+            Com qualquer número de objetos, não há cenário em que todas valem. Com leis contraditórias tudo "seguiria": veja o conflito em{' '}
+            <a href="#/contradicoes">Contradições</a>.
+          </p>
+        </div>
+      )}
+      {ap.z3 === 'desligado' && (
+        <p class="suave">
+          Ligue o Z3 (em <a href="#/contradicoes">Contradições</a>): ele confere o conjunto inteiro sem limite de tamanho, e a próxima rodada já o usa.
+        </p>
+      )}
+      {ap.z3 === 'sem-decisao' && <p class="suave">O Z3 não decidiu no tempo que teve. No modo de horas ele insiste bem mais.</p>}
+      {ap.pesos.length > 0 && (
+        <details class="explicacao em-linha">
+          <summary>as notas que mais pesam com {ap.n} objetos</summary>
+          <ul class="lista-cadeia">
+            {ap.pesos.map((p) => (
+              <li>
+                <Link id={p.id} /> — {p.tamanho > ap.limite ? 'passa do limite sozinha' : `${milhares(p.tamanho)} (sozinha)`}
+              </li>
+            ))}
+          </ul>
+          <p class="suave">Desativar as mais pesadas deixa o resto ser conferido aqui; o Z3 não tem esse limite.</p>
+        </details>
+      )}
+    </div>
+  )
+}
+
 const nomeResultado = (t: EstadoTeorema) =>
   ({
     segue: '✓ segue',
@@ -456,15 +530,18 @@ function Relatorio({
           </p>
         </div>
       )}
-      {c?.tipo === 'grande-demais' &&
-        (c.tempo ? (
-          <p class="aviso-texto">
-            A consistência não foi decidida a tempo (a checagem passou do prazo com {c.n} objetos). A rodada parou aqui; ela recomeça quando as notas
-            mudarem.
-          </p>
-        ) : (
-          <p class="aviso-texto">Grande demais para o motor finito (com {c.n} objetos). Diminua N.</p>
-        ))}
+      {c?.tipo === 'grande-demais' && c.tempo && (
+        <p class="aviso-texto">
+          A consistência não foi decidida a tempo (a checagem passou do prazo com {c.n} objetos). A rodada parou aqui; ela recomeça quando as notas
+          mudarem.
+        </p>
+      )}
+      {rel.aParte && <APartePesada rel={rel} />}
+      {c?.tipo === 'grande-demais' && !c.tempo && !rel.aParte && (
+        <p class="aviso-texto">
+          <GrandeDemaisTexto n={c.n} quais={visao ? 'as crenças desta visão' : 'as leis e fatos'} /> Rode de novo para ver as notas que mais pesam.
+        </p>
+      )}
 
       {rel.leis.length > 0 && (
         <details class="explicacao" open={decorrem.length > 0}>
@@ -517,7 +594,14 @@ function Relatorio({
                     <li class="segue">
                       ✓ <Link id={t.id} /> <span class="formula-inline">{t.formula}</span>
                       <div class="suave">
-                        ⇐ {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
+                        {t.z3 === 'segue' ? (
+                          '⇐ todas as leis e fatos (provado pelo Z3, para qualquer número de objetos; ele não diz quais notas bastam)'
+                        ) : (
+                          <>
+                            ⇐{' '}
+                            {t.apoio?.length ? <Links ids={t.apoio} /> : t.resultado.tipo === 'segue' && t.resultado.notas.length ? <Links ids={t.resultado.notas} /> : 'vale sempre'}
+                          </>
+                        )}
                       </div>
                       {graus.get(t.id) && <SeloGrau g={graus.get(t.id)!} />}
                       {!travado && <ConfirmacaoZ3 tipo="segue" formulas={formulasDoApoio(t, rel, grupos)} negar={t.formula} />}
@@ -590,6 +674,16 @@ function Relatorio({
                   <span class="girando" aria-hidden="true" /> conferindo com mais tempo
                   {t.resultado.tipo === 'tempo' && t.resultado.n > 1 && ` (sem contraexemplo até ${t.resultado.n - 1} objetos; continua do ${t.resultado.n})`}…
                 </>
+              ) : t.z3 === 'nao-segue' ? (
+                '✗ não segue: o Z3 achou um cenário em que as leis valem e ele falha (grande demais para desenhar aqui)'
+              ) : rel.aParte?.teoremas.includes(t.id) && t.resultado.tipo === 'grande-demais' ? (
+                rel.aParte.z3 === 'rodando' ? (
+                  <>
+                    <span class="girando" aria-hidden="true" /> grande demais para o motor finito; o Z3 está conferindo…
+                  </>
+                ) : (
+                  `grande demais para o motor finito${rel.aParte.z3 === 'desligado' ? ' (ligue o Z3 para conferir)' : rel.aParte.z3 === 'sem-decisao' ? '; o Z3 não decidiu a tempo' : ''}`
+                )
               ) : (
                 nomeResultado(t)
               )}

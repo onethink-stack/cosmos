@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
-import { prazosAuxiliares, reacaoEmCadeia, type RelatorioCadeia } from '../src/motor/cadeia'
+import { blocosIndependentes, prazosAuxiliares, reacaoEmCadeia, type AjudaZ3, type RelatorioCadeia } from '../src/motor/cadeia'
 import { bancoNaMemoria, definirBanco } from '../src/motor/bancoProvas'
 import { analisar, buscarModelo, OPCOES_PADRAO, perguntar } from '../src/motor/motor'
 
@@ -68,6 +68,50 @@ describe('reação em cadeia', () => {
   })
 })
 
+describe('conjunto grande demais para o motor finito', () => {
+  // "pesada" precisa de 3 objetos (a, b, d distintos) e passa do limite com 3; não tem nome em comum com L1 e L2
+  const dicP = [...dic, ficha('H', 'predicado', 3), ficha('a', 'constante'), ficha('b', 'constante'), ficha('d', 'constante')]
+  const pesada = g('pesada', 'a ≠ b', 'b ≠ d', 'a ≠ d', 'H(a, b, d)', '∀x ∀y ∀z ∀w (H(x, y, z) ∧ H(y, z, w) ⟹ H(x, z, w))')
+  const leves = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
+  const opP = { ...op, limite: 300 }
+  const respostas = (sem: number[], com: number[]) => () => ({ semModelo: new Set(sem), comModelo: new Set(com), fim: Promise.resolve({}) })
+  const rodarP = async (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], ajudaZ3?: AjudaZ3) => {
+    let ultimo: RelatorioCadeia[] = []
+    await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [] }, dicP, opP, (r) => (ultimo = r), undefined, ajudaZ3)
+    return ultimo[0]
+  }
+
+  it('separa as notas sem nome em comum com as outras: a rodada segue com o resto, e o Z3 confere o que ficou à parte', async () => {
+    const rel = await rodarP([...leves, pesada], [t('T1', 'Q(c)'), t('T2', 'H(b, d, a)')], respostas([1], [0]))
+    expect(rel.consistencia?.tipo).toBe('consistente')
+    expect(rel.aParte).toMatchObject({ n: 3, notas: ['pesada'], teoremas: ['T2:0'], z3: 'consistente' })
+    expect(rel.aParte!.pesos[0]).toMatchObject({ id: 'pesada' })
+    expect(rel.teoremas.find((x) => x.id === 'T1:0')!.resultado).toMatchObject({ tipo: 'segue', notas: ['L1', 'L2'] })
+    // o Z3 provou o que ficou de fora, para qualquer número de objetos
+    expect(rel.teoremas.find((x) => x.id === 'T2:0')).toMatchObject({ z3: 'segue', resultado: { tipo: 'segue' } })
+  })
+
+  it('sem Z3, o que ficou à parte espera (e a tela pede para ligar o Z3)', async () => {
+    const rel = await rodarP([...leves, pesada], [t('T1', 'Q(c)'), t('T2', 'H(b, d, a)')])
+    expect(rel.aParte!.z3).toBe('desligado')
+    expect(rel.teoremas.find((x) => x.id === 'T2:0')!.resultado.tipo).toBe('grande-demais')
+    expect(rel.teoremas.find((x) => x.id === 'T1:0')!.resultado.tipo).toBe('segue')
+  })
+
+  it('tudo ligado: nada dá para separar; fica tudo para o Z3, que pode achar a contradição', async () => {
+    const rel = await rodarP([pesada], [t('T2', 'H(b, d, a)')], respostas([0], []))
+    expect(rel.consistencia).toMatchObject({ tipo: 'grande-demais', n: 3 })
+    expect(rel.aParte).toMatchObject({ notas: ['pesada'], teoremas: ['T2:0'], z3: 'contraditorio' })
+  })
+
+  it('blocos: ∈ e os operadores modais ligam as notas; nomes diferentes, não', () => {
+    const dicB = [...dicP, ficha('A', 'constante'), ficha('B', 'constante')]
+    const pr = (id: string, f: string) => ({ g: g(id, f), itens: analisar([f], dicB) })
+    const blocos = blocosIndependentes([pr('1', 'P(c)'), pr('2', 'Q(a)'), pr('3', 'c ∈ A'), pr('4', 'a ∈ B'), pr('5', 'R(b)')])
+    expect(blocos.map((b) => b.map((x) => x.g.id))).toEqual([['1', '2', '3', '4'], ['5']])
+  })
+})
+
 describe('prazo de cada checagem principal', () => {
   it('um teorema que não decide no prazo da rodada: a rodada termina, e ele continua com mais tempo até decidir', async () => {
     definirBanco(bancoNaMemoria())
@@ -121,7 +165,7 @@ describe('prazo de cada checagem principal', () => {
         op,
         (r) => relatorios.push(r),
         undefined,
-        (_conjuntos, ate) => (pedidosZ3.push(ate), new Set<number>()),
+        (_conjuntos, ate) => (pedidosZ3.push(ate), { semModelo: new Set<number>(), comModelo: new Set<number>(), fim: Promise.resolve({}) }),
       )
       const ultimo = relatorios.at(-1)![0]
       expect(ultimo.teoremas.find((x) => x.id === 'T1:0')!.resultado.tipo).toBe('segue')

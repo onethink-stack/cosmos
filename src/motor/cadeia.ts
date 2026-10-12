@@ -15,8 +15,9 @@
 // acontecendo. Aprovar uma lei sugerida dispara a rodada seguinte (na tela).
 
 import type { EntradaDicionario } from '../dados/tipos'
-import type { Formula } from '../logica/ast'
-import { ehModal } from './aterrar'
+import type { Formula, Termo } from '../logica/ast'
+import { usosDeNomes } from '../logica/termos'
+import { Aterrador, ehModal, GrandeDemais } from './aterrar'
 import { Avaliador, tamanhoTexto } from './avaliar'
 import { descobrirComPrazo, type Consequencia, type PrazosDescoberta } from './descobrir'
 import { darVez, emParalelo, poolAtual } from './paralelo'
@@ -30,6 +31,7 @@ import {
   verificar,
   type Grupo,
   type BuscaFaixa,
+  type FormulaPronta,
   type GrupoPronto,
   type MundoExplicado,
   type OpcoesMotor,
@@ -106,11 +108,39 @@ export interface EstadoAprimoramento {
 
 /**
  * Pede ao Z3 (na linha principal) para provar, sem limite de tamanho, que
- * cada conjunto de fórmulas não tem modelo. Os índices provados vão entrando
- * no conjunto devolvido conforme as respostas chegam. `ate`: no modo de horas,
- * até quando insistir (tentativas cada vez mais longas); sem ele, uma tentativa curta.
+ * cada conjunto de fórmulas não tem modelo. Os índices vão entrando nas
+ * respostas conforme chegam. `ate`: até quando insistir (tentativas cada vez
+ * mais longas); sem ele, uma tentativa curta para cada.
  */
-export type AjudaZ3 = (conjuntos: Formula[][], ate?: number) => Set<number>
+export type AjudaZ3 = (conjuntos: Formula[][], ate?: number) => RespostasZ3
+
+export interface RespostasZ3 {
+  /** sem modelo de nenhum tamanho: o Z3 provou */
+  semModelo: Set<number>
+  /** o Z3 achou um cenário */
+  comModelo: Set<number>
+  /** o Z3 terminou (ou desistiu no prazo); `desligado`: não há Z3 ligado neste aparelho */
+  fim: Promise<{ desligado?: boolean }>
+}
+
+/**
+ * O conjunto inteiro passou do limite do motor finito: até n−1 objetos não há
+ * cenário em que todas as notas valem, e com n o problema não cabe. As notas
+ * sem nenhum nome em comum com as outras ficam à parte (a rodada segue com as
+ * outras), e o Z3, se ligado, confere o conjunto inteiro sem limite de tamanho.
+ */
+export interface PartePesada {
+  n: number
+  limite: number
+  /** notas que ficaram fora da rodada (todas, se não deu para separar) */
+  notas: string[]
+  /** as notas que mais pesam com n objetos (o tamanho de cada uma sozinha; acima do limite = limite + 1) */
+  pesos: { id: string; tamanho: number }[]
+  /** teoremas que usam nomes das notas à parte (ficaram fora da rodada) */
+  teoremas: string[]
+  /** o Z3 sobre o conjunto inteiro */
+  z3?: 'rodando' | 'desligado' | 'consistente' | 'contraditorio' | 'sem-decisao'
+}
 
 export type EstadoLei =
   /** as outras leis valem neste cenário e esta falha: ela diz algo que as outras não dizem */
@@ -128,6 +158,8 @@ export interface EstadoTeorema {
   apoio?: string[]
   /** 1 = direto das leis; 2 = usa um teorema da geração 1; … */
   geracao?: number
+  /** decidido pelo Z3, para qualquer número de objetos (grande demais para o motor finito) */
+  z3?: 'segue' | 'nao-segue'
 }
 
 export interface SugestaoCadeia {
@@ -161,6 +193,8 @@ export interface RelatorioCadeia {
   aprimoramento: EstadoAprimoramento | null
   /** ids das leis e fatos que entraram nesta rodada (para dizer o que é novo na seguinte) */
   leisIds?: string[]
+  /** o conjunto inteiro passou do limite do motor finito: o que ficou à parte */
+  aParte?: PartePesada
 }
 
 const conj = (fs: Formula[]): Formula => fs.reduce((a, b): Formula => ({ k: 'and', l: a, r: b, pos: 0, end: 0 }))
@@ -190,9 +224,11 @@ export async function reacaoEmCadeia(
     leisIds: c.grupos.map((g) => g.id),
   }))
   const enviar = () => parcial(relatorios.map((r) => ({ ...r })))
+  // o conjunto de cada contexto que a rodada usou (sem as notas grandes demais que ficaram à parte)
+  const usados: ContextoCadeia[] = []
   for (const [k, c] of pedido.contextos.entries()) {
     const rel = relatorios[k]
-    await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida, pedido.aprimorar ?? pedido.limites)
+    usados[k] = await rodarContexto(c, rel, pedido.inativas, dicionario, op, enviar, (msg) => progresso?.(c.chave, msg), pedido.rapida, pedido.aprimorar ?? pedido.limites)
     rel.etapa = 'fim'
     if (pedido.aprimorar) rel.aprimoramento = { situacao: 'esperando', de: { N: rel.N, K: rel.K }, conclusoes: 0, ms: 0 }
     enviar()
@@ -203,13 +239,19 @@ export async function reacaoEmCadeia(
   // (no modo de horas, com o tempo escolhido, mesmo sem aprimoramento)
   const base = lim ?? pedido.limites ?? { N: op.N, K: op.K, limite: op.limite, tempoChecagemMs: PRAZO_CHECAGEM_SEM_PERFIL_MS, orcamentoMs: 0 }
   const paraPendentes = pedido.paciencia ? { ...base, tempoChecagemMs: pedido.paciencia, orcamentoMs: pedido.paciencia } : lim
-  if (paraPendentes)
-    for (const [k, c] of pedido.contextos.entries())
-      await terminarTeoremas(c, relatorios[k], dicionario, op, paraPendentes, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3, !!pedido.paciencia)
+  // e, ao mesmo tempo, o que ficou grande demais para o motor finito vai para o Z3 (sem limite de tamanho)
+  const prazoZ3 = pedido.paciencia ?? Math.min(Math.max(base.orcamentoMs, PRAZO_Z3_A_PARTE_MS), 30 * 60_000)
+  for (const [k, c] of pedido.contextos.entries()) {
+    const aviso = (msg: string) => progresso?.(c.chave, msg)
+    await Promise.all([
+      paraPendentes && terminarTeoremas(usados[k], relatorios[k], dicionario, op, paraPendentes, enviar, aviso, ajudaZ3, !!pedido.paciencia),
+      aParteNoZ3(c, relatorios[k], dicionario, Date.now() + prazoZ3, enviar, aviso, ajudaZ3),
+    ])
+  }
   if (!lim) return
   const ini = Date.now()
   for (let k = 0; k < pedido.contextos.length; k++) {
-    const c = pedido.contextos[k]
+    const c = usados[k]
     const virou = await aprofundar(c, relatorios[k], dicionario, lim, ini, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3)
     if (virou) {
       // o resto fica como está; a próxima rodada (no nível novo) refaz tudo
@@ -248,7 +290,7 @@ async function terminarTeoremas(
   const phis = pendentes.map((e) => analisar([e.formula], dicionario)[0])
   const ate = Date.now() + lim.orcamentoMs
   // com o Z3 ligado, ele tenta ao mesmo tempo provar cada um para qualquer número de objetos
-  const provadasZ3 = ajudaZ3?.(phis.map((p) => (p ? [...premissas, nao(p.expandida)] : [])), horas ? ate : undefined) ?? new Set<number>()
+  const provadasZ3 = ajudaZ3?.(phis.map((p) => (p ? [...premissas, nao(p.expandida)] : [])), horas ? ate : undefined).semModelo ?? new Set<number>()
   const ks = faixa(1, Math.max(1, rel.K))
   const resta = () => Math.max(1000, ate - Date.now())
   let feitos = 0
@@ -340,7 +382,8 @@ function conclusoesLimitadas(c: ContextoCadeia, rel: RelatorioCadeia, dicionario
     }
   for (const t of rel.teoremas) {
     const phi = formulaDe(t.formula)
-    if (!phi) continue
+    // o que o Z3 decidiu vale para qualquer tamanho (e usa notas que ficaram à parte)
+    if (!phi || t.z3) continue
     if (t.resultado.tipo === 'segue') {
       cs.push({ descricao: `"${rotulo(t.id)}" segue das leis`, formulas: [...premissas, nao(phi)] })
       // a cadeia: o apoio (leis e teoremas anteriores) continua bastando?
@@ -414,7 +457,7 @@ async function aprofundar(
   const ini = Date.now()
   const todas = conclusoesLimitadas(c, rel, dicionario)
   // o Z3 tenta provar cada uma para qualquer tamanho; as que ele prova saem do aprofundamento
-  const provadas = todas.length && ajudaZ3 ? ajudaZ3(todas.map((x) => x.formulas)) : new Set<number>()
+  const provadas = todas.length && ajudaZ3 ? ajudaZ3(todas.map((x) => x.formulas)).semModelo : new Set<number>()
   /** as leves que caíram: saíram do relatório */
   const caidas = new Set<number>()
   const sairam: string[] = []
@@ -542,8 +585,13 @@ export function estadoDaLei(grupos: Grupo[], alvoId: string, dicionario: Entrada
   return { id: alvoId, tipo: 'incerto' }
 }
 
+/**
+ * Uma rodada num contexto. Devolve o conjunto que a rodada usou: o próprio
+ * contexto, ou, se o conjunto inteiro passou do limite do motor finito, só as
+ * notas que couberam (as outras ficam em `rel.aParte`).
+ */
 async function rodarContexto(
-  c: ContextoCadeia,
+  inteiro: ContextoCadeia,
   rel: RelatorioCadeia,
   inativas: Grupo[],
   dicionario: EntradaDicionario[],
@@ -552,12 +600,13 @@ async function rodarContexto(
   progresso: Progresso,
   rapida = false,
   lim?: LimitesAprimoramento,
-): Promise<void> {
+): Promise<ContextoCadeia> {
   const paralelo = poolAtual().tamanho
   const vez = (n: number) => (paralelo > 1 && n > 1 ? `, ${Math.min(paralelo, n)} ao mesmo tempo` : '')
-  const prontos: GrupoPronto[] = c.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
-  const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
-  const teoremas = c.teoremas.map((t) => ({ t, pronta: analisar([t.formula], dicionario)[0] }))
+  let c = inteiro
+  let prontos: GrupoPronto[] = c.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
+  let premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+  let teoremas = c.teoremas.map((t) => ({ t, pronta: analisar([t.formula], dicionario)[0] }))
   rel.K = [...premissas, ...teoremas.flatMap((x) => (x.pronta ? [x.pronta.expandida] : []))].some(ehModal) ? op.K : 1
   // a consistência (1) e cada teorema (3) são o resultado: vão até o fim. O resto
   // explica e completa (redundância, a cadeia de provas, conflitos, leis que
@@ -573,8 +622,21 @@ async function rodarContexto(
   rel.etapa = 'consistencia'
   progresso('conferindo se as leis e fatos são consistentes')
   rel.consistencia = verificar(c.grupos, dicionario, { ...op, prazo: Date.now() + prazoChecagem }, progresso)
+  // passou do limite (o tamanho, não o prazo): as notas sem nome em comum com as outras
+  // ficam à parte, e a rodada segue com as que cabem
+  if (rel.consistencia.tipo === 'grande-demais' && !rel.consistencia.tempo) {
+    c = separarPesadas(c, prontos, rel, dicionario, op, prazoChecagem, progresso)
+    prontos = prontos.filter((x) => c.grupos.includes(x.g))
+    premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+    teoremas = teoremas.filter((x) => c.teoremas.includes(x.t))
+  }
+  // os teoremas que ficaram à parte entram no relatório como "grande demais" (o Z3 confere depois)
+  const deFora: EstadoTeorema[] = inteiro.teoremas
+    .filter((t) => rel.aParte?.teoremas.includes(t.id))
+    .map((t) => ({ id: t.id, notaId: t.notaId, formula: t.formula, resultado: { tipo: 'grande-demais', n: rel.aParte!.n } }))
+  rel.teoremas = deFora
   enviar()
-  if (rel.consistencia.tipo === 'sem-modelo' || rel.consistencia.tipo === 'grande-demais') return
+  if (rel.consistencia.tipo === 'sem-modelo' || rel.consistencia.tipo === 'grande-demais') return c
 
   // 2. leis batendo umas com as outras
   rel.etapa = 'leis'
@@ -609,7 +671,7 @@ async function rodarContexto(
       (i, resultado) => {
         const { t } = teoremas[i]
         estados[i] = { id: t.id, notaId: t.notaId, formula: t.formula, resultado }
-        rel.teoremas = estados.filter((x): x is EstadoTeorema => !!x)
+        rel.teoremas = [...estados.filter((x): x is EstadoTeorema => !!x), ...deFora]
         progresso(`conferindo os teoremas (${++feitos}/${teoremas.length}${vez(teoremas.length)})`)
         enviar()
       },
@@ -620,7 +682,7 @@ async function rodarContexto(
   rel.etapa = 'cadeia'
   enviar()
   const provados = rel.teoremas
-    .map((e, ordem) => ({ e, ordem, pronta: teoremas.find((x) => x.t.id === e.id)!.pronta }))
+    .map((e, ordem) => ({ e, ordem, pronta: teoremas.find((x) => x.t.id === e.id)?.pronta }))
     .filter((x) => x.e.resultado.tipo === 'segue' && x.pronta)
     .sort((a, b) => apoioDireto(a.e) - apoioDireto(b.e) || a.ordem - b.ordem)
   const geracao = new Map<string, number>()
@@ -648,7 +710,7 @@ async function rodarContexto(
   rel.etapa = 'juntos'
   enviar()
   const abertos = rel.teoremas
-    .map((e) => ({ e, pronta: teoremas.find((x) => x.t.id === e.id)!.pronta }))
+    .map((e) => ({ e, pronta: teoremas.find((x) => x.t.id === e.id)?.pronta }))
     .filter((x) => x.e.resultado.tipo === 'nao-segue' && x.pronta)
   if (abertos.length >= 2) {
     progresso('conferindo se os teoremas que não seguem se contradizem entre si')
@@ -730,6 +792,212 @@ async function rodarContexto(
       rel.consequenciasJaTeorema = d.itens.length - novas.length
     } else rel.consequencias = []
   }
+  return c
+}
+
+/**
+ * O conjunto inteiro passou do limite do motor finito: até n−1 objetos não
+ * havia cenário, e com n não cabe. Mede o peso de cada nota nesse tamanho,
+ * separa as notas em blocos sem nenhum nome em comum e tira os blocos mais
+ * pesados, um por vez, até o resto caber. O que sai fica em `rel.aParte`
+ * (com os teoremas que usam nomes dele); devolve o contexto com o que ficou
+ * (o próprio, se não deu para separar: aí tudo fica à parte).
+ */
+function separarPesadas(
+  c: ContextoCadeia,
+  prontos: GrupoPronto[],
+  rel: RelatorioCadeia,
+  dicionario: EntradaDicionario[],
+  op: OpcoesMotor,
+  prazoChecagem: number,
+  progresso: Progresso,
+): ContextoCadeia {
+  const gd = rel.consistencia as Extract<ResultadoMotor, { tipo: 'grande-demais' }>
+  progresso(`o conjunto passou do limite com ${gd.n} objetos: medindo o peso de cada nota`)
+  const peso = new Map<string, number>()
+  const fimMedida = Date.now() + PRAZO_MEDIR_PESOS_MS
+  for (const x of prontos) {
+    if (Date.now() > fimMedida) break
+    peso.set(x.g.id, pesoAterrado(x.itens.map((i) => i.expandida), gd.n, rel.K, op.limite))
+  }
+  const pesos = [...peso].map(([id, tamanho]) => ({ id, tamanho })).sort((a, b) => b.tamanho - a.tamanho).slice(0, 8)
+  // uma nota que não deu tempo de medir conta como pesada
+  const pesoDe = (b: GrupoPronto[]) => b.reduce((s, x) => s + (peso.get(x.g.id) ?? op.limite), 0)
+  // os blocos mais leves primeiro: os pesados saem do fim
+  const ficam = blocosIndependentes(prontos).sort((a, b) => pesoDe(a) - pesoDe(b))
+  const saem: GrupoPronto[] = []
+  let r: ResultadoMotor = gd
+  while (ficam.length > 1 && r.tipo === 'grande-demais' && !r.tempo) {
+    saem.push(...ficam.pop()!)
+    progresso(`conferindo as outras notas, sem as ${saem.length} mais pesadas`)
+    r = verificar(ficam.flat().map((x) => x.g), dicionario, { ...op, prazo: Date.now() + prazoChecagem }, progresso)
+  }
+  const separou = saem.length > 0 && !(r.tipo === 'grande-demais' && !r.tempo)
+  const fora = separou ? saem : prontos
+  const nomesFora = new Set(fora.flatMap((x) => x.itens.flatMap(nomesDe)))
+  // com tudo à parte, todos os teoremas que o motor finito lê; separando, os que usam nomes do que saiu
+  const teoremasFora = c.teoremas.filter((t) => {
+    const p = analisar([t.formula], dicionario)[0]
+    return !!p && (!separou || nomesDe(p).some((n) => nomesFora.has(n)))
+  })
+  rel.aParte = { n: gd.n, limite: op.limite, notas: fora.map((x) => x.g.id), pesos, teoremas: teoremasFora.map((t) => t.id) }
+  if (!separou) return c
+  rel.consistencia = r
+  const idsFora = new Set(rel.aParte.notas)
+  return { ...c, grupos: c.grupos.filter((g) => !idsFora.has(g.id)), teoremas: c.teoremas.filter((t) => !teoremasFora.includes(t)) }
+}
+
+/** tamanho do circuito das fórmulas com n objetos (e k mundos, se modais); acima do limite: limite + 1 */
+function pesoAterrado(fs: Formula[], n: number, k: number, limite: number): number {
+  const at = new Aterrador(n, limite, fs.some(ehModal) ? k : 1)
+  try {
+    for (const f of fs) at.afirmar(f)
+    return at.tamanhoAtual
+  } catch (e) {
+    if (e instanceof GrandeDemais) return limite + 1
+    throw e
+  }
+}
+
+/** a fórmula usa ∈ (ou ∅, que o motor define por ∈)? */
+function usaPertence(f: Formula): boolean {
+  const termo = (t: Termo): boolean => {
+    switch (t.k) {
+      case 'vazio':
+        return true
+      case 'app':
+        return t.args.some(termo)
+      case 'inter':
+      case 'uniao':
+      case 'arit':
+        return termo(t.l) || termo(t.r)
+      case 'neg':
+        return termo(t.t)
+      default:
+        return false
+    }
+  }
+  switch (f.k) {
+    case 'rel':
+      return f.op === '∈' || f.op === '∉' || termo(f.l) || termo(f.r)
+    case 'pred':
+      return f.args.some(termo)
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return usaPertence(f.f)
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return usaPertence(f.l) || usaPertence(f.r)
+    case 'forall':
+    case 'exists':
+      return !!f.dom || usaPertence(f.corpo)
+    default:
+      return false
+  }
+}
+
+/**
+ * Os nomes que a fórmula usa. ∈ e os operadores modais contam como nomes:
+ * a relação ∈ e os mundos são os mesmos para todas as notas.
+ */
+function nomesDe(it: FormulaPronta): string[] {
+  const nomes = usosDeNomes(it.expandida).map((u) => u.nome)
+  if (usaPertence(it.expandida)) nomes.push('∈')
+  if (ehModal(it.expandida)) nomes.push('□')
+  return nomes
+}
+
+/**
+ * Separa as notas em blocos sem nenhum nome em comum. Um bloco não muda o que
+ * vale nos outros (fora o número de objetos, que é o mesmo para todos): cada
+ * um pode ser conferido à parte.
+ */
+export function blocosIndependentes(prontos: GrupoPronto[]): GrupoPronto[][] {
+  const pai = prontos.map((_, i) => i)
+  const raiz = (i: number): number => (pai[i] === i ? i : (pai[i] = raiz(pai[i])))
+  const dono = new Map<string, number>()
+  prontos.forEach((x, i) => {
+    for (const nome of x.itens.flatMap(nomesDe)) {
+      const j = dono.get(nome)
+      if (j === undefined) dono.set(nome, i)
+      else pai[raiz(i)] = raiz(j)
+    }
+  })
+  const blocos = new Map<number, GrupoPronto[]>()
+  prontos.forEach((x, i) => blocos.set(raiz(i), [...(blocos.get(raiz(i)) ?? []), x]))
+  return [...blocos.values()]
+}
+
+/**
+ * O que ficou grande demais para o motor finito vai para o Z3, que não tem
+ * limite de tamanho: o conjunto inteiro tem cenário? Cada teorema que ficou
+ * de fora segue de todas as leis? As respostas entram no relatório assim que
+ * chegam, até o Z3 terminar ou o prazo acabar.
+ */
+async function aParteNoZ3(
+  c: ContextoCadeia,
+  rel: RelatorioCadeia,
+  dicionario: EntradaDicionario[],
+  ate: number,
+  enviar: () => void,
+  progresso: Progresso,
+  ajudaZ3?: AjudaZ3,
+): Promise<void> {
+  const ap = rel.aParte
+  if (!ap) return
+  if (!ajudaZ3) {
+    rel.aParte = { ...ap, z3: 'desligado' }
+    return enviar()
+  }
+  const todas = c.grupos.map((g) => g.id)
+  const premissas = c.grupos.flatMap((g) => analisar(g.formulas, dicionario).map((i) => i.expandida))
+  const fora = rel.teoremas.filter((t) => ap.teoremas.includes(t.id))
+  const conjuntos = [
+    premissas,
+    ...fora.map((t) => {
+      const p = analisar([t.formula], dicionario)[0]
+      return p ? [...premissas, nao(p.expandida)] : []
+    }),
+  ]
+  rel.aParte = { ...ap, z3: 'rodando' }
+  progresso('o Z3 confere, sem limite de tamanho, o que ficou grande demais para o motor finito')
+  enviar()
+  const r = ajudaZ3(conjuntos, ate)
+  const vistos = new Set<number>()
+  const ler = () => {
+    let mudou = false
+    for (const i of [...r.semModelo, ...r.comModelo]) {
+      if (vistos.has(i)) continue
+      vistos.add(i)
+      mudou = true
+      const sem = r.semModelo.has(i)
+      if (i === 0) rel.aParte = { ...rel.aParte!, z3: sem ? 'contraditorio' : 'consistente' }
+      else {
+        const id = fora[i - 1].id
+        rel.teoremas = rel.teoremas.map((x) =>
+          x.id !== id
+            ? x
+            : sem
+              ? { ...x, z3: 'segue', resultado: { tipo: 'segue', N: rel.N, K: rel.K, notas: todas }, apoio: todas, geracao: 1 }
+              : { ...x, z3: 'nao-segue' },
+        )
+      }
+    }
+    if (mudou) enviar()
+  }
+  const fim: { desligado?: boolean; pronto?: boolean } = {}
+  void r.fim.then((x) => Object.assign(fim, x, { pronto: true }))
+  while (!fim.pronto && Date.now() < ate) {
+    ler()
+    await new Promise((ok) => setTimeout(ok, 1000))
+  }
+  ler()
+  if (rel.aParte?.z3 === 'rodando') rel.aParte = { ...rel.aParte, z3: fim.desligado ? 'desligado' : 'sem-decisao' }
+  enviar()
 }
 
 /**
@@ -747,6 +1015,12 @@ export function prazosAuxiliares(lim: LimitesAprimoramento | undefined, op: Opco
 
 /** sem perfil (testes, aprimoramento desligado): quanto cada checagem principal pode levar */
 const PRAZO_CHECAGEM_SEM_PERFIL_MS = 120_000
+
+/** quanto tempo, no máximo, para medir o peso de cada nota quando o conjunto passa do limite */
+const PRAZO_MEDIR_PESOS_MS = 20_000
+
+/** o mínimo que o Z3 tem para conferir o que ficou grande demais (fora do modo de horas) */
+const PRAZO_Z3_A_PARTE_MS = 2 * 60_000
 
 /** quantas notas o teorema usa direto das leis (menos = mais básico; entra antes na cadeia) */
 const apoioDireto = (e: EstadoTeorema) => (e.resultado.tipo === 'segue' ? e.resultado.notas.length : 99)

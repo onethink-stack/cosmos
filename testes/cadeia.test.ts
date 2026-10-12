@@ -102,6 +102,38 @@ describe('prazo de cada checagem principal', () => {
     }
   })
 
+  it('modo de horas: o que ficou pendente continua com o tempo escolhido (mesmo sem aprimorar), e o Z3 recebe o prazo', async () => {
+    definirBanco(bancoNaMemoria())
+    try {
+      const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
+      buscarModelo(
+        grupos.flatMap((x) => analisar(x.formulas, dic).map((i) => i.expandida)),
+        op,
+      )
+      const relatorios: RelatorioCadeia[][] = []
+      const pedidosZ3: (number | undefined)[] = []
+      // o aparelho não daria tempo nenhum (prazo vencido e sem aprimoramento); a paciência dá um minuto
+      const limites = { N: 5, K: 1, limite: 1_000_000, tempoChecagemMs: -1, orcamentoMs: 0 }
+      const inicio = Date.now()
+      await reacaoEmCadeia(
+        { contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas: [t('T1', 'Q(c)'), t('T2', 'R(c)')] }], inativas: [], limites, paciencia: 60_000 },
+        dic,
+        op,
+        (r) => relatorios.push(r),
+        undefined,
+        (_conjuntos, ate) => (pedidosZ3.push(ate), new Set<number>()),
+      )
+      const ultimo = relatorios.at(-1)![0]
+      expect(ultimo.teoremas.find((x) => x.id === 'T1:0')!.resultado.tipo).toBe('segue')
+      expect(ultimo.teoremas.find((x) => x.id === 'T2:0')!.resultado.tipo).toBe('nao-segue')
+      // o Z3 foi chamado com o prazo do modo de horas (uns 60 s à frente)
+      expect(pedidosZ3).toHaveLength(1)
+      expect(pedidosZ3[0]! - inicio).toBeGreaterThan(50_000)
+    } finally {
+      definirBanco(null)
+    }
+  })
+
   it('sem tempo, a pergunta nunca responde "segue" nem "não segue"', () => {
     const grupos = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)')]
     expect(perguntar(grupos, 'Q(c)', dic, op).tipo).toBe('segue')

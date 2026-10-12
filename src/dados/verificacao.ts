@@ -6,6 +6,7 @@ import { OPCOES_PADRAO, type Grupo, type ResultadoMotor, type ResultadoPergunta 
 import { assinatura, executarTarefas, type PedidoMotor, type RespostaMotor, type Tarefa } from '../motor/tarefas'
 import MotorWorker from '../motor/worker?worker&inline'
 import { abrirBancoProvas, bancoAtual, bancoNaMemoria, definirBanco, type EstatisticasBanco } from '../motor/bancoProvas'
+import { manterAcordado } from './acordado'
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
@@ -117,10 +118,22 @@ export const K_MAXIMO = K_ABSOLUTO
 /** quantas vezes seguidas o aprimoramento pode refazer a rodada sozinho */
 const MAX_VIRADAS = 3
 
+/**
+ * Modo de horas: o Z3 tenta cada pendente por 10 s, depois 2 min, 10 min e
+ * 30 min (e repete 30 min até o prazo). Uma tentativa só não passa de 30 min:
+ * se a reação for parada, o Z3 ainda termina a tentativa em curso.
+ */
+const TEMPOS_Z3_HORAS = [10_000, 120_000, 600_000, 1_800_000]
+/** as escolhas do modo de horas (0 = o tempo do aparelho) */
+export const PACIENCIAS_HORAS = [0, 1, 5, 10] as const
+export type PacienciaHoras = (typeof PACIENCIAS_HORAS)[number]
+
 class Verificacao {
   N = OPCOES_PADRAO.N
   /** máximo de mundos testados quando há □, ◇ ou B[…] */
   K = OPCOES_PADRAO.K
+  /** modo de horas da reação em cadeia (0 = o tempo do aparelho) */
+  paciencia: PacienciaHoras = 0
   rodando: { chave: string; msg: string } | null = null
   resultados = new Map<string, ResultadoTarefa>()
   /** última pergunta feita ("isto segue das notas?") */
@@ -179,6 +192,8 @@ class Verificacao {
     }
   }
   private avisar() {
+    // no modo de horas, a tela fica acesa enquanto a reação roda (com a tela apagada, o celular congela a aba)
+    manterAcordado(this.ocupado === 'cadeia' && this.paciencia > 0)
     this.ouvintes.forEach((f) => f())
   }
 
@@ -245,6 +260,8 @@ class Verificacao {
       if (n) this.N = n
       const k = await lerConfig<number>('K')
       if (k) this.K = k
+      const h = await lerConfig<number>('pacienciaHoras')
+      if (h && (PACIENCIAS_HORAS as readonly number[]).includes(h)) this.paciencia = h as PacienciaHoras
       const rodadas = await lerConfig<RodadaCadeia[]>('cadeiaRodadas')
       if (rodadas?.length && !this.rodadas.length) this.rodadas = rodadas
       const modelo = await lerConfig<ExecucaoModelo>('modeloUltimo')
@@ -272,6 +289,13 @@ class Verificacao {
   definirK(k: number) {
     this.K = Math.max(1, Math.min(perfil.atual.limites.K, Math.round(k) || OPCOES_PADRAO.K))
     void gravarConfig('K', this.K).catch(() => {})
+    this.avisar()
+  }
+
+  /** modo de horas da reação em cadeia: até quantas horas para o que ficar pendente (0 = o tempo do aparelho) */
+  definirPaciencia(h: PacienciaHoras) {
+    this.paciencia = h
+    void gravarConfig('pacienciaHoras', h).catch(() => {})
     this.avisar()
   }
 
@@ -321,14 +345,27 @@ class Verificacao {
    * O motor pediu ao Z3 para provar conclusões sem limite de tamanho (com o
    * Z3 ligado): cada uma provada é avisada ao worker, que deixa de aprofundá-la.
    */
-  private async provarNoZ3(pedido: number, conjuntos: Formula[][]) {
+  private async provarNoZ3(pedido: number, conjuntos: Formula[][], ate?: number) {
     if (!z3.ativo || !disponibilidadeZ3().ok) return
     const w = this.worker
     const dicionario = this.dicionario
-    for (const [indice, formulas] of conjuntos.entries()) {
-      if (!w || this.worker !== w) return // o trabalho foi cancelado
-      const r = await z3.provarFormulas(formulas, dicionario)
-      if (r === 'unsat' && this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice })
+    // uma tentativa curta para cada; no modo de horas, rodadas cada vez mais longas até o prazo
+    const tempos = ate ? TEMPOS_Z3_HORAS : [undefined]
+    const provados = new Set<number>()
+    for (let nivel = 0; ; nivel++) {
+      const tempo = tempos[Math.min(nivel, tempos.length - 1)]
+      for (const [indice, formulas] of conjuntos.entries()) {
+        if (!w || this.worker !== w) return // o trabalho foi cancelado
+        if (provados.has(indice) || !formulas.length) continue
+        if (ate && Date.now() >= ate) return
+        const r = await z3.provarFormulas(formulas, dicionario, tempo && ate ? Math.min(tempo, ate - Date.now()) : undefined)
+        if (r === 'unsat') {
+          provados.add(indice)
+          if (this.worker === w) w.postMessage({ tipo: 'z3-resposta', pedido, indice })
+        }
+        if (r === 'sat') provados.add(indice) // tem modelo: o Z3 não vai provar
+      }
+      if (!ate || provados.size >= conjuntos.filter((c) => c.length).length) return
     }
   }
 
@@ -383,6 +420,8 @@ class Verificacao {
     const completo: PedidoCadeia = {
       ...pedido,
       aprimorar: perfil.aprimorar ? { ...pf.limites, limite: limitePorWorker(pf.limites.limite, paralelo) } : undefined,
+      // modo de horas: o que ficar pendente na rodada continua por até tantas horas
+      ...(this.paciencia ? { paciencia: this.paciencia * 3_600_000 } : {}),
     }
     const numero = (this.rodadas.at(-1)?.numero ?? 0) + 1
     this.rodadas = [
@@ -549,7 +588,7 @@ class Verificacao {
   private receber(r: RespostaMotor) {
     if (r.id !== this.pedido) return
     if (r.tipo === 'z3-pedido') {
-      void this.provarNoZ3(r.pedido, r.conjuntos)
+      void this.provarNoZ3(r.pedido, r.conjuntos, r.ate)
       return
     }
     if (r.tipo === 'banco') {

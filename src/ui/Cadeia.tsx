@@ -5,7 +5,8 @@ import { grauHerdado, type GrauHerdado } from '../dados/grau'
 import { estado, useEstado } from '../dados/estado'
 import { usePerfil } from '../dados/perfil'
 import { preparar } from '../dados/premissas'
-import { assinaturaCadeia, useVerificacao, type RodadaCadeia } from '../dados/verificacao'
+import { podeManterAcordado } from '../dados/acordado'
+import { assinaturaCadeia, useVerificacao, type PacienciaHoras, type RodadaCadeia } from '../dados/verificacao'
 import type { EstadoTeorema, PedidoCadeia, RelatorioCadeia } from '../motor/cadeia'
 import { limiteTexto, tamanhoTexto } from '../motor/avaliar'
 import type { Grupo } from '../motor/motor'
@@ -132,6 +133,24 @@ export function Cadeia() {
             : `cenários até ${limiteTexto(pf.atual.Ninicial, pf.atual.Kinicial)}`}
         </span>
       </div>
+      <label class="suave">
+        Tempo para resolver o que ficar pendente:{' '}
+        <select value={ver.paciencia} onChange={(e) => ver.definirPaciencia(Number((e.target as HTMLSelectElement).value) as PacienciaHoras)}>
+          <option value={0}>o do aparelho ({pf.aprimorar ? `até ${Math.round(pf.atual.limites.orcamentoMs / 60_000)} min` : 'sem continuar'})</option>
+          <option value={1}>até 1 hora</option>
+          <option value={5}>até 5 horas</option>
+          <option value={10}>até 10 horas</option>
+        </select>
+      </label>
+      {ver.paciencia > 0 && (
+        <p class="suave">
+          Modo de horas: o teorema que não decidir no prazo da rodada continua sendo conferido por até {ver.paciencia} hora
+          {ver.paciencia > 1 ? 's' : ''} — o motor retoma do tamanho em que parou, e o Z3 (se estiver ligado, em Contradições) tenta
+          provar com tentativas cada vez mais longas. O que decidir entra no histórico na hora. Deixe o app aberto
+          {podeManterAcordado() ? ' (a tela fica acesa enquanto isso)' : ' e a tela ligada (este navegador não deixa o app mantê-la acesa)'}; no
+          celular, ligue na tomada.
+        </p>
+      )}
       {ficou && (
         <p class="suave">
           A última rodada {ficou}. “Continuar de onde parou” faz uma rodada nova que aproveita o que já foi provado.

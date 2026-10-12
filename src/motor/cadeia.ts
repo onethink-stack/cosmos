@@ -64,6 +64,11 @@ export interface PedidoCadeia {
   rapida?: boolean
   /** os prazos do aparelho sem aprofundar (as rodadas do segundo modelo); com `aprimorar`, valem os dele */
   limites?: LimitesAprimoramento
+  /**
+   * modo de horas: os teoremas que não decidiram na rodada continuam, cada um
+   * podendo usar até este tempo (ms), e o Z3 insiste neles o tempo todo
+   */
+  paciencia?: number
 }
 
 /** Até onde o aprimoramento automático pode ir (vem do perfil do aparelho). */
@@ -102,9 +107,10 @@ export interface EstadoAprimoramento {
 /**
  * Pede ao Z3 (na linha principal) para provar, sem limite de tamanho, que
  * cada conjunto de fórmulas não tem modelo. Os índices provados vão entrando
- * no conjunto devolvido conforme as respostas chegam.
+ * no conjunto devolvido conforme as respostas chegam. `ate`: no modo de horas,
+ * até quando insistir (tentativas cada vez mais longas); sem ele, uma tentativa curta.
  */
-export type AjudaZ3 = (conjuntos: Formula[][]) => Set<number>
+export type AjudaZ3 = (conjuntos: Formula[][], ate?: number) => Set<number>
 
 export type EstadoLei =
   /** as outras leis valem neste cenário e esta falha: ela diz algo que as outras não dizem */
@@ -193,10 +199,14 @@ export async function reacaoEmCadeia(
   }
   // aprimoramento: as conclusões que dependem do tamanho são reconferidas em cenários maiores
   const lim = pedido.aprimorar
-  if (!lim) return
   // antes, os teoremas que não decidiram no prazo da rodada: continuam de onde pararam, com mais tempo
-  for (const [k, c] of pedido.contextos.entries())
-    await terminarTeoremas(c, relatorios[k], dicionario, op, lim, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3)
+  // (no modo de horas, com o tempo escolhido, mesmo sem aprimoramento)
+  const base = lim ?? pedido.limites ?? { N: op.N, K: op.K, limite: op.limite, tempoChecagemMs: PRAZO_CHECAGEM_SEM_PERFIL_MS, orcamentoMs: 0 }
+  const paraPendentes = pedido.paciencia ? { ...base, tempoChecagemMs: pedido.paciencia, orcamentoMs: pedido.paciencia } : lim
+  if (paraPendentes)
+    for (const [k, c] of pedido.contextos.entries())
+      await terminarTeoremas(c, relatorios[k], dicionario, op, paraPendentes, enviar, (msg) => progresso?.(c.chave, msg), ajudaZ3, !!pedido.paciencia)
+  if (!lim) return
   const ini = Date.now()
   for (let k = 0; k < pedido.contextos.length; k++) {
     const c = pedido.contextos[k]
@@ -228,20 +238,23 @@ async function terminarTeoremas(
   enviar: () => void,
   progresso: Progresso,
   ajudaZ3?: AjudaZ3,
+  /** modo de horas: o Z3 insiste até o fim do prazo */
+  horas = false,
 ): Promise<void> {
   if (rel.consistencia?.tipo !== 'consistente') return
   const pendentes = rel.teoremas.filter((e) => e.resultado.tipo === 'tempo')
   if (!pendentes.length) return
   const premissas = c.grupos.flatMap((g) => analisar(g.formulas, dicionario).map((i) => i.expandida))
   const phis = pendentes.map((e) => analisar([e.formula], dicionario)[0])
-  // com o Z3 ligado, ele tenta ao mesmo tempo provar cada um para qualquer número de objetos
-  const provadasZ3 = ajudaZ3?.(phis.map((p) => (p ? [...premissas, nao(p.expandida)] : []))) ?? new Set<number>()
-  const ks = faixa(1, Math.max(1, rel.K))
   const ate = Date.now() + lim.orcamentoMs
+  // com o Z3 ligado, ele tenta ao mesmo tempo provar cada um para qualquer número de objetos
+  const provadasZ3 = ajudaZ3?.(phis.map((p) => (p ? [...premissas, nao(p.expandida)] : [])), horas ? ate : undefined) ?? new Set<number>()
+  const ks = faixa(1, Math.max(1, rel.K))
   const resta = () => Math.max(1000, ate - Date.now())
   let feitos = 0
   rel.continuando = pendentes.map((e) => e.id)
-  const aviso = () => progresso(`conferindo com mais tempo os teoremas que não decidiram na rodada (${feitos}/${pendentes.length})`)
+  const fim = horas ? ` — insistindo até ${new Date(ate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''
+  const aviso = () => progresso(`conferindo com mais tempo os teoremas que não decidiram na rodada (${feitos}/${pendentes.length})${fim}`)
   aviso()
   enviar()
   const decididos = new Set<string>()

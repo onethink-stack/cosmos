@@ -18,6 +18,8 @@ export interface Confirmacao {
   resultado?: ResultadoZ3
   ms?: number
   erro?: string
+  /** o tempo que o Z3 teve (um "não sei" com pouco tempo pode ser tentado de novo com mais) */
+  tempoMs?: number
 }
 
 /** Pode haver Z3 neste ambiente? Se não, por quê. */
@@ -197,16 +199,19 @@ class EstadoZ3 {
    * tamanho? Usado pelo aprofundamento: o que o Z3 prova não precisa ser
    * reconferido com mais objetos. Resposta guardada como as outras.
    */
-  async provarFormulas(formulas: Formula[], dicionario: EntradaDicionario[]): Promise<ResultadoZ3 | null> {
+  async provarFormulas(formulas: Formula[], dicionario: EntradaDicionario[], tempoMs = TEMPO_APROFUNDAR_MS): Promise<ResultadoZ3 | null> {
     const chave = `formulas:${JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))}`
-    if (!this.confirmacoes.has(chave)) {
+    const ja = this.confirmacoes.get(chave)
+    // "não sei" com menos tempo do que agora: tenta de novo, com o tempo maior (modo de horas)
+    const deNovo = ja?.estado === 'feito' && ja.resultado === 'unknown' && (ja.tempoMs ?? TEMPO_APROFUNDAR_MS) < tempoMs
+    if (!ja || deNovo) {
       this.confirmacoes.set(chave, { estado: 'rodando' })
       this.fila = this.fila.then(async () => {
         const ini = Date.now()
         try {
           const api = await this.carregar()
-          const resultado = await checarZ3(api, formulas, TEMPO_APROFUNDAR_MS, nomesNumericos(dicionario))
-          this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
+          const resultado = await checarZ3(api, formulas, tempoMs, nomesNumericos(dicionario))
+          this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini, tempoMs })
           if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
         } catch (e) {
           this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })

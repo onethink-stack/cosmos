@@ -39,11 +39,11 @@ ctx.onmessage = async (e: MessageEvent<PedidoMotor | { tipo: 'z3-resposta'; pedi
     .catch(() => definirBanco(bancoNaMemoria()))
   await banco
   ajustarParalelo(m.paralelo ?? 1)
-  const ajudaZ3 = (conjuntos: Formula[][]) => {
+  const ajudaZ3 = (conjuntos: Formula[][], ate?: number) => {
     const pedido = ++pedidosZ3
     const provadas = new Set<number>()
     provadasPorPedido.set(pedido, provadas)
-    ctx.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos } satisfies RespostaMotor)
+    ctx.postMessage({ id: m.id, tipo: 'z3-pedido', pedido, conjuntos, ...(ate ? { ate } : {}) } satisfies RespostaMotor)
     return provadas
   }
   await executarTarefas(m, (r: RespostaMotor) => ctx.postMessage(r), ajudaZ3)

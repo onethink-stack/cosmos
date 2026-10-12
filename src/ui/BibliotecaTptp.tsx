@@ -89,8 +89,8 @@ export function BibliotecaTptp() {
       </summary>
       {!bib.catalogo.length && !bib.abrindo && (
         <p class="suave">
-          O site do TPTP só deixa baixar até 250 MB por vez. O pacote da biblioteca junta todas as teorias de axiomas (as que o app lê, em FOF
-          e CNF) já traduzidas, num arquivo só. Abra-o aqui uma vez: ele fica guardado neste aparelho, e daí você procura e carrega no
+          O site do TPTP só deixa baixar até 250 MB por vez. O pacote da biblioteca junta todas as teorias de axiomas (as que o app lê, em FOF,
+          CNF e TFF sem aritmética) já traduzidas, num arquivo só. Abra-o aqui uma vez: ele fica guardado neste aparelho, e daí você procura e carrega no
           caderno só a teoria que interessa. O pacote dos problemas (problemas-tptp) traz as conjecturas com a resposta conhecida; abra-o
           também.
         </p>

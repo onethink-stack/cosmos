@@ -119,6 +119,93 @@ cnf(n2, negated_conjecture, r(b,a)).`
     const r = importarTptp('fof(a, axiom, ![X]: p(X)).', 't.p', 'tptp', dic)
     expect(r.notas[0].formulas[0]).toBe('∀x1 (p(x1))')
   })
+
+  it('"X != X" do TPTP vira ¬(x = x), que o validador aceita', () => {
+    const r = importarTptp('fof(a, axiom, ![X]: (X != X | p(X))).\nfof(c, conjecture, p(k)).', 'e9.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    expect(r.notas[0].formulas[0]).toBe('∀x ((¬(x = x) ∨ p(x)))')
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    expect(perguntar(leis, 'p(k)', comId(r.fichas), { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('segue')
+  })
+})
+
+describe('TPTP com tipos (TFF)', () => {
+  const pergunta = (texto: string, N = 4) => {
+    const r = importarTptp(texto, 'tff.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    const conj = r.notas.find((n) => n.compartimento === 'teorema')!
+    return { r, res: perguntar(leis, conj.formulas[0], comId(r.fichas), { ...OPCOES_PADRAO, N }).tipo }
+  }
+  const DOIS_TIPOS = `tff(a_type, type, a: $tType).
+tff(b_type, type, b: $tType).
+tff(c_type, type, c: a).
+tff(d_type, type, d: b).
+tff(um_so, axiom, ![X: a, Y: a]: X = Y).`
+
+  it('cada tipo é um predicado: "o tipo a tem um elemento só" não diz nada sobre o tipo b', () => {
+    // apagando os tipos, "∀x ∀y x = y" valeria para tudo, e o b também ficaria com um só
+    const { r, res } = pergunta(`${DOIS_TIPOS}\ntff(conj, conjecture, ![X: b, Y: b]: X = Y).`)
+    expect(res).toBe('nao-segue')
+    expect(r.notas.find((n) => n.titulo === 'um_so (axiom)')!.formulas[0]).toBe('∀x ∀y ((tipoA(x) ∧ tipoA(y)) ⟹ (x = y))')
+    expect(r.fichas.find((f) => f.simbolo === 'tipoB')).toMatchObject({ tipo: 'predicado', aridade: 1, termo: 'tipo b' })
+    const outra = pergunta(`${DOIS_TIPOS}\ntff(conj, conjecture, ![X: a]: X = c).`)
+    expect(outra.res).toBe('segue')
+    // a constante usada ganha a lei do seu tipo (as que não aparecem, não)
+    expect(outra.r.notas.find((n) => n.titulo === 'c_type (type)')!.formulas[0]).toBe('tipoA(c)')
+    expect(outra.r.notas.some((n) => n.titulo === 'd_type (type)')).toBe(false)
+  })
+
+  it('as funções devolvem o seu tipo, e nenhum tipo é vazio', () => {
+    const base = `tff(a_type, type, a: $tType).
+tff(b_type, type, b: $tType).
+tff(f_type, type, f: a > b).
+tff(g_type, type, g: (a * a) > b).
+tff(q_type, type, q: b > $o).
+tff(todo_b, axiom, ![Y: b]: q(Y)).`
+    // f(x) é do tipo b para todo x do tipo a: sem essa lei, q(f(x)) não seguiria
+    const { r, res } = pergunta(`${base}\ntff(conj, conjecture, ![X: a]: q(f(X))).`)
+    expect(res).toBe('segue')
+    expect(r.notas.find((n) => n.titulo === 'f_type (type)')!.formulas[0]).toBe('∀x1 (tipoA(x1) ⟹ (tipoB(f(x1))))')
+    // o tipo a não tem constante: entra "existe algo do tipo a"
+    expect(r.notas.find((n) => n.titulo === 'a_type (type)')!.formulas[0]).toBe('∃x (tipoA(x))')
+    const outra = pergunta(`${base}\ntff(conj, conjecture, ?[X: a, Y: a]: q(g(X, Y))).`)
+    expect(outra.res).toBe('segue')
+    expect(outra.r.notas.find((n) => n.titulo === 'g_type (type)')!.formulas[0]).toBe('∀x1 ∀x2 ((tipoA(x1) ∧ tipoA(x2)) ⟹ (tipoB(g(x1, x2))))')
+  })
+
+  it('tipo com nome entre aspas é o mesmo tipo onde aparecer', () => {
+    const { r, res } = pergunta(`tff('$ki_world_type', type, '$ki_world': $tType).
+tff(local, type, '$ki_local_world': '$ki_world').
+tff(acc, type, '$ki_accessible': ('$ki_world' * '$ki_world') > $o).
+tff(serial, axiom, ![W: '$ki_world']: ?[V: '$ki_world']: '$ki_accessible'(W, V)).
+tff(conj, conjecture, ?[V: '$ki_world']: '$ki_accessible'('$ki_local_world', V)).
+fof(outro, axiom, ![X]: p(X)).`)
+    expect(res).toBe('segue')
+    // dois tipos ($ki_world e o $i do fof): dois predicados, não três
+    expect(r.fichas.filter((f) => f.simbolo.startsWith('tipo')).map((f) => f.simbolo).sort()).toEqual(['tipoI', 'tipoKiWorld'])
+  })
+
+  it('com um tipo só, fica como em FOF (sem predicados de tipo)', () => {
+    const { r, res } = pergunta(`tff(a_type, type, a: $tType).
+tff(c_type, type, c: a).
+tff(p_type, type, p: a > $o).
+tff(ax, axiom, ![X: a]: p(X)).
+tff(conj, conjecture, p(c)).`)
+    expect(res).toBe('segue')
+    expect(r.notas.map((n) => n.formulas[0])).toEqual(['∀x (p(x))', 'p(c)'])
+    expect(r.fichas.some((f) => f.simbolo.startsWith('tipo'))).toBe(false)
+  })
+
+  it('não lê aritmética, tipos polimórficos nem ordem superior: avisa', () => {
+    const { formulas, avisos } = lerTptp(`tff(n, type, n: $int).
+tff(l, type, list: $tType > $tType).
+tff(x, axiom, ![T: $tType, X: T]: X = X).
+thf(h, axiom, ![P: $i > $o]: (P @ c)).
+tff(ok, axiom, p(c)).`)
+    expect(formulas.map((f) => f.nome)).toEqual(['ok'])
+    expect(avisos.join('\n')).toMatch(/aritmética[^]*polimórficos[^]*polimórficos[^]*ordem superior/)
+  })
 })
 
 describe('constantes físicas', () => {

@@ -123,10 +123,11 @@ function Tptp() {
   return (
     <details class="base-publica">
       <summary>
-        <b>TPTP</b> <span class="suave">— a biblioteca de problemas dos provadores automáticos (milhares de teorias, em FOF/CNF)</span>
+        <b>TPTP</b> <span class="suave">— a biblioteca de problemas dos provadores automáticos (milhares de teorias, em FOF/CNF/TFF)</span>
       </summary>
       <p class="suave">
-        Axiomas viram leis; conjecturas e teoremas viram teoremas, que o motor confere. Lê FOF e CNF (não lê TFF/THF, com tipos).
+        Axiomas viram leis; conjecturas e teoremas viram teoremas, que o motor confere. Lê FOF, CNF e TFF com tipos simples (cada tipo vira
+        um predicado, como tipoNat(x)); não lê THF (ordem superior), TFF com aritmética nem tipos polimórficos.
       </p>
       <ol class="suave passos-tptp">
         <li>
@@ -138,7 +139,7 @@ function Tptp() {
           <a href="https://seetptp.tptp.org/?folder=TPTPWorld/TPTP/Problems/" target="_blank" rel="noopener">
             problemas
           </a>{' '}
-          (cada um com a sua conjectura). Os nomes com “+” são em FOF; com “-”, em CNF.
+          (cada um com a sua conjectura). Os nomes com “+” são em FOF; com “-”, em CNF; com “_”, em TFF.
         </li>
         <li>
           Abra um arquivo e toque em <b>Download</b> — vem compactado (.tgz) e o app abre assim mesmo. Se o problema tiver “include”, baixe

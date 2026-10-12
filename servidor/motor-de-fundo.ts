@@ -416,11 +416,20 @@ const servidor = createServer(async (req, res) => {
 })
 
 servidor.on('error', (e: NodeJS.ErrnoException) => {
-  if (e.code === 'EADDRINUSE') {
-    console.error(`A porta ${PORTA} já está em uso: o motor de fundo já está rodando? (outra porta: CADERNO_PORTA=…)`)
-    process.exit(1)
-  }
-  throw e
+  if (e.code !== 'EADDRINUSE') throw e
+  // a porta está ocupada: se é o próprio motor de fundo (ligado noutra janela, ou pelo
+  // Windows), está tudo certo e este sai sem erro; se é outro programa, é erro
+  void fetch(`http://127.0.0.1:${PORTA}/estado`, { signal: AbortSignal.timeout(3000) })
+    .then((r) => r.json() as Promise<{ versao?: number }>)
+    .then((x) => {
+      if (x.versao !== VERSAO) throw new Error('outro programa')
+      log(`O motor de fundo já está rodando (porta ${PORTA}): nada a fazer.`)
+      process.exit(0)
+    })
+    .catch(() => {
+      console.error(`A porta ${PORTA} está ocupada por outro programa. Para usar outra: CADERNO_PORTA=…`)
+      process.exit(1)
+    })
 })
 
 servidor.listen(PORTA, '127.0.0.1', () => {

@@ -18,12 +18,17 @@ let banco: Promise<void> | null = null
 const respostasPorPedido = new Map<number, { r: RespostasZ3; acabar: (x: { desligado?: boolean }) => void }>()
 let pedidosZ3 = 0
 
-/** Ajusta quantos workers auxiliares existem (1 = nenhum: tudo aqui). */
-function ajustarParalelo(n: number) {
-  if (poolAtual().tamanho === n) return
+/** Ajusta quantos workers auxiliares existem (1 = nenhum: tudo aqui) e a parte da memória de cada um. */
+function ajustarParalelo(n: number, teto?: number) {
+  const atual = poolAtual()
+  if (atual.tamanho === n && n > 1 && atual instanceof PoolWorkers) {
+    atual.teto = teto
+    return
+  }
+  if (atual.tamanho === n) return
   if (n <= 1) return semParalelo()
   try {
-    definirPool(new PoolWorkers(() => new SubTrabalho(), n))
+    definirPool(new PoolWorkers(() => new SubTrabalho(), n, teto))
   } catch {
     semParalelo() // este navegador não deixa um worker criar outros
   }
@@ -46,7 +51,7 @@ ctx.onmessage = async (e: MessageEvent<PedidoMotor | MensagemZ3>) => {
     .then(definirBanco)
     .catch(() => definirBanco(bancoNaMemoria()))
   await banco
-  ajustarParalelo(m.paralelo ?? 1)
+  ajustarParalelo(m.paralelo ?? 1, m.limiteParalelo)
   const ajudaZ3 = (conjuntos: Formula[][], ate?: number): RespostasZ3 => {
     const pedido = ++pedidosZ3
     let acabar: (x: { desligado?: boolean }) => void = () => {}

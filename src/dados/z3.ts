@@ -1,14 +1,17 @@
 // Z3 no navegador: carregado sob demanda (35 MB), só no PWA servido por
 // http(s) com isolamento entre origens (o service worker cuida dos cabeçalhos).
+// Roda num worker só dele, trocado por um novo de tempos em tempos (cada
+// checagem deixa memória presa no Z3) e sempre que ele quebra ou trava.
 // Guarda as respostas por pergunta, para não repetir checagens.
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useReducer } from 'preact/hooks'
 import type { EntradaDicionario } from './tipos'
 import type { Formula } from '../logica/ast'
-import { guardarZ3, lerZ3Guardados } from '../motor/bancoProvas'
+import { resumo } from '../logica/resumo'
+import { guardarZ3, lerZ3Guardados, PREFIXO_CHAVE_Z3 } from '../motor/bancoProvas'
 import { analisar, nao, nomesNumericos, relevantes } from '../motor/motor'
-import { checarZ3, TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
+import { TEMPO_Z3_MS, type ResultadoZ3 } from '../motor/z3'
+import type { PedidoZ3, RespostaZ3 } from '../motor/z3worker'
 import { gravarConfig, lerConfig } from './db'
 
 export type StatusZ3 = 'desligado' | 'carregando' | 'pronto' | 'erro'
@@ -38,16 +41,12 @@ export function disponibilidadeZ3(): { ok: true } | { ok: false; motivo: string;
 
 const url = (f: string) => new URL(`./z3/${f}`, location.href).href
 
-function carregarScript(src: string): Promise<void> {
-  return new Promise((ok, falha) => {
-    if ((globalThis as any).initZ3) return ok()
-    const s = document.createElement('script')
-    s.src = src
-    s.onload = () => ok()
-    s.onerror = () => falha(new Error('não foi possível baixar o Z3 (sem internet e ainda não guardado no aparelho?)'))
-    document.head.appendChild(s)
-  })
-}
+/** o worker do Z3 é trocado por um novo depois de tantas checagens (solta a memória presa) */
+export const RECICLAR_Z3_A_CADA = 100
+/** sem resposta tanto tempo depois do prazo da checagem: o Z3 travou, e o worker é trocado */
+const FOLGA_VIGIA_MS = 60_000
+
+type Retorno = { resultado: ResultadoZ3 } | { erro: string }
 
 class EstadoZ3 {
   /** o usuário quer usar o Z3 (fica gravado) */
@@ -57,8 +56,14 @@ class EstadoZ3 {
   /** download para uso offline: bytes já baixados / total */
   download: { feito: number; total: number } | null = null
   guardado = false
-  private api: any = null
-  private carregando: Promise<any> | null = null
+  /** checagens feitas e quantas vezes o worker foi trocado (para mostrar na tela) */
+  checagens = 0
+  reinicios = 0
+  private trabalhador: Worker | null = null
+  private carregando: Promise<void> | null = null
+  private checagensNoWorker = 0
+  private esperando = new Map<number, (r: Retorno) => void>()
+  private proximoId = 0
   private confirmacoes = new Map<string, Confirmacao>()
   private fila: Promise<unknown> = Promise.resolve()
   private ouvintes = new Set<() => void>()
@@ -128,38 +133,101 @@ class EstadoZ3 {
     this.avisar()
   }
 
-  carregar(): Promise<any> {
-    if (this.api) return Promise.resolve(this.api)
+  /** Liga o worker do Z3 (se ainda não há um) e espera o Z3 ficar pronto nele. */
+  carregar(): Promise<void> {
     if (this.carregando) return this.carregando
-    this.status = 'carregando'
-    this.erro = null
-    this.avisar()
-    // no arquivo único o ramo do import() some do build (constante falsa)
-    this.carregando = (
-      __MODO_ARQUIVO__
-        ? Promise.reject(new Error('indisponível no arquivo único'))
-        : (async () => {
-            await carregarScript(url('z3-built.js'))
-            ;(globalThis as any).global ??= globalThis
-            const { init } = await import('z3-solver')
-            return init({ locateFile: (f: string) => url(f), mainScriptUrlOrBlob: url('z3-built.js') } as any)
-          })()
+    // trocar o worker não muda o que a tela mostra: só a primeira carga aparece
+    if (this.status !== 'pronto') {
+      this.status = 'carregando'
+      this.erro = null
+      this.avisar()
+    }
+    let w: Worker
+    try {
+      // no arquivo único não há Z3 (o worker nem chega a ser criado)
+      if (__MODO_ARQUIVO__) throw new Error('indisponível no arquivo único')
+      w = new Worker(new URL('../motor/z3worker.ts', import.meta.url), { type: 'module', name: 'z3' })
+    } catch (e) {
+      return Promise.reject(this.falhouAoCarregar(e as Error))
+    }
+    this.trabalhador = w
+    this.checagensNoWorker = 0
+    this.carregando = new Promise<void>((ok, falha) => {
+      w.onmessage = (e: MessageEvent<RespostaZ3>) => {
+        const m = e.data
+        if (m.tipo === 'pronto') return ok()
+        if (m.tipo === 'erro') return falha(new Error(m.msg))
+        const fim = this.esperando.get(m.id)
+        this.esperando.delete(m.id)
+        fim?.(m.tipo === 'resultado' ? { resultado: m.resultado } : { erro: m.msg })
+      }
+      // o worker caiu (ex.: faltou memória): as checagens em curso falham e o próximo uso cria outro
+      w.onerror = (e) => {
+        e.preventDefault()
+        falha(new Error(e.message || 'o Z3 parou'))
+        if (this.trabalhador === w) this.descartar(e.message || 'o Z3 parou (memória?)')
+      }
+      w.postMessage({ tipo: 'iniciar', base: url('') } satisfies PedidoZ3)
+    }).then(
+      () => {
+        if (this.status !== 'pronto') {
+          this.status = 'pronto'
+          void this.conferirGuardado().then(() => this.avisar())
+          this.avisar()
+        }
+      },
+      (e) => {
+        if (this.trabalhador === w) this.descartar()
+        throw this.falhouAoCarregar(e as Error)
+      },
     )
-      .then((api) => {
-        this.api = api
-        this.status = 'pronto'
-        void this.conferirGuardado().then(() => this.avisar())
-        this.avisar()
-        return api
-      })
-      .catch((e) => {
-        this.status = 'erro'
-        this.erro = (e as Error).message
-        this.carregando = null
-        this.avisar()
-        throw e
-      })
     return this.carregando
+  }
+
+  private falhouAoCarregar(e: Error): Error {
+    this.status = 'erro'
+    this.erro = e.message
+    this.carregando = null
+    this.avisar()
+    return e
+  }
+
+  /** Joga fora o worker do Z3 (e toda a memória dele); o próximo uso cria outro. */
+  private descartar(motivo = 'o Z3 foi reiniciado') {
+    this.trabalhador?.terminate()
+    if (this.trabalhador) this.reinicios++
+    this.trabalhador = null
+    this.carregando = null
+    for (const fim of this.esperando.values()) fim({ erro: motivo })
+    this.esperando.clear()
+  }
+
+  /**
+   * Uma checagem no worker do Z3. Troca o worker antes, se ele já fez muitas;
+   * se a checagem falhar (o Z3 quebrou ou travou), tenta mais uma vez num worker novo.
+   */
+  private async checar(formulas: Formula[], tempoMs: number, numericos: Set<string>, tentativa = 0): Promise<ResultadoZ3> {
+    if (this.checagensNoWorker >= RECICLAR_Z3_A_CADA) this.descartar()
+    await this.carregar()
+    const w = this.trabalhador!
+    this.checagensNoWorker++
+    this.checagens++
+    const id = ++this.proximoId
+    const r = await new Promise<Retorno>((ok) => {
+      const vigia = setTimeout(() => {
+        if (this.esperando.has(id) && this.trabalhador === w) this.descartar('o Z3 não respondeu (travou) e foi reiniciado')
+      }, tempoMs + FOLGA_VIGIA_MS)
+      this.esperando.set(id, (x) => {
+        clearTimeout(vigia)
+        ok(x)
+      })
+      w.postMessage({ tipo: 'checar', id, formulas, tempoMs, numericos: [...numericos] } satisfies PedidoZ3)
+    })
+    if ('resultado' in r) return r.resultado
+    // depois de uma falha o Z3 pode ter ficado num estado ruim: worker novo
+    if (this.trabalhador === w) this.descartar()
+    if (tentativa === 0) return this.checar(formulas, tempoMs, numericos, 1)
+    throw new Error(r.erro)
   }
 
   /** Traz do banco de provas as respostas do Z3 já guardadas no aparelho. */
@@ -200,7 +268,7 @@ class EstadoZ3 {
    * reconferido com mais objetos. Resposta guardada como as outras.
    */
   async provarFormulas(formulas: Formula[], dicionario: EntradaDicionario[], tempoMs = TEMPO_APROFUNDAR_MS): Promise<ResultadoZ3 | null> {
-    const chave = `formulas:${JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))}`
+    const chave = `${PREFIXO_CHAVE_Z3}${resumo(`formulas:${JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))}`)}`
     const ja = this.confirmacoes.get(chave)
     // "não sei" com menos tempo do que agora: tenta de novo, com o tempo maior (modo de horas)
     const deNovo = ja?.estado === 'feito' && ja.resultado === 'unknown' && (ja.tempoMs ?? TEMPO_APROFUNDAR_MS) < tempoMs
@@ -209,8 +277,7 @@ class EstadoZ3 {
       this.fila = this.fila.then(async () => {
         const ini = Date.now()
         try {
-          const api = await this.carregar()
-          const resultado = await checarZ3(api, formulas, tempoMs, nomesNumericos(dicionario))
+          const resultado = await this.checar(formulas, tempoMs, nomesNumericos(dicionario))
           this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini, tempoMs })
           if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
         } catch (e) {
@@ -242,7 +309,6 @@ class EstadoZ3 {
     this.fila = this.fila.then(async () => {
       const ini = Date.now()
       try {
-        const api = await this.carregar()
         let prontas = analisar(formulas, dicionario, true)
         const [phi] = negar !== undefined ? analisar([negar], dicionario, true) : []
         if (negar !== undefined && !phi) throw new Error('fórmula inválida')
@@ -250,7 +316,7 @@ class EstadoZ3 {
         if (centro && soRelevantes) prontas = relevantes(prontas, centro)
         const fs = prontas.map((x) => x.expandida)
         if (phi) fs.push(nao(phi.expandida))
-        const resultado = await checarZ3(api, fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
+        const resultado = await this.checar(fs, TEMPO_Z3_MS, nomesNumericos(dicionario))
         this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini })
         // fica no banco de provas (não precisa provar de novo noutro dia)
         if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini })
@@ -273,6 +339,6 @@ export function useZ3(): EstadoZ3 {
   return z3
 }
 
-/** Chave de uma checagem do Z3: fórmulas, fórmula negada e as fichas (tipo, aridade, número). */
+/** Chave de uma checagem do Z3: fórmulas, fórmula negada e as fichas (tipo, aridade, número), resumidas. */
 export const chaveZ3 = (formulas: string[], negar: string | null, dic: EntradaDicionario[]) =>
-  JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico, e.argumentos ?? null])])
+  `${PREFIXO_CHAVE_Z3}${resumo(JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico, e.argumentos ?? null])]))}`

@@ -36,6 +36,8 @@ export interface PedidoMotor {
   modelo?: PedidoModelo
   /** quantos workers auxiliares usar (1 = só o próprio worker) */
   paralelo?: number
+  /** teto do tamanho do problema em cada worker auxiliar (a memória do aparelho dividida entre eles) */
+  limiteParalelo?: number
 }
 
 export type RespostaMotor =

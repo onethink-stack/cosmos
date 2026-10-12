@@ -100,14 +100,15 @@ export const K_ABSOLUTO = Math.max(...PERFIS.map((p) => p.limites.K))
 export const N_MANUAL = 30
 
 /**
- * Quantas checagens rodam ao mesmo tempo, cada uma num worker: um por núcleo
- * (menos um, para a tela), e no máximo um a cada 1,5 GB de memória.
+ * Quantas checagens rodam ao mesmo tempo, cada uma num worker: metade dos
+ * núcleos (o computador continua livre e não fica no máximo por horas), e no
+ * máximo um a cada 1,5 GB de memória. Quem quiser mais escolhe à mão.
  */
 export function nucleosDisponiveis(): number {
   const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Navigator & { deviceMemory?: number }
   const nucleos = nav.hardwareConcurrency ?? 2
   const memoria = nav.deviceMemory ?? 4
-  return Math.max(1, Math.min(nucleos - 1, Math.floor(memoria / 1.5), 12))
+  return Math.max(1, Math.min(Math.floor(nucleos / 2), Math.floor(memoria / 1.5), 12))
 }
 
 /**

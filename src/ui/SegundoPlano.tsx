@@ -5,6 +5,7 @@ import { useEstado } from '../dados/estado'
 import { useEffect, useState } from 'preact/hooks'
 import { useVerificacao, verificacao, type Ocupacao } from '../dados/verificacao'
 import { useAgenda } from '../dados/segundoPlano'
+import { RECICLAR_Z3_A_CADA, useZ3 } from '../dados/z3'
 
 const NOME_TRABALHO: Record<Ocupacao, string> = {
   verificar: 'verificando',
@@ -119,16 +120,17 @@ export function ConfigPerfil() {
         >
           <option value="auto">Automático ({nucleosDisponiveis()} neste aparelho)</option>
           {Array.from({ length: Math.max(1, navigator.hardwareConcurrency || 2) }, (_, i) => i + 1).map((n) => (
-            <option value={String(n)}>{n === 1 ? '1 (um de cada vez)' : String(n)}</option>
+            <option value={String(n)}>{n === 1 ? '1 (leve: um de cada vez, o computador fica livre)' : String(n)}</option>
           ))}
         </select>
       </label>
       <p class="suave">
         Cada núcleo confere uma coisa (um teorema, uma lei, uma conclusão no aprofundamento) ao mesmo tempo que os outros. Mais núcleos:
-        mais rápido, mas o aparelho esquenta e gasta mais bateria. O automático deixa um núcleo livre para a tela e usa no máximo um a cada
-        1,5 GB de memória. Com o Z3 ligado, ele também prova as conclusões para qualquer número de objetos, e essas nem precisam ser
+        mais rápido, mas o aparelho esquenta e gasta mais bateria. O automático usa metade dos núcleos (o computador continua livre para o
+        resto, mesmo em trabalhos de horas) e no máximo um a cada 1,5 GB de memória. Com o Z3 ligado, ele também prova as conclusões para qualquer número de objetos, e essas nem precisam ser
         aprofundadas.
       </p>
+      <Memoria />
       <Especificacao />
       <label class="alternar">
         <input type="checkbox" checked={pf.aprimorar} onChange={(e) => pf.definirAprimorar((e.target as HTMLInputElement).checked)} />
@@ -140,6 +142,40 @@ export function ConfigPerfil() {
       </label>
       <Banco />
     </details>
+  )
+}
+
+/** Como o app cuida da memória (para não fechar em trabalhos longos), e quanto usa agora. */
+function Memoria() {
+  const z = useZ3()
+  const [medida, definirMedida] = useState<string | null>(null)
+  const perf = (typeof performance !== 'undefined' ? performance : {}) as { measureUserAgentSpecificMemory?: () => Promise<{ bytes: number }> }
+  const podeMedir = !!perf.measureUserAgentSpecificMemory && typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated
+  const medir = async () => {
+    definirMedida('medindo… (pode levar alguns segundos)')
+    try {
+      const r = await perf.measureUserAgentSpecificMemory!()
+      definirMedida(`${(r.bytes / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} GB`)
+    } catch {
+      definirMedida('não foi possível medir')
+    }
+  }
+  return (
+    <p class="suave">
+      <b>Memória:</b> trabalhando ao mesmo tempo, cada núcleo fica com uma parte da memória (juntos, abaixo de uns 3 GB); o que não cabe nessa
+      parte é refeito sozinho, com a memória toda. Cada núcleo é trocado por um novo depois de 200 checagens, e o Z3 roda à parte, reiniciado a
+      cada {RECICLAR_Z3_A_CADA} checagens (cada uma deixa memória presa nele) ou na hora, se travar.
+      {z.checagens > 0 && ` Nesta sessão: ${z.checagens} checagens do Z3, ${z.reinicios} reinício${z.reinicios === 1 ? '' : 's'}.`}
+      {podeMedir && (
+        <>
+          {' '}
+          <button type="button" class="botao" onClick={() => void medir()}>
+            Medir a memória do app
+          </button>
+          {medida && ` ${medida}`}
+        </>
+      )}
+    </p>
   )
 }
 

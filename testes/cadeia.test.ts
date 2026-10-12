@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { blocosIndependentes, prazosAuxiliares, reacaoEmCadeia, type AjudaZ3, type RelatorioCadeia } from '../src/motor/cadeia'
 import { bancoNaMemoria, definirBanco } from '../src/motor/bancoProvas'
+import { comTeto, definirPool, PoolLocal, semParalelo } from '../src/motor/paralelo'
 import { analisar, buscarModelo, OPCOES_PADRAO, perguntar } from '../src/motor/motor'
 
 const op = { ...OPCOES_PADRAO, N: 5 }
@@ -109,6 +110,34 @@ describe('conjunto grande demais para o motor finito', () => {
     const pr = (id: string, f: string) => ({ g: g(id, f), itens: analisar([f], dicB) })
     const blocos = blocosIndependentes([pr('1', 'P(c)'), pr('2', 'Q(a)'), pr('3', 'c ∈ A'), pr('4', 'a ∈ B'), pr('5', 'R(b)')])
     expect(blocos.map((b) => b.map((x) => x.g.id))).toEqual([['1', '2', '3', '4'], ['5']])
+  })
+})
+
+describe('memória dividida entre os núcleos', () => {
+  it('cada trabalho em paralelo fica no teto do pool', () => {
+    const t = { tipo: 'faixa' as const, formulas: [], ns: [1], ks: [1], limite: 2_000_000 }
+    expect(comTeto(t, 500_000)).toMatchObject({ limite: 500_000 })
+    expect(comTeto({ ...t, limite: 100 }, 500_000)).toMatchObject({ limite: 100 })
+    const p = { tipo: 'perguntar' as const, grupos: [], formula: 'P(c)', dicionario: [], op }
+    expect(comTeto(p, 1000)).toMatchObject({ op: { limite: 1000, N: 5 } })
+    expect(comTeto(p)).toBe(p)
+  })
+
+  it('o teorema que não coube na parte de um núcleo é refeito sozinho, com o limite inteiro', async () => {
+    // a rotação aplicada duas vezes: segue, mas a busca do contraexemplo passa de 300 com poucos objetos
+    const dicR = [...dic, ficha('R', 'predicado', 3)]
+    const grupos = [g('L1', '∀x ∀y ∀z (R(x, y, z) ⟹ R(y, z, x))')]
+    const teoremas = [t('T1', '∀x ∀y ∀z (R(x, y, z) ⟹ R(z, x, y))')]
+    definirPool(new PoolLocal(300))
+    try {
+      let ultimo: RelatorioCadeia[] = []
+      await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas }], inativas: [] }, dicR, op, (r) => (ultimo = r))
+      expect(ultimo[0].teoremas[0].resultado).toMatchObject({ tipo: 'segue', N: 5 })
+      // com o teto, o mesmo teorema não decide
+      expect(perguntar(grupos, teoremas[0].formula, dicR, { ...op, limite: 300 }).tipo).toBe('grande-demais')
+    } finally {
+      semParalelo()
+    }
   })
 })
 

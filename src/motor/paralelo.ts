@@ -52,22 +52,42 @@ export function executarTrabalho(t: Trabalho): unknown {
 export interface Pool {
   /** quantos trabalhos rodam ao mesmo tempo */
   readonly tamanho: number
+  /**
+   * teto do tamanho do problema de cada trabalho (cláusulas): com vários
+   * workers ao mesmo tempo, cada um fica com uma parte da memória. Sem ele, o
+   * limite que o trabalho trouxer
+   */
+  readonly teto?: number
   rodar(t: Trabalho): Promise<unknown>
   encerrar(): void
 }
 
+/** O trabalho com o limite de tamanho no teto do pool (no máximo). */
+export function comTeto(t: Trabalho, teto?: number): Trabalho {
+  if (!teto) return t
+  if (t.tipo === 'faixa') return t.limite > teto ? { ...t, limite: teto } : t
+  return t.op.limite > teto ? { ...t, op: { ...t.op, limite: teto } } : t
+}
+
 /** Sem workers: um trabalho por vez, aqui mesmo. */
-class PoolLocal implements Pool {
+export class PoolLocal implements Pool {
   readonly tamanho = 1
   private fila: Promise<unknown> = Promise.resolve()
+  constructor(readonly teto?: number) {}
   // em fila: cada trabalho começa depois que o anterior acabou e foi avisado (o progresso aparece um a um)
   rodar(t: Trabalho) {
-    const r = this.fila.then(() => executarTrabalho(t))
+    const r = this.fila.then(() => executarTrabalho(comTeto(t, this.teto)))
     this.fila = r.catch(() => {})
     return r
   }
   encerrar() {}
 }
+
+/**
+ * Cada worker auxiliar é trocado por um novo depois de tantos trabalhos: a
+ * memória que ele juntou (problemas grandes, o banco de provas) volta inteira.
+ */
+const TRABALHOS_POR_WORKER = 200
 
 interface Pendente {
   t: Trabalho
@@ -81,10 +101,12 @@ export class PoolWorkers implements Pool {
   private livres: Worker[] = []
   private fila: Pendente[] = []
   private emCurso = new Map<Worker, Pendente>()
+  private feitos = new Map<Worker, number>()
 
   constructor(
     private criar: () => Worker,
     readonly tamanho: number,
+    public teto?: number,
   ) {
     for (let i = 0; i < tamanho; i++) this.adicionar()
   }
@@ -94,7 +116,17 @@ export class PoolWorkers implements Pool {
     w.onmessage = (e: MessageEvent<{ resultado?: unknown; erro?: string }>) => {
       const p = this.emCurso.get(w)
       this.emCurso.delete(w)
-      this.livres.push(w)
+      const feitos = (this.feitos.get(w) ?? 0) + 1
+      if (feitos >= TRABALHOS_POR_WORKER) {
+        // já fez muitos: sai, e entra um novo no lugar (com a memória zerada)
+        this.feitos.delete(w)
+        this.workers = this.workers.filter((x) => x !== w)
+        w.terminate()
+        this.adicionar()
+      } else {
+        this.feitos.set(w, feitos)
+        this.livres.push(w)
+      }
       if (p) e.data.erro !== undefined ? p.falha(new Error(e.data.erro)) : p.ok(e.data.resultado)
       this.despachar()
     }
@@ -103,7 +135,9 @@ export class PoolWorkers implements Pool {
       e.preventDefault?.()
       const p = this.emCurso.get(w)
       this.emCurso.delete(w)
+      this.feitos.delete(w)
       this.workers = this.workers.filter((x) => x !== w)
+      this.livres = this.livres.filter((x) => x !== w)
       w.terminate()
       p?.falha(new Error(e.message || 'um worker do motor parou (memória?)'))
       this.adicionar()
@@ -125,7 +159,7 @@ export class PoolWorkers implements Pool {
       const w = this.livres.pop()!
       const p = this.fila.shift()!
       this.emCurso.set(w, p)
-      w.postMessage(p.t)
+      w.postMessage(comTeto(p.t, this.teto))
     }
   }
 
@@ -136,6 +170,7 @@ export class PoolWorkers implements Pool {
     this.livres = []
     this.fila = []
     this.emCurso.clear()
+    this.feitos.clear()
   }
 }
 

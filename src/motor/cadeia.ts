@@ -28,6 +28,7 @@ import {
   registrarSemModelo,
   minimizarRapido,
   nao,
+  perguntar,
   verificar,
   type Grupo,
   type BuscaFaixa,
@@ -676,6 +677,19 @@ async function rodarContexto(
         enviar()
       },
     )
+    // em paralelo, cada worker tem só uma parte da memória: o teorema que não coube nela
+    // é refeito aqui, sozinho, com o limite inteiro (os outros workers estão parados)
+    const teto = poolAtual().teto
+    if (teto && teto < op.limite) {
+      const grandes = estados.flatMap((e, i) => (e?.resultado.tipo === 'grande-demais' ? [i] : []))
+      for (const [k, i] of grandes.entries()) {
+        const { t } = teoremas[i]
+        progresso(`conferindo sozinho, com toda a memória, um teorema grande (${k + 1}/${grandes.length})`)
+        estados[i] = { ...estados[i]!, resultado: perguntar(c.grupos, t.formula, dicionario, { ...op, prazo: Date.now() + prazoChecagem }) }
+        rel.teoremas = [...estados.filter((x): x is EstadoTeorema => !!x), ...deFora]
+        enviar()
+      }
+    }
   }
 
   // 4. a cadeia: teoremas que seguem de teoremas já provados

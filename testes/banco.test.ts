@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { resumo } from '../src/logica/resumo'
 import { bancoNaMemoria, chaveProva, definirBanco } from '../src/motor/bancoProvas'
 import { buscarModelo, OPCOES_PADRAO, prepararFormulas } from '../src/motor/motor'
 
@@ -16,6 +17,17 @@ describe('banco de provas', () => {
     expect(chaveProva(outra)).toBe(chaveProva(fs))
     expect(buscarModelo(outra, op).status).toBe('sem-modelo')
     expect(b.estatisticas.acertos).toBe(1)
+  })
+
+  it('a chave é curta (um resumo), por maior que seja o conjunto, e muda quando as fórmulas mudam', () => {
+    const muitas = prepararFormulas(
+      Array.from({ length: 300 }, (_, i) => `∀x ∀y (R${i}(x, y) ⟹ R${i + 1}(y, x))`),
+      [],
+    )
+    expect(chaveProva(muitas).length).toBeLessThan(40)
+    expect(chaveProva(muitas.slice(1))).not.toBe(chaveProva(muitas))
+    expect(resumo('a')).toBe(resumo('a'))
+    expect(new Set(Array.from({ length: 5000 }, (_, i) => resumo(`P(c${i})`))).size).toBe(5000)
   })
 
   it('aprofundar só testa os tamanhos novos; um modelo achado vale para sempre', () => {

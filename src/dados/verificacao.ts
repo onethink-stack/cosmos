@@ -443,7 +443,16 @@ class Verificacao {
     this.pendentes = new Map()
     this.rodando = { chave: 'cadeia', msg: 'preparando' }
     this.avisar()
-    const p: PedidoMotor = { id, tarefas: [], dicionario, opcoes: { N, K, limite: pf.limites.limite }, cadeia: completo, paralelo }
+    const p: PedidoMotor = {
+      id,
+      tarefas: [],
+      dicionario,
+      opcoes: { N, K, limite: pf.limites.limite },
+      cadeia: completo,
+      paralelo,
+      // cada worker auxiliar com a sua parte da memória (juntos, abaixo de uns 3 GB)
+      limiteParalelo: limitePorWorker(pf.limites.limite, paralelo),
+    }
     this.pedidoAtual = p
     const w = this.obterWorker()
     if (w) w.postMessage(p)
@@ -497,6 +506,7 @@ class Verificacao {
         desativadasPelosDados: entrada.desativadasPelosDados,
       },
       paralelo: perfil.paralelo,
+      limiteParalelo: limitePorWorker(pf.limites.limite, perfil.paralelo),
     }
     this.pedidoAtual = p
     const w = this.obterWorker()

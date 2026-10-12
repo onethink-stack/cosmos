@@ -13,16 +13,24 @@
 
 import type { Formula } from '../logica/ast'
 import { canonica } from '../logica/canonica'
+import { resumo } from '../logica/resumo'
 import type { Modelo } from './motor'
 
-/** muda quando a semântica do motor muda: invalida o que foi guardado antes */
-const VERSAO_MOTOR = 'm1'
+/**
+ * muda quando a semântica do motor (ou o formato da chave) muda: invalida o que
+ * foi guardado antes. m2: a chave é um resumo do texto das fórmulas, não o texto.
+ */
+const VERSAO_MOTOR = 'm2'
 const NOME_BANCO = 'caderno-provas'
 const LOJA = 'provas'
 /** respostas do Z3 (sat/unsat), pela chave da checagem */
 const LOJA_Z3 = 'z3'
 /** acima disso, as entradas usadas há mais tempo saem */
 const MAX_ENTRADAS = 20_000
+/** acima disso, as respostas do Z3 guardadas são apagadas (cada uma é pequena; é só um teto) */
+const MAX_Z3 = 50_000
+/** as chaves das respostas do Z3 começam assim (um resumo); as antigas, com o texto inteiro, são apagadas */
+export const PREFIXO_CHAVE_Z3 = 'h1:'
 
 export type Prova =
   /** K: mundos testados na busca que achou o modelo */
@@ -55,7 +63,7 @@ export const bancoAtual = () => atual
 
 /** Chave de um conjunto de fórmulas: a ordem e o nome das variáveis ligadas não importam. */
 export function chaveProva(formulas: Formula[]): string {
-  return `${VERSAO_MOTOR}|${formulas.map(canonica).sort().join(' ⊓ ')}`
+  return `${VERSAO_MOTOR}|${resumo(formulas.map(canonica).sort().join(' ⊓ '))}`
 }
 
 /** Banco só na memória (sem IndexedDB). */
@@ -106,6 +114,12 @@ export async function lerZ3Guardados(): Promise<RespostaZ3Guardada[]> {
   if (typeof indexedDB === 'undefined') return []
   const db = await abrirDb()
   try {
+    // as do formato antigo (a chave era o texto inteiro, dezenas de KB cada) saem sem serem lidas
+    await pedido(db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).delete(IDBKeyRange.upperBound(PREFIXO_CHAVE_Z3, true)))
+    if ((await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).count())) > MAX_Z3) {
+      await pedido(db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).clear())
+      return []
+    }
     return (await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).getAll())) as RespostaZ3Guardada[]
   } finally {
     db.close()
@@ -125,6 +139,8 @@ export async function abrirBancoProvas(): Promise<BancoProvas> {
   // apagado de fora: daqui em diante fica só na memória
   let aberto = true
   const db = await abrirDb(() => (aberto = false))
+  // as de versões antigas (no formato antigo, a chave era o texto inteiro das fórmulas) saem sem serem lidas
+  await pedido(db.transaction(LOJA, 'readwrite').objectStore(LOJA).delete(IDBKeyRange.upperBound(`${VERSAO_MOTOR}|`, true))).catch(() => {})
   const todas = (await pedido(db.transaction(LOJA).objectStore(LOJA).getAll())) as Prova[]
   const m = new Map<string, Prova>()
   for (const p of todas) if (p.chave.startsWith(`${VERSAO_MOTOR}|`)) m.set(p.chave, p)

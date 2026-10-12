@@ -25,6 +25,26 @@ describe('exportar e importar', () => {
     expect(r.avisos).toEqual([])
   })
 
+  it('leva os conjuntos de dados do Mundo, e as fichas com o tipo de cada argumento', () => {
+    const conjunto = {
+      id: 'd1',
+      nome: 'medidas',
+      fonte: 'tabela',
+      pasta: 'dados-medidas',
+      criadoEm: '2026-10-12T00:00:00.000Z',
+      tolerancia: 0.02,
+      colunas: [{ nome: 'x', simbolo: 'x', tipo: 'numero' as const }],
+      linhas: [['1'], ['2']],
+    }
+    const dic = [{ ...ficha('t', 'tam'), tipo: 'funcao' as const, aridade: 1, numerico: true, argumentos: ['obj' as const] }]
+    const b = criarBackup([], dic, 6, new Date(), [], [conjunto as never])
+    const r = lerBackup(JSON.stringify({ ...b, conjuntos: [...b.conjuntos!, { nome: 'sem id' }] }))
+    if (!r.ok) throw new Error(r.erro)
+    expect(r.backup.conjuntos).toEqual([conjunto])
+    expect(r.avisos.some((a) => a.includes('conjunto'))).toBe(true)
+    expect(r.backup.dicionario[0]).toMatchObject({ numerico: true, argumentos: ['obj'] })
+  })
+
   it('recusa arquivos que não são backup', () => {
     expect(lerBackup('não é json')).toEqual({ ok: false, erro: 'O arquivo não é um JSON válido.' })
     expect(lerBackup('{"foo": 1}').ok).toBe(false)

@@ -51,6 +51,12 @@ class MundoDados {
     return this.gravar()
   }
 
+  /** troca todos os conjuntos (restaurar um backup) */
+  substituir(conjuntos: ConjuntoDados[]) {
+    this.conjuntos = conjuntos
+    return this.gravar()
+  }
+
   remover(id: string) {
     this.conjuntos = this.conjuntos.filter((x) => x.id !== id)
     return this.gravar()

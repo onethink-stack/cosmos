@@ -1,13 +1,27 @@
 import { useState } from 'preact/hooks'
 import { SenhaErrada } from '../dados/cripto'
 import { useEstado } from '../dados/estado'
-import { abrirSistema, carregarSistema, CIFRADOS, NENHUM, notasPresentes, removerSistema, type SistemaCifrado } from '../dados/sistemas'
+import { useBiblioteca } from '../dados/biblioteca'
+import { descreverInstalacao } from '../dados/pacotesSite'
+import {
+  abrirSistema,
+  carregarSistema,
+  CIFRADOS,
+  instalarBibliotecasDoSistema,
+  NENHUM,
+  notasPresentes,
+  removerSistema,
+  type SistemaCifrado,
+} from '../dados/sistemas'
 
 /** Pede a senha, decifra e carrega o sistema no caderno. */
 export function DesbloquearSistema({ s, rotulo, onFeito }: { s: SistemaCifrado; rotulo: string; onFeito?: (msg: string) => void }) {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [abrindo, setAbrindo] = useState(false)
+  // o que vem junto e é grande (o TPTP): baixa depois das notas, mostrando o andamento
+  const [baixando, setBaixando] = useState<string | null>(null)
+  const bib = useBiblioteca()
 
   const abrir = async (e: Event) => {
     e.preventDefault()
@@ -18,7 +32,20 @@ export function DesbloquearSistema({ s, rotulo, onFeito }: { s: SistemaCifrado; 
       const c = await abrirSistema(s, senha)
       await carregarSistema(c)
       setSenha('')
-      onFeito?.(`${c.nome}: ${c.notas.length} notas e ${c.dicionario.length} fichas no caderno.`)
+      const dados = c.conjuntos?.length ? `, ${c.conjuntos.length} conjunto${c.conjuntos.length > 1 ? 's' : ''} de dados no Mundo` : ''
+      const msg = `${c.nome}: ${c.notas.length} notas e ${c.dicionario.length} fichas no caderno${dados}.`
+      onFeito?.(msg)
+      setAbrindo(false)
+      if (c.bibliotecas?.length) {
+        setBaixando('procurando no site…')
+        try {
+          const r = await instalarBibliotecasDoSistema(c, setBaixando)
+          if (r) onFeito?.(`${msg} ${descreverInstalacao(r)}.`)
+        } catch (x) {
+          setErro(`O TPTP não foi instalado: ${(x as Error).message}. Tente de novo na Biblioteca TPTP, em Mundo.`)
+        }
+        setBaixando(null)
+      }
     } catch (x) {
       setErro(x instanceof SenhaErrada ? 'Senha incorreta.' : (x as Error).message)
     }
@@ -38,6 +65,12 @@ export function DesbloquearSistema({ s, rotulo, onFeito }: { s: SistemaCifrado; 
       <button type="submit" class="primario" disabled={abrindo || !senha}>
         {abrindo ? 'Abrindo…' : rotulo}
       </button>
+      {baixando && (
+        <p class="suave">
+          {s.nome} traz junto o TPTP: {baixando}
+          {bib.abrindo && bib.abrindo.total > 0 && ` ${bib.abrindo.feitas.toLocaleString('pt-BR')} de ${bib.abrindo.total.toLocaleString('pt-BR')}`}
+        </p>
+      )}
       {erro && <p class="erro-texto">{erro}</p>}
     </form>
   )

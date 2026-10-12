@@ -7,7 +7,10 @@
 import { mesclarDicionario, mesclarPorId } from './backup'
 import { decifrar, type Cifrado } from './cripto'
 import { estado, notaVazia } from './estado'
+import { mundo } from './mundo'
+import { instalarDoSite, type PacoteDoSite } from './pacotesSite'
 import type { EntradaDicionario, Nota } from './tipos'
+import type { ConjuntoDados } from '../motor/dados'
 
 /** Conteúdo de um sistema (o que fica dentro do arquivo cifrado). */
 export interface ConteudoSistema {
@@ -17,6 +20,10 @@ export interface ConteudoSistema {
   /** notas sem as datas (preenchidas ao carregar) */
   notas: Omit<Nota, 'criadaEm' | 'atualizadaEm'>[]
   dicionario: EntradaDicionario[]
+  /** conjuntos de dados do Mundo que vão junto (entram no aparelho ao carregar) */
+  conjuntos?: ConjuntoDados[]
+  /** pacotes do site que vão junto (biblioteca e problemas do TPTP): o app baixa e instala */
+  bibliotecas?: PacoteDoSite[]
 }
 
 /** Sistema cifrado: só o nome é visível; o resto precisa da senha. */
@@ -59,7 +66,16 @@ export async function carregarSistema(c: ConteudoSistema) {
     return { ...notaVazia(), ...n, criadaEm: antiga?.criadaEm ?? agora, atualizadaEm: agora }
   })
   await estado.substituirTudo(mesclarPorId(estado.notas, novas), mesclarDicionario(estado.dicionario, c.dicionario))
+  // os dados do Mundo que vêm com o sistema (os do mesmo id voltam ao original)
+  if (c.conjuntos?.length) {
+    if (!mundo.carregado) await mundo.carregar()
+    for (const d of c.conjuntos) await mundo.adicionar(d)
+  }
 }
+
+/** Instala os pacotes do site que o sistema inclui (o TPTP, no Principia). */
+export const instalarBibliotecasDoSistema = (c: ConteudoSistema, progresso?: (msg: string) => void) =>
+  c.bibliotecas?.length ? instalarDoSite(c.bibliotecas, false, progresso) : Promise.resolve(null)
 
 /** Tira do caderno as notas do sistema (as fichas ficam, podem ser usadas por outras notas). */
 export async function removerSistema(id: string) {

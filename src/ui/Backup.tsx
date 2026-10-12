@@ -2,12 +2,13 @@ import { useEffect, useState } from 'preact/hooks'
 import { criarBackup, diasDesde, lerBackup, mesclarDicionario, mesclarPorId, nomeArquivo, type Backup as DadosBackup } from '../dados/backup'
 import { estado, useEstado } from '../dados/estado'
 import { historico } from '../dados/historico'
+import { mundo } from '../dados/mundo'
 import { useVerificacao, verificacao } from '../dados/verificacao'
 import { Offline } from './Offline'
 
 /** Baixa o backup como arquivo .json e registra a data. */
 export async function exportarBackup() {
-  const b = criarBackup(estado.notas, estado.dicionario, verificacao.N, new Date(), historico.achados)
+  const b = criarBackup(estado.notas, estado.dicionario, verificacao.N, new Date(), historico.achados, mundo.conjuntos)
   const blob = new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -64,6 +65,7 @@ export function Backup() {
       return
     await est.substituirTudo(b.notas, b.dicionario)
     if (b.historico?.length) await historico.substituir(b.historico)
+    if (b.conjuntos?.length) await mundo.substituir(b.conjuntos)
     aplicarN(b)
     setLido(null)
     setFeito(`Importado: ${resumo(b.notas.length, b.dicionario.length)}.`)
@@ -74,6 +76,7 @@ export function Backup() {
     const b = lido.backup
     await est.substituirTudo(mesclarPorId(est.notas, b.notas), mesclarDicionario(est.dicionario, b.dicionario))
     if (b.historico?.length) await historico.mesclar(b.historico)
+    for (const c of b.conjuntos ?? []) await mundo.adicionar(c)
     aplicarN(b)
     setLido(null)
     setFeito(`Mesclado: ${resumo(b.notas.length, b.dicionario.length)} do backup (novas ou atualizadas).`)

@@ -11,6 +11,7 @@ import {
   type ItemCatalogo,
 } from '../dados/biblioteca'
 import { estado, useEstado } from '../dados/estado'
+import { descreverInstalacao, instalarDoSite, PACOTES_DO_SITE } from '../dados/pacotesSite'
 import { ProblemasTptp } from './ProblemasTptp'
 
 /** quantas teorias aparecem de uma vez na busca */
@@ -64,6 +65,21 @@ export function BibliotecaTptp() {
     }
   }
 
+  // os dois pacotes também ficam no site: baixa e instala os que mudaram
+  const [baixando, setBaixando] = useState<string | null>(null)
+  const doSite = async () => {
+    setErro(null)
+    setFeito(null)
+    setBaixando('procurando no site…')
+    try {
+      const r = await instalarDoSite(PACOTES_DO_SITE, false, setBaixando)
+      setFeito(`${descreverInstalacao(r)}.`)
+    } catch (x) {
+      setErro(`Não deu para baixar do site: ${(x as Error).message}`)
+    }
+    setBaixando(null)
+  }
+
   const carregar = async (item: ItemCatalogo) => {
     const t = await biblioteca.teoria(item.id)
     if (!t) return
@@ -90,13 +106,19 @@ export function BibliotecaTptp() {
       {!bib.catalogo.length && !bib.abrindo && (
         <p class="suave">
           O site do TPTP só deixa baixar até 250 MB por vez. O pacote da biblioteca junta todas as teorias de axiomas (as que o app lê, em FOF,
-          CNF e TFF sem aritmética) já traduzidas, num arquivo só. Abra-o aqui uma vez: ele fica guardado neste aparelho, e daí você procura e carrega no
-          caderno só a teoria que interessa. O pacote dos problemas (problemas-tptp) traz as conjecturas com a resposta conhecida; abra-o
-          também.
+          CNF, TFF e THF) já traduzidas, num arquivo só; o dos problemas traz as conjecturas com a resposta conhecida. Os dois estão no site
+          deste app: baixe-os aqui uma vez (o Principia também os traz quando é aberto). Ficam guardados neste aparelho, e daí você procura e
+          carrega no caderno só a teoria ou o problema que interessa.
         </p>
       )}
+      <div class="barra-acoes">
+        <button type="button" class={bib.catalogo.length ? '' : 'primario'} disabled={!!bib.abrindo || !!baixando} onClick={() => void doSite()}>
+          {bib.catalogo.length ? 'Atualizar do site' : 'Baixar do site (biblioteca e problemas)'}
+        </button>
+        {baixando && <span class="suave">{baixando}</span>}
+      </div>
       <label class="campo-rotulo">
-        {bib.catalogo.length ? 'Abrir outro pacote (substitui o do mesmo tipo)' : 'Abrir o pacote (biblioteca-tptp ou problemas-tptp .jsonl.gz)'}
+        {bib.catalogo.length ? 'Ou abrir outro pacote (substitui o do mesmo tipo)' : 'Ou abrir o pacote de um arquivo (biblioteca-tptp ou problemas-tptp .jsonl.gz)'}
         <input type="file" accept=".gz,.jsonl" disabled={!!bib.abrindo} onChange={(e) => void abrir(e)} />
       </label>
       {bib.abrindo && (

@@ -107,6 +107,8 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
     const d = dic.get(nome)
     return d ? (d.numerico ? 'num' : 'obj') : null
   }
+  /** o que o i-ésimo argumento do símbolo recebe, se a ficha disser (mistura números e objetos) */
+  const argumentoDe = (nome: string, i: number, escopo: string[]): Sorte => (escopo.includes(nome) ? null : (dic.get(nome)?.argumentos?.[i] ?? null))
   /** a sorte que o termo tem por si (sem olhar onde está) */
   const sorte = (t: Termo, escopo: string[]): Sorte => {
     switch (t.k) {
@@ -146,10 +148,10 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       case 'app': {
         if (escopo.includes(t.fn)) add('E10', 'erro', `'${t.fn}' é variável quantificada e não pode ser usada como função`, t)
         else registrar(t.fn, 'funcao', t.args.length, t)
-        // função numérica recebe números; as outras, objetos
+        // função numérica recebe números; as outras, objetos (a não ser que a ficha diga argumento a argumento)
         const s = sorte(t, escopo)
         const num = s === 'num' || (s === null && esperado === 'num')
-        t.args.forEach((a) => termo(a, escopo, false, num ? 'num' : 'obj'))
+        t.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(t.fn, i, escopo) ?? (num ? 'num' : 'obj')))
         return
       }
       case 'inter':
@@ -169,6 +171,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       case 'vazio':
       case 'num':
       case 'reais':
+      case 'inteiros':
         return
     }
   }
@@ -178,7 +181,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       case 'pred':
         if (escopo.includes(f.nome)) add('E10', 'erro', `'${f.nome}' é variável quantificada e não pode ser usada como predicado`, f)
         else registrar(f.nome, 'predicado', f.args.length, f)
-        f.args.forEach((a) => termo(a, escopo, false))
+        f.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(f.nome, i, escopo) ?? 'obj'))
         return
       case 'rel': {
         if (f.op === '≠' && termosIguais(f.l, f.r))
@@ -237,7 +240,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         if (escopo.includes(f.v))
           add('E5', 'aviso', `'${f.v}' já está quantificada num escopo externo; este quantificador esconde o anterior`, vSpan)
         const antes = reais
-        if (f.dom?.k === 'reais') reais = [...reais, f.v]
+        if (f.dom?.k === 'reais' || f.dom?.k === 'inteiros') reais = [...reais, f.v]
         else {
           if (reais.includes(f.v)) reais = reais.filter((x) => x !== f.v)
           if (f.dom) termo(f.dom, escopo, true)

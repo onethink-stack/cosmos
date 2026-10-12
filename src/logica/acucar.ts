@@ -79,8 +79,8 @@ export function expandir(f: Formula): Formula {
       case 'forall':
       case 'exists': {
         const corpo = ex(f.corpo)
-        // ∀x∈ℝ: a variável é um número real; fica marcada no domínio
-        if (!f.dom || f.dom.k === 'reais') return { ...f, corpo }
+        // ∀x∈ℝ, ∀x∈ℤ: a variável é um número (real ou inteiro); fica marcada no domínio
+        if (!f.dom || f.dom.k === 'reais' || f.dom.k === 'inteiros') return { ...f, corpo }
         const v: Termo = { k: 'nome', nome: f.v, pos: f.vPos, end: f.vPos + f.v.length }
         const guarda = mem(v, f.dom, f.dom)
         return {

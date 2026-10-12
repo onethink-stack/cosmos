@@ -20,6 +20,8 @@ export type Termo =
   | ({ k: 'neg'; t: Termo } & Span)
   /** ℝ: só como domínio de quantificador (∀x∈ℝ): a variável é um número real */
   | ({ k: 'reais' } & Span)
+  /** ℤ: só como domínio de quantificador (∀x∈ℤ): a variável é um número inteiro */
+  | ({ k: 'inteiros' } & Span)
 
 export type OpArit = '+' | '−' | '·' | '/' | '^'
 

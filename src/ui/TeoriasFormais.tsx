@@ -123,11 +123,13 @@ function Tptp() {
   return (
     <details class="base-publica">
       <summary>
-        <b>TPTP</b> <span class="suave">— a biblioteca de problemas dos provadores automáticos (milhares de teorias, em FOF/CNF/TFF)</span>
+        <b>TPTP</b> <span class="suave">— a biblioteca de problemas dos provadores automáticos (milhares de teorias, em FOF/CNF/TFF/THF)</span>
       </summary>
       <p class="suave">
-        Axiomas viram leis; conjecturas e teoremas viram teoremas, que o motor confere. Lê FOF, CNF e TFF com tipos simples (cada tipo vira
-        um predicado, como tipoNat(x)); não lê THF (ordem superior), TFF com aritmética nem tipos polimórficos.
+        Axiomas viram leis; conjecturas e teoremas viram teoremas, que o motor confere. Lê FOF, CNF e TFF (cada tipo vira um predicado,
+        como tipoNat(x); números inteiros e reais vão para ℤ e ℝ, que o Z3 decide). Tipos polimórficos (TF1) e ordem superior (THF) são
+        traduzidos para primeira ordem: o que segue na tradução segue no original, mas um cenário onde a conjectura falha pode não valer
+        lá. Não lê divisão inteira e arredondamento, if/let, escolha (@+) nem THF com números ou tipos polimórficos.
       </p>
       <ol class="suave passos-tptp">
         <li>
@@ -139,7 +141,7 @@ function Tptp() {
           <a href="https://seetptp.tptp.org/?folder=TPTPWorld/TPTP/Problems/" target="_blank" rel="noopener">
             problemas
           </a>{' '}
-          (cada um com a sua conjectura). Os nomes com “+” são em FOF; com “-”, em CNF; com “_”, em TFF.
+          (cada um com a sua conjectura). Os nomes com “+” são em FOF; com “-”, em CNF; com “_”, em TFF; com “^”, em THF.
         </li>
         <li>
           Abra um arquivo e toque em <b>Download</b> — vem compactado (.tgz) e o app abre assim mesmo. Se o problema tiver “include”, baixe

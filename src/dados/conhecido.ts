@@ -7,6 +7,23 @@ export type Sabe = 'segue' | 'nao-segue' | 'contraditorio' | 'consistente' | 'ab
 
 /** etiqueta na conjectura de um problema carregado: "tptp-sabe-segue" etc. */
 export const ETIQUETA_TPTP = 'tptp-sabe-'
+/**
+ * etiqueta na conjectura de um problema grande, que veio só com os axiomas
+ * ligados a ela: "segue" vale com todos; um contraexemplo, não necessariamente
+ */
+export const ETIQUETA_SELECAO = 'tptp-axiomas-escolhidos'
+/**
+ * etiqueta na conjectura de um problema com números: o motor finito deixa as
+ * leis com números de fora (quem decide é o Z3), então um cenário que ele ache
+ * pode não valer com elas
+ */
+export const ETIQUETA_NUMEROS = 'tptp-com-numeros'
+/**
+ * etiqueta na conjectura de um problema de ordem superior (THF) ou com tipos
+ * polimórficos (TF1), traduzido para primeira ordem simples: "segue" vale no
+ * original; um cenário onde a conjectura falha pode não valer
+ */
+export const ETIQUETA_APROXIMADA = 'tptp-traducao-aproximada'
 
 export const SABE: Record<Sabe, { curto: string; longo: string }> = {
   segue: { curto: 'teorema', longo: 'os provadores provaram que a conjectura segue dos axiomas' },

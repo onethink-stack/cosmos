@@ -147,6 +147,10 @@ export const TEORIAS: Teoria[] = [
  * são trocadas junto); uma variável com o nome de um símbolo do dicionário
  * vira outra (senão seria quantificar uma constante). `trocar` aplica isso.
  */
+/** duas fichas com o mesmo sentido: tipo, aridade, se é número e o que cada argumento recebe */
+export const mesmoSentido = (a: Omit<EntradaDicionario, 'id'>, b: Omit<EntradaDicionario, 'id'>) =>
+  a.tipo === b.tipo && a.aridade === b.aridade && !!a.numerico === !!b.numerico && (a.argumentos ?? []).join() === (b.argumentos ?? []).join()
+
 export function adaptarAoDicionario(
   fichasDaTeoria: Omit<EntradaDicionario, 'id'>[],
   dicionario: EntradaDicionario[],
@@ -156,7 +160,7 @@ export function adaptarAoDicionario(
   const fichas: EntradaDicionario[] = []
   for (const f of fichasDaTeoria) {
     const e = usados.get(f.simbolo)
-    if (e && e.tipo === f.tipo && e.aridade === f.aridade) continue // já existe igual: usa a mesma
+    if (e && mesmoSentido(e, f)) continue // já existe igual: usa a mesma
     let s = f.simbolo
     if (e) {
       let i = 2

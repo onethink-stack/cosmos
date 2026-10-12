@@ -12,7 +12,7 @@
 // teorias da biblioteca ele inclui; ao carregar, as teorias entram junto.
 
 import { useEffect, useReducer } from 'preact/hooks'
-import { ETIQUETA_TPTP, SABE, type Sabe } from './conhecido'
+import { ETIQUETA_APROXIMADA, ETIQUETA_NUMEROS, ETIQUETA_SELECAO, ETIQUETA_TPTP, SABE, type Sabe } from './conhecido'
 import { notaVazia } from './estado'
 import { adaptarAoDicionario } from './teorias'
 import type { EntradaDicionario, Nota } from './tipos'
@@ -63,6 +63,15 @@ export interface ProblemaTptp {
   grande?: boolean
   /** por que não dá para carregar (alguma parte o caderno não lê: a resposta conhecida poderia mudar) */
   incompleto?: string
+  /**
+   * grande demais para o caderno: veio só com os axiomas ligados à conjectura
+   * (já dentro de `formulas`). "Segue" com eles vale com todos; "não segue", não
+   */
+  selecao?: { escolhidos: number; total: number }
+  /** usa números (TFF com aritmética): quem decide é o Z3 */
+  aritmetica?: boolean
+  /** ordem superior (THF) ou tipos polimórficos (TF1), traduzidos: só o "segue" é garantido */
+  aproximada?: boolean
 }
 
 export type ItemProblema = Omit<ProblemaTptp, 'formulas' | 'fichas'>
@@ -403,12 +412,18 @@ export async function notasDoProblema(
     { pasta, fonte: `TPTP v9.3.0: Problems/${p.id.slice(0, 3)}/${p.id}.p` },
   )
   const sabe = `${SABE[p.sabe].longo} (Status ${p.status} no TPTP${p.dificuldade != null ? `; dificuldade ${p.dificuldade}` : ''})`
+  const selecao = p.selecao
+    ? `\n\nO problema inteiro tem ${p.selecao.total.toLocaleString('pt-BR')} axiomas, grande demais para o caderno: vieram só os ${p.selecao.escolhidos} ligados à conjectura (pelos símbolos que ela usa). Se segue com eles, segue com todos; um cenário onde ela falha pode ser só falta de algum axioma deixado de fora.`
+    : ''
   for (const n of r.notas) {
     const nome = n.id.slice(pasta.length + 1)
     if (!doProblema.has(nome)) continue
     if (doProblema.get(nome) === 'conjecture') {
       n.tags.push(`${ETIQUETA_TPTP}${p.sabe}`)
-      n.texto = `${p.titulo}${p.ingles ? `\n${p.ingles}` : ''}\n\nO que se sabe: ${sabe}.`
+      if (p.selecao) n.tags.push(ETIQUETA_SELECAO)
+      if (p.aritmetica) n.tags.push(ETIQUETA_NUMEROS)
+      if (p.aproximada) n.tags.push(ETIQUETA_APROXIMADA)
+      n.texto = `${p.titulo}${p.ingles ? `\n${p.ingles}` : ''}\n\nO que se sabe: ${sabe}.${selecao}`
     } else n.texto = `${p.dominio}: ${p.titulo}`
   }
   return { ...r, faltam }

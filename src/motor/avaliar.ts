@@ -302,6 +302,7 @@ function instanciarTermo(t: Termo, env: Env): Termo {
     case 'vazio':
     case 'num':
     case 'reais':
+    case 'inteiros':
       return t
   }
 }

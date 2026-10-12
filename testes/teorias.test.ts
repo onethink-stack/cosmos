@@ -52,7 +52,7 @@ fof(irreflexiva, axiom, ![X]: ~ less_than(X,X)).
 fof(assimetrica, conjecture, ![X,Y]: (less_than(X,Y) => ~less_than(Y,X))).
 cnf(c1, axiom, f(X) != a | p(X)).
 include('Axioms/SET001-0.ax').
-tff(t, type, n: $int).`
+tff(t, axiom, $floor(n) = n).`
 
   it('lê FOF e CNF e avisa o que não lê', () => {
     const { formulas, avisos } = lerTptp(ARQUIVO)
@@ -197,14 +197,103 @@ tff(conj, conjecture, p(c)).`)
     expect(r.fichas.some((f) => f.simbolo.startsWith('tipo'))).toBe(false)
   })
 
-  it('não lê aritmética, tipos polimórficos nem ordem superior: avisa', () => {
-    const { formulas, avisos } = lerTptp(`tff(n, type, n: $int).
-tff(l, type, list: $tType > $tType).
-tff(x, axiom, ![T: $tType, X: T]: X = X).
-thf(h, axiom, ![P: $i > $o]: (P @ c)).
+  it('não lê divisão inteira nem if/let: avisa', () => {
+    const { formulas, avisos } = lerTptp(`tff(n, axiom, $floor(n) = n).
+tff(i, axiom, $ite(p, a, b) = a).
 tff(ok, axiom, p(c)).`)
     expect(formulas.map((f) => f.nome)).toEqual(['ok'])
-    expect(avisos.join('\n')).toMatch(/aritmética[^]*polimórficos[^]*polimórficos[^]*ordem superior/)
+    expect(avisos.join('\n')).toMatch(/divisão inteira[^]*if\/let/)
+  })
+
+  it('o mesmo nome com aridades diferentes vira dois símbolos (color e color2)', () => {
+    const r = importarTptp('fof(a, axiom, color(x) => color(x, y)).\nfof(b, axiom, color(z)).\nfof(c, conjecture, color(z, y)).', 'sob.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    expect(r.notas[0].formulas[0]).toBe('(color(x) ⟹ color2(x, y))')
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    expect(perguntar(leis, r.notas[2].formulas[0], comId(r.fichas), { ...OPCOES_PADRAO, N: 3 }).tipo).toBe('nao-segue')
+  })
+})
+
+describe('TPTP com tipos polimórficos (TF1)', () => {
+  const LISTAS = `tff(list_t, type, list: $tType > $tType).
+tff(nil_t, type, nil: !>[A: $tType]: list(A)).
+tff(cons_t, type, cons: !>[A: $tType]: (A * list(A)) > list(A)).
+tff(hd_t, type, hd: !>[A: $tType]: list(A) > A).
+tff(hd_ax, axiom, ![A: $tType, X: A, L: list(A)]: hd(A, cons(A, X, L)) = X).
+tff(a_t, type, a: $i).`
+  const pergunta = (conj: string) => {
+    const r = importarTptp(`${LISTAS}\n${conj}`, 'tf1.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    const dic = comId(r.fichas)
+    for (const n of r.notas) for (const f of n.formulas) expect(validar(f, dic).ok, f).toBe(true)
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    const t = r.notas.find((n) => n.compartimento === 'teorema')!
+    return { r, res: perguntar(leis, t.formulas[0], dic, { ...OPCOES_PADRAO, N: 3 }).tipo }
+  }
+
+  it('cada símbolo polimórfico vira um por tipo: hd($i, cons($i, a, nil($i))) = a', () => {
+    const { r, res } = pergunta('tff(conj, conjecture, hd($i, cons($i, a, nil($i))) = a).')
+    expect(res).toBe('segue')
+    expect(r.aproximada).toBe(true)
+    expect(r.fichas.map((f) => f.simbolo)).toEqual(expect.arrayContaining(['consI', 'hdI', 'nilI']))
+  })
+
+  it('conjectura polimórfica: vale para um tipo novo, sem nada de especial', () => {
+    expect(pergunta('tff(conj, conjecture, ![B: $tType, Y: B, M: list(B)]: hd(B, cons(B, Y, M)) = Y).').res).toBe('segue')
+    expect(pergunta('tff(conj, conjecture, ![B: $tType, Y: B]: hd(B, nil(B)) = Y).').res).toBe('nao-segue')
+  })
+})
+
+describe('TPTP de ordem superior (THF)', () => {
+  const pergunta = (texto: string, N = 3) => {
+    const r = importarTptp(texto, 'thf.p', 'tptp', [])
+    expect(r.avisos).toEqual([])
+    const dic = comId(r.fichas)
+    for (const n of r.notas) for (const f of n.formulas) expect(validar(f, dic).ok, f).toBe(true)
+    const leis = r.notas.filter((n) => n.compartimento === 'lei').map((n) => ({ id: n.id, rotulo: n.titulo, formulas: n.formulas }))
+    const conj = r.notas.find((n) => n.compartimento === 'teorema')!
+    return { r, res: perguntar(leis, conj.formulas[0], dic, { ...OPCOES_PADRAO, N }).tipo }
+  }
+
+  it('abre as definições: a igualdade de Leibniz é transitiva (SYO001^1)', () => {
+    const { r, res } = pergunta(`thf(leibeq_decl, type, leibeq: $i > $i > $o).
+thf(leibeq, definition, (leibeq = (^ [X: $i, Y: $i]: ! [P: $i > $o]: ((P @ X) => (P @ Y))))).
+thf(conj, conjecture, ! [X: $i, Y: $i, Z: $i]: (((leibeq @ X @ Y) & (leibeq @ Y @ Z)) => (leibeq @ X @ Z))).`)
+    expect(res).toBe('segue')
+    // a definição sumiu (foi aberta); o predicado P virou objeto aplicado por ap
+    expect(r.notas.some((n) => n.titulo.startsWith('leibeq'))).toBe(false)
+    expect(r.notas.find((n) => n.compartimento === 'teorema')!.formulas[0]).toContain('vale(ap')
+  })
+
+  it('constante usada como valor e lambda como argumento: entram com a sua definição', () => {
+    const base = `thf(p_t, type, p: $i > $o).
+thf(a_t, type, a: $i).
+thf(b_t, type, b: $i).
+thf(q_t, type, q: ($i > $o) > $o).
+thf(ax2, axiom, ! [F: $i > $o]: ((q @ F) => (F @ a))).`
+    expect(pergunta(`${base}\nthf(ax1, axiom, q @ p).\nthf(c, conjecture, p @ a).`).res).toBe('segue')
+    expect(pergunta(`${base}\nthf(ax1, axiom, q @ (^ [X: $i]: (p @ X))).\nthf(c, conjecture, p @ a).`).res).toBe('segue')
+    expect(pergunta(`${base}\nthf(ax1, axiom, q @ p).\nthf(c, conjecture, p @ b).`).res).toBe('nao-segue')
+  })
+
+  it('fórmula como argumento (valor lógico como objeto): says @ a @ (p @ a)', () => {
+    const { res } = pergunta(`thf(p_t, type, p: $i > $o).
+thf(a_t, type, a: $i).
+thf(says_t, type, says: $i > $o > $o).
+thf(ax1, axiom, says @ a @ (p @ a)).
+thf(ax2, axiom, ! [X: $i, P: $o]: ((says @ X @ P) => P)).
+thf(c, conjecture, p @ a).`)
+    expect(res).toBe('segue')
+  })
+
+  it('marca a tradução como aproximada (cenário onde falha pode não valer no original)', () => {
+    expect(importarTptp('thf(p_t, type, p: $i > $o).\nthf(a, axiom, ! [X: $i]: (p @ X)).', 'x.p', 'tptp', []).aproximada).toBe(true)
+    expect(importarTptp('fof(a, axiom, p(a)).', 'x.p', 'tptp', []).aproximada).toBeUndefined()
+  })
+
+  it('não lê tipos polimórficos nem escolha: avisa', () => {
+    const r = importarTptp('thf(c, axiom, ! [A: $tType, X: A]: (X = X)).\nthf(d, axiom, (@+ [X: $i]: (p @ X)) = a).', 'x.p', 'tptp', [])
+    expect(r.avisos.join('\n')).toMatch(/TH1[^]*escolha/)
   })
 })
 

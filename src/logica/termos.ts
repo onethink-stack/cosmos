@@ -14,7 +14,8 @@ export function termosIguais(a: Termo, b: Termo): boolean {
     case 'vazio':
       return b.k === 'vazio'
     case 'reais':
-      return b.k === 'reais'
+    case 'inteiros':
+      return b.k === a.k
     case 'num':
       return b.k === 'num' && Number(a.valor) === Number(b.valor)
     case 'arit':
@@ -37,6 +38,7 @@ export function temAritmetica(f: Formula, numericos?: (nome: string) => boolean)
       case 'arit':
       case 'neg':
       case 'reais':
+      case 'inteiros':
         return true
       case 'nome':
         return !!numericos?.(x.nome)
@@ -158,6 +160,7 @@ export function usosDeNomes(f: Formula): UsoNome[] {
       case 'vazio':
       case 'num':
       case 'reais':
+      case 'inteiros':
         return
     }
   }

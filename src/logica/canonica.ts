@@ -23,6 +23,7 @@ export function canonica(f: Formula): string {
       case 'vazio':
       case 'num':
       case 'reais':
+      case 'inteiros':
         return t
     }
   }

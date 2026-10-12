@@ -36,6 +36,7 @@ export type TipoToken =
   | 'gt'
   | 'ge'
   | 'reais'
+  | 'inteiros'
   | 'eof'
 
 export interface Token {
@@ -65,6 +66,7 @@ const SIMBOLOS: [string, TipoToken][] = [
   ['<=', 'le'], ['>=', 'ge'], ['<', 'lt'], ['>', 'gt'], ['≤', 'le'], ['≥', 'ge'], ['⩽', 'le'], ['⩾', 'ge'],
   ['+', 'plus'], ['−', 'minus'], ['-', 'minus'], ['·', 'times'], ['*', 'times'], ['×', 'times'], ['/', 'div'], ['^', 'pow'],
   ['\\R', 'reais'],
+  ['\\Z', 'inteiros'],
   ['∀', 'forall'], ['∃', 'exists'], ['¬', 'not'], ['~', 'not'],
   ['∧', 'and'], ['&', 'and'], ['∨', 'or'], ['|', 'or'],
   ['⟹', 'imp'], ['⇒', 'imp'], ['→', 'imp'], ['⟺', 'iff'], ['⇔', 'iff'], ['↔', 'iff'],
@@ -79,7 +81,7 @@ export const SIMBOLO_DE: Record<TipoToken, string> = {
   nome: 'nome', subscr: 'subscrito', forall: '∀', exists: '∃', not: '¬', and: '∧',
   or: '∨', imp: '⟹', iff: '⟺', eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆',
   cap: '⋂', cup: '⋃', empty: '∅', lpar: '(', rpar: ')', comma: ',', nec: '□', pos: '◇', lbrack: '[', rbrack: ']',
-  num: 'número', plus: '+', minus: '−', times: '·', div: '/', pow: '^', lt: '<', le: '≤', gt: '>', ge: '≥', reais: 'ℝ',
+  num: 'número', plus: '+', minus: '−', times: '·', div: '/', pow: '^', lt: '<', le: '≤', gt: '>', ge: '≥', reais: 'ℝ', inteiros: 'ℤ',
   eof: 'fim da fórmula',
 }
 
@@ -140,6 +142,11 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
     }
     if (c === 'ℝ') {
       push('reais', c, i, i + 1)
+      i++
+      continue
+    }
+    if (c === 'ℤ') {
+      push('inteiros', c, i, i + 1)
       i++
       continue
     }

@@ -15,7 +15,7 @@
 // tocado: o resultado só vai para ele se o usuário levar.
 
 import { inativasDoContexto, pedidoDaCadeia } from '../dados/cadeia'
-import { SABE, sabeDaNota } from '../dados/conhecido'
+import { ETIQUETA_APROXIMADA, ETIQUETA_NUMEROS, ETIQUETA_SELECAO, SABE, sabeDaNota } from '../dados/conhecido'
 import { contextoDoTeorema } from '../dados/premissas'
 import type { EntradaDicionario, Nota } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
@@ -520,6 +520,51 @@ export function comOTptp(itens: ItemModelo[], notas: Nota[]): ItemModelo[] {
     const semAxioma = `sem ${desativados.length === 1 ? 'o axioma desativado' : `os ${desativados.length} axiomas desativados`}`
     const contra = it.classe === 'tese' || it.classe === 'conflito' || it.classe === 'refutado'
     const avisar = (texto: string, discorda = false) => (it.tptp = { texto, discorda })
+    // problema com números: o motor finito deixou as leis com números de fora; o cenário
+    // que ele achou pode não valer com elas (quem decide é o Z3)
+    if (contra && nota.tags.includes(ETIQUETA_NUMEROS) && (sabe === 'segue' || sabe === 'contraditorio')) {
+      avisar(
+        `${SABE[sabe].longo}; o cenário que o motor achou deixa de fora as leis com números (o motor finito não lê números): quem decide é o Z3`,
+      )
+      return it
+    }
+    // ordem superior ou polimorfismo traduzidos: a tradução não tem tudo o que o original garante
+    if (nota.tags.includes(ETIQUETA_APROXIMADA)) {
+      if (it.classe === 'provado') avisar('o TPTP confirma: os provadores provaram que segue em todos os tamanhos, não só até o limite')
+      else if (contra && (sabe === 'segue' || sabe === 'contraditorio'))
+        avisar(
+          `${SABE[sabe].longo}; o cenário que o motor achou é da tradução para primeira ordem, que não tem todas as funções (ou todos os tipos) do original: pode não valer lá`,
+        )
+      else avisar(`${SABE[sabe].longo} (no problema original, de ordem superior ou com tipos polimórficos)`)
+      return it
+    }
+    // problema grande: vieram só os axiomas ligados à conjectura. Segue com eles ⟹ segue com
+    // todos; mas um cenário onde ela falha pode ser só falta de um axioma deixado de fora
+    if (nota.tags.includes(ETIQUETA_SELECAO)) {
+      switch (sabe) {
+        case 'segue':
+          if (it.classe === 'provado') avisar('o TPTP confirma: os provadores provaram que segue em todos os tamanhos, não só até o limite')
+          else if (contra)
+            avisar(
+              'com só os axiomas escolhidos há um cenário onde não segue; os provadores provaram que segue com todos os axiomas do problema: falta algum que ficou de fora',
+            )
+          else avisar(`os provadores provaram que segue com todos os axiomas do problema (aqui vieram só os escolhidos; ${it.explicacao})`)
+          break
+        case 'nao-segue':
+          avisar(
+            it.classe === 'provado'
+              ? 'o TPTP sabe que não segue: o contraexemplo é maior que o limite conferido (ou infinito)'
+              : 'o TPTP sabe que não segue, com todos os axiomas do problema',
+          )
+          break
+        case 'contraditorio':
+          avisar('o TPTP sabe que os axiomas deste problema se contradizem — com todos; os escolhidos podem não se contradizer')
+          break
+        default:
+          avisar(`${SABE[sabe].longo} (com todos os axiomas; aqui vieram só os escolhidos)`)
+      }
+      return it
+    }
     switch (sabe) {
       case 'segue':
         if (it.classe === 'provado') avisar('o TPTP confirma: os provadores provaram que segue em todos os tamanhos, não só até o limite')

@@ -29,6 +29,8 @@ export function imprimirTermo(t: Termo): string {
       return t.valor
     case 'reais':
       return 'ℝ'
+    case 'inteiros':
+      return 'ℤ'
     case 'neg': {
       const p = nivelTermo(t.t) < 4 ? `(${imprimirTermo(t.t)})` : imprimirTermo(t.t)
       return `−${p}`

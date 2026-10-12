@@ -177,7 +177,8 @@ class Parser {
       case 'minus':
         return this.atomo(apos)
       case 'reais':
-        this.erro('E0', `'ℝ' só pode aparecer como domínio de quantificador: ∀x∈ℝ ou ∃x∈ℝ (${this.col(tk)})`, tk)
+      case 'inteiros':
+        this.erro('E0', `'${tk.v}' só pode aparecer como domínio de quantificador: ∀x∈${tk.v} ou ∃x∈${tk.v} (${this.col(tk)})`, tk)
       case 'rbrack':
         this.erro('E0', `']' sem '[' correspondente (${this.col(tk)})`, tk)
       case 'eof':
@@ -217,9 +218,9 @@ class Parser {
       const inTk = this.avancar()
       if (this.faltaOperando(inTk) || this.at().t === 'not')
         this.erro('E1', `'∈' sem termo depois de '${qs}${v.v}' (${this.col(inTk)})`, inTk)
-      if (this.at().t === 'reais') {
+      if (this.at().t === 'reais' || this.at().t === 'inteiros') {
         const r = this.avancar()
-        dom = { k: 'reais', pos: r.pos, end: r.end }
+        dom = { k: r.t === 'reais' ? 'reais' : 'inteiros', pos: r.pos, end: r.end }
       } else dom = this.termo()
     }
     if (this.faltaOperando(q))
@@ -362,7 +363,8 @@ class Parser {
       this.avancar()
       return { k: 'num', valor: tk.v, pos: tk.pos, end: tk.end }
     }
-    if (tk.t === 'reais') this.erro('E0', `'ℝ' só pode aparecer como domínio de quantificador: ∀x∈ℝ ou ∃x∈ℝ (${this.col(tk)})`, tk)
+    if (tk.t === 'reais' || tk.t === 'inteiros')
+      this.erro('E0', `'${tk.v}' só pode aparecer como domínio de quantificador: ∀x∈${tk.v} ou ∃x∈${tk.v} (${this.col(tk)})`, tk)
     if (tk.t === 'nome') {
       this.avancar()
       const prox = this.at()

@@ -270,4 +270,4 @@ export function useZ3(): EstadoZ3 {
 
 /** Chave de uma checagem do Z3: fórmulas, fórmula negada e as fichas (tipo, aridade, número). */
 export const chaveZ3 = (formulas: string[], negar: string | null, dic: EntradaDicionario[]) =>
-  JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico])])
+  JSON.stringify([formulas, negar, dic.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico, e.argumentos ?? null])])

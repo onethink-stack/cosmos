@@ -64,7 +64,8 @@ export function ProblemasTptp() {
       <p class="suave">
         {bib.problemas.length.toLocaleString('pt-BR')} problemas: {[...porSabe].map(([s, n]) => `${n.toLocaleString('pt-BR')} ${SABE[s].curto}`).join(' · ')}.
         Carregado no caderno, o problema traz junto as teorias que inclui; no segundo modelo, a conjectura aparece com o que os provadores já
-        sabem dela.
+        sabem dela. Os grandes demais vêm só com os axiomas ligados à conjectura: se segue com eles, segue com todos; um cenário onde ela
+        falha pode ser só falta de um axioma deixado de fora.
       </p>
       {erro && <p class="erro-texto">{erro}</p>}
       {feito && <p class="status-ok">✓ {feito}</p>}
@@ -123,6 +124,9 @@ function ItemProblemaUi({ p, onCarregar }: { p: ItemProblema; onCarregar: () => 
       {p.ingles && p.ingles !== p.titulo && <div class="suave">{p.ingles}</div>}
       <div class="suave">
         {p.nFormulas.toLocaleString('pt-BR')} fórmulas
+        {p.selecao && ` (${p.selecao.escolhidos} dos ${p.selecao.total.toLocaleString('pt-BR')} axiomas: os ligados à conjectura)`}
+        {p.aritmetica && ' · com números (quem decide é o Z3)'}
+        {p.aproximada && ' · traduzido para primeira ordem (só o "segue" é garantido)'}
         {p.inclui.length > 0 && ` · inclui ${p.inclui.map((i) => i.id).join(', ')}`}
         {p.dificuldade != null && ` · dificuldade ${Math.round(p.dificuldade * 100)}%`}
       </div>

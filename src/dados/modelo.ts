@@ -43,7 +43,7 @@ export function assinaturaModelo(notas: Nota[], dicionario: EntradaDicionario[],
     marcaDados,
     pastas,
     notas.map((n) => [n.id, n.ativa, n.compartimento, n.formulas, n.titular, n.grau]),
-    dicionario.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico]),
+    dicionario.map((e) => [e.simbolo, e.tipo, e.aridade, !!e.numerico, e.argumentos ?? null]),
   ])
 }
 

@@ -163,6 +163,46 @@ describe('problemas do TPTP no segundo modelo', () => {
     expect(semAxioma.classe).toBe('incerto')
     expect(semAxioma.tptp!.texto).toContain('sem o axioma desativado')
   })
+
+  it('problema grande com axiomas escolhidos: cenário onde falha não é discordância, e o TPTP não vira prova', async () => {
+    const escolhidos = (sabe: string) => ({ tags: [...doProblema(sabe).tags, 'tptp-axiomas-escolhidos'] })
+    const { final } = await rodar([
+      nota('L1', 'lei', ['∀x (P(x) ⟹ Q(x))'], doProblema()),
+      nota('L2', 'lei', ['P(a)'], doProblema()),
+      nota('T1', 'teorema', ['Q(a)'], escolhidos('segue')),
+      // com todos os axiomas seguiria; com os escolhidos, não: falta um que ficou de fora
+      nota('T2', 'teorema', ['R(a)'], escolhidos('segue')),
+    ])
+    expect(final.itens.find((i) => i.id === 'T1:0')!.tptp!.texto).toContain('o TPTP confirma')
+    const t2 = final.itens.find((i) => i.id === 'T2:0')!
+    expect(t2.classe).toBe('tese')
+    expect(t2.tptp).toMatchObject({ discorda: false })
+    expect(t2.tptp!.texto).toContain('falta algum que ficou de fora')
+    // o que o motor não decide continua sem decisão: a prova dos provadores usou axiomas que não vieram
+    const item = { id: 'T1:0', notaId: 'T1', chave: 'geral', titulo: 'T1', formula: 'Q(a)', classe: 'incerto' as const, explicacao: 'não decidiu' }
+    const r = comOTptp([item], [nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], escolhidos('segue'))])[0]
+    expect(r.classe).toBe('incerto')
+    expect(r.tptp!.texto).toContain('só os escolhidos')
+  })
+
+  it('problema com números: o cenário do motor finito (sem as leis com números) não é discordância', async () => {
+    const comNumeros = { tags: [...doProblema('segue').tags, 'tptp-com-numeros'] }
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], comNumeros)])
+    const t1 = final.itens.find((i) => i.id === 'T1:0')!
+    expect(t1.classe).toBe('tese')
+    expect(t1.tptp).toMatchObject({ discorda: false })
+    expect(t1.tptp!.texto).toContain('quem decide é o Z3')
+  })
+
+  it('ordem superior ou polimórfico traduzido: o cenário da tradução não é discordância, e o TPTP não vira prova', async () => {
+    const aprox = { tags: [...doProblema('segue').tags, 'tptp-traducao-aproximada'] }
+    const { final } = await rodar([nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], aprox)])
+    const t1 = final.itens.find((i) => i.id === 'T1:0')!
+    expect(t1.tptp).toMatchObject({ discorda: false })
+    expect(t1.tptp!.texto).toContain('pode não valer lá')
+    const item = { id: 'T1:0', notaId: 'T1', chave: 'geral', titulo: 'T1', formula: 'Q(a)', classe: 'incerto' as const, explicacao: 'não decidiu' }
+    expect(comOTptp([item], [nota('L1', 'lei', ['P(a)'], doProblema()), nota('T1', 'teorema', ['Q(a)'], aprox)])[0].classe).toBe('incerto')
+  })
 })
 
 describe('segundo modelo com aprimoramento', () => {

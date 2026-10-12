@@ -69,7 +69,7 @@ function liberacoes(api: any): Liberacoes {
 export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3_MS, numericos: Set<string> = new Set()): Promise<ResultadoZ3> {
   const espera = liberacoes(api)
   const ctx = obterContexto(api)
-  const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real } = ctx
+  const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real, IsInt } = ctx
   const Obj = Sort.declare('Obj')
   const Mundo = Sort.declare('Mundo')
   const B = Bool.sort()
@@ -86,14 +86,18 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
     if (!constantes.has(nome)) constantes.set(nome, Const(`c:${nome}`, Obj))
     return constantes.get(nome)
   }
-  const funcao = (nome: string, aridade: number) => {
-    const k = `${nome}/${aridade}`
-    if (!funcoes.has(k)) funcoes.set(k, Funcao.declare(`f:${k}`, Mundo, ...Array(aridade).fill(Obj), Obj))
+  // cada argumento com o seu tipo (número ou objeto): o validador garante que um
+  // símbolo recebe sempre os mesmos; a assinatura vai no nome para não misturar
+  const ehReal = (e: Expr) => String(e.sort.name()) === 'Real'
+  const sinal = (args: Expr[]) => (args.some(ehReal) ? `:${args.map((a) => (ehReal(a) ? 'R' : 'O')).join('')}` : '')
+  const funcao = (nome: string, args: Expr[]) => {
+    const k = `${nome}/${args.length}${sinal(args)}`
+    if (!funcoes.has(k)) funcoes.set(k, Funcao.declare(`f:${k}`, Mundo, ...args.map((a) => a.sort), Obj))
     return funcoes.get(k)
   }
-  const predicado = (nome: string, aridade: number) => {
-    const k = `${nome}/${aridade}`
-    if (!predicados.has(k)) predicados.set(k, Funcao.declare(`p:${k}`, Mundo, ...Array(aridade).fill(Obj), B))
+  const predicado = (nome: string, args: Expr[]) => {
+    const k = `${nome}/${args.length}${sinal(args)}`
+    if (!predicados.has(k)) predicados.set(k, Funcao.declare(`p:${k}`, Mundo, ...args.map((a) => a.sort), B))
     return predicados.get(k)
   }
   const acesso = (agente: string) => {
@@ -107,9 +111,9 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
     if (!reaisC.has(nome)) reaisC.set(nome, Real.const(`n:${nome}`))
     return reaisC.get(nome)
   }
-  const funcaoReal = (nome: string, aridade: number) => {
-    const k = `${nome}/${aridade}`
-    if (!reaisF.has(k)) reaisF.set(k, Funcao.declare(`fn:${k}`, ...Array(aridade).fill(Real.sort()), Real.sort()))
+  const funcaoReal = (nome: string, args: Expr[]) => {
+    const k = `${nome}/${args.length}${args.every(ehReal) ? '' : `:${args.map((a) => (ehReal(a) ? 'R' : 'O')).join('')}`}`
+    if (!reaisF.has(k)) reaisF.set(k, Funcao.declare(`fn:${k}`, ...args.map((a) => a.sort), Real.sort()))
     return reaisF.get(k)
   }
   const potencia = (base: Expr, exp: Termo, env: Map<string, Expr>, w: Expr): Expr => {
@@ -131,9 +135,11 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
       case 'vazio':
         usaVazio = true
         return constante('∅')
-      case 'app':
-        if (numericos.has(t.fn)) return funcaoReal(t.fn, t.args.length).call(...t.args.map((a) => termo(a, env, w)))
-        return funcao(t.fn, t.args.length).call(w, ...t.args.map((a) => termo(a, env, w)))
+      case 'app': {
+        const args = t.args.map((a) => termo(a, env, w))
+        if (numericos.has(t.fn)) return funcaoReal(t.fn, args).call(...args)
+        return funcao(t.fn, args).call(w, ...args)
+      }
       case 'num':
         return Real.val(t.valor)
       case 'neg':
@@ -153,8 +159,10 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
     switch (f.k) {
       case 'const':
         return Bool.val(f.valor)
-      case 'pred':
-        return predicado(f.nome, f.args.length).call(w, ...f.args.map((a) => termo(a, env, w)))
+      case 'pred': {
+        const args = f.args.map((a) => termo(a, env, w))
+        return predicado(f.nome, args).call(w, ...args)
+      }
       case 'rel': {
         const l = termo(f.l, env, w)
         if (f.op === '=' || f.op === '≠') {
@@ -193,11 +201,13 @@ export async function checarZ3(api: any, formulas: Formula[], tempoMs = TEMPO_Z3
       }
       case 'forall':
       case 'exists': {
-        if (f.dom && f.dom.k !== 'reais') throw new Error('∀x∈S deveria ter sido expandido antes do Z3')
+        if (f.dom && f.dom.k !== 'reais' && f.dom.k !== 'inteiros') throw new Error('∀x∈S deveria ter sido expandido antes do Z3')
         const x = f.dom ? Real.const(`${f.v}!${++contador}`) : nova(f.v, Obj)
         const env2 = new Map(env)
         env2.set(f.v, x)
         const corpo = formula(f.corpo, env2, w)
+        // ∀x∈ℤ: um real que é inteiro (assim inteiros e reais se misturam nas contas)
+        if (f.dom?.k === 'inteiros') return f.k === 'forall' ? ForAll([x], Implies(IsInt(x), corpo)) : Exists([x], And(IsInt(x), corpo))
         return f.k === 'forall' ? ForAll([x], corpo) : Exists([x], corpo)
       }
     }

@@ -11,6 +11,12 @@ export interface EntradaDicionario {
   definicao: string
   /** constante ou função com valor numérico (número real); uma função numérica recebe números */
   numerico?: boolean
+  /**
+   * o que cada argumento recebe, quando mistura números e objetos (ex.: do TPTP,
+   * "tamanho(lista)" devolve número e recebe objeto; "primo(n)" recebe número).
+   * Sem isto: função numérica recebe números; o resto, objetos
+   */
+  argumentos?: ('num' | 'obj')[]
 }
 
 /** teorema: não é premissa; o app confere se segue das leis e fatos ativos */

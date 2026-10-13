@@ -208,8 +208,10 @@ function RespostaPergunta({
           <strong>Não segue</strong>
           {cabeca}
           <p>
-            Há um cenário com {tamanhoTexto(res.mundo.n, res.mundo.modelo.mundos)} onde todas as suas notas valem e a fórmula falha. E ela também não é
-            contradita: as notas não decidem a questão.
+            Há um cenário com {tamanhoTexto(res.mundo.n, res.mundo.modelo.mundos)} onde todas as suas notas valem e a fórmula falha.{' '}
+            {res.semMundoAFavor
+              ? 'Não deu para conferir se as notas a contradizem (o cenário a favor ficou grande demais).'
+              : 'E ela também não é contradita: as notas não decidem a questão.'}
           </p>
           <ArvorePassos p={res.mundo.passos} />
           <details class="explicacao">

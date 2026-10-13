@@ -3,6 +3,8 @@ import { avisos } from '../dados/avisos'
 import { corrigirConclusoes, corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
 import { historico } from '../dados/historico'
+import { perguntas } from '../dados/perguntas'
+import { tradutor } from '../dados/tradutor'
 import { useVersao } from '../dados/versao'
 import { verificacao } from '../dados/verificacao'
 import { z3 } from '../dados/z3'
@@ -16,6 +18,7 @@ import { Historico } from './Historico'
 import { Modelo } from './Modelo'
 import { Mundo } from './Mundo'
 import { PainelContradicoes } from './PainelContradicoes'
+import { PerguntarPortugues } from './PerguntarPortugues'
 import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
 import { Sistemas } from './Sistemas'
@@ -41,6 +44,8 @@ export function App() {
       })
     void verificacao.carregarConfig()
     void historico.carregar()
+    void tradutor.carregarConfig()
+    void perguntas.carregar()
     void z3.carregarConfig()
     void z3.carregarGuardados()
   }, [])
@@ -61,6 +66,9 @@ export function App() {
           <nav>
             <a href="#/notas" class={aba === 'notas' ? 'ativo' : ''}>
               Notas
+            </a>
+            <a href="#/perguntar" class={aba === 'perguntar' ? 'ativo' : ''}>
+              Perguntar
             </a>
             <a href="#/dicionario" class={aba === 'dicionario' ? 'ativo' : ''}>
               Dicionário
@@ -116,6 +124,8 @@ export function App() {
           <Historico />
         ) : rota.tela === 'verdades' ? (
           <Verdades />
+        ) : rota.tela === 'perguntar' ? (
+          <PerguntarPortugues />
         ) : (
           <PainelContradicoes />
         )}

@@ -478,8 +478,12 @@ export type ResultadoPergunta =
   | { tipo: 'segue'; N: number; K: number; notas: string[] }
   /** as notas implicam a negação da fórmula */
   | { tipo: 'contradiz'; N: number; K: number; notas: string[]; mundo: MundoExplicado }
-  /** há mundo com as notas e a fórmula falsa, e há mundo com as notas e a fórmula verdadeira */
-  | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado }
+  /**
+   * há mundo com as notas e a fórmula falsa, e há mundo com as notas e a
+   * fórmula verdadeira (`semMundoAFavor`: esse segundo ficou grande demais
+   * para procurar — não se sabe se as notas a contradizem)
+   */
+  | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado; semMundoAFavor?: true }
   /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
@@ -542,7 +546,7 @@ export function perguntar(
     return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }
   }
   // grande demais ao procurar o mundo a favor: ainda assim sabemos que não segue
-  return { tipo: 'nao-segue', N: op.N, mundo }
+  return { tipo: 'nao-segue', N: op.N, mundo, ...(afavor.status === 'modelo' ? {} : { semMundoAFavor: true as const }) }
 }
 
 /**

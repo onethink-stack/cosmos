@@ -47,6 +47,17 @@
         "dist"
       ],
       "port": 4190
+    },
+    {
+      "name": "caderno-teste",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
+      "port": 5180
     }
   ]
 }

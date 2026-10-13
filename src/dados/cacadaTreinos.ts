@@ -341,3 +341,124 @@ export const MODELOS: ModeloInicial[] = [
     ],
   },
 ]
+
+const AG = 'AxelarGateway.sol (axelar-cgp-solidity, commit 43ec407)'
+const AW = 'auth/AxelarAuthWeighted.sol (axelar-cgp-solidity, commit 43ec407)'
+
+MODELOS.push({
+  id: 'axelar-gateway',
+  nome: 'Axelar Gateway — comandos e aprovações (rascunho)',
+  programa: 'https://immunefi.com/bug-bounty/axelarnetwork/information/',
+  escopo:
+    'Um passo: ou execute (um comando, com a prova de um conjunto de operadores), ou validateContractCall (o contrato de destino consome uma aprovação). No escopo do programa estão os proxies do Gateway em Ethereum, Avalanche, BNB, Polygon, Fantom, Aurora e Moonbeam, e os tokens axlUSDC (22 ativos). Crítica: 10% dos fundos afetados, até US$ 500 mil; alta: US$ 5 mil a 25 mil. Código obrigatório como prova; KYC com documento e reconhecimento facial, se o relatório for elegível. O que já está nos repositórios axelar-core, axelar-cgp-solidity, tofnd e tofn como problema conhecido não paga.',
+  nota:
+    'Rascunho tirado do código público do Gateway. Antes de confiar nas regras, confira no explorador da rede que o proxy em escopo aponta para esta implementação. O peso e o limiar das assinaturas viraram propriedades (Assinou, Recente: dentro das últimas 16 épocas); a conta dos pesos fica para um próximo passo. A última promessa fura de propósito: o código não cancela aprovações quando os operadores mudam — uma pista para descartar.',
+  regras: [
+    {
+      id: 'ax-tipos',
+      titulo: 'Tipos: comandos, chaves de aprovação e conjuntos de operadores',
+      formula:
+        '∀x ¬(Comando(x) ∧ Chave(x)) ∧ ∀x ¬(Comando(x) ∧ Conjunto(x)) ∧ ∀x ¬(Chave(x) ∧ Conjunto(x)) ∧ Comando(cc) ∧ Chave(kk) ∧ Conjunto(ss) ∧ Conjunto(atualA) ∧ Conjunto(atualD) ∧ ∀c (Comando(c) ⟹ Chave(chaveDe(c)) ∧ Conjunto(novo(c)))',
+      fonte: `${AG}: commandIds, _getIsContractCallApprovedKey; ${AW}: hashForEpoch`,
+    },
+    {
+      id: 'ax-chave',
+      titulo: 'A chave da aprovação inclui o commandId (comandos diferentes, chaves diferentes)',
+      formula: '∀c ∀d (Comando(c) ∧ Comando(d) ∧ chaveDe(c) = chaveDe(d) ⟹ c = d)',
+      fonte: `${AG}: _getIsContractCallApprovedKey(commandId, …)`,
+    },
+    { id: 'ax-operacao', titulo: 'Acontece uma operação', formula: '(Executa(cc) ∨ Valida(kk)) ∧ ¬(Executa(cc) ∧ Valida(kk))', fonte: 'execute, validateContractCall' },
+    {
+      id: 'ax-prova',
+      titulo: 'validateProof: o conjunto está nas últimas 16 épocas e as assinaturas atingem o limiar',
+      formula: 'Executa(cc) ⟹ Recente(ss) ∧ Assinou(ss)',
+      fonte: `${AW}: validateProof, _validateSignatures (OLD_KEY_RETENTION = 16)`,
+    },
+    { id: 'ax-atual', titulo: 'O conjunto atual é recente', formula: 'Recente(atualA)', fonte: `${AW}: currentEpoch` },
+    {
+      id: 'ax-tipo-comando',
+      titulo: 'O comando é aprovar uma chamada ou trocar os operadores (os outros ficam fora do modelo)',
+      formula: 'Executa(cc) ⟹ (Aprova(cc) ∨ Troca(cc)) ∧ ¬(Aprova(cc) ∧ Troca(cc))',
+      fonte: `${AG}: execute (SELECTOR_APPROVE_CONTRACT_CALL, SELECTOR_TRANSFER_OPERATORSHIP)`,
+    },
+    { id: 'ax-resto', titulo: 'Os outros comandos não mudam', formula: '∀c (Comando(c) ∧ c ≠ cc ⟹ (ExecD(c) ⟺ ExecA(c)))', fonte: `${AG}: execute` },
+    {
+      id: 'ax-repetido',
+      titulo: 'Comando já executado é ignorado',
+      formula: 'Executa(cc) ∧ ExecA(cc) ⟹ ExecD(cc) ∧ atualD = atualA ∧ ∀k (Chave(k) ⟹ (AprovD(k) ⟺ AprovA(k)))',
+      fonte: `${AG}: execute (if (isCommandExecuted(commandId)) continue)`,
+    },
+    {
+      id: 'ax-aprovar',
+      titulo: 'approveContractCall: marca o comando executado e aprova a chave dele',
+      formula:
+        'Executa(cc) ∧ ¬ExecA(cc) ∧ Aprova(cc) ⟹ ExecD(cc) ∧ AprovD(chaveDe(cc)) ∧ atualD = atualA ∧ ∀k (Chave(k) ∧ k ≠ chaveDe(cc) ⟹ (AprovD(k) ⟺ AprovA(k)))',
+      fonte: `${AG}: _setCommandExecuted, approveContractCall`,
+    },
+    {
+      id: 'ax-trocar',
+      titulo: 'transferOperatorship com prova do conjunto atual: o novo conjunto vira o atual',
+      formula:
+        'Executa(cc) ∧ ¬ExecA(cc) ∧ Troca(cc) ∧ ss = atualA ⟹ ExecD(cc) ∧ atualD = novo(cc) ∧ novo(cc) ≠ atualA ∧ ∀k (Chave(k) ⟹ (AprovD(k) ⟺ AprovA(k)))',
+      fonte: `${AG}: execute (allowOperatorshipTransfer); ${AW}: _transferOperatorship (DuplicateOperators)`,
+    },
+    {
+      id: 'ax-trocar-nao',
+      titulo: 'transferOperatorship com prova de outro conjunto: ignorado (não marca executado)',
+      formula: 'Executa(cc) ∧ ¬ExecA(cc) ∧ Troca(cc) ∧ ss ≠ atualA ⟹ ¬ExecD(cc) ∧ atualD = atualA ∧ ∀k (Chave(k) ⟹ (AprovD(k) ⟺ AprovA(k)))',
+      fonte: `${AG}: execute (if (!allowOperatorshipTransfer) continue)`,
+    },
+    {
+      id: 'ax-validar',
+      titulo: 'validateContractCall: entrega se a chave está aprovada, e consome a aprovação',
+      formula:
+        'Valida(kk) ⟹ (Entrega(kk) ⟺ AprovA(kk)) ∧ ¬AprovD(kk) ∧ atualD = atualA ∧ ∀k (Chave(k) ∧ k ≠ kk ⟹ (AprovD(k) ⟺ AprovA(k))) ∧ ∀c (Comando(c) ⟹ (ExecD(c) ⟺ ExecA(c)))',
+      fonte: `${AG}: validateContractCall (_setBool(key, false))`,
+    },
+    { id: 'ax-entrega', titulo: 'Só a validação entrega', formula: 'Entrega(kk) ⟹ Valida(kk)', fonte: `${AG}: ContractCallExecuted` },
+  ],
+  promessas: [
+    {
+      id: 'ax-uma-vez',
+      titulo: 'Uma chamada aprovada é entregue no máximo uma vez',
+      citacao: 'Depois de validada, a chamada é marcada como executada para não rodar duas vezes.',
+      formula: 'Entrega(kk) ⟹ ¬AprovD(kk)',
+      fonte: `${AG}: comentário de validateContractCall`,
+    },
+    {
+      id: 'ax-consumida',
+      titulo: 'Uma aprovação consumida não volta',
+      citacao: 'Comandos repetidos são ignorados.',
+      formula: '∀c (Comando(c) ∧ ExecA(c) ∧ ¬AprovA(chaveDe(c)) ⟹ ¬AprovD(chaveDe(c)))',
+      fonte: `${AG}: comentário de execute`,
+    },
+    {
+      id: 'ax-origem',
+      titulo: 'Toda aprovação vem de um comando executado',
+      citacao: 'Só comandos assinados pelos operadores aprovam chamadas.',
+      formula: '(∀c (Comando(c) ∧ AprovA(chaveDe(c)) ⟹ ExecA(c))) ⟹ (∀c (Comando(c) ∧ AprovD(chaveDe(c)) ⟹ ExecD(c)))',
+      fonte: `${AG}: execute`,
+    },
+    {
+      id: 'ax-so-atual',
+      titulo: 'Só o conjunto atual troca os operadores',
+      citacao: 'validateProof devolve verdadeiro só para os operadores atuais, e só eles podem trocar a operação.',
+      formula: 'atualD ≠ atualA ⟹ ss = atualA',
+      fonte: `${AW}: validateProof`,
+    },
+    {
+      id: 'ax-prova-recente',
+      titulo: 'Nada é aprovado sem prova de um conjunto recente',
+      citacao: 'Prova de operadores fora das últimas épocas é recusada.',
+      formula: '∀k (Chave(k) ∧ ¬AprovA(k) ∧ AprovD(k) ⟹ Recente(ss) ∧ Assinou(ss))',
+      fonte: `${AW}: validateProof (InvalidOperators)`,
+    },
+    {
+      id: 'ax-ingenua',
+      titulo: 'Trocar os operadores cancela as aprovações antigas (promessa ingênua, para treinar)',
+      citacao: 'Não está na documentação: parece razoável e não é o que o código faz.',
+      formula: 'atualD ≠ atualA ⟹ ∀k (Chave(k) ⟹ ¬AprovD(k))',
+      fonte: '',
+    },
+  ],
+})

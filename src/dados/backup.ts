@@ -2,6 +2,7 @@ import { notaVazia } from './estado'
 import { achadoValido, type Achado } from './historico'
 import type { ConjuntoDados } from '../motor/dados'
 import type { Alvo } from './cacada'
+import { alvoSaneado } from './cacadaArquivo'
 import { COMPARTIMENTOS, type Compartimento, type EntradaDicionario, type Grau, type Nota, type TipoSimbolo } from './tipos'
 
 export const DIAS_LEMBRETE = 7
@@ -22,11 +23,7 @@ export interface Backup {
   alvos?: Alvo[]
 }
 
-/** um alvo da caçada com o mínimo para entrar */
-export function alvoValido(a: unknown): a is Alvo {
-  const o = a as Alvo
-  return !!o && typeof o.id === 'string' && typeof o.nome === 'string' && Array.isArray(o.regras) && Array.isArray(o.promessas) && Array.isArray(o.achados)
-}
+
 
 /** um conjunto de dados do Mundo com o mínimo para entrar (id, nome, colunas e linhas) */
 export function conjuntoValido(c: unknown): c is ConjuntoDados {
@@ -137,7 +134,7 @@ export function lerBackup(conteudo: string): { ok: true; backup: Backup; avisos:
     avisos.push(`${o.conjuntos.length - conjuntos.length} conjunto(s) de dados ignorado(s): incompletos.`)
   if (Array.isArray(o.historico) && historico.length < o.historico.length)
     avisos.push(`${o.historico.length - historico.length} item(ns) do histórico ignorado(s): incompletos.`)
-  const alvos = Array.isArray(o.alvos) ? (o.alvos as unknown[]).filter(alvoValido) : []
+  const alvos = Array.isArray(o.alvos) ? (o.alvos as unknown[]).map(alvoSaneado).filter((a): a is Alvo => !!a) : []
   if (Array.isArray(o.alvos) && alvos.length < o.alvos.length) avisos.push(`${o.alvos.length - alvos.length} alvo(s) da caçada ignorado(s): incompletos.`)
   return {
     ok: true,

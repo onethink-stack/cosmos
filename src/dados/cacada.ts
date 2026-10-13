@@ -14,6 +14,7 @@ import { examinarTudo } from '../motor/cacada'
 import CacadaWorker from '../motor/cacadaWorker?worker&inline'
 import { analisar, nao, type Modelo, type MundoExplicado } from '../motor/motor'
 import type { PassoExplicacao } from '../motor/avaliar'
+import { lerPacoteDeAlvos, mesclarAlvos, pacoteDeAlvos, type Mescla } from './cacadaArquivo'
 import type { CasoTreino, ModeloInicial } from './cacadaTreinos'
 import { gravarConfig, lerConfig } from './db'
 import { disponibilidadeZ3, PRIORIDADE, z3 } from './z3'
@@ -106,6 +107,9 @@ export interface ExameAlvo {
   /** promessa em exame agora */
   promessaId?: string
   resultados: Record<string, ResultadoPromessa>
+  /** as regras e as promessas examinadas (o Z3 confere estas, mesmo que o alvo mude no meio) */
+  regras: { id: string; formula: string }[]
+  promessas: Record<string, string>
 }
 
 /** até quantos objetos o motor finito procura (as falhas lógicas costumam aparecer com poucos) */
@@ -120,6 +124,12 @@ const ESPERA_MS = 800
 const CHAVE = 'cacadaAlvos'
 
 const novoId = (prefixo: string) => `${prefixo}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+
+/** Os avisos de uma fórmula (ex.: E14, o escopo de um quantificador que passa do parêntese). */
+export function avisosDaFormula(texto: string): string[] {
+  if (!texto.trim()) return []
+  return validar(texto, []).diags.filter((d) => d.nivel === 'aviso').map((d) => d.msg)
+}
 
 /** Os erros de uma fórmula (vazia = válida). Sem dicionário: os nomes valem pelo uso. */
 export function errosDaFormula(texto: string): string[] {
@@ -251,6 +261,24 @@ class Cacada {
     void this.gravar()
   }
 
+  /** O arquivo com estes alvos (para levar a outro aparelho). */
+  exportar(ids?: string[]): string {
+    const alvos = ids ? this.alvos.filter((a) => ids.includes(a.id)) : this.alvos
+    return JSON.stringify(pacoteDeAlvos(alvos), null, 2)
+  }
+
+  /** Junta os alvos de um arquivo (de outro aparelho, ou um backup): o mais novo de cada fica, e os achados se somam. */
+  async importar(conteudo: string): Promise<{ ok: true; mescla: Mescla; ignorados: number } | { ok: false; erro: string }> {
+    const lido = lerPacoteDeAlvos(conteudo)
+    if (!lido.ok) return lido
+    await this.carregar()
+    const mescla = mesclarAlvos(this.alvos, lido.alvos)
+    this.alvos = mescla.alvos
+    for (const a of lido.alvos) this.exames.delete(a.id)
+    await this.gravar()
+    return { ok: true, mescla, ignorados: lido.ignorados }
+  }
+
   /** troca todos os alvos (restaurar um backup) */
   async substituir(alvos: Alvo[]) {
     await this.carregar()
@@ -295,7 +323,13 @@ class Cacada {
     const promessas = a.promessas.filter((p) => valida(p.formula)).map((p) => ({ id: p.id, formula: p.formula }))
     // os outros alvos com exame pela metade ficam para quando forem abertos de novo
     for (const [id, e] of this.exames) if (id !== a.id && e.rodando) this.exames.set(id, { ...e, rodando: false, assinatura: '' })
-    this.exames.set(a.id, { assinatura, rodando: promessas.length > 0, resultados: {} })
+    this.exames.set(a.id, {
+      assinatura,
+      rodando: promessas.length > 0,
+      resultados: {},
+      regras: regras.map((r) => ({ id: r.id, formula: r.formulas[0] })),
+      promessas: Object.fromEntries(promessas.map((p) => [p.id, p.formula])),
+    })
     this.avisar()
     this.worker?.terminate()
     this.worker = null
@@ -354,10 +388,11 @@ class Cacada {
   private async pedirZ3(alvoId: string, assinatura: string, promessaId: string, exame: ExamePromessa) {
     if (exame.tipo === 'fura' || exame.tipo === 'invalida') return
     if (!z3.ativo || !disponibilidadeZ3().ok) return this.mudarZ3(alvoId, assinatura, promessaId, { estado: 'desligado' })
-    const a = this.alvo(alvoId)
-    const pr = a?.promessas.find((p) => p.id === promessaId)
-    if (!a || !pr) return
-    const regras = a.regras.filter((r) => r.ativa && valida(r.formula))
+    // as regras e a promessa do exame (não as de agora: o alvo pode ter mudado no meio)
+    const e = this.exames.get(alvoId)
+    const formulaPromessa = e?.promessas[promessaId]
+    if (!e || e.assinatura !== assinatura || formulaPromessa === undefined) return
+    const regras = e.regras
     const formulas: Formula[] = []
     const grupos: number[] = []
     for (const [i, r] of regras.entries())
@@ -365,7 +400,7 @@ class Cacada {
         formulas.push(f.expandida)
         grupos.push(i)
       }
-    const [phi] = analisar([pr.formula], [], true)
+    const [phi] = analisar([formulaPromessa], [], true)
     if (!phi) return
     this.mudarZ3(alvoId, assinatura, promessaId, { estado: 'rodando' })
     const provar = (extra: Formula[]) => z3.provarFormulas([...formulas, ...extra], [], TEMPO_Z3_MS, [...grupos, ...extra.map(() => null)], PRIORIDADE.pergunta)
@@ -461,6 +496,48 @@ export function ondeFalha(p: PassoExplicacao, profundidade = 4): string[] {
   }
   ir(p, 0)
   return linhas
+}
+
+/**
+ * Esqueleto da prova de conceito em Foundry: o teste que precisa chegar ao
+ * cenário por chamadas reais, numa cópia local da rede. Só o esqueleto: os
+ * endereços, as chamadas e a asserção são de quem caça.
+ */
+export function esqueletoFoundry(a: Alvo, achado: Achado): string {
+  const pr = a.promessas.find((p) => p.id === achado.promessaId)
+  const comentario = (linhas: string[]) => linhas.map((l) => `        //   ${l}`)
+  return [
+    '// SPDX-License-Identifier: UNLICENSED',
+    'pragma solidity ^0.8.20;',
+    '',
+    'import {Test} from "forge-std/Test.sol";',
+    '',
+    `/// PoC (draft): ${a.nome} — "${pr?.titulo || achado.promessa}" does not hold`,
+    ...(a.programa ? [`/// Program: ${a.programa}`] : []),
+    '/// Run on a LOCAL fork only (never mainnet or a public testnet):',
+    '///   RPC_URL=<your node> forge test --match-contract PoC -vvv',
+    'contract PoC is Test {',
+    '    // TODO: the in-scope contracts (addresses from the program\'s scope page)',
+    '    // address constant TARGET = 0x0000000000000000000000000000000000000000;',
+    '',
+    '    function setUp() public {',
+    '        vm.createSelectFork(vm.envString("RPC_URL"));',
+    '    }',
+    '',
+    '    function test_promiseDoesNotHold() public {',
+    '        // Target state (the scenario the model found):',
+    ...comentario(fatosDoCenario(achado.mundo.modelo)),
+    '        // Rules this state relies on (each must also hold in the real code):',
+    ...comentario(achado.regras.map((r, i) => `${i + 1}. ${r.titulo || r.formula}${r.fonte ? ` — ${r.fonte}` : ''}`)),
+    '',
+    '        // 1) TODO: reach the state above with real calls (vm.prank for each actor).',
+    '',
+    `        // 2) TODO: show the documented property fails: ${achado.promessa}`,
+    '        // assertTrue(<what should never happen>, "promise violated");',
+    '    }',
+    '}',
+    '',
+  ].join('\n')
 }
 
 /**

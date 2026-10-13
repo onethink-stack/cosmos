@@ -381,3 +381,6 @@ details.explicacao p { margin: 6px 0; }
 .cacar .regra-alvo.fechada .linha-campos { align-items: center; }
 .cacar .regra-alvo .fonte { font-size: .82rem; margin: 4px 0 0; overflow-wrap: anywhere; }
 .cacar .citacao { font-style: italic; margin: 4px 0; }
+.cacar .botao-arquivo { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 12px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--superficie-2); cursor: pointer; }
+.cacar .botao-arquivo input { display: none; }
+.cacar .avisos-formula { margin: 4px 0; padding-left: 18px; font-size: .85rem; }

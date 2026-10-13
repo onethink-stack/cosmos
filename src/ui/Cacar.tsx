@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'preact/hooks'
 import {
   assinaturaAlvo,
+  avisosDaFormula,
   errosDaFormula,
+  esqueletoFoundry,
   ESTADOS_ACHADO,
   N_CACADA,
   novaPromessa,
@@ -21,6 +23,21 @@ import type { MundoExplicado } from '../motor/motor'
 import { EditorFormulas } from './EditorFormulas'
 import { FormulaExibida } from './FormulaExibida'
 import { ArvorePassos, ModeloVisual } from './ResultadoVerificacao'
+
+/** Baixa um texto como arquivo. */
+function baixar(nome: string, conteudo: string) {
+  const url = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = nome
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+const hoje = () => new Date().toISOString().slice(0, 10)
+const nomeArquivo = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'alvo'
 
 /** Caçar falhas lógicas: a lista de alvos, ou um alvo aberto. */
 export function Cacar({ id }: { id?: string }) {
@@ -73,6 +90,7 @@ function RegrasDoJogo({ aberto }: { aberto?: boolean }) {
 
 function ListaAlvos() {
   const c = useCacada()
+  const [importado, setImportado] = useState<{ ok?: string; erro?: string } | null>(null)
   const abrir = (a: Alvo) => (location.hash = `#/cacar/${encodeURIComponent(a.id)}`)
   return (
     <section class="cacar">
@@ -88,7 +106,41 @@ function ListaAlvos() {
         <button type="button" class="primario" onClick={() => abrir(c.novoAlvo())}>
           + Novo alvo
         </button>
+        {c.alvos.length > 0 && (
+          <button type="button" onClick={() => baixar(`cacada-alvos-${hoje()}.json`, c.exportar())}>
+            Exportar todos os alvos
+          </button>
+        )}
+        <label class="botao-arquivo">
+          Importar alvos
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={async (e) => {
+              const el = e.target as HTMLInputElement
+              const arq = el.files?.[0]
+              el.value = ''
+              if (!arq) return
+              const r = await c.importar(await arq.text())
+              if (!r.ok) return setImportado({ erro: r.erro })
+              const m = r.mescla
+              const partes = [
+                m.novos && `${m.novos} alvo${m.novos > 1 ? 's novos' : ' novo'}`,
+                m.atualizados && `${m.atualizados} atualizado${m.atualizados > 1 ? 's' : ''} (a versão do arquivo era mais nova)`,
+                m.achadosNovos && `${m.achadosNovos} achado${m.achadosNovos > 1 ? 's' : ''} somado${m.achadosNovos > 1 ? 's' : ''}`,
+                r.ignorados && `${r.ignorados} ignorado${r.ignorados > 1 ? 's' : ''} (incompleto${r.ignorados > 1 ? 's' : ''})`,
+              ].filter(Boolean)
+              setImportado({ ok: partes.length ? `Importado: ${partes.join('; ')}.` : 'Nada novo: este aparelho já tinha tudo o que o arquivo traz.' })
+            }}
+          />
+        </label>
       </div>
+      {importado?.ok && <p class="status-ok">✓ {importado.ok}</p>}
+      {importado?.erro && <p class="erro-texto">{importado.erro}</p>}
+      <p class="suave">
+        Vários aparelhos caçando juntos: cada um exporta os alvos em que trabalhou e importa os dos outros. O mais novo de cada alvo fica, e os
+        achados dos dois lados se somam.
+      </p>
 
       {c.alvos.length > 0 && (
         <ul class="lista-alvos">
@@ -279,6 +331,9 @@ function TelaAlvo({ alvo }: { alvo: Alvo }) {
 
       <RegrasDoJogo />
       <div class="barra-acoes">
+        <button type="button" onClick={() => baixar(`cacada-${nomeArquivo(alvo.nome)}-${hoje()}.json`, c.exportar([alvo.id]))}>
+          Exportar este alvo
+        </button>
         <button
           type="button"
           class="discreto perigo"
@@ -332,7 +387,7 @@ function EditorRegra(props: { r: RegraAlvo; numero: number; onMudar: (r: RegraAl
           </button>
         </div>
         <FormulaExibida texto={r.formula} />
-        {errosDaFormula(r.formula).length > 0 && <p class="erro-texto">Fórmula inválida: fica de fora do exame.</p>}
+        <ProblemasDaFormula texto={r.formula} />
         {r.fonte && <p class="suave fonte">{r.fonte}</p>}
       </div>
     )
@@ -391,7 +446,7 @@ function EditorPromessa(props: { p: PromessaAlvo; numero: number; onMudar: (p: P
         </div>
         {p.citacao && <p class="citacao">“{p.citacao}”</p>}
         <FormulaExibida texto={p.formula} />
-        {errosDaFormula(p.formula).length > 0 && <p class="erro-texto">Fórmula inválida: fica de fora do exame.</p>}
+        <ProblemasDaFormula texto={p.formula} />
         {p.fonte && <p class="suave fonte">{p.fonte}</p>}
       </div>
     )
@@ -430,6 +485,19 @@ function EditorPromessaAberto({ p, numero, onMudar, onRemover, onFechar }: { p: 
       </div>
     </div>
   )
+}
+
+/** Fechada, a fórmula ainda mostra o que está errado nela (inválida, ou um aviso como o do escopo). */
+function ProblemasDaFormula({ texto }: { texto: string }) {
+  if (errosDaFormula(texto).length) return <p class="erro-texto">Fórmula inválida: fica de fora do exame. Abra para ver o erro.</p>
+  const avisos = avisosDaFormula(texto)
+  return avisos.length ? (
+    <ul class="aviso-texto avisos-formula">
+      {avisos.map((a) => (
+        <li>Aviso: {a}</li>
+      ))}
+    </ul>
+  ) : null
 }
 
 function Cenario({ mundo, rotulo, aberto }: { mundo: MundoExplicado; rotulo: string; aberto?: boolean }) {
@@ -471,7 +539,6 @@ function LinhaZ3({ z }: { z?: ParecerZ3Cacada }) {
 
 function ResultadoDaPromessa({ alvo, promessa, r, esperando }: { alvo: Alvo; promessa: PromessaAlvo; r?: ResultadoPromessa; esperando: boolean }) {
   const c = useCacada()
-  const [guardado, setGuardado] = useState(false)
   if (!promessa.formula.trim()) return null
   if (!r) return esperando ? <p class="suave">esperando o exame…</p> : null
   const titulo = (id: string) => alvo.regras.find((x) => x.id === id)
@@ -486,17 +553,10 @@ function ResultadoDaPromessa({ alvo, promessa, r, esperando }: { alvo: Alvo; pro
             Não achou? Monte as chamadas reais que levam a ele num teste, numa cópia local da rede.
           </p>
           <Cenario mundo={e.mundo} rotulo="Ver o cenário e onde a promessa falha" aberto />
-          {guardado ? (
-            <p class="status-ok">✓ Guardado nos achados, abaixo.</p>
+          {jaGuardado(alvo, promessa.id, e.mundo) ? (
+            <p class="status-ok">✓ Este cenário está nos achados, abaixo.</p>
           ) : (
-            <button
-              type="button"
-              class="mini"
-              onClick={() => {
-                c.guardarAchado(alvo.id, promessa.id, e.mundo)
-                setGuardado(true)
-              }}
-            >
+            <button type="button" class="mini" onClick={() => c.guardarAchado(alvo.id, promessa.id, e.mundo)}>
               Guardar como achado (pista)
             </button>
           )}
@@ -575,6 +635,12 @@ function ResultadoDaPromessa({ alvo, promessa, r, esperando }: { alvo: Alvo; pro
   }
 }
 
+/** o mesmo cenário (mesma promessa, mesmo modelo) já foi guardado como achado? */
+const jaGuardado = (alvo: Alvo, promessaId: string, mundo: MundoExplicado) => {
+  const m = JSON.stringify(mundo.modelo)
+  return alvo.achados.some((a) => a.promessaId === promessaId && JSON.stringify(a.mundo.modelo) === m)
+}
+
 function ListaRegras({ ids, alvo }: { ids: string[]; alvo: Alvo }) {
   return (
     <ul class="lista-conflito">
@@ -593,11 +659,17 @@ function ListaRegras({ ids, alvo }: { ids: string[]; alvo: Alvo }) {
 
 function CartaoAchado({ alvo, a }: { alvo: Alvo; a: Achado }) {
   const c = useCacada()
-  const [copiado, setCopiado] = useState(false)
+  const [copiado, setCopiado] = useState<'relatorio' | 'teste' | null>(null)
   const pr = alvo.promessas.find((p) => p.id === a.promessaId)
   const comTeste = a.estado === 'poc' || a.estado === 'reportado'
   const info = ESTADOS_ACHADO.find((x) => x.estado === a.estado)
   const texto = rascunhoRelatorio(alvo, a)
+  const teste = esqueletoFoundry(alvo, a)
+  const copiar = (qual: 'relatorio' | 'teste', t: string) =>
+    void navigator.clipboard?.writeText(t).then(
+      () => setCopiado(qual),
+      () => setCopiado(null),
+    )
   return (
     <div class={`resultado ${a.estado === 'descartado' || a.estado === 'faltava-regra' ? '' : comTeste ? 'res-ok' : 'res-aviso'} achado`}>
       <div class="linha-campos">
@@ -628,21 +700,19 @@ function CartaoAchado({ alvo, a }: { alvo: Alvo; a: Achado }) {
         </p>
       )}
       <details class="explicacao">
+        <summary>Esqueleto do teste (Foundry, para rodar numa cópia local da rede)</summary>
+        <pre class="rascunho">{teste}</pre>
+      </details>
+      <details class="explicacao">
         <summary>Rascunho do relatório (em inglês, a língua dos programas)</summary>
         <pre class="rascunho">{texto}</pre>
       </details>
       <div class="barra-acoes">
-        <button
-          type="button"
-          class="mini"
-          onClick={() =>
-            void navigator.clipboard?.writeText(texto).then(
-              () => setCopiado(true),
-              () => setCopiado(false),
-            )
-          }
-        >
-          {copiado ? '✓ Copiado' : 'Copiar o rascunho'}
+        <button type="button" class="mini" onClick={() => copiar('teste', teste)}>
+          {copiado === 'teste' ? '✓ Copiado' : 'Copiar o esqueleto do teste'}
+        </button>
+        <button type="button" class="mini" onClick={() => copiar('relatorio', texto)}>
+          {copiado === 'relatorio' ? '✓ Copiado' : 'Copiar o rascunho'}
         </button>
         <button
           type="button"

@@ -2,12 +2,16 @@
 // para garantir: prova do Z3 (para qualquer número de objetos), cenário real
 // em que as notas valem e a fórmula falha, ou "não sei" — com o porquê.
 // O tradutor (português → fórmula) nunca decide nada: só o motor finito e o Z3.
+// O conselheiro (conselheiro.ts) só antecipa e recorta: cenários já
+// conhecidos das notas, e as notas que vão primeiro ao Z3.
 
 import type { Formula } from '../logica/ast'
 import { renomear } from '../logica/nomes'
+import { Avaliador } from '../motor/avaliar'
 import { analisar, gruposRelevantes, nao, nomesDaFormula, type GrupoPronto, type MundoExplicado, type ResultadoPergunta } from '../motor/motor'
 import type { Tarefa } from '../motor/tarefas'
-import type { ResultadoZ3 } from '../motor/z3'
+import type { RespostaComNucleo, ResultadoZ3 } from '../motor/z3'
+import { assinaturaNotas, conselheiro, julgarNosMundos, type Etapa } from './conselheiro'
 import type { EntradaDicionario } from './tipos'
 import { verificacao, type Ocupacao } from './verificacao'
 import { disponibilidadeZ3, z3 } from './z3'
@@ -35,6 +39,16 @@ export interface ParecerZ3 {
   resultado: ResultadoZ3
   /** sem modelo: as notas que a prova usou */
   notas: string[]
+  /** sem modelo com só uma parte das notas: quantas entraram e de quantas */
+  recorte?: { etapa: Etapa; usadas: number; total: number }
+}
+
+/** o que os cenários já conhecidos das notas dizem (o conselheiro os guardou) */
+export interface Conhecido {
+  /** um cenário das notas em que a fórmula é falsa */
+  falha?: MundoExplicado
+  /** há um cenário das notas em que ela é verdadeira */
+  vale?: boolean
 }
 
 export interface Resposta {
@@ -55,12 +69,16 @@ export interface Resposta {
   z3Segue: ParecerZ3 | null
   /** Z3 com as notas e a fórmula (sem modelo = contradiz) */
   z3Contradiz: ParecerZ3 | null
+  /** decidida só pelos cenários que o conselheiro guardou (sem procurar de novo) */
+  atalho?: boolean
+  /** o cenário veio dos guardados pelo conselheiro */
+  mundoConhecido?: boolean
 }
 
 /**
- * Junta o que o motor finito e o Z3 disseram numa resposta. `cenarioConfiavel`:
- * o motor finito leu todas as notas (as com números ele deixa de fora, e aí o
- * cenário dele pode não valer para elas).
+ * Junta o que o motor finito, o Z3 e os cenários já conhecidos disseram numa
+ * resposta. `cenarioConfiavel`: o motor finito leu todas as notas (as com
+ * números ele deixa de fora, e aí o cenário dele pode não valer para elas).
  */
 export function decidir(
   formula: string,
@@ -69,31 +87,34 @@ export function decidir(
   zContra: ParecerZ3 | null,
   cenarioConfiavel: boolean,
   motivos: string[] = [],
+  conhecido: Conhecido = {},
 ): Resposta {
   const base = { formula, finito: fin, z3Segue: zSegue, z3Contradiz: zContra, motivos: [] as string[] }
   const provaSim = zSegue?.resultado === 'unsat'
   const provaNao = zContra?.resultado === 'unsat'
-  const mundoFalha = cenarioConfiavel && fin && (fin.tipo === 'nao-segue' || fin.tipo === 'contradiz') ? fin.mundo : undefined
-  // o motor finito achou um cenário das notas onde ela vale
+  const mundoFinito = cenarioConfiavel && fin && (fin.tipo === 'nao-segue' || fin.tipo === 'contradiz') ? fin.mundo : undefined
+  const mundoFalha = mundoFinito ?? conhecido.falha
+  const comMundo = mundoFalha ? { mundo: mundoFalha, ...(mundoFinito ? {} : { mundoConhecido: true }) } : {}
+  // o motor finito (ou um cenário guardado) mostra um cenário das notas onde ela vale
   const finitoVale = cenarioConfiavel && (fin?.tipo === 'segue' || (fin?.tipo === 'nao-segue' && !fin.semMundoAFavor))
 
   if (provaSim && provaNao) return { ...base, veredito: 'contraditorias', definitiva: true, notas: [...new Set([...zSegue.notas, ...zContra.notas])] }
   if (provaSim) {
-    if (mundoFalha) return { ...base, veredito: 'discordam', definitiva: false, notas: [], mundo: mundoFalha }
+    if (mundoFalha) return { ...base, veredito: 'discordam', definitiva: false, notas: [], ...comMundo }
     return { ...base, veredito: 'sim', definitiva: true, notas: zSegue.notas }
   }
   if (provaNao) {
-    if (finitoVale) return { ...base, veredito: 'discordam', definitiva: false, notas: [] }
-    return { ...base, veredito: 'nao', definitiva: true, notas: zContra.notas, ...(mundoFalha ? { mundo: mundoFalha } : {}) }
+    if (finitoVale || conhecido.vale) return { ...base, veredito: 'discordam', definitiva: false, notas: [] }
+    return { ...base, veredito: 'nao', definitiva: true, notas: zContra.notas, ...comMundo }
   }
-  if (fin?.tipo === 'premissas-contraditorias' && zSegue?.resultado !== 'sat' && zContra?.resultado !== 'sat')
+  if (fin?.tipo === 'premissas-contraditorias' && zSegue?.resultado !== 'sat' && zContra?.resultado !== 'sat' && !mundoFalha && !conhecido.vale)
     return { ...base, veredito: 'contraditorias', definitiva: false, notas: [], N: fin.N, motivos }
 
   const falha = !!mundoFalha || zSegue?.resultado === 'sat'
-  const vale = finitoVale || zContra?.resultado === 'sat'
-  if (falha && vale) return { ...base, veredito: 'nao-decidem', definitiva: true, notas: [], ...(mundoFalha ? { mundo: mundoFalha } : {}) }
+  const vale = finitoVale || zContra?.resultado === 'sat' || !!conhecido.vale
+  if (falha && vale) return { ...base, veredito: 'nao-decidem', definitiva: true, notas: [], ...comMundo }
   if (fin?.tipo === 'contradiz' && cenarioConfiavel) return { ...base, veredito: 'quase-nao', definitiva: false, notas: fin.notas, N: fin.N, mundo: fin.mundo, motivos }
-  if (falha) return { ...base, veredito: 'nao-decorre', definitiva: true, notas: [], ...(mundoFalha ? { mundo: mundoFalha } : {}) }
+  if (falha) return { ...base, veredito: 'nao-decorre', definitiva: true, notas: [], ...comMundo }
   if (fin?.tipo === 'segue' && cenarioConfiavel) return { ...base, veredito: 'quase-sim', definitiva: false, notas: fin.notas, N: fin.N, motivos }
   return { ...base, veredito: 'nao-sei', definitiva: false, notas: [], motivos }
 }
@@ -109,10 +130,14 @@ const OCUPACAO: Record<Ocupacao, string> = {
 }
 
 /** o que o motor finito disse, ou por que não disse */
-function perguntarAoMotorFinito(tarefa: Tarefa, formula: string, dicionario: EntradaDicionario[]): Promise<{ r: ResultadoPergunta | null; motivo?: string }> {
+function perguntarAoMotorFinito(
+  tarefa: Tarefa,
+  formula: string,
+  dicionario: EntradaDicionario[],
+): Promise<{ r: ResultadoPergunta | null; ms: number; motivo?: string }> {
   const v = verificacao
   // não interrompe outro trabalho (a reação em cadeia pode levar horas): responde só com o Z3
-  if (v.ocupado && v.ocupado !== 'perguntar') return Promise.resolve({ r: null, motivo: `o motor finito estava ocupado (${OCUPACAO[v.ocupado]})` })
+  if (v.ocupado && v.ocupado !== 'perguntar') return Promise.resolve({ r: null, ms: 0, motivo: `o motor finito estava ocupado (${OCUPACAO[v.ocupado]})` })
   const inicio = new Date().toISOString()
   v.perguntar(tarefa, formula, dicionario)
   return new Promise((ok) => {
@@ -121,8 +146,8 @@ function perguntarAoMotorFinito(tarefa: Tarefa, formula: string, dicionario: Ent
       sair()
       const p = v.pergunta
       if (p && p.formula === formula && p.chave === tarefa.chave && p.quando >= inicio)
-        ok(p.erro ? { r: null, motivo: `o motor finito falhou: ${p.erro}` } : { r: p.resultado })
-      else ok({ r: null, motivo: 'a pergunta ao motor finito foi interrompida' })
+        ok(p.erro ? { r: null, ms: p.ms, motivo: `o motor finito falhou: ${p.erro}` } : { r: p.resultado, ms: p.ms })
+      else ok({ r: null, ms: 0, motivo: 'a pergunta ao motor finito foi interrompida' })
     })
   })
 }
@@ -145,26 +170,52 @@ function motivoDoFinito(r: ResultadoPergunta): string | null {
 
 /** tempo do Z3 para cada checagem de uma pergunta */
 const TEMPO_PERGUNTA_MS = 10_000
+/** só as notas sugeridas: uma tentativa curta (se não der, vêm mais notas) */
+const TEMPO_SUGERIDAS_MS = 5_000
 /** depois de provar que segue, a checagem de que as notas não se contradizem é curta */
 const TEMPO_CONSISTENCIA_MS = 3_000
 
+type Provar = (formulas: Formula[], dicionario: EntradaDicionario[], tempoMs: number, grupos: (number | null)[]) => Promise<RespostaComNucleo | null>
+type Registrar = (etapa: Etapa, usadas: number, total: number, resultado: string, ms: number) => void
+
 /**
- * Z3: as notas junto com `fixa` não têm modelo? Primeiro só as notas ligadas
- * à pergunta pelos nomes (sem modelo com menos notas = sem modelo com todas);
- * um cenário só vale achado com todas.
+ * Z3: as notas junto com `fixa` não têm modelo? Primeiro só as notas que o
+ * conselheiro sugere, depois as ligadas à pergunta pelos nomes, por fim
+ * todas. Sem modelo com menos notas = sem modelo com todas; um cenário só
+ * vale achado com todas.
  */
-async function semModeloNoZ3(prontos: GrupoPronto[], alvo: Formula, fixa: Formula, dicionario: EntradaDicionario[], tempoMs: number): Promise<ParecerZ3 | null> {
+export async function semModeloNoZ3(
+  prontos: GrupoPronto[],
+  alvo: Formula,
+  fixa: Formula,
+  dicionario: EntradaDicionario[],
+  tempoMs: number,
+  sugeridas: string[] = [],
+  registrar: Registrar = () => {},
+  provar: Provar = (fs, d, t, g) => z3.provarFormulas(fs, d, t, g),
+): Promise<ParecerZ3 | null> {
   const ligadas = gruposRelevantes(prontos, [{ texto: '', original: alvo, expandida: alvo, aritmetica: false }])
-  const conjuntos = ligadas.length < prontos.length ? [ligadas, prontos] : [prontos]
+  const sugeridasGs = prontos.filter((x) => sugeridas.includes(x.g.id))
+  const etapas: [Etapa, GrupoPronto[], number][] = []
+  if (sugeridasGs.length && sugeridasGs.length < ligadas.length) etapas.push(['sugeridas', sugeridasGs, Math.min(tempoMs, TEMPO_SUGERIDAS_MS)])
+  if (ligadas.length < prontos.length) etapas.push(['ligadas', ligadas, tempoMs])
+  etapas.push(['todas', prontos, tempoMs])
   let ultimo: ParecerZ3 | null = null
-  for (const [k, gs] of conjuntos.entries()) {
+  for (const [k, [etapa, gs, tempo]] of etapas.entries()) {
     const formulas = gs.flatMap((x) => x.itens.map((i) => i.expandida))
     const grupos = gs.flatMap((x, gi) => x.itens.map(() => gi))
-    const r = await z3.provarFormulas([...formulas, fixa], dicionario, tempoMs, [...grupos, null])
+    const ini = Date.now()
+    const r = await provar([...formulas, fixa], dicionario, tempo, [...grupos, null])
+    registrar(etapa, gs.length, prontos.length, r?.resultado ?? 'erro', Date.now() - ini)
     if (!r) continue
-    if (r.resultado === 'unsat') return { resultado: 'unsat', notas: r.nucleo ? r.nucleo.map((i) => gs[i].g.id) : gs.map((x) => x.g.id) }
+    if (r.resultado === 'unsat')
+      return {
+        resultado: 'unsat',
+        notas: r.nucleo ? r.nucleo.map((i) => gs[i].g.id) : gs.map((x) => x.g.id),
+        ...(etapa !== 'todas' ? { recorte: { etapa, usadas: gs.length, total: prontos.length } } : {}),
+      }
     // com notas a menos, um cenário não diz nada: só vale o de todas
-    if (k === conjuntos.length - 1) ultimo = { resultado: r.resultado, notas: [] }
+    if (k === etapas.length - 1) ultimo = { resultado: r.resultado, notas: [] }
   }
   return ultimo
 }
@@ -177,6 +228,23 @@ export async function responder(formula: string, tarefa: Tarefa, dicionario: Ent
   const prontos: GrupoPronto[] = tarefa.grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario, true) })).filter((x) => x.itens.length)
   // o motor finito deixa de fora as notas com números: o cenário dele pode não valer para elas
   const cenarioConfiavel = !prontos.some((x) => x.itens.some((i) => i.aritmetica))
+  const contexto = tarefa.chave
+  const assinatura = assinaturaNotas(tarefa.grupos)
+  await conselheiro.carregar()
+  const registrar: Registrar = (etapa, usadas, total, resultado, ms) => conselheiro.registrar({ quando: Date.now(), contexto, etapa, premissas: usadas, total, resultado, ms })
+
+  // 1. os cenários das notas que já são conhecidos: decidem na hora o que mostram
+  const conhecido: Conhecido = {}
+  if (cenarioConfiavel && !phi.aritmetica) {
+    const ini = Date.now()
+    const notas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+    const j = julgarNosMundos(conselheiro.mundosValidos(contexto, assinatura, notas), phi.expandida)
+    if (j.falha) conhecido.falha = { n: j.falha.n, modelo: j.falha, passos: new Avaliador(j.falha).explicar(phi.original) }
+    if (j.vale) conhecido.vale = true
+    registrar('mundos', prontos.length, prontos.length, j.falha && j.vale ? 'decidiu' : j.falha ? 'refutou' : j.vale ? 'vale' : 'nada', Date.now() - ini)
+    // um cenário em que vale e outro em que falha: as notas não decidem (definitivo, sem procurar)
+    if (j.falha && j.vale) return { ...decidir(formula, null, null, null, cenarioConfiavel, [], conhecido), atalho: true }
+  }
 
   const z3Pronto = z3.ativo && disponibilidadeZ3().ok
   if (!z3.ativo) motivos.push('o Z3 está desligado (sem ele, nada é provado para qualquer número de objetos)')
@@ -185,16 +253,31 @@ export async function responder(formula: string, tarefa: Tarefa, dicionario: Ent
     if (!d.ok) motivos.push(`o Z3 não está disponível: ${d.motivo}`)
   }
 
+  const sugeridas = conselheiro.sugerir(
+    contexto,
+    phi.expandida,
+    prontos.map((x) => ({ id: x.g.id, itens: x.itens.map((i) => i.expandida) })),
+  )
   aviso?.('o motor finito procura cenários; o Z3 tenta provar')
-  const finito = perguntarAoMotorFinito(tarefa, formula, dicionario)
+  // com um cenário guardado mostrando que não segue, nem o motor finito nem o Z3 precisam procurar outro
+  const finito = conhecido.falha ? Promise.resolve({ r: null, ms: 0 } as { r: ResultadoPergunta | null; ms: number; motivo?: string }) : perguntarAoMotorFinito(tarefa, formula, dicionario)
   const provas = (async () => {
     if (!z3Pronto) return { segue: null, contradiz: null }
-    const segue = await semModeloNoZ3(prontos, phi.expandida, nao(phi.expandida), dicionario, TEMPO_PERGUNTA_MS)
+    const segue = conhecido.falha ? null : await semModeloNoZ3(prontos, phi.expandida, nao(phi.expandida), dicionario, TEMPO_PERGUNTA_MS, sugeridas, registrar)
     // provado que segue: só falta ver se não é porque as notas se contradizem (curto)
-    const contradiz = await semModeloNoZ3(prontos, phi.expandida, phi.expandida, dicionario, segue?.resultado === 'unsat' ? TEMPO_CONSISTENCIA_MS : TEMPO_PERGUNTA_MS)
+    const contradiz = await semModeloNoZ3(
+      prontos,
+      phi.expandida,
+      phi.expandida,
+      dicionario,
+      segue?.resultado === 'unsat' ? TEMPO_CONSISTENCIA_MS : TEMPO_PERGUNTA_MS,
+      sugeridas,
+      registrar,
+    )
     return { segue, contradiz }
   })()
   const [f, z] = await Promise.all([finito, provas])
+  if (f.r) registrar('finito', prontos.length, prontos.length, f.r.tipo, f.ms)
   if (f.motivo) motivos.push(f.motivo)
   if (f.r) {
     const m = motivoDoFinito(f.r)
@@ -203,7 +286,14 @@ export async function responder(formula: string, tarefa: Tarefa, dicionario: Ent
   if (z3Pronto && z.segue?.resultado !== 'unsat' && z.contradiz?.resultado !== 'unsat') motivos.push('o Z3 não achou prova no tempo que teve')
   if (!cenarioConfiavel && f.r && (f.r.tipo === 'nao-segue' || f.r.tipo === 'contradiz' || f.r.tipo === 'segue'))
     motivos.push('o motor finito deixou de fora as notas com números')
-  return decidir(formula, f.r, z.segue, z.contradiz, cenarioConfiavel, motivos)
+
+  // 2. o conselheiro aprende: o cenário achado (vale para todas as notas) e as notas de cada prova
+  if (cenarioConfiavel && f.r && (f.r.tipo === 'nao-segue' || f.r.tipo === 'contradiz')) conselheiro.guardarMundo(contexto, f.r.mundo.modelo, assinatura)
+  if (cenarioConfiavel && f.r?.tipo === 'nao-segue' && f.r.aFavor) conselheiro.guardarMundo(contexto, f.r.aFavor, assinatura)
+  const simbolos = nomesDaFormula(phi.expandida)
+  for (const p of [z.segue, z.contradiz]) if (p?.resultado === 'unsat' && p.notas.length < prontos.length) conselheiro.guardarProva(contexto, simbolos, p.notas)
+
+  return decidir(formula, f.r, z.segue, z.contradiz, cenarioConfiavel, motivos, conhecido)
 }
 
 /** Os nomes (constantes) que uma pergunta de "quem" testa: os que aparecem nas notas do conjunto. */

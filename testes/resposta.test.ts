@@ -47,6 +47,15 @@ describe('decidir: só prova, cenário ou "não sei"', () => {
     expect(decidir('φ', segue, unknown, unsat(), true).veredito).toBe('discordam')
   })
 
+  it('cenários já conhecidos (guardados pelo conselheiro) valem como os do motor finito', () => {
+    expect(decidir('φ', null, null, null, true, [], { falha: mundo, vale: true })).toMatchObject({ veredito: 'nao-decidem', definitiva: true, mundoConhecido: true })
+    expect(decidir('φ', null, null, unknown, true, [], { falha: mundo })).toMatchObject({ veredito: 'nao-decorre', definitiva: true })
+    expect(decidir('φ', null, null, unsat(['L3']), true, [], { falha: mundo })).toMatchObject({ veredito: 'nao', notas: ['L3'] })
+    // um cenário conhecido onde vale contra uma "prova" do contrário: defeito, sem resposta
+    expect(decidir('φ', null, unknown, unsat(), true, [], { vale: true }).veredito).toBe('discordam')
+    expect(decidir('φ', null, unsat(), unknown, true, [], { falha: mundo }).veredito).toBe('discordam')
+  })
+
   it('sem nada decidido: "não sei" com os motivos', () => {
     expect(decidir('φ', { tipo: 'grande-demais', n: 4 }, null, null, true, ['grande demais'])).toMatchObject({ veredito: 'nao-sei', motivos: ['grande demais'] })
   })

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useConselheiro } from '../dados/conselheiro'
 import { salvarDeduzida } from '../dados/deduzida'
 import { useEstado } from '../dados/estado'
 import { MAX_CANDIDATOS, usePerguntas, type Conversa, type RespostaDeQuem } from '../dados/perguntas'
@@ -104,6 +105,7 @@ export function PerguntarPortugues() {
       {c && <ConversaAtual c={c} dicionario={est.dicionario} notas={est.notas} rotulo={conjuntos.find((t) => t.chave === c.chave)?.rotulo} />}
 
       <ConfigTradutor />
+      <PainelConselheiro />
 
       {p.recentes.length > 0 && (
         <details class="explicacao">
@@ -334,6 +336,7 @@ function CartaoResposta({ r, chave, notas }: { r: Resposta; chave: string; notas
         <div class="resultado res-ok">
           <strong>Sim.</strong>
           <p>Provado: segue das suas notas com qualquer número de objetos (inclusive infinitos).</p>
+          <Conselho r={r} />
           {r.notas.length > 0 ? (
             <>
               <p>A prova usou{r.notas.length > 1 ? ` estas ${r.notas.length} notas` : ' esta nota'}:</p>
@@ -350,6 +353,7 @@ function CartaoResposta({ r, chave, notas }: { r: Resposta; chave: string; notas
         <div class="resultado res-conflito">
           <strong>Não.</strong>
           <p>Provado: as suas notas dizem o contrário, com qualquer número de objetos.</p>
+          <Conselho r={r} />
           {r.notas.length > 0 && (
             <>
               <p>A prova usou:</p>
@@ -364,6 +368,7 @@ function CartaoResposta({ r, chave, notas }: { r: Resposta; chave: string; notas
         <div class="resultado res-aviso">
           <strong>As suas notas não decidem.</strong>
           <p>Há um cenário em que todas elas valem e isto é verdade, e outro em que é falso. Para decidir, falta uma lei ou um fato.</p>
+          <Conselho r={r} />
           <Cenario r={r} rotulo="Ver o cenário em que é falso" />
         </div>
       )
@@ -372,6 +377,7 @@ function CartaoResposta({ r, chave, notas }: { r: Resposta; chave: string; notas
         <div class="resultado res-aviso">
           <strong>Não decorre das suas notas.</strong>
           <p>Há um cenário em que todas elas valem e isto é falso. (Não deu para saber se elas o contradizem.)</p>
+          <Conselho r={r} />
           <Cenario r={r} rotulo="Ver esse cenário" />
           <Motivos r={r} />
         </div>
@@ -459,6 +465,64 @@ function ListaDeQuem({ q, dicionario, terminou }: { q: RespostaDeQuem; dicionari
         {q.deFora > 0 && ` (${q.deFora} ficaram de fora: o máximo é ${MAX_CANDIDATOS})`}.
       </p>
     </div>
+  )
+}
+
+/** O que o conselheiro fez nesta resposta (ele só antecipa e recorta: quem decide é o motor finito e o Z3). */
+function Conselho({ r }: { r: Resposta }) {
+  const recorte = (r.veredito === 'sim' ? r.z3Segue : r.veredito === 'nao' ? r.z3Contradiz : null)?.recorte
+  const texto = r.atalho
+    ? 'Decidido na hora: o conselheiro já conhecia cenários das suas notas em que isto vale e em que não vale — nem o motor finito nem o Z3 precisaram procurar.'
+    : r.mundoConhecido
+      ? 'O cenário veio dos que o conselheiro guardou (as suas notas de agora valem nele): ninguém precisou procurar.'
+      : recorte
+        ? `O Z3 recebeu só ${recorte.usadas} das ${recorte.total} notas (${recorte.etapa === 'sugeridas' ? 'as que o conselheiro sugeriu' : 'as ligadas à pergunta pelos nomes'}) e provou com elas — o que é prova com todas.`
+        : null
+  return texto ? <p class="suave conselho">Conselheiro: {texto}</p> : null
+}
+
+/** O que o conselheiro aprendeu e se ele está ajudando. */
+function PainelConselheiro() {
+  const c = useConselheiro()
+  useEffect(() => void c.carregar(), [])
+  const e = c.estatisticas()
+  const seg = (ms: number) => (ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`)
+  return (
+    <details class="explicacao painel-conselheiro">
+      <summary>
+        Conselheiro: {e.mundos} cenário{e.mundos === 1 ? '' : 's'} e {e.provas} prova{e.provas === 1 ? '' : 's'} guardados
+      </summary>
+      <p class="suave">
+        O conselheiro aprende com cada pergunta e com cada rodada da reação em cadeia, e só muda a <b>ordem</b> e o <b>recorte</b> do que o motor
+        finito e o Z3 conferem — nunca a resposta. Ele guarda cenários em que as suas notas valem (uma pergunta falsa num deles não segue: isso já é
+        um cenário real) e as notas que cada prova usou (para uma pergunta parecida, elas vão primeiro ao Z3; se não bastarem, vêm as outras).
+        Um cenário só é usado depois de conferir que as notas de agora valem nele.
+      </p>
+      <ul class="lista-simples">
+        <li>
+          Perguntas decididas na hora pelos cenários guardados: <b>{e.decididasPorMundos}</b>
+          {e.refutadasPorMundos > e.decididasPorMundos && ` (e em mais ${e.refutadasPorMundos - e.decididasPorMundos} um cenário guardado mostrou que não segue)`}
+        </li>
+        <li>
+          Provas do Z3 só com as notas sugeridas: <b>{e.provasSugeridas.n}</b>
+          {e.provasSugeridas.n > 0 &&
+            ` — em média ${e.provasSugeridas.premissas.toFixed(0)} de ${e.provasSugeridas.total.toFixed(0)} notas, em ${seg(e.provasSugeridas.ms)}`}
+        </li>
+        <li>
+          Provas que precisaram de mais notas: <b>{e.provasComMais.n}</b>
+          {e.provasComMais.n > 0 && ` — em média ${seg(e.provasComMais.ms)}`}
+        </li>
+        <li>
+          Checagens do Z3 sem decisão no prazo: <b>{e.semDecisao}</b>
+        </li>
+        <li class="suave">{e.tentativas} tentativas registradas neste aparelho</li>
+      </ul>
+      {(e.mundos > 0 || e.provas > 0 || e.tentativas > 0) && (
+        <button type="button" class="mini" onClick={() => void c.esquecer()}>
+          Esquecer o que o conselheiro aprendeu
+        </button>
+      )}
+    </details>
   )
 }
 

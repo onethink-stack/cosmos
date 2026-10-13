@@ -483,7 +483,7 @@ export type ResultadoPergunta =
    * fórmula verdadeira (`semMundoAFavor`: esse segundo ficou grande demais
    * para procurar — não se sabe se as notas a contradizem)
    */
-  | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado; semMundoAFavor?: true }
+  | { tipo: 'nao-segue'; N: number; mundo: MundoExplicado; semMundoAFavor?: true; aFavor?: Modelo }
   /** as notas já não têm modelo até N: qualquer coisa "seguiria" */
   | { tipo: 'premissas-contraditorias'; N: number }
   | { tipo: 'grande-demais'; n: number }
@@ -504,7 +504,8 @@ const PRAZO_MINIMO_NOTAS_MS = 15_000
 
 /**
  * "A fórmula segue das notas?" — testa notas ∪ {¬φ} e notas ∪ {φ} em
- * domínios de 1 a N objetos.
+ * domínios de 1 a N objetos. `comAFavor`: quando não segue, devolve também o
+ * cenário em que as notas e ela valem (o conselheiro das perguntas o guarda).
  */
 export function perguntar(
   grupos: Grupo[],
@@ -512,6 +513,7 @@ export function perguntar(
   dicionario: EntradaDicionario[],
   op: OpcoesMotor,
   progresso?: Progresso,
+  comAFavor = false,
 ): ResultadoPergunta {
   const [phi] = analisar([formula], dicionario)
   if (!phi) return analisar([formula], dicionario, true).length ? { tipo: 'aritmetica' } : { tipo: 'formula-invalida' }
@@ -546,7 +548,8 @@ export function perguntar(
     return { tipo: 'contradiz', N: op.N, K: afavor.K, notas: notas.map((x) => x.g.id), mundo }
   }
   // grande demais ao procurar o mundo a favor: ainda assim sabemos que não segue
-  return { tipo: 'nao-segue', N: op.N, mundo, ...(afavor.status === 'modelo' ? {} : { semMundoAFavor: true as const }) }
+  if (afavor.status !== 'modelo') return { tipo: 'nao-segue', N: op.N, mundo, semMundoAFavor: true }
+  return { tipo: 'nao-segue', N: op.N, mundo, ...(comAFavor ? { aFavor: afavor.modelo } : {}) }
 }
 
 /**

@@ -11,6 +11,7 @@ import { motorFundo } from './motorFundo'
 import { prepararCadeia } from './cadeia'
 import { lerConfig, gravarConfig } from './db'
 import { estado } from './estado'
+import { conselheiro } from './conselheiro'
 import { achadosDaCadeia, achadosDoModelo, historico } from './historico'
 import { z3 } from './z3'
 import { K_ABSOLUTO, limitePorWorker, N_ABSOLUTO, N_MANUAL, perfil } from './perfil'
@@ -277,9 +278,11 @@ class Verificacao {
     this.avisar()
   }
 
-  /** O que a rodada concluiu vai para o histórico (que não se perde quando vêm rodadas novas). */
+  /** O que a rodada concluiu vai para o histórico (que não se perde quando vêm rodadas novas), e o conselheiro aprende com ela. */
   private registrarCadeia(r: RodadaCadeia) {
     historico.registrar(achadosDaCadeia(r.relatorios, estado.notas), `cadeia:${this.iniciadoEm}:${r.numero}`)
+    const contextos = this.pedidoAtual?.cadeia?.contextos
+    if (contextos) conselheiro.aprenderDaCadeia(r.relatorios, contextos, this.dicionario)
   }
 
   /** Grava as rodadas (no máximo a cada 3 s enquanto roda; sempre no começo e no fim). */

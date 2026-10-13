@@ -464,7 +464,8 @@ export function vereditoDosDados(formulas: string[], dicionario: EntradaDicionar
           ...v,
           texto: `vale nos ${v.conferidos} ${onde} de “${c.nome}”${v.desconhecidos ? ` (${v.desconhecidos} sem dado)` : ''}`,
         }
-      if (v.tipo === 'incerto' && !melhor) melhor = { ...v, texto: `os dados de “${c.nome}” não decidem (falta observar)` }
+      if (v.tipo === 'incerto' && !melhor)
+        melhor = { ...v, texto: v.grande ? `grande demais para conferir nos dados de “${c.nome}”` : `os dados de “${c.nome}” não decidem (falta observar)` }
     }
   return melhor
 }

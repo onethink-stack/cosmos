@@ -4,7 +4,7 @@
 
 import { useEffect, useReducer } from 'preact/hooks'
 import { canonica } from '../logica/canonica'
-import { induzirCasos, induzirObjetos, type ConjuntoDados } from '../motor/dados'
+import { induzirCasos, induzirObjetos, type ConjuntoDados, type LeiInduzida } from '../motor/dados'
 import { PREFIXO_INDUZIDA, vereditoDosDados } from '../motor/modelo'
 import { analisar } from '../motor/motor'
 import { gravarConfig, lerConfig } from './db'
@@ -85,10 +85,22 @@ function variaveisLivres(dicionario: EntradaDicionario[]): [string, string, stri
 /** leis induzidas por conjunto de dados que entram no modelo (as mais apoiadas) */
 export const MAX_INDUZIDAS = 15
 
+/** o que cada conjunto sugere, por nomes de variáveis (um conjunto não muda depois de criado) */
+const sugeridas = new WeakMap<ConjuntoDados, Map<string, LeiInduzida[]>>()
+
+function induzir(c: ConjuntoDados, vars: [string, string, string]): LeiInduzida[] {
+  let porVars = sugeridas.get(c)
+  if (!porVars) sugeridas.set(c, (porVars = new Map()))
+  const chave = vars.join(' ')
+  let leis = porVars.get(chave)
+  if (!leis) porVars.set(chave, (leis = [...induzirObjetos(c, vars), ...induzirCasos(c)].sort((a, b) => b.apoio - a.apoio)))
+  return leis
+}
+
 /** Leis que os dados de um conjunto sugerem, prontas para entrar como notas (grau M). */
 export function leisInduzidas(c: ConjuntoDados, dicionario: EntradaDicionario[], jaExistem: Set<string> = new Set()): Nota[] {
   const agora = c.criadoEm
-  const leis = [...induzirObjetos(c, variaveisLivres(dicionario)), ...induzirCasos(c)].sort((a, b) => b.apoio - a.apoio)
+  const leis = induzir(c, variaveisLivres(dicionario))
   const notas: Nota[] = []
   for (const [k, l] of leis.entries()) {
     if (notas.length >= MAX_INDUZIDAS) break
@@ -127,12 +139,24 @@ export interface EntradaModelo {
   marcaDados: string
 }
 
+/** a última entrada montada: a tela e o automático (a cada 20 s, enquanto o modelo roda) pedem a mesma */
+let ultimaEntrada: { de: unknown[]; entrada: EntradaModelo } | null = null
+
 /**
  * A entrada do segundo modelo: as notas das pastas, com o mundo — leis e
  * fatos que os dados contradizem saem (com o porquê), e as leis induzidas dos
- * dados entram como hipóteses (grau M).
+ * dados entram como hipóteses (grau M). Com as mesmas notas, pastas,
+ * dicionário e dados (os mesmos objetos), devolve a mesma entrada.
  */
 export function entradaDoModelo(notasCaderno: Nota[], pastas: string[], dicionario: EntradaDicionario[], conjuntos: ConjuntoDados[], usarDados = true): EntradaModelo {
+  const de = [notasCaderno, pastas, dicionario, conjuntos, usarDados]
+  if (ultimaEntrada?.de.every((x, i) => x === de[i])) return ultimaEntrada.entrada
+  const entrada = montarEntrada(notasCaderno, pastas, dicionario, conjuntos, usarDados)
+  ultimaEntrada = { de, entrada }
+  return entrada
+}
+
+function montarEntrada(notasCaderno: Nota[], pastas: string[], dicionario: EntradaDicionario[], conjuntos: ConjuntoDados[], usarDados: boolean): EntradaModelo {
   const base = notasDoModelo(notasCaderno, pastas)
   const dados = usarDados ? dadosDasPastas(conjuntos, pastas) : []
   const desativadasPelosDados: Record<string, string> = {}

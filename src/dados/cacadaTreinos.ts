@@ -342,8 +342,8 @@ export const MODELOS: ModeloInicial[] = [
   },
 ]
 
-const AG = 'AxelarGateway.sol (axelar-cgp-solidity, commit 43ec407)'
-const AW = 'auth/AxelarAuthWeighted.sol (axelar-cgp-solidity, commit 43ec407)'
+const AG = 'AxelarGateway.sol (axelar-cgp-solidity v6.4.0, igual ao da rede)'
+const AW = 'auth/AxelarAuthWeighted.sol (axelar-cgp-solidity v6.4.0, igual ao da rede)'
 
 MODELOS.push({
   id: 'axelar-gateway',
@@ -352,7 +352,7 @@ MODELOS.push({
   escopo:
     'Um passo: ou execute (um comando, com a prova de um conjunto de operadores), ou validateContractCall (o contrato de destino consome uma aprovação). No escopo do programa estão os proxies do Gateway em Ethereum, Avalanche, BNB, Polygon, Fantom, Aurora e Moonbeam, e os tokens axlUSDC (22 ativos). Crítica: 10% dos fundos afetados, até US$ 500 mil; alta: US$ 5 mil a 25 mil. Código obrigatório como prova; KYC com documento e reconhecimento facial, se o relatório for elegível. O que já está nos repositórios axelar-core, axelar-cgp-solidity, tofnd e tofn como problema conhecido não paga.',
   nota:
-    'Rascunho tirado do código público do Gateway. Antes de confiar nas regras, confira no explorador da rede que o proxy em escopo aponta para esta implementação. O peso e o limiar das assinaturas viraram propriedades (Assinou, Recente: dentro das últimas 16 épocas); a conta dos pesos fica para um próximo passo. A última promessa fura de propósito: o código não cancela aprovações quando os operadores mudam — uma pista para descartar.',
+    'Rascunho tirado do código que roda no Ethereum: a implementação do proxy (0x99B5…4098) e o módulo de assinaturas (0xE3B8…8AD0) são idênticos à versão v6.4.0 do repositório axelar-cgp-solidity (em outras redes, confira). Na rede, a troca de operadores guarda o hash dos bytes recebidos, não da codificação padrão; o time corrigiu isso no repositório em março de 2026 (commit f6d7a1a): é conhecido, não paga. O peso e o limiar das assinaturas viraram propriedades (Assinou, Recente: dentro das últimas 16 épocas); a conta dos pesos fica para um próximo passo. A última promessa fura de propósito: o código não cancela aprovações quando os operadores mudam — uma pista para descartar.',
   regras: [
     {
       id: 'ax-tipos',

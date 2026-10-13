@@ -10,7 +10,7 @@ import { useEffect, useReducer } from 'preact/hooks'
 import { verificacao, assinaturaCadeia, type Conclusao, type Ocupacao } from './verificacao'
 import { formulasDoApoio, prepararCadeia } from './cadeia'
 import { preparar } from './premissas'
-import { chaveZ3, z3 } from './z3'
+import { chaveZ3, PRIORIDADE, z3 } from './z3'
 import { assinaturaModelo, configModelo } from './modelo'
 import { entradaDoModelo, mundo, type EntradaModelo } from './mundo'
 import type { Classe } from '../motor/modelo'
@@ -426,11 +426,13 @@ function conferirNumerosNoFundo() {
     if (!ctx) continue
     const formulas = ctx.grupos.flatMap((g) => g.formulas)
     for (const t of rel.teoremas) {
-      if (t.resultado.tipo === 'aritmetica') z3.confirmar(chaveZ3(formulas, t.formula, estado.dicionario), formulas, estado.dicionario, t.formula, true)
+      // checagens em lote, de fundo: uma pergunta passa na frente
+      if (t.resultado.tipo === 'aritmetica')
+        z3.confirmar(chaveZ3(formulas, t.formula, estado.dicionario), formulas, estado.dicionario, t.formula, true, undefined, PRIORIDADE.fundo)
       // o que seguiu até N objetos: o Z3 tenta provar para qualquer tamanho
       if (t.resultado.tipo === 'segue') {
         const apoio = formulasDoApoio(t, rel, ctx.grupos)
-        z3.confirmar(chaveZ3(apoio, t.formula, estado.dicionario), apoio, estado.dicionario, t.formula)
+        z3.confirmar(chaveZ3(apoio, t.formula, estado.dicionario), apoio, estado.dicionario, t.formula, false, undefined, PRIORIDADE.fundo)
       }
     }
   }

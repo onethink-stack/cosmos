@@ -14,7 +14,7 @@ import type { RespostaComNucleo, ResultadoZ3 } from '../motor/z3'
 import { assinaturaNotas, conselheiro, julgarNosMundos, type Etapa } from './conselheiro'
 import type { EntradaDicionario } from './tipos'
 import { verificacao, type Ocupacao } from './verificacao'
-import { disponibilidadeZ3, z3 } from './z3'
+import { disponibilidadeZ3, PRIORIDADE, z3 } from './z3'
 
 export type Veredito =
   /** provado (Z3): segue das notas, com qualquer número de objetos */
@@ -192,7 +192,8 @@ export async function semModeloNoZ3(
   tempoMs: number,
   sugeridas: string[] = [],
   registrar: Registrar = () => {},
-  provar: Provar = (fs, d, t, g) => z3.provarFormulas(fs, d, t, g),
+  // quem pergunta espera na tela: as checagens passam na frente das de fundo
+  provar: Provar = (fs, d, t, g) => z3.provarFormulas(fs, d, t, g, PRIORIDADE.pergunta),
 ): Promise<ParecerZ3 | null> {
   const ligadas = gruposRelevantes(prontos, [{ texto: '', original: alvo, expandida: alvo, aritmetica: false }])
   const sugeridasGs = prontos.filter((x) => sugeridas.includes(x.g.id))

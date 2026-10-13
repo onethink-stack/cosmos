@@ -81,6 +81,12 @@ export interface PedidoCadeia {
    * podendo usar até este tempo (ms), e o Z3 insiste neles o tempo todo
    */
   paciencia?: number
+  /**
+   * o Z3 faz uma tentativa curta por conclusão, sem insistir com tentativas
+   * cada vez mais longas (o segundo modelo: ele não pode ficar parado minutos
+   * esperando o Z3 — o que não decidir fica "até N", como sem o Z3)
+   */
+  z3Curto?: boolean
 }
 
 /** Até onde o aprimoramento automático pode ir (vem do perfil do aparelho). */
@@ -277,14 +283,15 @@ export async function reacaoEmCadeia(
   const base = lim ?? pedido.limites ?? { N: op.N, K: op.K, limite: op.limite, tempoChecagemMs: PRAZO_CHECAGEM_SEM_PERFIL_MS, orcamentoMs: 0 }
   const paraPendentes = pedido.paciencia ? { ...base, tempoChecagemMs: pedido.paciencia, orcamentoMs: pedido.paciencia } : lim
   // e, ao mesmo tempo, o que ficou grande demais para o motor finito vai para o Z3 (sem limite de tamanho)
-  const prazoZ3 = pedido.paciencia ?? Math.min(Math.max(base.orcamentoMs, PRAZO_Z3_A_PARTE_MS), 30 * 60_000)
+  const prazoZ3 = pedido.z3Curto ? PRAZO_Z3_CURTO_MS : (pedido.paciencia ?? Math.min(Math.max(base.orcamentoMs, PRAZO_Z3_A_PARTE_MS), 30 * 60_000))
+  const insistir = !pedido.z3Curto
   for (const [k, c] of pedido.contextos.entries()) {
     const aviso = (msg: string) => progresso?.(c.chave, msg)
     await Promise.all([
       paraPendentes && terminarTeoremas(usados[k], relatorios[k], dicionario, op, paraPendentes, enviar, aviso, ajudaZ3, !!pedido.paciencia),
-      aParteNoZ3(c, relatorios[k], dicionario, Date.now() + prazoZ3, enviar, aviso, ajudaZ3),
+      aParteNoZ3(c, relatorios[k], dicionario, Date.now() + prazoZ3, enviar, aviso, ajudaZ3, insistir),
       // o "segue" e o "contradiz" do motor finito só valem até N: o Z3 prova (ou derruba) para qualquer tamanho
-      confirmarNoZ3(usados[k], relatorios[k], dicionario, Date.now() + prazoZ3, enviar, aviso, ajudaZ3, !paraPendentes),
+      confirmarNoZ3(usados[k], relatorios[k], dicionario, Date.now() + prazoZ3, enviar, aviso, ajudaZ3, !paraPendentes, insistir),
     ])
   }
   if (!lim) return
@@ -1001,6 +1008,8 @@ async function aParteNoZ3(
   enviar: () => void,
   progresso: Progresso,
   ajudaZ3?: AjudaZ3,
+  /** tentativas cada vez mais longas até o prazo (senão, uma curta para cada) */
+  insistir = true,
 ): Promise<void> {
   const ap = rel.aParte
   if (!ap) return
@@ -1023,7 +1032,7 @@ async function aParteNoZ3(
   enviar()
   const r = ajudaZ3(
     conjuntos,
-    ate,
+    insistir ? ate : undefined,
     conjuntos.map((_, i) => (i === 0 ? m.grupos : [...m.grupos, null])),
   )
   const vistos = new Set<number>()
@@ -1068,12 +1077,13 @@ function premissasMarcadas(c: ContextoCadeia, dicionario: EntradaDicionario[]) {
   }
 }
 
-/** Lê as respostas do Z3 conforme chegam (`ler`), até ele terminar ou o prazo acabar. */
-async function esperarZ3(r: RespostasZ3, ate: number, ler: () => void): Promise<{ desligado?: boolean }> {
+/** Lê as respostas do Z3 conforme chegam (`ler`), até ele terminar ou o prazo acabar; `aCadaVolta`: a cada segundo (o andamento na tela). */
+async function esperarZ3(r: RespostasZ3, ate: number, ler: () => void, aCadaVolta?: () => void): Promise<{ desligado?: boolean }> {
   const fim: { desligado?: boolean; pronto?: boolean } = {}
   void r.fim.then((x) => Object.assign(fim, x, { pronto: true }))
   while (!fim.pronto && Date.now() < ate) {
     ler()
+    aCadaVolta?.()
     await new Promise((ok) => setTimeout(ok, 1000))
   }
   ler()
@@ -1102,6 +1112,8 @@ async function confirmarNoZ3(
   progresso: Progresso,
   ajudaZ3?: AjudaZ3,
   comPendentes = false,
+  /** na fase com todas as notas, tentativas cada vez mais longas até o prazo (senão, uma curta para cada) */
+  insistir = true,
 ): Promise<void> {
   if (!ajudaZ3 || rel.consistencia?.tipo !== 'consistente') return
   const tipos = comPendentes ? ['segue', 'contradiz', 'tempo', 'grande-demais'] : ['segue', 'contradiz']
@@ -1129,28 +1141,38 @@ async function confirmarNoZ3(
       return { ...y, z3: 'segue', resultado: { tipo: 'segue', N: rel.N, K: rel.K, notas: ns }, apoio: ns, geracao: 1 }
     })
   }
-  /** um pedido ao Z3; `ler(i, provado, núcleo)` a cada resposta; `insistir`: tentativas cada vez mais longas até o prazo (senão, uma curta) */
+  // o andamento: quantos o Z3 já decidiu, e há quanto tempo está nisso (a tela não parece parada)
+  const ini = Date.now()
+  const decididos = () => alvos.filter((x) => rel.teoremas.find((y) => y.id === x.t.id)?.z3).length
+  const andamento = () =>
+    progresso(`o Z3 confere os teoremas para qualquer número de objetos: ${decididos()} de ${alvos.length} decididos (há ${Math.round((Date.now() - ini) / 1000)} s)`)
+  /** um pedido ao Z3; `ler(i, provado, núcleo)` a cada resposta; `longo`: tentativas cada vez mais longas até o prazo (senão, uma curta) */
   const pedir = async (
     conjuntos: Formula[][],
     grupos: (number | null)[][] | undefined,
-    insistir: boolean,
+    longo: boolean,
     ler: (i: number, provado: boolean, nucleo?: number[]) => void,
   ) => {
-    const r = ajudaZ3(conjuntos, insistir ? ate : undefined, grupos)
+    const r = ajudaZ3(conjuntos, longo ? ate : undefined, grupos)
     const vistos = new Set<number>()
-    await esperarZ3(r, ate, () => {
-      let mudou = false
-      for (const i of [...r.semModelo, ...r.comModelo]) {
-        if (vistos.has(i)) continue
-        vistos.add(i)
-        mudou = true
-        ler(i, r.semModelo.has(i), r.nucleos.get(i))
-      }
-      if (mudou) enviar()
-    })
+    await esperarZ3(
+      r,
+      ate,
+      () => {
+        let mudou = false
+        for (const i of [...r.semModelo, ...r.comModelo]) {
+          if (vistos.has(i)) continue
+          vistos.add(i)
+          mudou = true
+          ler(i, r.semModelo.has(i), r.nucleos.get(i))
+        }
+        if (mudou) enviar()
+      },
+      andamento,
+    )
   }
 
-  progresso(`o Z3 confere os teoremas para qualquer número de objetos (${alvos.length})`)
+  andamento()
   // 1. com as notas que o motor finito achou (S); os que não têm S vão direto com todas
   const comS = alvos.filter((x) => notasFinitas(x) !== null)
   const semS = alvos.filter((x) => notasFinitas(x) === null)
@@ -1192,13 +1214,16 @@ async function confirmarNoZ3(
     await pedir(
       todos.map((x) => [...m.formulas, contra(x)]),
       todos.map(() => [...m.grupos, null]),
-      true,
+      insistir,
       (i, provado, nucleo) => todos[i] && decidir(todos[i], provado, provado && nucleo ? m.ids(nucleo) : null),
     )
   enviar()
 }
 
 const mesmasNotas = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
+
+/** com `z3Curto` (o segundo modelo), o máximo que a rodada espera o Z3 */
+const PRAZO_Z3_CURTO_MS = 3 * 60_000
 
 /** quantos cenários a rodada guarda para julgar os teoremas (os primeiros; os outros só valem para o próprio teorema) */
 const MAX_CENARIOS_NA_RODADA = 60

@@ -50,6 +50,17 @@ const FOLGA_VIGIA_MS = 15_000
 
 type Retorno = RespostaComNucleo | { erro: string }
 
+/** a checagem foi interrompida para atender antes uma mais importante (será tentada de novo depois) */
+class Interrompida extends Error {}
+
+/**
+ * A vez de cada checagem: uma pergunta (alguém espera a resposta) passa na
+ * frente de uma confirmação que a tela mostra, que passa na frente das de
+ * fundo (a reação em cadeia, as checagens em lote do segundo modelo).
+ */
+export const PRIORIDADE = { fundo: 0, tela: 1, pergunta: 2 } as const
+export type Prioridade = (typeof PRIORIDADE)[keyof typeof PRIORIDADE]
+
 class EstadoZ3 {
   /** o usuário quer usar o Z3 (fica gravado) */
   ativo = false
@@ -67,7 +78,16 @@ class EstadoZ3 {
   private esperando = new Map<number, (r: Retorno) => void>()
   private proximoId = 0
   private confirmacoes = new Map<string, Confirmacao>()
-  private fila: Promise<unknown> = Promise.resolve()
+  /**
+   * Uma checagem por vez, numa fila por prioridade (PRIORIDADE): a de cima
+   * passa na frente, e interrompe uma de baixo que já esteja rodando (a
+   * reação em cadeia pode insistir minutos numa só).
+   */
+  private filas: (() => Promise<void>)[][] = [[], [], []]
+  private girando = false
+  private emCurso: { prioridade: Prioridade } | null = null
+  /** a checagem em curso cedeu a vez a uma mais importante */
+  private interrompida = false
   private ouvintes = new Set<() => void>()
 
   assinar(fn: () => void) {
@@ -211,6 +231,11 @@ class EstadoZ3 {
   private async checar(formulas: Formula[], tempoMs: number, numericos: Set<string>, grupos?: (number | null)[], tentativa = 0): Promise<RespostaComNucleo> {
     if (this.checagensNoWorker >= RECICLAR_Z3_A_CADA) this.descartar()
     await this.carregar()
+    // chegou uma mais importante enquanto o Z3 carregava: esta cede a vez antes de começar
+    if (this.emCurso && this.temMaisImportante(this.emCurso.prioridade)) {
+      this.interrompida = true
+      throw new Interrompida('cedeu a vez')
+    }
     const w = this.trabalhador!
     this.checagensNoWorker++
     this.checagens++
@@ -226,10 +251,48 @@ class EstadoZ3 {
       w.postMessage({ tipo: 'checar', id, formulas, tempoMs, numericos: [...numericos], ...(grupos ? { grupos } : {}) } satisfies PedidoZ3)
     })
     if ('resultado' in r) return r
+    if (this.interrompida) throw new Interrompida(r.erro)
     // depois de uma falha o Z3 pode ter ficado num estado ruim: worker novo
     if (this.trabalhador === w) this.descartar()
     if (tentativa === 0) return this.checar(formulas, tempoMs, numericos, grupos, 1)
     throw new Error(r.erro)
+  }
+
+  private temMaisImportante(p: Prioridade) {
+    return this.filas.some((f, i) => i > p && f.length > 0)
+  }
+
+  /** Põe a checagem na fila; uma mais importante interrompe a que está rodando (que é pedida de novo depois). */
+  private enfileirar(tarefa: () => Promise<void>, prioridade: Prioridade) {
+    this.filas[prioridade].push(tarefa)
+    // (só com a checagem já no worker: interromper o Z3 carregando deixaria a fila esperando para sempre)
+    if (this.emCurso && this.emCurso.prioridade < prioridade && !this.interrompida && this.esperando.size > 0) {
+      this.interrompida = true
+      this.descartar('interrompido para atender antes uma checagem mais importante')
+    }
+    void this.girar()
+  }
+
+  private async girar() {
+    if (this.girando) return
+    this.girando = true
+    try {
+      for (;;) {
+        const prioridade = ([2, 1, 0] as const).find((p) => this.filas[p].length > 0)
+        if (prioridade === undefined) break
+        const tarefa = this.filas[prioridade].shift()!
+        this.emCurso = { prioridade }
+        this.interrompida = false
+        try {
+          await tarefa()
+        } catch {
+          /* cada tarefa guarda o próprio erro */
+        }
+        this.emCurso = null
+      }
+    } finally {
+      this.girando = false
+    }
   }
 
   /** Traz do banco de provas as respostas do Z3 já guardadas no aparelho. */
@@ -275,6 +338,8 @@ class EstadoZ3 {
     tempoMs = TEMPO_APROFUNDAR_MS,
     /** de qual nota vem cada fórmula: com isso, a resposta traz o núcleo (as notas que a prova usou) */
     grupos?: (number | null)[],
+    /** a vez dela na fila (uma pergunta passa na frente do resto) */
+    prioridade: Prioridade = PRIORIDADE.fundo,
   ): Promise<RespostaComNucleo | null> {
     const texto = JSON.stringify(formulas, (k, v) => (k === 'pos' || k === 'end' ? undefined : v))
     const chave = `${PREFIXO_CHAVE_Z3}${resumo(`formulas:${texto}${grupos ? `|grupos:${JSON.stringify(grupos)}` : ''}`)}`
@@ -283,17 +348,19 @@ class EstadoZ3 {
     const deNovo = ja?.estado === 'feito' && ja.resultado === 'unknown' && (ja.tempoMs ?? TEMPO_APROFUNDAR_MS) < tempoMs
     if (!ja || deNovo) {
       this.confirmacoes.set(chave, { estado: 'rodando' })
-      this.fila = this.fila.then(async () => {
+      this.enfileirar(async () => {
         const ini = Date.now()
         try {
           const { resultado, nucleo } = await this.checar(formulas, tempoMs, nomesNumericos(dicionario), grupos)
           this.confirmacoes.set(chave, { estado: 'feito', resultado, ms: Date.now() - ini, tempoMs, nucleo })
           if (resultado !== 'unknown') guardarZ3({ chave, resultado, ms: Date.now() - ini, ...(nucleo ? { nucleo } : {}) })
         } catch (e) {
-          this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
+          // interrompida: fica como se nunca tivesse sido pedida (o próximo pedido tenta de novo)
+          if (e instanceof Interrompida || this.interrompida) this.confirmacoes.delete(chave)
+          else this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
         }
         this.avisar()
-      })
+      }, prioridade)
     }
     const c = await this.esperar(chave)
     return c?.resultado ? { resultado: c.resultado, nucleo: c.nucleo ?? null } : null
@@ -312,11 +379,20 @@ class EstadoZ3 {
    * `soRelevantes`: só as fórmulas ligadas por nomes à negada (ou a `foco`),
    * para o Z3 não se perder em leis que não têm nada a ver.
    */
-  confirmar(chave: string, formulas: string[], dicionario: EntradaDicionario[], negar?: string, soRelevantes = false, foco?: string) {
+  confirmar(
+    chave: string,
+    formulas: string[],
+    dicionario: EntradaDicionario[],
+    negar?: string,
+    soRelevantes = false,
+    foco?: string,
+    /** uma confirmação que a tela mostra passa na frente das de fundo; as em lote vão como de fundo */
+    prioridade: Prioridade = PRIORIDADE.tela,
+  ) {
     if (this.confirmacoes.has(chave)) return
     this.confirmacoes.set(chave, { estado: 'rodando' })
     this.avisar()
-    this.fila = this.fila.then(async () => {
+    this.enfileirar(async () => {
       const ini = Date.now()
       try {
         let prontas = analisar(formulas, dicionario, true)
@@ -334,7 +410,7 @@ class EstadoZ3 {
         this.confirmacoes.set(chave, { estado: 'erro', erro: (e as Error).message })
       }
       this.avisar()
-    })
+    }, prioridade)
   }
 }
 

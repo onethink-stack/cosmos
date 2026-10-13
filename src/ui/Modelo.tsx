@@ -195,6 +195,14 @@ export function Modelo() {
 
 function Execucao({ exec, desatualizada, ocupado }: { exec: ExecucaoModelo; desatualizada: boolean; ocupado: boolean }) {
   const rel = exec.relatorio
+  // enquanto roda, o tempo anda sozinho (os relatórios do motor podem demorar a chegar, ex.: esperando o Z3)
+  const [, tique] = useState(0)
+  useEffect(() => {
+    if (exec.terminada) return
+    const id = setInterval(() => tique((x) => x + 1), 1000)
+    return () => clearInterval(id)
+  }, [exec.terminada])
+  const decorrido = exec.terminada ? exec.ms : Math.max(exec.ms, Date.now() - exec.quando)
   const situacao = exec.interrompida
     ? exec.interrompida === 'usuario'
       ? 'parado por você'
@@ -214,7 +222,7 @@ function Execucao({ exec, desatualizada, ocupado }: { exec: ExecucaoModelo; desa
       </h3>
       <div class="suave res-meta">
         {situacao}
-        {rel && ` · ${rel.rodada} rodada${rel.rodada === 1 ? '' : 's'}`} · {tempo(exec.ms)} · {new Date(exec.quando).toLocaleString('pt-BR')}
+        {rel && ` · ${rel.rodada} rodada${rel.rodada === 1 ? '' : 's'}`} · {tempo(decorrido)} · {new Date(exec.quando).toLocaleString('pt-BR')}
         {exec.terminada && desatualizada && <span class="selo aviso"> desatualizado — as notas mudaram</span>}
       </div>
       {exec.erro && <p class="erro-texto">Falha no motor: {exec.erro}</p>}

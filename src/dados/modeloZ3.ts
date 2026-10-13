@@ -6,7 +6,7 @@
 import type { ItemModelo, RelatorioModelo } from '../motor/modelo'
 import { pedidoDaCadeia } from './cadeia'
 import type { EntradaDicionario } from './tipos'
-import { chaveZ3, disponibilidadeZ3, z3 } from './z3'
+import { chaveZ3, disponibilidadeZ3, PRIORIDADE, z3 } from './z3'
 import { analisar } from '../motor/motor'
 
 interface Checagem {
@@ -19,8 +19,26 @@ interface Checagem {
   formulas: string[]
 }
 
+/**
+ * O que depende só do resultado e do dicionário fica guardado: a tela do
+ * modelo é redesenhada várias vezes por segundo enquanto o motor trabalha, e
+ * refazer estas contas a cada vez (todas as notas analisadas de novo) fazia a
+ * tela engasgar.
+ */
+const guardados = new WeakMap<RelatorioModelo, { dicionario: EntradaDicionario[]; checagens?: Checagem[]; consistencia?: Consistencia[] }>()
+function guardado(rel: RelatorioModelo, dicionario: EntradaDicionario[]) {
+  let g = guardados.get(rel)
+  if (!g || g.dicionario !== dicionario) guardados.set(rel, (g = { dicionario }))
+  return g
+}
+
 /** O que o Z3 precisa conferir neste resultado do modelo. */
 function checagens(rel: RelatorioModelo, dicionario: EntradaDicionario[]): Checagem[] {
+  const g = guardado(rel, dicionario)
+  return (g.checagens ??= calcularChecagens(rel, dicionario))
+}
+
+function calcularChecagens(rel: RelatorioModelo, dicionario: EntradaDicionario[]): Checagem[] {
   const contextos = pedidoDaCadeia(rel.notas, dicionario).contextos
   const premissas = (chave: string) => contextos.find((c) => c.chave === chave)?.grupos.flatMap((g) => g.formulas) ?? []
   const cs: Checagem[] = []
@@ -50,18 +68,31 @@ function checagens(rel: RelatorioModelo, dicionario: EntradaDicionario[]): Checa
 export function pedirZ3DoModelo(rel: RelatorioModelo, dicionario: EntradaDicionario[]) {
   if (!z3.ativo) return
   for (const c of checagens(rel, dicionario)) {
-    if (c.segue) z3.confirmar(c.segue, c.premissas, dicionario, c.formulas[0], true)
+    // checagens em lote: de fundo (uma pergunta passa na frente)
+    if (c.segue) z3.confirmar(c.segue, c.premissas, dicionario, c.formulas[0], true, undefined, PRIORIDADE.fundo)
     // só as leis ligadas por nomes à fórmula (o Z3 não se perde no resto)
-    z3.confirmar(c.junto, [...c.premissas, ...c.formulas], dicionario, undefined, true, c.formulas.map((f) => `(${f})`).join(' ∧ '))
+    z3.confirmar(c.junto, [...c.premissas, ...c.formulas], dicionario, undefined, true, c.formulas.map((f) => `(${f})`).join(' ∧ '), PRIORIDADE.fundo)
   }
-  for (const c of consistenciaZ3(rel, dicionario)) z3.confirmar(c.chaveZ3, c.premissas, dicionario)
+  for (const c of consistenciaZ3(rel, dicionario)) z3.confirmar(c.chaveZ3, c.premissas, dicionario, undefined, false, undefined, PRIORIDADE.fundo)
 }
 
 /**
  * Consistência de cada conjunto com todas as leis, inclusive as com números
  * (o motor finito deixa essas de fora). Só para conjuntos que têm números.
  */
-export function consistenciaZ3(rel: RelatorioModelo, dicionario: EntradaDicionario[]) {
+export function consistenciaZ3(rel: RelatorioModelo, dicionario: EntradaDicionario[]): Consistencia[] {
+  const g = guardado(rel, dicionario)
+  return (g.consistencia ??= calcularConsistencia(rel, dicionario))
+}
+
+interface Consistencia {
+  chave: string
+  rotulo: string
+  premissas: string[]
+  chaveZ3: string
+}
+
+function calcularConsistencia(rel: RelatorioModelo, dicionario: EntradaDicionario[]): Consistencia[] {
   // fórmula com números: o motor finito a deixa de fora, o Z3 a lê
   const temNumero = (f: string) => !analisar([f], dicionario).length && analisar([f], dicionario, true).length > 0
   return pedidoDaCadeia(rel.notas, dicionario)

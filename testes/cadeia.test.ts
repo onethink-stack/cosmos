@@ -336,6 +336,29 @@ describe('o Z3 confere o "segue até N" do motor finito', () => {
     expect(estadoEfetivo(t1)).toEqual({ tipo: 'segue', provado: false })
   })
 
+  it('segundo modelo (z3Curto): o Z3 faz uma tentativa curta e não insiste minutos; sem isso, insiste até o prazo', async () => {
+    const prazos = async (z3Curto: boolean) => {
+      const vistos: (number | undefined)[] = []
+      const ajudaZ3: AjudaZ3 = (_c, ate) => {
+        vistos.push(ate)
+        return { semModelo: new Set(), comModelo: new Set(), nucleos: new Map(), fim: Promise.resolve({}) }
+      }
+      await reacaoEmCadeia(
+        { contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos: [injetiva], teoremas: [sobrejetiva] }], inativas: [], z3Curto },
+        dicS,
+        op,
+        () => {},
+        undefined,
+        ajudaZ3,
+      )
+      return vistos
+    }
+    const curto = await prazos(true)
+    expect(curto.length).toBeGreaterThan(0)
+    expect(curto.every((p) => p === undefined)).toBe(true)
+    expect((await prazos(false)).some((p) => p !== undefined)).toBe(true)
+  })
+
   it('o Z3 acha o cenário infinito: deixa de "seguir"', async () => {
     const rel = await rodarZ3([injetiva], [sobrejetiva], z3Responde([], [0]))
     expect(rel.teoremas[0].z3).toBe('nao-segue')

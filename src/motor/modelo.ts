@@ -400,7 +400,8 @@ export async function rodarModelo(
       dicionario,
     )
     await reacaoEmCadeia(
-      { ...pedido, contextos: pedido.contextos.map((c) => ordenar(c, notas, criadas, false)), aprimorar: p.aprimorar },
+      // o Z3 faz uma tentativa curta por conclusão: o modelo não fica parado minutos esperando por ele
+      { ...pedido, contextos: pedido.contextos.map((c) => ordenar(c, notas, criadas, false)), aprimorar: p.aprimorar, z3Curto: true },
       dicionario,
       nivel,
       (rs) => {

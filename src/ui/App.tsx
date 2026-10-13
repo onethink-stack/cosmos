@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks'
 import { avisos } from '../dados/avisos'
+import { conselheiro } from '../dados/conselheiro'
 import { corrigirConclusoes, corrigirNotasDasBibliotecas } from '../dados/correcoes'
 import { estado, useEstado } from '../dados/estado'
 import { historico } from '../dados/historico'
@@ -45,6 +46,7 @@ export function App() {
     void verificacao.carregarConfig()
     void historico.carregar()
     void tradutor.carregarConfig()
+    void conselheiro.carregar()
     void perguntas.carregar()
     void z3.carregarConfig()
     void z3.carregarGuardados()

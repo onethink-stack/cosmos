@@ -77,13 +77,14 @@ describe('notas sugeridas', () => {
   ]
   it('primeiro as que provaram perguntas parecidas, depois as que falam dos mesmos nomes', () => {
     const provas: ProvaGuardada[] = [{ id: 'p', contexto: 'geral', simbolos: ['Mortal', 'Socrates'], notas: ['L1', 'F1'], quando: 0 }]
-    const s = sugerirNotas(provas, 'geral', ['Mortal', 'Socrates'], disponiveis)
+    const s = sugerirNotas(provas, ['Mortal', 'Socrates'], disponiveis)
     expect(s.slice(0, 2).sort()).toEqual(['F1', 'L1'])
     expect(s).not.toContain('X')
     // sem histórico: só as que falam dos nomes
-    expect(sugerirNotas([], 'geral', ['Zeus'], disponiveis)).toEqual(['F2'])
-    // provas de outro conjunto não contam
-    expect(sugerirNotas(provas, 'visao:Ana', ['Planeta'], disponiveis)).toEqual(['X'])
+    expect(sugerirNotas([], ['Zeus'], disponiveis)).toEqual(['F2'])
+    // provas de outro conjunto não vão para a sugestão
+    conselheiro.guardarProva('visao:Ana', ['Mortal', 'Socrates'], ['L2'])
+    expect(conselheiro.conselhoPara('geral').provas.some((p) => p.notas.includes('L2'))).toBe(false)
   })
 })
 

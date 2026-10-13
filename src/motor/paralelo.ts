@@ -8,13 +8,13 @@ import type { EntradaDicionario } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { estadoDaLei, type EstadoLei } from './cadeia'
 import { procurarLeis, type ResultadoLacunas } from './lacunas'
-import { analisar, buscarNaFaixa, minimizarRapido, perguntar, type BuscaFaixa, type Grupo, type OpcoesMotor, type ResultadoPergunta } from './motor'
+import { analisar, buscarNaFaixa, minimizarRapido, perguntar, type BuscaFaixa, type ExtrasPergunta, type Grupo, type OpcoesMotor, type ResultadoPergunta } from './motor'
 
 export type Trabalho =
   /** procura modelo só nesses tamanhos (o aprofundamento); `prazoMs` conta a partir de quando começa */
   | { tipo: 'faixa'; formulas: Formula[]; ns: number[]; ks: number[]; limite: number; prazoMs?: number }
   /** `prazoMs`: cada teorema desiste depois disso (fica "não decidiu a tempo"); conta de quando começa */
-  | { tipo: 'perguntar'; grupos: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor; prazoMs?: number }
+  | { tipo: 'perguntar'; grupos: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor; prazoMs?: number; extras?: ExtrasPergunta }
   | { tipo: 'lacunas'; grupos: Grupo[]; inativas: Grupo[]; formula: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
   /** a lei decorre das outras ou é independente? */
   | { tipo: 'lei'; grupos: Grupo[]; alvo: string; dicionario: EntradaDicionario[]; op: OpcoesMotor }
@@ -36,7 +36,7 @@ export function executarTrabalho(t: Trabalho): unknown {
     case 'faixa':
       return buscarNaFaixa(t.formulas, t.ns, t.ks, t.limite, t.prazoMs ? Date.now() + t.prazoMs : undefined)
     case 'perguntar':
-      return perguntar(t.grupos, t.formula, t.dicionario, t.prazoMs ? { ...t.op, prazo: Date.now() + t.prazoMs } : t.op)
+      return perguntar(t.grupos, t.formula, t.dicionario, t.prazoMs ? { ...t.op, prazo: Date.now() + t.prazoMs } : t.op, undefined, t.extras)
     case 'lacunas':
       return procurarLeis(t.grupos, t.inativas, t.formula, t.dicionario, t.op)
     case 'lei':

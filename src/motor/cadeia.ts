@@ -18,6 +18,7 @@ import type { EntradaDicionario } from '../dados/tipos'
 import type { Formula } from '../logica/ast'
 import { Aterrador, ehModal, GrandeDemais } from './aterrar'
 import { Avaliador, tamanhoTexto } from './avaliar'
+import { cenariosValidos, julgarNosMundos, sugerirNotas, type ConselhoCadeia } from './conselho'
 import { descobrirComPrazo, type Consequencia, type PrazosDescoberta } from './descobrir'
 import { darVez, emParalelo, poolAtual } from './paralelo'
 import { canonica, type LeiSugerida, type ResultadoLacunas } from './lacunas'
@@ -28,11 +29,13 @@ import {
   registrarSemModelo,
   minimizarRapido,
   nao,
+  nomesDaFormula,
   perguntar,
   verificar,
   type Grupo,
   type BuscaFaixa,
   type GrupoPronto,
+  type Modelo,
   type MundoExplicado,
   type OpcoesMotor,
   type Progresso,
@@ -59,6 +62,8 @@ export interface ContextoCadeia {
    * a lei que falta para um teorema de uma visão nunca é uma lei geral, e vice-versa
    */
   inativas?: Grupo[]
+  /** o que o conselheiro do app aprendeu sobre este conjunto (cenários e provas guardados) */
+  conselho?: ConselhoCadeia
 }
 
 export interface PedidoCadeia {
@@ -211,6 +216,22 @@ export interface RelatorioCadeia {
   leisIds?: string[]
   /** o conjunto inteiro passou do limite do motor finito: o que ficou à parte */
   aParte?: PartePesada
+  /** o que o conselheiro poupou nesta rodada */
+  conselho?: AjudaDoConselho
+}
+
+/** O que o conselheiro poupou numa rodada (ele só antecipa e recorta: quem decide é o motor finito e o Z3). */
+export interface AjudaDoConselho {
+  /** cenários das notas conhecidos (o da consistência, os guardados que ainda valem e os achados na rodada) */
+  cenarios: number
+  /** teoremas decididos só pelos cenários conhecidos (um em que falha e outro em que vale) */
+  porCenario: number
+  /** teoremas em que um cenário conhecido poupou a busca do contraexemplo */
+  contraConhecido: number
+  /** teoremas provados pelo Z3 só com as notas sugeridas */
+  provadosComSugeridas: number
+  /** cenários das notas achados na rodada em que um teorema vale (o conselheiro do app os guarda) */
+  aFavor?: Modelo[]
 }
 
 const conj = (fs: Formula[]): Formula => fs.reduce((a, b): Formula => ({ k: 'and', l: a, r: b, pos: 0, end: 0 }))
@@ -700,24 +721,55 @@ async function rodarContexto(
     )
   }
 
-  // 3. cada teorema (vários ao mesmo tempo)
+  // 3. cada teorema (vários ao mesmo tempo). Antes de procurar, o teorema é julgado nos
+  // cenários das notas já conhecidos: falso num deles, não segue (é um cenário real) — e
+  // verdadeiro noutro, nem é preciso procurar nada. Os cenários que cada teorema acha
+  // entram na lista e servem para os seguintes.
   rel.etapa = 'teoremas'
   enviar()
   {
+    const conhecidos = cenariosConhecidos(inteiro.conselho, rel, premissas)
+    const ajuda: AjudaDoConselho = { cenarios: conhecidos.length, porCenario: 0, contraConhecido: 0, provadosComSugeridas: 0 }
+    rel.conselho = ajuda
+    const aprender = (m: Modelo) => {
+      if (conhecidos.length < MAX_CENARIOS_NA_RODADA) conhecidos.push(m)
+      ajuda.cenarios = conhecidos.length
+    }
     const estados: (EstadoTeorema | undefined)[] = []
     let feitos = 0
     if (teoremas.length) progresso(`conferindo os teoremas (0/${teoremas.length}${vez(teoremas.length)})`)
-    await emParalelo(
-      teoremas,
-      ({ t }) => ({ tipo: 'perguntar', grupos: c.grupos, formula: t.formula, dicionario, op, prazoMs: prazoChecagem }),
-      (i, resultado) => {
-        const { t } = teoremas[i]
-        estados[i] = { id: t.id, notaId: t.notaId, formula: t.formula, resultado }
-        rel.teoremas = [...estados.filter((x): x is EstadoTeorema => !!x), ...deFora]
-        progresso(`conferindo os teoremas (${++feitos}/${teoremas.length}${vez(teoremas.length)})`)
-        enviar()
-      },
-    )
+    await aosPoucos(teoremas.length, paralelo, async (i) => {
+      const { t, pronta } = teoremas[i]
+      const j = pronta && conhecidos.length ? julgarNosMundos(conhecidos, pronta.expandida) : { falha: null, vale: false }
+      let resultado: ResultadoPergunta
+      if (pronta && j.falha && j.vale) {
+        resultado = { tipo: 'nao-segue', N: op.N, mundo: { n: j.falha.n, modelo: j.falha, passos: new Avaliador(j.falha).explicar(pronta.original) } }
+        ajuda.porCenario++
+      } else {
+        if (j.falha) ajuda.contraConhecido++
+        resultado = (await poolAtual().rodar({
+          tipo: 'perguntar',
+          grupos: c.grupos,
+          formula: t.formula,
+          dicionario,
+          op,
+          prazoMs: prazoChecagem,
+          extras: { comAFavor: true, ...(j.falha ? { contra: j.falha } : {}) },
+        })) as ResultadoPergunta
+        // os cenários deste teorema valem para todas as notas do conjunto: servem para os próximos
+        if (resultado.tipo === 'nao-segue' || resultado.tipo === 'contradiz') aprender(resultado.mundo.modelo)
+        if (resultado.tipo === 'nao-segue' && resultado.aFavor) {
+          aprender(resultado.aFavor)
+          if ((ajuda.aFavor ??= []).length < MAX_A_FAVOR_NO_RELATORIO) ajuda.aFavor.push(resultado.aFavor)
+          const { aFavor: _aFavor, ...semAFavor } = resultado
+          resultado = semAFavor
+        }
+      }
+      estados[i] = { id: t.id, notaId: t.notaId, formula: t.formula, resultado }
+      rel.teoremas = [...estados.filter((x): x is EstadoTeorema => !!x), ...deFora]
+      progresso(`conferindo os teoremas (${++feitos}/${teoremas.length}${vez(teoremas.length)})`)
+      enviar()
+    })
     // em paralelo, cada worker tem só uma parte da memória: o teorema que não coube nela
     // é refeito aqui, sozinho, com o limite inteiro (os outros workers estão parados)
     const teto = poolAtual().teto
@@ -1111,9 +1163,31 @@ async function confirmarNoZ3(
     if (provado) decidir(x, true, notasFinitas(x))
     else faltam.push(x)
   })
-  // os que S não provou (ou não respondeu a tempo), e os sem S: com todas as notas
+  // os que S não provou (ou não respondeu a tempo), e os sem S
   for (const x of comS) if (!faltam.includes(x) && !rel.teoremas.find((y) => y.id === x.t.id)?.z3) faltam.push(x)
-  const todos = [...semS, ...faltam]
+  let todos = [...semS, ...faltam]
+  // 1b. as notas que o conselheiro sugere (as que provaram teoremas parecidos e as que falam
+  // dos mesmos nomes), sozinhas, numa tentativa curta: sem modelo com elas = provado com todas
+  const disponiveis = m.prontos.map((p) => ({ id: p.g.id, simbolos: [...new Set(p.itens.flatMap(nomesDe))] }))
+  const sugeridas = todos
+    .map((x) => ({ x, ids: sugerirNotas(c.conselho?.provas ?? [], [...new Set(nomesDaFormula(x.phi!.expandida))], disponiveis) }))
+    .filter((s) => s.ids.length && s.ids.length < m.prontos.length && !mesmasNotas(s.ids, notasFinitas(s.x) ?? []))
+  if (sugeridas.length && Date.now() < ate) {
+    const gruposDe = (ids: string[]) => ids.flatMap((id) => m.prontos[indice.get(id) ?? -1]?.itens.map(() => indice.get(id)!) ?? [])
+    await pedir(
+      sugeridas.map((s) => [...formulasDe(s.ids), contra(s.x)]),
+      sugeridas.map((s) => [...gruposDe(s.ids), null]),
+      false,
+      (i, provado, nucleo) => {
+        const s = sugeridas[i]
+        if (!s || !provado) return
+        decidir(s.x, true, nucleo ? m.ids(nucleo) : s.ids)
+        if (rel.conselho) rel.conselho = { ...rel.conselho, provadosComSugeridas: rel.conselho.provadosComSugeridas + 1 }
+      },
+    )
+    todos = todos.filter((x) => !rel.teoremas.find((y) => y.id === x.t.id)?.z3)
+  }
+  // o resto: com todas as notas
   if (todos.length && Date.now() < ate)
     await pedir(
       todos.map((x) => [...m.formulas, contra(x)]),
@@ -1125,6 +1199,37 @@ async function confirmarNoZ3(
 }
 
 const mesmasNotas = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
+
+/** quantos cenários a rodada guarda para julgar os teoremas (os primeiros; os outros só valem para o próprio teorema) */
+const MAX_CENARIOS_NA_RODADA = 60
+/** quantos cenários "a favor" vão no relatório para o conselheiro do app guardar */
+const MAX_A_FAVOR_NO_RELATORIO = 10
+/** tempo para conferir os cenários que o conselheiro mandou contra as notas de agora */
+const PRAZO_CONFERIR_CENARIOS_MS = 3000
+
+/**
+ * Os cenários em que todas as notas do conjunto valem, já conhecidos antes de
+ * conferir os teoremas: o da consistência (desta rodada) e os que o conselheiro
+ * mandou, conferidos aqui contra as notas de agora (com prazo).
+ */
+function cenariosConhecidos(conselho: ConselhoCadeia | undefined, rel: RelatorioCadeia, premissas: Formula[]): Modelo[] {
+  const r: Modelo[] = []
+  if (rel.consistencia?.tipo === 'consistente') r.push(rel.consistencia.modelo)
+  if (conselho?.mundos.length) r.push(...cenariosValidos(conselho.mundos, premissas, Date.now() + PRAZO_CONFERIR_CENARIOS_MS))
+  return r.slice(0, MAX_CENARIOS_NA_RODADA)
+}
+
+/**
+ * Roda `fazer(i)` para cada i, até `paralelo` ao mesmo tempo, começando cada
+ * um só quando há vaga (assim o que os primeiros descobrem já serve aos seguintes).
+ */
+async function aosPoucos(total: number, paralelo: number, fazer: (i: number) => Promise<void>): Promise<void> {
+  let proximo = 0
+  const vaga = async () => {
+    while (proximo < total) await fazer(proximo++)
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(paralelo, total)) }, vaga))
+}
 
 /**
  * Quanto cada etapa auxiliar da rodada pode levar: um quarto do orçamento do

@@ -126,7 +126,7 @@ export async function executarTarefas(p: PedidoMotor, enviar: (r: RespostaMotor)
         continue
       }
       if (p.pergunta !== undefined) {
-        const resultado = perguntar(t.grupos, p.pergunta, p.dicionario, p.opcoes, progresso, true)
+        const resultado = perguntar(t.grupos, p.pergunta, p.dicionario, p.opcoes, progresso, { comAFavor: true })
         enviar({ id: p.id, tipo: 'resposta', chave: t.chave, resultado, ms: Date.now() - ini })
         continue
       }

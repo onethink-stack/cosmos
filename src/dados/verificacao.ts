@@ -483,7 +483,8 @@ class Verificacao {
     const K = Math.min(nivel?.K ?? pf.Kinicial, pf.limites.K)
     const paralelo = perfil.paralelo
     const completo: PedidoCadeia = {
-      ...pedido,
+      // o que o conselheiro aprendeu sobre cada conjunto (cenários e provas): só ordem e recorte, nunca o veredito
+      ...conselheiro.comConselho(pedido),
       aprimorar: perfil.aprimorar ? { ...pf.limites, limite: limitePorWorker(pf.limites.limite, paralelo) } : undefined,
       // modo de horas: o que ficar pendente na rodada continua por até tantas horas
       ...(this.paciencia ? { paciencia: this.paciencia * 3_600_000 } : {}),
@@ -809,7 +810,9 @@ export const verificacao = new Verificacao()
 
 /** Identifica uma rodada da reação em cadeia (muda se qualquer nota que entra nela mudar). */
 export function assinaturaCadeia(pedido: PedidoCadeia, dicionario: EntradaDicionario[]): string {
-  return JSON.stringify([pedido.contextos, pedido.inativas, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
+  // o conselho não muda o resultado (só o tempo): não entra na assinatura
+  const contextos = pedido.contextos.map(({ conselho: _conselho, ...c }) => c)
+  return JSON.stringify([contextos, pedido.inativas, dicionario.map((e) => [e.simbolo, e.tipo, e.aridade])])
 }
 
 /** Identifica uma busca de leis que faltam (muda se o teorema, as premissas ou as notas desativadas mudarem). */

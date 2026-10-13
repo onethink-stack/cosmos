@@ -502,10 +502,19 @@ export const nao = (f: Formula): Formula => ({ k: 'not', f, pos: 0, end: 0 })
 /** com prazo, o tempo mínimo para achar as notas de origem depois de decidir */
 const PRAZO_MINIMO_NOTAS_MS = 15_000
 
+export interface ExtrasPergunta {
+  /** quando não segue, devolve também o cenário em que as notas e ela valem (o conselheiro o guarda) */
+  comAFavor?: boolean
+  /**
+   * um cenário em que todas as notas valem e a fórmula é falsa, já conhecido
+   * (o conselheiro): nem a consistência nem o contraexemplo precisam ser procurados
+   */
+  contra?: Modelo
+}
+
 /**
  * "A fórmula segue das notas?" — testa notas ∪ {¬φ} e notas ∪ {φ} em
- * domínios de 1 a N objetos. `comAFavor`: quando não segue, devolve também o
- * cenário em que as notas e ela valem (o conselheiro das perguntas o guarda).
+ * domínios de 1 a N objetos.
  */
 export function perguntar(
   grupos: Grupo[],
@@ -513,12 +522,16 @@ export function perguntar(
   dicionario: EntradaDicionario[],
   op: OpcoesMotor,
   progresso?: Progresso,
-  comAFavor = false,
+  extras: ExtrasPergunta = {},
 ): ResultadoPergunta {
   const [phi] = analisar([formula], dicionario)
   if (!phi) return analisar([formula], dicionario, true).length ? { tipo: 'aritmetica' } : { tipo: 'formula-invalida' }
   const prontos: GrupoPronto[] = grupos.map((g) => ({ g, itens: analisar(g.formulas, dicionario) })).filter((x) => x.itens.length)
   const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+  // com prazo, achar as notas de origem ganha um tempo próprio (uma checagem que não
+  // decide mantém a nota: a lista pode sair maior, nunca insuficiente)
+  const opNotas = op.prazo ? { ...op, prazo: Math.max(op.prazo, Date.now() + PRAZO_MINIMO_NOTAS_MS) } : op
+  if (extras.contra) return naoSegue(prontos, phi, extras.contra, op, opNotas, progresso, extras.comAFavor)
 
   progresso?.('conferindo se as notas são consistentes')
   const base = buscarModelo(premissas, op)
@@ -528,17 +541,27 @@ export function perguntar(
   progresso?.('procurando um mundo onde as notas valem e a fórmula falha')
   const contra = buscarModelo([...premissas, nao(phi.expandida)], op)
   if (contra.status === 'grande-demais') return contra.tempo ? { tipo: 'tempo', n: contra.n, fase: 'contra' } : { tipo: 'grande-demais', n: contra.n }
-  // com prazo, achar as notas de origem ganha um tempo próprio (uma checagem que não
-  // decide mantém a nota: a lista pode sair maior, nunca insuficiente)
-  const opNotas = op.prazo ? { ...op, prazo: Math.max(op.prazo, Date.now() + PRAZO_MINIMO_NOTAS_MS) } : op
   if (contra.status === 'sem-modelo') {
     const notas = notasNecessarias(prontos, phi, [nao(phi.expandida)], opNotas, (g, i, n) =>
       progresso?.(`procurando as notas necessárias: testando sem "${g.rotulo}" (${i + 1}/${n})`),
     )
     return { tipo: 'segue', N: op.N, K: contra.K, notas: notas.map((x) => x.g.id) }
   }
+  return naoSegue(prontos, phi, contra.modelo, op, opNotas, progresso, extras.comAFavor)
+}
 
-  const mundo: MundoExplicado = { n: contra.n, modelo: contra.modelo, passos: new Avaliador(contra.modelo).explicar(phi.original) }
+/** Não segue (há o cenário `contra`): as notas a contradizem, ou não decidem? */
+function naoSegue(
+  prontos: GrupoPronto[],
+  phi: FormulaPronta,
+  contra: Modelo,
+  op: OpcoesMotor,
+  opNotas: OpcoesMotor,
+  progresso?: Progresso,
+  comAFavor = false,
+): ResultadoPergunta {
+  const premissas = prontos.flatMap((x) => x.itens.map((i) => i.expandida))
+  const mundo: MundoExplicado = { n: contra.n, modelo: contra, passos: new Avaliador(contra).explicar(phi.original) }
   progresso?.('procurando um mundo onde as notas valem e a fórmula também')
   const afavor = buscarModelo([...premissas, phi.expandida], op)
   if (afavor.status === 'sem-modelo') {

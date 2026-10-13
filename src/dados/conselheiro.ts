@@ -13,13 +13,14 @@
 // Cada tentativa fica registrada, para medir se ele está ajudando.
 
 import { useEffect, useReducer } from 'preact/hooks'
-import type { Formula, Termo } from '../logica/ast'
+import type { Formula } from '../logica/ast'
 import { resumo } from '../logica/resumo'
-import { Avaliador } from '../motor/avaliar'
-import { estadoEfetivo, type RelatorioCadeia } from '../motor/cadeia'
-import { analisar, nomesDaFormula, type Modelo } from '../motor/motor'
-import type { Grupo } from '../motor/motor'
+import { estadoEfetivo, type ContextoCadeia, type PedidoCadeia, type RelatorioCadeia } from '../motor/cadeia'
+import { sugerirNotas, valeNoMundo, type ConselhoCadeia } from '../motor/conselho'
+import { analisar, nomesDaFormula, type Grupo, type Modelo } from '../motor/motor'
 import type { EntradaDicionario } from './tipos'
+
+export { julgarNosMundos, sugerirNotas, valeNoMundo } from '../motor/conselho'
 
 export interface MundoGuardado {
   id: string
@@ -63,121 +64,13 @@ export interface Tentativa {
 const MAX_MUNDOS_POR_CONTEXTO = 40
 const MAX_PROVAS = 3000
 const MAX_TENTATIVAS = 5000
-/** quantas notas o conselheiro sugere, no máximo, antes das ligadas pelos nomes */
-export const MAX_SUGERIDAS = 24
+/** quantas provas vão para cada rodada da reação em cadeia (as mais novas) */
+const PROVAS_POR_RODADA = 400
 /** tempo máximo para reconferir os cenários guardados depois que as notas mudam (o resto fica para a próxima) */
 const PRAZO_RECONFERIR_MS = 300
 
 /** a assinatura das notas de um conjunto (a mesma para as mesmas fórmulas, em qualquer ordem) */
 export const assinaturaNotas = (grupos: Grupo[]) => resumo(JSON.stringify(grupos.flatMap((g) => g.formulas.map((f) => f.trim())).sort()))
-
-// ------------------------------------------------------------ julgar nos cenários
-
-/** a fórmula só usa o que o cenário interpreta de forma legítima (crenças de agentes que ele tem; ∅ como objeto, se ele tem ∅) */
-function cabe(f: Formula, m: Modelo): boolean {
-  const agentes = new Set((m.acessos ?? []).map((a) => a.agente))
-  const temVazio = m.constantes.some((c) => c.nome === '∅')
-  const termoOk = (t: Termo): boolean => {
-    switch (t.k) {
-      case 'vazio':
-        return temVazio
-      case 'app':
-        return t.args.every(termoOk)
-      case 'nome':
-        return true
-      default:
-        // números, ⋂, ⋃ como objeto: o motor finito não lê
-        return false
-    }
-  }
-  const ok = (g: Formula): boolean => {
-    switch (g.k) {
-      case 'pred':
-        return g.args.every(termoOk)
-      case 'rel':
-        return (g.op === '=' || g.op === '∈') && termoOk(g.l) && termoOk(g.r)
-      case 'const':
-        return true
-      case 'not':
-      case 'nec':
-      case 'pos':
-        return ok(g.f)
-      case 'crenca':
-        return agentes.has(g.agente) && ok(g.f)
-      case 'and':
-      case 'or':
-      case 'imp':
-      case 'iff':
-        return ok(g.l) && ok(g.r)
-      case 'forall':
-      case 'exists':
-        return !g.dom && ok(g.corpo)
-    }
-  }
-  return ok(f)
-}
-
-/** a fórmula (expandida) é verdadeira no cenário? null: o cenário não a interpreta */
-export function valeNoMundo(f: Formula, m: Modelo): boolean | null {
-  if (!cabe(f, m)) return null
-  try {
-    return new Avaliador(m).avaliar(f)
-  } catch {
-    return null
-  }
-}
-
-/**
- * A fórmula nos cenários em que as notas valem: `falha`, um em que ela é
- * falsa (não segue); `vale`, se há um em que ela é verdadeira.
- */
-export function julgarNosMundos(modelos: Modelo[], phi: Formula): { falha: Modelo | null; vale: boolean } {
-  let falha: Modelo | null = null
-  let vale = false
-  for (const m of modelos) {
-    const v = valeNoMundo(phi, m)
-    if (v === false) falha ??= m
-    if (v === true) vale = true
-    if (falha && vale) break
-  }
-  return { falha, vale }
-}
-
-// ------------------------------------------------------------ sugerir notas
-
-/**
- * As notas que vão primeiro ao Z3, da mais promissora para a menos: as que
- * provaram perguntas parecidas (pontos pela semelhança dos nomes) e as que
- * falam de algum nome da pergunta. Vazio: nada a sugerir.
- */
-export function sugerirNotas(
-  provas: ProvaGuardada[],
-  contexto: string,
-  simbolos: string[],
-  disponiveis: { id: string; simbolos: string[] }[],
-  max = MAX_SUGERIDAS,
-): string[] {
-  const alvo = new Set(simbolos)
-  const existe = new Set(disponiveis.map((d) => d.id))
-  const pontos = new Map<string, number>()
-  for (const p of provas) {
-    if (p.contexto !== contexto) continue
-    let comum = 0
-    for (const s of p.simbolos) if (alvo.has(s)) comum++
-    if (!comum) continue
-    const semelhanca = comum / (alvo.size + p.simbolos.length - comum)
-    for (const n of p.notas) if (existe.has(n)) pontos.set(n, (pontos.get(n) ?? 0) + 1 + semelhanca)
-  }
-  // as que falam dos mesmos nomes (valem menos que as que já provaram algo parecido)
-  for (const d of disponiveis) {
-    const comum = d.simbolos.filter((s) => alvo.has(s)).length
-    if (comum) pontos.set(d.id, (pontos.get(d.id) ?? 0) + comum / (d.simbolos.length + 1))
-  }
-  return [...pontos]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, max)
-    .map(([id]) => id)
-}
 
 // ------------------------------------------------------------ guardado
 
@@ -363,7 +256,34 @@ class Conselheiro {
   /** As notas que vão primeiro ao Z3 numa pergunta sobre `phi` (ids, da mais promissora). */
   sugerir(contexto: string, phi: Formula, grupos: { id: string; itens: Formula[] }[]): string[] {
     const disponiveis = grupos.map((g) => ({ id: g.id, simbolos: [...new Set(g.itens.flatMap(nomesDaFormula))] }))
-    return sugerirNotas(this.provas, contexto, [...new Set(nomesDaFormula(phi))], disponiveis)
+    return sugerirNotas(
+      this.provas.filter((p) => p.contexto === contexto),
+      [...new Set(nomesDaFormula(phi))],
+      disponiveis,
+    )
+  }
+
+  /** O que vai para uma rodada da reação em cadeia, por conjunto: os cenários e as provas guardados dele. */
+  conselhoPara(contexto: string): ConselhoCadeia {
+    return {
+      mundos: this.mundos.filter((m) => m.contexto === contexto).map((m) => m.modelo),
+      provas: this.provas
+        .filter((p) => p.contexto === contexto)
+        .slice(-PROVAS_POR_RODADA)
+        .map((p) => ({ simbolos: p.simbolos, notas: p.notas })),
+    }
+  }
+
+  /** O pedido da rodada com o conselho de cada conjunto (sem nada aprendido, como está). */
+  comConselho(pedido: PedidoCadeia): PedidoCadeia {
+    if (!this.mundos.length && !this.provas.length) return pedido
+    return {
+      ...pedido,
+      contextos: pedido.contextos.map((c): ContextoCadeia => {
+        const conselho = this.conselhoPara(c.chave)
+        return conselho.mundos.length || conselho.provas.length ? { ...c, conselho } : c
+      }),
+    }
   }
 
   /** O que uma rodada da reação em cadeia ensina: os cenários das leis e as notas de cada prova do Z3. */
@@ -376,6 +296,7 @@ class Conselheiro {
       // a rodada separa as notas em blocos independentes (e deixa as pesadas à parte): um cenário dela
       // pode valer só para parte das notas — sem assinatura, ele é sempre reconferido antes de ser usado
       if (r.consistencia?.tipo === 'consistente') this.guardarMundo(r.chave, r.consistencia.modelo, '')
+      for (const m of r.conselho?.aFavor ?? []) this.guardarMundo(r.chave, m, '')
       for (const t of r.teoremas) {
         const e = estadoEfetivo(t)
         if (!t.z3 && (t.resultado.tipo === 'nao-segue' || t.resultado.tipo === 'contradiz')) this.guardarMundo(r.chave, t.resultado.mundo.modelo, '')

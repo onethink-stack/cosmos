@@ -3,7 +3,7 @@ import type { EntradaDicionario } from '../src/dados/tipos'
 import { blocosIndependentes, estadoEfetivo, prazosAuxiliares, reacaoEmCadeia, type AjudaZ3, type RelatorioCadeia } from '../src/motor/cadeia'
 import { bancoNaMemoria, definirBanco } from '../src/motor/bancoProvas'
 import { comTeto, definirPool, PoolLocal, semParalelo } from '../src/motor/paralelo'
-import { analisar, buscarModelo, OPCOES_PADRAO, perguntar } from '../src/motor/motor'
+import { analisar, buscarModelo, OPCOES_PADRAO, perguntar, type Modelo } from '../src/motor/motor'
 
 const op = { ...OPCOES_PADRAO, N: 5 }
 const ficha = (simbolo: string, tipo: EntradaDicionario['tipo'], aridade = 0): EntradaDicionario => ({
@@ -160,11 +160,12 @@ describe('prazo de cada checagem principal', () => {
         op,
         (r) => relatorios.push(r),
       )
-      // a rodada fechou com os dois sem decisão, e eles foram continuados
+      // a rodada fechou com T1 sem decisão, e ele foi continuado; T2 nem precisou de busca:
+      // no cenário da consistência (R falso) as notas valem e ele falha — não segue
       const fimDaRodada = relatorios.find((r) => r[0].etapa === 'fim')![0]
       expect(fimDaRodada.consistencia?.tipo).toBe('consistente')
-      expect(fimDaRodada.teoremas.map((x) => x.resultado.tipo)).toEqual(['tempo', 'tempo'])
-      expect(relatorios.some((r) => r[0].continuando?.length === 2)).toBe(true)
+      expect(fimDaRodada.teoremas.map((x) => x.resultado.tipo)).toEqual(['tempo', 'nao-segue'])
+      expect(relatorios.some((r) => r[0].continuando?.length === 1)).toBe(true)
       // no fim, cada um com a resposta certa
       const ultimo = relatorios.at(-1)![0]
       expect(ultimo.continuando).toBeUndefined()
@@ -270,6 +271,47 @@ describe('as notas de onde um teorema segue (o núcleo, não todas)', () => {
   }, 60_000)
 })
 
+describe('o conselheiro dentro da rodada: cenários conhecidos', () => {
+  /** um cenário de 1 objeto (c) com os predicados verdadeiros dados */
+  const cenario = (...verdadeiros: string[]): Modelo => ({
+    n: 1,
+    mundos: 1,
+    constantes: [{ nome: 'c', valor: 0 }],
+    funcoes: [],
+    predicados: verdadeiros.map((nome) => ({ nome, aridade: 1, verdadeiros: [{ args: [0], w: 0 }] })),
+    pertence: [],
+    acessos: [],
+  })
+  const rodarComConselho = async (grupos: ReturnType<typeof g>[], teoremas: ReturnType<typeof t>[], mundos: Modelo[]) => {
+    let ultimo: RelatorioCadeia[] = []
+    await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos, teoremas, conselho: { mundos, provas: [] } }], inativas: [] }, dic, op, (r) => (ultimo = r))
+    return ultimo[0]
+  }
+
+  it('um cenário das notas em que o teorema falha e outro em que vale: decidido sem procurar', async () => {
+    const rel = await rodarComConselho([g('L1', 'P(c)')], [t('T1', 'Q(c)')], [cenario('P'), cenario('P', 'Q')])
+    expect(rel.teoremas[0].resultado.tipo).toBe('nao-segue')
+    expect(rel.conselho?.porCenario).toBe(1)
+  })
+
+  it('um cenário em que as notas de agora NÃO valem nunca é usado (o teorema que segue continua seguindo)', async () => {
+    // P(c) falso: não é cenário das notas; se fosse usado, "P(c)" pareceria não seguir
+    const rel = await rodarComConselho([g('L1', '∀x (Q(x) ⟹ P(x))'), g('L2', 'Q(c)')], [t('T1', 'P(c)')], [cenario('Q'), cenario()])
+    expect(rel.teoremas[0].resultado.tipo).toBe('segue')
+    expect(rel.conselho?.porCenario).toBe(0)
+  })
+
+  it('o que um teorema acha serve aos seguintes da mesma rodada', async () => {
+    semParalelo()
+    const rel = await rodarComConselho([g('L1', 'P(c)')], [t('T1', 'Q(c)'), t('T2', '∃x Q(x)')], [])
+    expect(rel.teoremas.map((x) => x.resultado.tipo)).toEqual(['nao-segue', 'nao-segue'])
+    // T1 acha o cenário em que Q vale; com o da consistência (Q falso), T2 sai sem procurar
+    expect(rel.conselho?.porCenario).toBe(1)
+    // o cenário "a favor" não fica no relatório (só serve à rodada)
+    expect(rel.teoremas.some((x) => 'aFavor' in x.resultado)).toBe(false)
+  })
+})
+
 describe('o Z3 confere o "segue até N" do motor finito', () => {
   // "s nunca leva dois objetos ao mesmo lugar ⟹ todo objeto é alcançado": vale em todo cenário finito, falha nos naturais (s(x) = x + 1)
   const dicS = [...dic, ficha('s', 'funcao', 1)]
@@ -305,6 +347,24 @@ describe('o Z3 confere o "segue até N" do motor finito', () => {
     const rel = await rodarZ3(leis, [t('T1', 'Q(c)')], z3Responde([0], [], [[0, [0, 1]]]))
     expect(rel.teoremas[0]).toMatchObject({ z3: 'segue', resultado: { tipo: 'segue', notas: ['L1', 'L2'] } })
     expect(estadoEfetivo(rel.teoremas[0])).toEqual({ tipo: 'segue', provado: true })
+  })
+
+  it('as notas que o conselheiro sugere vão sozinhas ao Z3: provado com elas, o núcleo vale (e as outras nem entram)', async () => {
+    const leis = [g('L1', '∀x (P(x) ⟹ Q(x))'), g('L2', 'P(c)'), g('L3', '∀x (R(x) ⟹ S(x))'), g('L4', '∃x S(x)')]
+    const pedidos: number[] = []
+    // 1º pedido (só as notas do motor finito): o Z3 acha cenário; 2º (as sugeridas): prova, com o núcleo L1 e L2
+    const ajudaZ3: AjudaZ3 = (conjuntos) => {
+      pedidos.push(conjuntos[0].length)
+      const segundo = pedidos.length === 2
+      return { semModelo: new Set(segundo ? [0] : []), comModelo: new Set(segundo ? [] : [0]), nucleos: new Map(segundo ? [[0, [0, 1]]] : []), fim: Promise.resolve({}) }
+    }
+    let ultimo: RelatorioCadeia[] = []
+    const conselho = { mundos: [], provas: [{ simbolos: ['Q', 'c'], notas: ['L1', 'L2', 'L3'] }] }
+    await reacaoEmCadeia({ contextos: [{ chave: 'geral', rotulo: 'Leis e fatos', grupos: leis, teoremas: [t('T1', 'Q(c)')], conselho }], inativas: [] }, dicS, op, (r) => (ultimo = r), undefined, ajudaZ3)
+    expect(ultimo[0].teoremas[0]).toMatchObject({ z3: 'segue', resultado: { tipo: 'segue', notas: ['L1', 'L2'] } })
+    expect(ultimo[0].conselho?.provadosComSugeridas).toBe(1)
+    // S (2 notas) + a negação; depois as 3 sugeridas + a negação; o pedido com todas as notas não foi preciso
+    expect(pedidos).toEqual([3, 4])
   })
 
   it('o que não decidiu a tempo também vai para o Z3 (mesmo sem aprofundamento), e provado vira "segue" com o núcleo', async () => {

@@ -407,6 +407,24 @@ const GrandeDemaisTexto = ({ n, limite, quais }: { n: number; limite?: number; q
 )
 
 /** O conjunto inteiro passou do limite do motor finito: o que ficou à parte, o que pesa e o que o Z3 disse. */
+/** O que o conselheiro poupou nesta rodada (ele só antecipa e recorta: quem decide é o motor finito e o Z3). */
+function AjudaConselheiro({ rel }: { rel: RelatorioCadeia }) {
+  const a = rel.conselho
+  if (!a || (!a.porCenario && !a.contraConhecido && !a.provadosComSugeridas)) return null
+  const partes = [
+    a.porCenario > 0 && `${a.porCenario} teorema${a.porCenario > 1 ? 's decididos' : ' decidido'} sem procurar, por cenários já conhecidos das notas`,
+    a.contraConhecido > 0 && `${a.contraConhecido} em que um cenário conhecido poupou a busca do contraexemplo`,
+    a.provadosComSugeridas > 0 &&
+      `${a.provadosComSugeridas} provado${a.provadosComSugeridas > 1 ? 's' : ''} pelo Z3 só com as notas sugeridas`,
+  ].filter(Boolean)
+  return (
+    <p class="suave">
+      Conselheiro: {partes.join('; ')}. Um cenário conhecido só é usado se as notas de agora valem nele; as respostas são as mesmas, só mais
+      rápidas.
+    </p>
+  )
+}
+
 function APartePesada({ rel }: { rel: RelatorioCadeia }) {
   const ap = rel.aParte!
   // nada deu para separar: a rodada parou na consistência
@@ -584,6 +602,7 @@ function Relatorio({
               lei M virar F, é preciso medir (e então mudar o grau na nota).
             </p>
           )}
+          <AjudaConselheiro rel={rel} />
           {geracoes.map((g) => (
             <div class="geracao">
               <div class="geracao-titulo">

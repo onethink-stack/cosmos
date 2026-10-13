@@ -19,6 +19,8 @@ interface Props {
   rotulo?: string
   /** cria a ficha deduzida para um nome não declarado (E12/E13) */
   onCriarFicha?: (ficha: NonNullable<Diag['ficha']>) => void
+  /** os nomes valem pelo uso, sem ficha no dicionário (a caçada de falhas) */
+  semFichas?: boolean
 }
 
 /** Recorta o texto em trechos, marcando os diagnósticos (sem sobreposição). */
@@ -39,7 +41,7 @@ function realcar(texto: string, diags: Diag[]) {
 
 export function CampoFormula(p: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
-  const r = useMemo(() => validar(p.valor, p.dicionario, { exigirFichas: true }), [p.valor, p.dicionario])
+  const r = useMemo(() => validar(p.valor, p.dicionario, { exigirFichas: !p.semFichas }), [p.valor, p.dicionario, p.semFichas])
 
   const ajustarAltura = () => {
     const el = ref.current

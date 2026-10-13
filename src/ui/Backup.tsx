@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { criarBackup, diasDesde, lerBackup, mesclarDicionario, mesclarPorId, nomeArquivo, type Backup as DadosBackup } from '../dados/backup'
+import { cacada } from '../dados/cacada'
 import { estado, useEstado } from '../dados/estado'
 import { historico } from '../dados/historico'
 import { mundo } from '../dados/mundo'
@@ -8,7 +9,8 @@ import { Offline } from './Offline'
 
 /** Baixa o backup como arquivo .json e registra a data. */
 export async function exportarBackup() {
-  const b = criarBackup(estado.notas, estado.dicionario, verificacao.N, new Date(), historico.achados, mundo.conjuntos)
+  await cacada.carregar()
+  const b = criarBackup(estado.notas, estado.dicionario, verificacao.N, new Date(), historico.achados, mundo.conjuntos, cacada.alvos)
   const blob = new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -66,6 +68,7 @@ export function Backup() {
     await est.substituirTudo(b.notas, b.dicionario)
     if (b.historico?.length) await historico.substituir(b.historico)
     if (b.conjuntos?.length) await mundo.substituir(b.conjuntos)
+    if (b.alvos?.length) await cacada.substituir(b.alvos)
     aplicarN(b)
     setLido(null)
     setFeito(`Importado: ${resumo(b.notas.length, b.dicionario.length)}.`)
@@ -77,6 +80,7 @@ export function Backup() {
     await est.substituirTudo(mesclarPorId(est.notas, b.notas), mesclarDicionario(est.dicionario, b.dicionario))
     if (b.historico?.length) await historico.mesclar(b.historico)
     for (const c of b.conjuntos ?? []) await mundo.adicionar(c)
+    if (b.alvos?.length) await cacada.mesclar(b.alvos)
     aplicarN(b)
     setLido(null)
     setFeito(`Mesclado: ${resumo(b.notas.length, b.dicionario.length)} do backup (novas ou atualizadas).`)

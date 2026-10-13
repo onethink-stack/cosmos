@@ -45,6 +45,28 @@ describe('exportar e importar', () => {
     expect(r.backup.dicionario[0]).toMatchObject({ numerico: true, argumentos: ['obj'] })
   })
 
+  it('leva os alvos da caçada de falhas (regras, promessas e achados)', () => {
+    const alvo = {
+      id: 'alvo-1',
+      nome: 'ponte',
+      programa: '',
+      escopo: '',
+      regras: [{ id: 'r1', titulo: 'guarda', formula: '∀x (D(x) ⟹ G(x))', fonte: 'Ponte.sol:10', ativa: true }],
+      promessas: [{ id: 'p1', titulo: 'saca', citacao: 'todo depósito pode ser sacado', formula: '∀x (D(x) ⟹ S(x))', fonte: '' }],
+      achados: [],
+      criadoEm: '2026-10-13T00:00:00.000Z',
+      atualizadoEm: '2026-10-13T00:00:00.000Z',
+    }
+    const b = criarBackup([], [], 6, new Date(), [], [], [alvo])
+    const r = lerBackup(JSON.stringify({ ...b, alvos: [...b.alvos!, { nome: 'sem id' }] }))
+    if (!r.ok) throw new Error(r.erro)
+    expect(r.backup.alvos).toEqual([alvo])
+    expect(r.avisos.some((a) => a.includes('alvo'))).toBe(true)
+    // backups antigos não têm alvos
+    const antigo = lerBackup(JSON.stringify({ ...b, alvos: undefined }))
+    expect(antigo.ok && antigo.backup.alvos).toEqual([])
+  })
+
   it('recusa arquivos que não são backup', () => {
     expect(lerBackup('não é json')).toEqual({ ok: false, erro: 'O arquivo não é um JSON válido.' })
     expect(lerBackup('{"foo": 1}').ok).toBe(false)

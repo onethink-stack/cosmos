@@ -16,6 +16,8 @@ export type Rota =
   | { tela: 'historico' }
   | { tela: 'verdades' }
   | { tela: 'perguntar' }
+  /** caçar falhas lógicas: a lista de alvos, ou um alvo */
+  | { tela: 'cacar'; id?: string }
 
 let visitas = 0
 
@@ -48,6 +50,8 @@ export function lerRota(hash: string): Rota {
       return { tela: 'verdades' }
     case 'perguntar':
       return { tela: 'perguntar' }
+    case 'cacar':
+      return partes[1] ? { tela: 'cacar', id: decodeURIComponent(partes[1]) } : { tela: 'cacar' }
     default:
       return { tela: 'notas' }
   }

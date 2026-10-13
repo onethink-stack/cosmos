@@ -20,6 +20,7 @@ import { Modelo } from './Modelo'
 import { Mundo } from './Mundo'
 import { PainelContradicoes } from './PainelContradicoes'
 import { PerguntarPortugues } from './PerguntarPortugues'
+import { Cacar } from './Cacar'
 import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
 import { Sistemas } from './Sistemas'
@@ -87,6 +88,9 @@ export function App() {
             <a href="#/verdades" class={aba === 'verdades' ? 'ativo' : ''}>
               Verdades
             </a>
+            <a href="#/cacar" class={aba === 'cacar' ? 'ativo' : ''}>
+              Caçar falhas
+            </a>
             <a href="#/historico" class={aba === 'historico' ? 'ativo' : ''}>
               Histórico
             </a>
@@ -128,6 +132,8 @@ export function App() {
           <Verdades />
         ) : rota.tela === 'perguntar' ? (
           <PerguntarPortugues />
+        ) : rota.tela === 'cacar' ? (
+          <Cacar key={rota.id ?? ''} id={rota.id} />
         ) : (
           <PainelContradicoes />
         )}

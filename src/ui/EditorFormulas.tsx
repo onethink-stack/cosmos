@@ -12,10 +12,12 @@ interface Props {
   onCriarFicha?: (ficha: NonNullable<Diag['ficha']>) => void
   /** campo único (sem "+ Fórmula" nem remover); Enter chama onEnter */
   unica?: { rotulo: string; onEnter: () => void }
+  /** os nomes valem pelo uso, sem ficha no dicionário */
+  semFichas?: boolean
 }
 
 /** Lista de fórmulas de uma nota, com a barra de símbolos fixa acima. */
-export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha, unica }: Props) {
+export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha, unica, semFichas }: Props) {
   const campos = useRef<(HTMLTextAreaElement | null)[]>([])
   const alvo = useRef(0)
   const focarDepois = useRef<number | null>(null)
@@ -73,6 +75,7 @@ export function EditorFormulas({ formulas, onChange, dicionario, onCriarFicha, u
           onEnter={unica ? unica.onEnter : () => adicionar(i)}
           onRemover={unica ? undefined : () => remover(i)}
           onCriarFicha={onCriarFicha}
+          semFichas={semFichas}
         />
       ))}
       {!unica && (

@@ -360,3 +360,24 @@ details.explicacao p { margin: 6px 0; }
 .perguntar-pt .corrigir { margin-top: 8px; }
 .perguntar-pt button.link { background: none; border: none; padding: 0; min-height: 0; color: var(--destaque); text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
 .perguntar-pt .config-tradutor { margin-top: 16px; }
+
+/* caçar falhas lógicas */
+.cacar .regras-jogo { border: 1px solid var(--aviso); border-radius: var(--raio); padding: 8px 12px; margin: 10px 0; background: var(--superficie); }
+.cacar .regras-jogo summary { cursor: pointer; font-weight: 600; }
+.cacar .regras-jogo li { margin: 6px 0; }
+.cacar .lista-alvos, .cacar .lista-treinos { list-style: none; padding: 0; }
+.cacar .lista-alvos li { padding: 8px 0; border-bottom: 1px solid var(--borda); }
+.cacar .treino { border: 1px solid var(--borda); border-radius: var(--raio); padding: 8px 12px; margin: 8px 0; background: var(--superficie); }
+.cacar .treino p { margin: 6px 0; }
+.cacar .regra-alvo { border: 1px solid var(--borda); border-left: 4px solid var(--lei); border-radius: var(--raio); padding: 2px 12px; margin: 10px 0; background: var(--superficie); }
+.cacar .regra-alvo.inativa { opacity: .6; }
+.cacar .promessa-alvo > .regra-alvo { border-left-color: var(--destaque); margin-bottom: 0; }
+.cacar .promessa-alvo { margin-bottom: 18px; }
+.cacar .alternar { align-self: center; }
+.cacar .abrir-programa { align-self: center; }
+.cacar .rascunho { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; background: var(--superficie-2); padding: 8px; border-radius: var(--raio); }
+.cacar .achado select { max-width: 100%; }
+.cacar .regra-alvo.fechada { padding: 8px 12px; }
+.cacar .regra-alvo.fechada .linha-campos { align-items: center; }
+.cacar .regra-alvo .fonte { font-size: .82rem; margin: 4px 0 0; overflow-wrap: anywhere; }
+.cacar .citacao { font-style: italic; margin: 4px 0; }

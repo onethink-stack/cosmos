@@ -83,10 +83,41 @@ describe('gerador de teoremas (saturação)', () => {
     expect(g.contradicao).toEqual(['L1', 'L2', 'L3'])
   })
 
-  it('igualdade: troca iguais por iguais', () => {
-    const { formulas } = gerar(notas(['L1', 'a = b'], ['L2', 'P(a)']))
-    expect(formulas).toContain('P(b)')
+  it('igualdade: troca iguais por iguais (escrevendo tudo na forma que a ordem escolhe: b vira a)', () => {
+    const { formulas } = gerar(notas(['L1', 'a = b'], ['L2', 'P(b)'], ['L3', '∀x (P(x) ⟹ Q(x))']))
+    expect(formulas).toContain('P(a)')
+    expect(formulas).toContain('Q(a)')
+    // Q(b) diz o mesmo que Q(a) (b = a): não sai de novo
+    expect(formulas).not.toContain('Q(b)')
   })
+
+  it('teoria de grupos: com a igualdade nativa, sai o inverso do inverso (e outras leis de grupo)', () => {
+    const dicG = [ficha('op', 'funcao', 2), ficha('inv', 'funcao', 1), ficha('e', 'constante')]
+    const ns = [
+      ['G1', '∀x ∀y ∀z (op(op(x, y), z) = op(x, op(y, z)))'],
+      ['G2', '∀x (op(e, x) = x)'],
+      ['G3', '∀x (op(inv(x), x) = e)'],
+    ].map(([id, f]) => ({ id, formulas: analisar([f], dicG).map((i) => i.expandida) }))
+    const g = new Gerador(ns, new Set(dicG.map((x) => x.simbolo)), { pesoMax: 20, litMax: 2, profTermo: 4, passivasMax: 200_000 })
+    // o banco no fim (os superados — versões ainda não simplificadas — saem)
+    const banco = new Map<string, string>()
+    for (let i = 0; i < 200 && !g.saturado; i++)
+      for (const ev of g.passo(100)) {
+        if (ev.tipo === 'teorema') banco.set(ev.t.chave, ev.t.formula)
+        if (ev.tipo === 'superado') banco.delete(ev.chave)
+      }
+    const formulas = [...banco.values()]
+    // cada lei, escrita com o lado que for
+    const tem = (q: string, l: string, r: string) => formulas.includes(`${q}${l} = ${r}${q ? ')' : ''}`) || formulas.includes(`${q}${r} = ${l}${q ? ')' : ''}`)
+    expect(tem('∀x (', 'inv(inv(x))', 'x'), 'inverso do inverso').toBe(true)
+    expect(tem('∀x (', 'op(x, e)', 'x'), 'neutro à direita').toBe(true)
+    expect(tem('∀x (', 'op(x, inv(x))', 'e'), 'inverso à direita').toBe(true)
+    expect(tem('', 'inv(e)', 'e'), 'inverso do neutro').toBe(true)
+    expect(tem('∀x ∀y (', 'inv(op(x, y))', 'op(inv(y), inv(x))'), 'inverso do produto').toBe(true)
+    // o que ainda dava para simplificar não fica no banco
+    expect(formulas).not.toContain('∀x (x = op(inv(e), x))')
+    expect(g.contradicao).toBeNull()
+  }, 120_000)
 
   it('para quando tudo até o peso máximo já foi gerado (saturou)', () => {
     const { g } = gerar(notas(['L1', '∀x (P(x) ⟹ Q(x))'], ['L2', 'P(a)']))

@@ -5,6 +5,16 @@
 // laço da "cláusula escolhida" (a mais leve primeiro, e de vez em quando a
 // mais antiga, para nenhuma ficar esquecida).
 //
+// A igualdade é nativa, como nesses provadores (os axiomas dela — simétrica,
+// transitiva, trocar iguais por iguais em cada função e predicado — faziam a
+// busca explodir, e teoria de grupos não saía):
+//   - paramodulação: de "s = t" e de uma cláusula com um pedaço que unifica
+//     com s, a mesma cláusula com t no lugar;
+//   - reescrita: as igualdades de um literal só que uma ordem dos termos
+//     orienta (o lado maior vira o menor: "inv(inv(x)) = x") simplificam toda
+//     cláusula nova — reescrever sempre encurta, então sempre termina;
+//   - resolução da igualdade: "s ≠ t ou C", com s e t unificáveis, dá C.
+//
 // O que sai daqui vale para QUALQUER número de objetos (é prova, não busca de
 // cenário): resolução é correta. Uma cláusula vazia prova que as leis se
 // contradizem.
@@ -160,6 +170,50 @@ function casar(p: TermoC, t: TermoC, s: Map<number, TermoC>): boolean {
 
 /** x é uma variável que não aparece em t (pode ser trocada por t) */
 const trocavel = (x: TermoC, t: TermoC) => ehVar(x) && !ocorre(x, t, new Map())
+
+/** troca as variáveis de t pelo que `s` diz, uma vez só (sem seguir o que foi posto no lugar) */
+const trocarVars = (t: TermoC, s: Map<number, TermoC>): TermoC => (ehVar(t) ? (s.get(t) ?? t) : t.a.length ? { f: t.f, a: t.a.map((x) => trocarVars(x, s)) } : t)
+
+function contarVars(t: TermoC, m: Map<number, number> = new Map()): Map<number, number> {
+  if (ehVar(t)) m.set(t, (m.get(t) ?? 0) + 1)
+  else t.a.forEach((x) => contarVars(x, m))
+  return m
+}
+
+/**
+ * s ≻ t na ordem dos termos (Knuth-Bendix, com peso 1 por símbolo e desempate
+ * pelo nome): toda variável de t aparece em s ao menos as mesmas vezes, e s é
+ * mais pesado (ou, de mesmo peso, maior na ordem dos símbolos e depois dos
+ * argumentos). Trocar s por t, em qualquer lugar, sempre encurta: a reescrita
+ * termina.
+ */
+export function maior(s: TermoC, t: TermoC): boolean {
+  if (ehVar(s)) return false
+  if (ehVar(t)) return ocorre(t, s, new Map())
+  const vs = contarVars(s)
+  for (const [v, n] of contarVars(t)) if ((vs.get(v) ?? 0) < n) return false
+  const ps = pesoT(s)
+  const pt = pesoT(t)
+  if (ps !== pt) return ps > pt
+  if (s.f !== t.f) return s.f > t.f
+  if (s.a.length !== t.a.length) return s.a.length > t.a.length
+  for (let i = 0; i < s.a.length; i++) if (!igualT(s.a[i], t.a[i])) return maior(s.a[i], t.a[i])
+  return false
+}
+
+/** os pedaços de t que não são variáveis, com o caminho até cada um */
+function posicoes(t: TermoC, caminho: number[] = [], r: { t: { f: string; a: TermoC[] }; c: number[] }[] = []) {
+  if (ehVar(t)) return r
+  r.push({ t, c: caminho })
+  t.a.forEach((x, i) => posicoes(x, [...caminho, i], r))
+  return r
+}
+
+/** t com o pedaço do caminho trocado por `por` */
+function trocarEm(t: TermoC, caminho: number[], por: TermoC, k = 0): TermoC {
+  if (k === caminho.length || ehVar(t)) return por
+  return { f: t.f, a: t.a.map((y, i) => (i === caminho[k] ? trocarEm(y, caminho, por, k + 1) : y)) }
+}
 
 const pesoT = (t: TermoC): number => (ehVar(t) ? 1 : 1 + t.a.reduce<number>((n, x) => n + pesoT(x), 0))
 const altura = (t: TermoC): number => (ehVar(t) ? 0 : t.a.length ? 1 + Math.max(...t.a.map(altura)) : 0)
@@ -446,6 +500,8 @@ export interface EstatisticasGerador {
   descartadas: number
   /** passaram do peso máximo (seriam geradas com um peso maior) */
   pesadas: number
+  /** reescritas por uma regra (saíram, e entrou a versão simplificada) */
+  simplificadas: number
 }
 
 /**
@@ -456,7 +512,7 @@ export interface EstatisticasGerador {
 export class Gerador {
   /** fórmulas que o gerador não lê (lógica modal, números, longas demais) */
   readonly ignoradas: { nota: string; motivo: string }[] = []
-  readonly estatisticas: EstatisticasGerador = { escolhidas: 0, geradas: 0, esperando: 0, guardadas: 0, descartadas: 0, pesadas: 0 }
+  readonly estatisticas: EstatisticasGerador = { escolhidas: 0, geradas: 0, esperando: 0, guardadas: 0, descartadas: 0, pesadas: 0, simplificadas: 0 }
   contradicao: string[] | null = null
   private proximo = 0
   private fila = new Fila()
@@ -472,6 +528,10 @@ export class Gerador {
   private chaves = new Set<string>()
   private escolhas = 0
   private pesoMax: number
+  /** as leis usam "=": paramodulação, reescrita e resolução da igualdade */
+  private igualdade = false
+  /** igualdades de um literal só, orientadas (o lado maior vira o menor), pelo símbolo do lado maior */
+  private reescritas = new Map<string, { l: TermoC; r: TermoC; c: Clausula }[]>()
 
   constructor(
     notas: NotaParaGerar[],
@@ -482,8 +542,6 @@ export class Gerador {
   ) {
     this.pesoMax = op.pesoMax
     const ctx: Contexto = { vars: 0, sk: 0, usaVazio: false }
-    const funcoes = new Map<string, number>()
-    const predicados = new Map<string, number>()
     let usaIgual = false
     for (const n of notas)
       for (const f of n.formulas) {
@@ -496,38 +554,13 @@ export class Gerador {
           continue
         }
         for (const c of cs) {
-          for (const l of c) {
-            if (l.p === IGUAL) usaIgual = true
-            else predicados.set(l.p, l.a.length)
-            const ver = (t: TermoC): void => {
-              if (ehVar(t)) return
-              if (t.a.length) funcoes.set(t.f, t.a.length)
-              t.a.forEach(ver)
-            }
-            l.a.forEach(ver)
-          }
+          if (c.some((l) => l.p === IGUAL)) usaIgual = true
           this.entrada(c, n.id)
         }
       }
     if (ctx.usaVazio) this.entrada([{ pos: false, p: PERTENCE, a: [0, { f: VAZIO, a: [] }] }], `${ORIGEM_INTERNA}vazio`)
-    // igualdade pelos axiomas dela: reflexiva, simétrica, transitiva, e trocar iguais por iguais
-    if (usaIgual) {
-      const eq = (pos: boolean, x: TermoC, y: TermoC): Literal => ({ pos, p: IGUAL, a: [x, y] })
-      const o = `${ORIGEM_INTERNA}igualdade`
-      this.entrada([eq(true, 0, 0)], o)
-      this.entrada([eq(false, 0, 1), eq(true, 1, 0)], o)
-      this.entrada([eq(false, 0, 1), eq(false, 1, 2), eq(true, 0, 2)], o)
-      for (const [f, n] of funcoes)
-        for (let i = 0; i < n; i++) {
-          const args = (v: number) => Array.from({ length: n }, (_, k): TermoC => (k === i ? v : k + 2))
-          this.entrada([eq(false, 0, 1), eq(true, { f, a: args(0) }, { f, a: args(1) })], o)
-        }
-      for (const [p, n] of predicados)
-        for (let i = 0; i < n; i++) {
-          const args = (v: number) => Array.from({ length: n }, (_, k): TermoC => (k === i ? v : k + 2))
-          this.entrada([eq(false, 0, 1), { pos: false, p, a: args(0) }, { pos: true, p, a: args(1) }], o)
-        }
-    }
+    // a igualdade é nativa (paramodulação, reescrita, resolução da igualdade): sem axiomas dela
+    this.igualdade = usaIgual
   }
 
   private entrada(lits: Literal[], origem: string) {
@@ -569,6 +602,11 @@ export class Gerador {
       const g = this.escolher()
       if (!g) break
       this.esperando--
+      // a escolhida, reescrita pelas regras de agora: se mudou, a versão simplificada entra no lugar dela
+      if (this.reescritas.size && this.simplificar(g, eventos)) {
+        if (this.contradicao) break
+        continue
+      }
       const sigG = new Set(g.sig)
       // alguma ativa já diz o mesmo, mais geral: esta não acrescenta nada
       if (this.ativas.some((a) => a.estado === 'ativa' && a.lits.length <= g.lits.length && a.sig.every((x) => sigG.has(x)) && subsume(a.lits, g.lits))) {
@@ -583,9 +621,11 @@ export class Gerador {
           this.foraDesdeArrumar++
         }
       g.estado = 'ativa'
-      this.ativar(g)
+      const regra = this.ativar(g)
       this.estatisticas.escolhidas++
       this.avaliar(g, eventos)
+      // uma regra nova: as ativas que ela simplifica saem, e entram as versões simplificadas
+      if (regra && this.simplificarAtivas(g, eventos)) break
       if (this.combinar(g, eventos)) break
     }
     this.estatisticas.esperando = this.esperando
@@ -609,7 +649,8 @@ export class Gerador {
     }
   }
 
-  private ativar(c: Clausula) {
+  /** põe a cláusula entre as ativas; true se ela virou uma regra de reescrita */
+  private ativar(c: Clausula): boolean {
     // de tempos em tempos, as que saíram deixam a lista e o índice
     if (this.foraDesdeArrumar > 1000) {
       this.ativas = this.ativas.filter((a) => a.estado === 'ativa')
@@ -619,6 +660,68 @@ export class Gerador {
     }
     this.ativas.push(c)
     this.indexar(c)
+    // uma igualdade de um literal só que a ordem orienta passa a reescrever as cláusulas novas
+    const [l] = c.lits
+    if (this.igualdade && c.lits.length === 1 && l.pos && l.p === IGUAL) {
+      const [s, t] = l.a
+      const regra = maior(s, t) ? { l: s, r: t } : maior(t, s) ? { l: t, r: s } : null
+      if (regra && !ehVar(regra.l)) {
+        const lista = this.reescritas.get(regra.l.f)
+        if (lista) lista.push({ ...regra, c })
+        else this.reescritas.set(regra.l.f, [{ ...regra, c }])
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
+   * A cláusula reescrita pelas regras de agora (sem a regra dela mesma). Se
+   * mudou, ela sai (e deixa de ser regra, se era; se era um teorema guardado,
+   * fica superado) e a versão simplificada entra; true nesse caso.
+   */
+  private simplificar(c: Clausula, eventos: EventoGerador[]): boolean {
+    const usadas = new Set<Clausula>()
+    const orc = { n: MAX_REESCRITAS }
+    const lits = c.lits.map((l) => ({ ...l, a: l.a.map((t) => this.formaNormal(t, usadas, orc, c)) }))
+    if (!usadas.size) return false
+    if (c.estado === 'ativa') this.foraDesdeArrumar++
+    c.estado = 'fora'
+    this.estatisticas.simplificadas++
+    for (const [f, lista] of this.reescritas) {
+      const resto = lista.filter((r) => r.c !== c)
+      if (resto.length !== lista.length) this.reescritas.set(f, resto)
+    }
+    if (c.guardada) {
+      eventos.push({ tipo: 'superado', chave: c.chave })
+      this.guardados = this.guardados.filter((g) => g.chave !== c.chave)
+    }
+    return this.derivar(lits, [c, ...usadas], eventos)
+  }
+
+  /** a regra nova `r` simplifica as ativas: as simplificadas saem e as versões novas entram; true se achou a contradição */
+  private simplificarAtivas(r: Clausula, eventos: EventoGerador[]): boolean {
+    for (const a of [...this.ativas]) {
+      if (a === r || a.estado !== 'ativa') continue
+      if (this.simplificar(a, eventos) && this.contradicao) return true
+    }
+    return false
+  }
+
+  /** t reescrito até não dar mais (as regras usadas entram em `usadas`; `orc`: no máximo tantas reescritas) */
+  private formaNormal(t: TermoC, usadas: Set<Clausula>, orc: { n: number }, exceto?: Clausula): TermoC {
+    if (ehVar(t)) return t
+    const u: { f: string; a: TermoC[] } = t.a.length ? { f: t.f, a: t.a.map((x) => this.formaNormal(x, usadas, orc, exceto)) } : t
+    for (const regra of this.reescritas.get(u.f) ?? []) {
+      if (orc.n <= 0) return u
+      if (regra.c === exceto) continue
+      const s = new Map<number, TermoC>()
+      if (!casar(regra.l, u, s)) continue
+      orc.n--
+      usadas.add(regra.c)
+      return this.formaNormal(trocarVars(regra.r, s), usadas, orc, exceto)
+    }
+    return u
   }
 
   private indexar(c: Clausula) {
@@ -654,52 +757,85 @@ export class Gerador {
   }
 
   /** resolução da escolhida com as ativas (e com ela mesma) e fatoração; true se achou a contradição */
-  private combinar(g: Clausula, eventos: EventoGerador[]): boolean {
-    const desloc = nVars(g.lits)
-    const herdados = (pais: Clausula[]) => {
-      const s = new Set<string>()
-      for (const p of pais) for (const a of p.guardada ? [p.chave] : p.ancestrais) s.add(a)
-      return [...s].slice(0, 12)
+  /** os teoremas guardados mais próximos de onde uma cláusula nova vem */
+  private herdados(pais: Clausula[]) {
+    const s = new Set<string>()
+    for (const p of pais) for (const a of p.guardada ? [p.chave] : p.ancestrais) s.add(a)
+    return [...s].slice(0, 12)
+  }
+
+  /**
+   * Uma cláusula derivada de `pais`: reescrita pelas regras (as usadas entram
+   * no apoio), arrumada e, se não for pesada demais, posta na fila. true se
+   * for a cláusula vazia (as leis se contradizem).
+   */
+  private derivar(lits: Literal[], pais: Clausula[], eventos: EventoGerador[]): boolean {
+    if (this.reescritas.size) {
+      const usadas = new Set<Clausula>()
+      const orc = { n: MAX_REESCRITAS }
+      lits = lits.map((l) => ({ ...l, a: l.a.map((t) => this.formaNormal(t, usadas, orc)) }))
+      for (const u of usadas) if (!pais.includes(u)) pais = [...pais, u]
     }
-    const apoioDe = (a: Clausula, b: Clausula) => [...new Set([...a.apoio, ...b.apoio])].sort()
-    const tentar = (lits: Literal[], pais: Clausula[]): boolean => {
-      // pesada demais (antes de arrumar: só literais repetidos fariam o peso cair, e são raros)
-      if ((pesoC(lits) > this.pesoMax || lits.length > this.op.litMax) && !temRepetido(lits)) {
-        this.estatisticas.pesadas++
-        return false
-      }
-      const n = normalizar(lits)
-      if (!n) return false
-      const apoio = pais.length === 2 ? apoioDe(pais[0], pais[1]) : pais[0].apoio
-      if (!n.lits.length) {
-        this.contradicao = apoio.filter((o) => !o.startsWith(ORIGEM_INTERNA))
-        eventos.push({ tipo: 'contradicao', apoio: this.contradicao })
-        return true
-      }
-      const peso = pesoC(n.lits)
-      if (peso > this.pesoMax || n.lits.length > this.op.litMax || n.lits.some((l) => l.a.some((t) => altura(t) > this.op.profTermo))) {
-        this.estatisticas.pesadas++
-        return false
-      }
-      this.nova(n.lits, n.chave, pais.map((p) => p.id), apoio, 1 + Math.max(...pais.map((p) => p.prof)), herdados(pais))
-      // memória: fila grande demais, o peso máximo baixa (o que for mais pesado espera um aprofundamento)
-      if (this.esperando > this.op.passivasMax) this.pesoMax = Math.max(4, this.pesoMax - 1)
+    // pesada demais (antes de arrumar: só literais repetidos fariam o peso cair, e são raros)
+    if ((pesoC(lits) > this.pesoMax || lits.length > this.op.litMax) && !temRepetido(lits)) {
+      this.estatisticas.pesadas++
       return false
     }
-    // resolução: um literal da escolhida contra um oposto de uma ativa
+    const n = normalizar(lits)
+    if (!n) return false
+    const apoio = [...new Set(pais.flatMap((p) => p.apoio))].sort()
+    if (!n.lits.length) {
+      this.contradicao = apoio.filter((o) => !o.startsWith(ORIGEM_INTERNA))
+      eventos.push({ tipo: 'contradicao', apoio: this.contradicao })
+      return true
+    }
+    const peso = pesoC(n.lits)
+    if (peso > this.pesoMax || n.lits.length > this.op.litMax || n.lits.some((l) => l.a.some((t) => altura(t) > this.op.profTermo))) {
+      this.estatisticas.pesadas++
+      return false
+    }
+    this.nova(n.lits, n.chave, pais.map((p) => p.id), apoio, 1 + Math.max(...pais.map((p) => p.prof)), this.herdados(pais))
+    // memória: fila grande demais, o peso máximo baixa (o que for mais pesado espera um aprofundamento)
+    if (this.esperando > this.op.passivasMax) this.pesoMax = Math.max(4, this.pesoMax - 1)
+    return false
+  }
+
+  private combinar(g: Clausula, eventos: EventoGerador[]): boolean {
+    const desloc = nVars(g.lits)
+    const tentar = (lits: Literal[], pais: Clausula[]): boolean => this.derivar(lits, pais, eventos)
+    // resolução: um literal da escolhida contra um oposto de uma ativa (a = b também contra b ≠ a)
     for (let i = 0; i < g.lits.length; i++) {
       const l = g.lits[i]
       const oposto = this.indice.get(`${l.pos ? '-' : '+'}${l.p}/${l.a.length}`) ?? []
       for (const { c: a, i: j } of oposto) {
         if (a.estado !== 'ativa') continue
-        const s = new Map<number, TermoC>()
         const m = a.lits[j]
-        if (!l.a.every((x, k) => unificar(x, deslocar(m.a[k], desloc), s))) continue
-        const resto = [
-          ...g.lits.filter((_, k) => k !== i).map((x) => ({ ...x, a: x.a.map((t) => aplicar(t, s)) })),
-          ...a.lits.filter((_, k) => k !== j).map((x) => ({ ...x, a: x.a.map((t) => aplicar(deslocar(t, desloc), s)) })),
-        ]
-        if (tentar(resto, a === g ? [g] : [g, a])) return true
+        const ordens = l.p === IGUAL ? [m.a, [m.a[1], m.a[0]]] : [m.a]
+        for (const args of ordens) {
+          const s = new Map<number, TermoC>()
+          if (!l.a.every((x, k) => unificar(x, deslocar(args[k], desloc), s))) continue
+          const resto = [
+            ...g.lits.filter((_, k) => k !== i).map((x) => ({ ...x, a: x.a.map((t) => aplicar(t, s)) })),
+            ...a.lits.filter((_, k) => k !== j).map((x) => ({ ...x, a: x.a.map((t) => aplicar(deslocar(t, desloc), s)) })),
+          ]
+          if (tentar(resto, a === g ? [g] : [g, a])) return true
+        }
+      }
+    }
+    if (this.igualdade) {
+      // resolução da igualdade: "s ≠ t ou C" com s e t unificáveis dá C
+      for (let i = 0; i < g.lits.length; i++) {
+        const l = g.lits[i]
+        if (l.pos || l.p !== IGUAL) continue
+        const s = new Map<number, TermoC>()
+        if (!unificar(l.a[0], l.a[1], s)) continue
+        if (tentar(g.lits.filter((_, k) => k !== i).map((x) => ({ ...x, a: x.a.map((t) => aplicar(t, s)) })), [g])) return true
+      }
+      // paramodulação: das igualdades da escolhida para dentro das ativas (e dela mesma), e das ativas para dentro dela
+      for (const a of this.ativas) {
+        if (a.estado !== 'ativa') continue
+        if (this.paramodular(g, a, tentar)) return true
+        if (a !== g && this.paramodular(a, g, tentar)) return true
       }
     }
     // fatoração: dois literais iguais (de mesmo sinal) da escolhida viram um
@@ -714,4 +850,44 @@ export class Gerador {
       }
     return false
   }
+
+  /**
+   * Paramodulação de `e` (que tem "s = t") para dentro de `d`: cada pedaço de d
+   * (não variável) que unifica com s vira t. De uma variável não se troca (ela
+   * casaria com tudo), nem do lado menor de uma igualdade que a ordem orienta.
+   */
+  private paramodular(e: Clausula, d: Clausula, tentar: (lits: Literal[], pais: Clausula[]) => boolean): boolean {
+    const desloc = nVars(e.lits)
+    let dl: Literal[] | null = null
+    for (let k = 0; k < e.lits.length; k++) {
+      const eq = e.lits[k]
+      if (!eq.pos || eq.p !== IGUAL) continue
+      for (const [s, t] of [
+        [eq.a[0], eq.a[1]],
+        [eq.a[1], eq.a[0]],
+      ]) {
+        if (ehVar(s) || maior(t, s)) continue
+        dl ??= d.lits.map((l) => ({ ...l, a: l.a.map((x) => deslocar(x, desloc)) }))
+        for (let j = 0; j < dl.length; j++) {
+          const m = dl[j]
+          for (let ai = 0; ai < m.a.length; ai++)
+            for (const pos of posicoes(m.a[ai])) {
+              if (pos.t.f !== s.f || pos.t.a.length !== s.a.length) continue
+              const sub = new Map<number, TermoC>()
+              if (!unificar(s, pos.t, sub)) continue
+              const novo: Literal = { ...m, a: m.a.map((x, i) => (i === ai ? trocarEm(x, pos.c, t) : x)) }
+              const lits = [...e.lits.filter((_, i) => i !== k), ...dl.map((l, i) => (i === j ? novo : l))].map((l) => ({
+                ...l,
+                a: l.a.map((x) => aplicar(x, sub)),
+              }))
+              if (tentar(lits, e === d ? [e] : [e, d])) return true
+            }
+        }
+      }
+    }
+    return false
+  }
 }
+
+/** quantas reescritas, no máximo, numa cláusula nova (a ordem garante que termina; isto só protege de um caso enorme) */
+const MAX_REESCRITAS = 2000

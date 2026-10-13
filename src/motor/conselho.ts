@@ -108,10 +108,62 @@ export function julgarNosMundos(modelos: Modelo[], phi: Formula): { falha: Model
   return { falha, vale }
 }
 
+/** quantas vezes a mais que o nome mais raro de uma nota um nome dela pode aparecer e ainda puxá-la (SInE) */
+export const TOLERANCIA_SINE = 1.5
+/** quantas camadas a seleção pelos nomes avança a partir da pergunta */
+export const PROFUNDIDADE_SINE = 3
+
+/**
+ * Escolhe as leis pela pergunta (SInE, de Hoder e Voronkov, usado pelo Vampire
+ * e pelo E nos problemas com milhares de axiomas): uma nota é puxada por um
+ * nome só se ele está entre os mais raros dela (aparece em no máximo
+ * `tolerancia` vezes mais notas que o nome mais raro dela) — um nome que está
+ * em quase tudo não puxa tudo. Começa pelos nomes da pergunta; cada nota
+ * puxada traz os nomes dela para a camada seguinte. Devolve a camada (1, 2, …)
+ * de cada nota puxada.
+ */
+export function selecaoSine(
+  disponiveis: { id: string; simbolos: string[] }[],
+  alvo: string[],
+  tolerancia = TOLERANCIA_SINE,
+  profundidade = PROFUNDIDADE_SINE,
+): Map<string, number> {
+  const ocorre = new Map<string, number>()
+  for (const d of disponiveis) for (const s of new Set(d.simbolos)) ocorre.set(s, (ocorre.get(s) ?? 0) + 1)
+  // de cada nome, as notas que ele puxa
+  const puxa = new Map<string, string[]>()
+  for (const d of disponiveis) {
+    const raros = [...new Set(d.simbolos)]
+    if (!raros.length) continue
+    const minimo = Math.min(...raros.map((s) => ocorre.get(s)!))
+    for (const s of raros) if (ocorre.get(s)! <= tolerancia * minimo) puxa.set(s, [...(puxa.get(s) ?? []), d.id])
+  }
+  const simbolosDe = new Map(disponiveis.map((d) => [d.id, d.simbolos]))
+  const camada = new Map<string, number>()
+  const vistos = new Set(alvo)
+  let frente = [...vistos]
+  for (let k = 1; k <= profundidade && frente.length; k++) {
+    const proxima: string[] = []
+    for (const s of frente)
+      for (const id of puxa.get(s) ?? []) {
+        if (camada.has(id)) continue
+        camada.set(id, k)
+        for (const t of simbolosDe.get(id) ?? [])
+          if (!vistos.has(t)) {
+            vistos.add(t)
+            proxima.push(t)
+          }
+      }
+    frente = proxima
+  }
+  return camada
+}
+
 /**
  * As notas que vão primeiro ao Z3, da mais promissora para a menos: as que
- * provaram perguntas parecidas (pontos pela semelhança dos nomes) e as que
- * falam de algum nome da pergunta. Vazio: nada a sugerir.
+ * provaram perguntas parecidas (pontos pela semelhança dos nomes) e as que a
+ * seleção pelos nomes raros (SInE) puxa a partir da pergunta — as das
+ * primeiras camadas antes. Vazio: nada a sugerir.
  */
 export function sugerirNotas(provas: ProvaConhecida[], simbolos: string[], disponiveis: { id: string; simbolos: string[] }[], max = MAX_SUGERIDAS): string[] {
   const alvo = new Set(simbolos)
@@ -124,11 +176,8 @@ export function sugerirNotas(provas: ProvaConhecida[], simbolos: string[], dispo
     const semelhanca = comum / (alvo.size + p.simbolos.length - comum)
     for (const n of p.notas) if (existe.has(n)) pontos.set(n, (pontos.get(n) ?? 0) + 1 + semelhanca)
   }
-  // as que falam dos mesmos nomes (valem menos que as que já provaram algo parecido)
-  for (const d of disponiveis) {
-    const comum = d.simbolos.filter((s) => alvo.has(s)).length
-    if (comum) pontos.set(d.id, (pontos.get(d.id) ?? 0) + comum / (d.simbolos.length + 1))
-  }
+  // as que a seleção pelos nomes raros puxa (valem menos que as que já provaram algo parecido)
+  for (const [id, k] of selecaoSine(disponiveis, simbolos)) pontos.set(id, (pontos.get(id) ?? 0) + 0.9 / k)
   return [...pontos]
     .sort((a, b) => b[1] - a[1])
     .slice(0, max)

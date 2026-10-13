@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { assinaturaNotas, conselheiro, julgarNosMundos, sugerirNotas, valeNoMundo, type ProvaGuardada } from '../src/dados/conselheiro'
+import { selecaoSine } from '../src/motor/conselho'
 import { semModeloNoZ3 } from '../src/dados/resposta'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import type { Formula } from '../src/logica/ast'
@@ -80,11 +81,34 @@ describe('notas sugeridas', () => {
     const s = sugerirNotas(provas, ['Mortal', 'Socrates'], disponiveis)
     expect(s.slice(0, 2).sort()).toEqual(['F1', 'L1'])
     expect(s).not.toContain('X')
-    // sem histórico: só as que falam dos nomes
-    expect(sugerirNotas([], ['Zeus'], disponiveis)).toEqual(['F2'])
+    // sem histórico: as que os nomes raros puxam, camada por camada (Zeus → F2 → Deus → L2 → Mortal → L1);
+    // F1 não vem por "Homem": em F1 o nome raro é Sócrates
+    expect(sugerirNotas([], ['Zeus'], disponiveis)).toEqual(['F2', 'L2', 'L1'])
     // provas de outro conjunto não vão para a sugestão
     conselheiro.guardarProva('visao:Ana', ['Mortal', 'Socrates'], ['L2'])
     expect(conselheiro.conselhoPara('geral').provas.some((p) => p.notas.includes('L2'))).toBe(false)
+  })
+})
+
+describe('escolher as leis pela pergunta (SInE)', () => {
+  it('um nome que está em quase tudo não puxa tudo; os raros puxam, camada por camada', () => {
+    // 200 notas sobre conjuntos (todas com ∈) e uma cadeia A → B → C
+    const ruido = Array.from({ length: 200 }, (_, i) => ({ id: `N${i}`, simbolos: ['∈', `S${i}`] }))
+    const cadeia = [
+      { id: 'A', simbolos: ['∈', 'p', 'q'] },
+      { id: 'B', simbolos: ['q', 'r'] },
+      { id: 'C', simbolos: ['r', 's'] },
+      { id: 'E', simbolos: ['s', 'v'] },
+      // F só é puxada pelo nome mais raro dela (w), não por r
+      { id: 'F', simbolos: ['r', 'w'] },
+    ]
+    const sel = selecaoSine([...ruido, ...cadeia], ['p', '∈'])
+    expect(sel.get('A')).toBe(1)
+    expect(sel.get('B')).toBe(2)
+    expect(sel.get('C')).toBe(3)
+    expect(sel.has('F')).toBe(false)
+    // nenhuma das 200 entrou só por ter ∈
+    expect([...sel.keys()].filter((id) => id.startsWith('N'))).toEqual([])
   })
 })
 

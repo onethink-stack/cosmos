@@ -282,7 +282,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
           add(
             'E16',
             'aviso',
-            `Lido como ${imprimir(f)}: o escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' vai até o fim. Se ele devia valer só para a primeira parte, escreva ${so}. Para tirar este aviso sem mudar o sentido, ponha o corpo entre parênteses.`,
+            `Lido como ${imprimir(f)}: o escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' vai até o fim. Escrito assim, com o corpo inteiro entre parênteses, o aviso some e o sentido é o mesmo. Se o quantificador devia valer só para ${imprimir(f.corpo.l)}, a fórmula é outra: ${so}.`,
             { pos: f.pos, end: f.vPos + f.v.length },
           )
         }

@@ -7,6 +7,7 @@ import type { EntradaDicionario } from '../src/dados/tipos'
 import type { Formula, Termo } from '../src/logica/ast'
 import { expandir } from '../src/logica/acucar'
 import { canonica } from '../src/logica/canonica'
+import { imprimir } from '../src/logica/impressao'
 import { definirAvisoDeEscopo, validar } from '../src/logica/validador'
 import { nao, OPCOES_PADRAO, perguntar, prepararFormulas, type Grupo } from '../src/motor/motor'
 import { checarZ3 } from '../src/motor/z3'
@@ -135,10 +136,20 @@ const EXEMPLOS: [string, EntradaDicionario[], string | null, string][] = [
   ["²x = 4", [], "(= ²x 4)", "E17?"],
   ["∀x P(x²)", [], "(∀ x (P x²))", "E17?"],
   ["B[Ana²] P(a)", [], "(B \"Ana²\" (P a))", "E17?"],
+  ["xᵃ = y", [], "(= xᵃ y)", ""],
+  ["x⁺ = y", [], null, "E8"],
+  ["٣x = y", [], "(= ٣x y)", ""],
+  ["x₁ = y", [], "(= (_ x 1) y)", ""],
+  ["x_1 = y", [], "(= (_ x 1) y)", ""],
+  ["2x = 4", [], null, "E2"],
+  ["B [Ana] P(a)", [], null, "E2"],
+  ["f (a) = b", [], null, "E2"],
+  ["P(a)∧Q(a)", [], "(∧ (P a) (Q a))", ""],
+  ["(P(a) ∧ ∀x P(x)) ⟹ Q(b)", [], "(⟹ (∧ (P a) (∀ x (P x))) (Q b))", ""],
 ]
 
 describe('gramática normativa: cada exemplo é lido sempre do mesmo jeito', () => {
-  it('são 63 exemplos', () => expect(EXEMPLOS).toHaveLength(63))
+  it('são 73 exemplos', () => expect(EXEMPLOS).toHaveLength(73))
   for (const [texto, dic, arvore, cods] of EXEMPLOS)
     it(texto, () => {
       const v = validar(texto, dic)
@@ -188,6 +199,65 @@ describe('E17: sobrescrito em nome é aviso, e o nome continua sendo outro nome'
     const v = validar('∀x P(x²)', [])
     expect(f(v.ast!)).toBe('(∀ x (P x²))')
     expect(canonica(expandir(v.ast!))).not.toBe(canonica(expandir(validar('∀x P(x)', []).ast!)))
+  })
+})
+
+describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a mesma árvore', () => {
+  // sorteio determinístico: a mesma semente dá sempre as mesmas fórmulas
+  const sorteio = (semente: number) => () => {
+    semente = (semente * 1103515245 + 12345) % 2147483648
+    return semente / 2147483648
+  }
+  const ATOMOS = ['P(a)', 'Q(x)', 'R(x, y)', 'a = b', 'x ∈ A', 'f(x) = y', 'P(x)', 'Q(b)']
+  const gerar = (r: () => number, prof: number): string => {
+    const sub = () => gerar(r, prof - 1)
+    switch (Math.floor(r() * (prof > 0 ? 10 : 1))) {
+      case 0:
+        return ATOMOS[Math.floor(r() * ATOMOS.length)]
+      case 1:
+        return `¬${sub()}`
+      case 2:
+        return `${sub()} ∧ ${sub()}`
+      case 3:
+        return `${sub()} ∨ ${sub()}`
+      case 4:
+        return `${sub()} ⟹ ${sub()}`
+      case 5:
+        return `${sub()} ⟺ ${sub()}`
+      case 6:
+        return `∀x ${sub()}`
+      case 7:
+        return `∃y (${sub()})`
+      case 8:
+        return `(${sub()})`
+      default:
+        return r() < 0.5 ? `□${sub()}` : `B[Ana] ${sub()}`
+    }
+  }
+
+  it('3.000 fórmulas sorteadas: imprimir a árvore e ler de novo dá a mesma árvore', () => {
+    const r = sorteio(42)
+    let validas = 0
+    for (let i = 0; i < 3000; i++) {
+      const t = gerar(r, 4)
+      const v = validar(t, [])
+      if (!v.ok || !v.ast) continue
+      validas++
+      const impresso = imprimir(v.ast)
+      const outra = validar(impresso, [])
+      expect(outra.ast ? f(outra.ast) : null, `${t}  →  ${impresso}`).toBe(f(v.ast))
+    }
+    expect(validas).toBeGreaterThan(1000)
+  })
+
+  it('3.000 textos aleatórios com os símbolos da linguagem: sempre árvore ou erro, nunca exceção', () => {
+    const r = sorteio(7)
+    const PECAS = ['∀x', '∃y', '¬', '∧', '∨', '⟹', '⟺', '(', ')', 'P(a)', 'x', '=', '∈', 'A', ',', 'B[Ana]', '□', '◇', '²', '⋂', '−', '2', 'f(', '[', ']']
+    for (let i = 0; i < 3000; i++) {
+      const t = Array.from({ length: 1 + Math.floor(r() * 12) }, () => PECAS[Math.floor(r() * PECAS.length)]).join(' ')
+      const v = validar(t, [])
+      expect(v.ok ? !!v.ast : v.diags.length > 0, t).toBe(true)
+    }
   })
 })
 

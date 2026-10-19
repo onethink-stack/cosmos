@@ -109,11 +109,15 @@ class Parser {
     }
   }
 
-  /** Erro para um token que sobrou onde se esperava fim, ')' ou conectivo. */
-  private erroInesperado(tk: Token, esperado: string): never {
-    if (INICIO_FORMULA.includes(tk.t))
+  /**
+   * Erro para um token que sobrou onde se esperava fim, ')', ',' ou conectivo. Só
+   * depois de uma fórmula completa (no fim do texto ou dentro de um grupo) um começo
+   * de fórmula é E3; dentro de um termo ou dos argumentos, é um símbolo inesperado.
+   */
+  private erroInesperado(tk: Token, esperado: string, depoisDeFormula = true): never {
+    if (depoisDeFormula && INICIO_FORMULA.includes(tk.t))
       this.erro('E3', `Duas fórmulas lado a lado sem conectivo (${this.col(tk)}): falta ∧, ∨, ⟹ ou ⟺`, tk)
-    if (RELACOES[tk.t])
+    if (depoisDeFormula && RELACOES[tk.t])
       this.erro('E0', `Relação '${SIMBOLO_DE[tk.t]}' aplicada a uma fórmula, ou relações encadeadas (${this.col(tk)})`, tk)
     if (tk.t === 'rpar') this.erro('E7', `')' na ${this.col(tk)} não tem '(' correspondente`, tk)
     this.erro('E0', `'${SIMBOLO_DE[tk.t]}' inesperado na ${this.col(tk)}; esperava ${esperado}`, tk)
@@ -471,7 +475,7 @@ class Parser {
     if (tk.t === 'lpar') {
       this.avancar()
       const t = this.termo()
-      if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')'")
+      if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')'", false)
       const fecha = this.avancar()
       return alargar(t, tk.pos, fecha.end)
     }
@@ -494,7 +498,7 @@ class Parser {
       if (this.at().t === 'rpar') break
       if (this.at().t === 'nome' || this.at().t === 'lpar' || this.at().t === 'num')
         this.erro('E0', `Falta ',' entre argumentos de '${nome.v}' (${this.col(this.at())})`, this.at())
-      this.erroInesperado(this.at(), `',' ou ')' nos argumentos de '${nome.v}'`)
+      this.erroInesperado(this.at(), `',' ou ')' nos argumentos de '${nome.v}'`, false)
     }
     const fecha = this.avancar()
     return { k: 'app', fn: nome.v, args, subscrito: false, pos: nome.pos, end: fecha.end }

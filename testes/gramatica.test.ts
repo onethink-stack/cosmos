@@ -89,9 +89,9 @@ interface Exemplo {
 const PACOTE: { versao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
 describe('gramática normativa: cada exemplo do pacote é lido como o arquivo diz', () => {
-  it('versão m2, 153 exemplos', () => {
+  it('versão m2, 173 exemplos', () => {
     expect(PACOTE.versao).toBe('m2')
-    expect(PACOTE.exemplos).toHaveLength(153)
+    expect(PACOTE.exemplos).toHaveLength(173)
   })
   for (const e of PACOTE.exemplos)
     it(`${e.id} ${e.texto}`, () => {

@@ -2707,6 +2707,379 @@
      "inicio": 5
     }
    ]
+  },
+  {
+   "id": "G154",
+   "texto": "x ∈ A ⋂/ B",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G155",
+   "texto": "a ++b = c",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 2
+    }
+   ]
+  },
+  {
+   "id": "G156",
+   "texto": "a − · b = c",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 2
+    }
+   ]
+  },
+  {
+   "id": "G157",
+   "texto": "a / −]b = c",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G158",
+   "texto": "a ≤= b",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 2
+    }
+   ]
+  },
+  {
+   "id": "G159",
+   "texto": "a ≤ / b",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G160",
+   "texto": ",P(a)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 0
+    }
+   ]
+  },
+  {
+   "id": "G161",
+   "texto": "∧ P(a)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 0
+    }
+   ]
+  },
+  {
+   "id": "G162",
+   "texto": "(P(a) ◇Q(b)) ∧ R(c)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E3",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G163",
+   "texto": "−(a ¬b) = c",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G164",
+   "texto": "P(f(a ¬b))",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G165",
+   "texto": "P(f(a b))",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G166",
+   "texto": "(a = b) = c",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro",
+     "inicio": 8
+    }
+   ]
+  },
+  {
+   "id": "G167",
+   "texto": "0 / Aⱼ < 1",
+   "fichas": [
+    {
+     "simbolo": "A",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "B",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "C",
+     "tipo": "predicado",
+     "aridade": 0
+    }
+   ],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(< (/ 0 (_ A j)) 1)",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E10",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G168",
+   "texto": "0.5 ≥ a_1",
+   "fichas": [
+    {
+     "simbolo": "a",
+     "tipo": "constante",
+     "aridade": 0
+    },
+    {
+     "simbolo": "P",
+     "tipo": "predicado",
+     "aridade": 1
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1
+    }
+   ],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(≥ 0.5 (_ a 1))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E10",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G169",
+   "texto": "∀x 1 < A_x",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(∀ x (< 1 (_ A x)))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E15",
+     "nivel": "erro",
+     "inicio": 8
+    }
+   ]
+  },
+  {
+   "id": "G170",
+   "texto": "∀x 1 < h(x)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(∀ x (< 1 (h x)))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E15",
+     "nivel": "erro",
+     "inicio": 9
+    }
+   ]
+  },
+  {
+   "id": "G171",
+   "texto": "z ∈ (A)",
+   "fichas": [
+    {
+     "simbolo": "A",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "B",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "C",
+     "tipo": "predicado",
+     "aridade": 0
+    }
+   ],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(∈ z A)",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E10",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G172",
+   "texto": "((x² = y))",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(= x² y)",
+   "arvoreExpandida": "(= x² y)",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 2
+    }
+   ]
+  },
+  {
+   "id": "G173",
+   "texto": "(B[Ana] (x² = y ⟺ x² ∈ B))",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(B \"Ana\" (⟺ (= x² y) (∈ x² B)))",
+   "arvoreExpandida": "(B \"Ana\" (⟺ (= x² y) (∈ x² B)))",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 9
+    },
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 18
+    }
+   ]
   }
  ]
 }

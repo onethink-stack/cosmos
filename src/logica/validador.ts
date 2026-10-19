@@ -175,13 +175,17 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
 
   // variáveis de ∀x∈ℝ / ∃x∈ℝ são números; as outras, objetos
   let reais: string[] = []
-  const sorteDoNome = (nome: string, escopo: string[]): Sorte => {
+  // a ficha só diz a sorte quando o tipo dela é o do uso; a de outro tipo já dá E10 e não diz nada
+  const sorteDoNome = (nome: string, escopo: string[], tipo: 'constante' | 'funcao' = 'constante'): Sorte => {
     if (escopo.includes(nome)) return reais.includes(nome) ? 'num' : 'obj'
     const d = dic.get(nome)
-    return d ? (d.numerico ? 'num' : 'obj') : null
+    return d && d.tipo === tipo ? (d.numerico ? 'num' : 'obj') : null
   }
   /** o que o i-ésimo argumento do símbolo recebe, se a ficha disser (mistura números e objetos) */
-  const argumentoDe = (nome: string, i: number, escopo: string[]): Sorte => (escopo.includes(nome) ? null : (dic.get(nome)?.argumentos?.[i] ?? null))
+  const argumentoDe = (nome: string, i: number, escopo: string[], tipo: 'funcao' | 'predicado'): Sorte => {
+    const d = escopo.includes(nome) ? undefined : dic.get(nome)
+    return d && d.tipo === tipo ? (d.argumentos?.[i] ?? null) : null
+  }
   /** a sorte que o termo tem por si (sem olhar onde está) */
   const sorte = (t: Termo, escopo: string[]): Sorte => {
     switch (t.k) {
@@ -192,7 +196,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       case 'nome':
         return sorteDoNome(t.nome, escopo)
       case 'app':
-        return escopo.includes(t.fn) ? null : sorteDoNome(t.fn, [])
+        return escopo.includes(t.fn) ? null : sorteDoNome(t.fn, [], 'funcao')
       default:
         return 'obj'
     }
@@ -224,7 +228,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         // função numérica recebe números; as outras, objetos (a não ser que a ficha diga argumento a argumento)
         const s = sorte(t, escopo)
         const num = s === 'num' || (s === null && esperado === 'num')
-        t.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(t.fn, i, escopo) ?? (num ? 'num' : 'obj')))
+        t.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(t.fn, i, escopo, 'funcao') ?? (num ? 'num' : 'obj')))
         return
       }
       case 'inter':
@@ -254,7 +258,7 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
       case 'pred':
         if (escopo.includes(f.nome)) add('E10', 'erro', `'${f.nome}' é variável quantificada e não pode ser usada como predicado`, f)
         else registrar(f.nome, 'predicado', f.args.length, f)
-        f.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(f.nome, i, escopo) ?? 'obj'))
+        f.args.forEach((a, i) => termo(a, escopo, false, argumentoDe(f.nome, i, escopo, 'predicado') ?? 'obj'))
         return
       case 'rel': {
         if (f.op === '≠' && termosIguais(f.l, f.r))

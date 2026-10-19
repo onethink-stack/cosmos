@@ -16,28 +16,28 @@
    "codigo": "E0",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Erro de sintaxe que não é E1, E2, E3 nem E7: fórmula vazia; relação aplicada a fórmula ou relações encadeadas (a = b = c); B[] sem titular, B[ sem fechar ou algo que não é nome dentro de B[…]; quantificador sem variável ou com variável indexada; ℝ ou ℤ fora do domínio de quantificador; ']' sem '['; parênteses vazios; aplicação sem argumentos (f()); falta ',' entre argumentos; índice sem nome antes; termo esperado e outro símbolo encontrado; símbolo inesperado; aninhamento acima do limite; profundidade da árvore acima de 2.000.",
+   "quando": "Erro de sintaxe que não é E1, E2, E3 nem E7: fórmula vazia; relação aplicada a fórmula ou relações encadeadas (a = b = c); B[] sem titular, B[ sem fechar ou algo que não é nome dentro de B[…]; quantificador sem variável ou com variável indexada; ℝ ou ℤ fora do domínio de quantificador; ']' sem '['; parênteses vazios; aplicação sem argumentos (f()); falta ',' entre argumentos; índice sem nome antes; termo esperado e outro símbolo encontrado; símbolo inesperado; aninhamento acima do limite; profundidade da árvore acima de 2.000. A regra exata de cada código, pelo que o leitor esperava e pelo símbolo que encontrou, está na seção 2.4 de gramatica-m2.md.",
    "inicio": "informativo: o símbolo em que o leitor parou"
   },
   {
    "codigo": "E1",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Operador sem operando: conectivo (∧ ∨ ⟹ ⟺) seguido de fim, ')', ',', ']', outro conectivo ou relação; prefixo (¬ □ ◇ B[…]) seguido de fim, ')', ',', ']' ou conectivo; fórmula que começa com conectivo, relação, operador de conta ou ⋂/⋃; quantificador sem corpo; '∈' sem termo depois da variável do quantificador; operador de termo (+ − · / ^ ⋂ ⋃) sem termo à direita; termo que falta antes de ')', ',', conectivo ou fim.",
+   "quando": "Operador sem operando: conectivo (∧ ∨ ⟹ ⟺) seguido de fim, ')', ',', ']', outro conectivo ou relação; prefixo (¬ □ ◇ B[…]) seguido de fim, ')', ',', ']' ou conectivo; fórmula que começa com conectivo, relação, operador de conta ou ⋂/⋃; quantificador sem corpo; '∈' sem termo depois da variável do quantificador; operador de termo (+ − · / ^ ⋂ ⋃) sem termo à direita; termo que falta antes de ')', ',', conectivo ou fim. A regra exata de cada código, pelo que o leitor esperava e pelo símbolo que encontrou, está na seção 2.4 de gramatica-m2.md.",
    "inicio": "informativo: o operador sem operando, ou o símbolo em que falta o termo"
   },
   {
    "codigo": "E2",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Um termo onde se esperava fórmula: termo sem relação depois, que não é aplicação de predicado nem proposição do dicionário. Exemplos: ¬a, P (a) com espaço, A sozinho sem ficha de aridade 0, 2x = 4, B [Ana] P(a).",
+   "quando": "Um termo onde se esperava fórmula: termo sem relação depois, que não é aplicação de predicado nem proposição do dicionário. Exemplos: ¬a, P (a) com espaço, A sozinho sem ficha de aridade 0, 2x = 4, B [Ana] P(a). A regra exata de cada código, pelo que o leitor esperava e pelo símbolo que encontrou, está na seção 2.4 de gramatica-m2.md.",
    "inicio": "informativo: o trecho do termo"
   },
   {
    "codigo": "E3",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Sobra texto depois de uma fórmula completa, e a sobra começa uma fórmula: duas fórmulas lado a lado, sem conectivo.",
+   "quando": "Depois de uma fórmula completa, no fim do texto ou dentro de um grupo de fórmula, vem um símbolo que começa outra fórmula: duas fórmulas lado a lado, sem conectivo. Dentro de um termo ou dos argumentos de uma aplicação, o mesmo símbolo dá E0. A regra exata de cada código está na seção 2.4 de gramatica-m2.md.",
    "inicio": "informativo: o primeiro símbolo da sobra"
   },
   {
@@ -121,7 +121,7 @@
    "codigo": "E15",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Termo de sorte conhecida (número ou objeto) num lugar que pede a outra: contas, comparações < ≤ > ≥, argumentos de funções e predicados, ∈, ∉, ⊆, ⋂, ⋃ e domínios; ou = e ≠ entre um número e um objeto (seção 4.3).",
+   "quando": "Termo de sorte conhecida (número ou objeto) num lugar que pede a outra: contas, comparações < ≤ > ≥, argumentos de funções e predicados, ∈, ∉, ⊆, ⋂, ⋃ e domínios; ou = e ≠ entre um número e um objeto (seção 4.3). A ficha só decide a sorte quando o tipo dela é o do uso.",
    "inicio": "o trecho do termo de sorte errada; ou o da relação, quando os dois lados de = ou ≠ discordam"
   },
   {

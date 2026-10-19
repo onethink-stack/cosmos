@@ -172,6 +172,66 @@ Da que prende mais à que prende menos:
 | Fórmulas | ⟺ | à esquerda |
 | Fórmulas | ∀ ∃ | prefixo cujo corpo vai até o fim (2.2) |
 
+### 2.4 Código de cada erro de sintaxe
+
+O código do primeiro erro depende do que o leitor esperava e do símbolo que
+encontrou. Começam um termo: nome, número, `(`, ∅ e `−`. Começam uma fórmula:
+esses e mais ¬, □, ◇, ∀ e ∃ (`B[` é um nome seguido de `[`).
+
+**Esperando uma fórmula** (no início, depois de um conectivo ou de um prefixo,
+no corpo de um quantificador, logo depois de um `(` em posição de fórmula):
+
+| Encontra | Código |
+| --- | --- |
+| ∧ ∨ ⟹ ⟺ | E1 |
+| uma relação | E1 |
+| + · / ^ ⋂ ⋃ | E1 |
+| `)` logo depois do `(` | E0 (parênteses vazios) |
+| ℝ, ℤ, `]`, `[`, `,` ou um subscrito sem nome | E0 |
+
+**Logo depois de um operador**, o código vai no operador:
+
+| Operador | Encontra | Código |
+| --- | --- | --- |
+| ∧ ∨ ⟹ ⟺ | fim, `)`, `,`, `]`, outro conectivo ou uma relação | E1 |
+| ¬ □ ◇ e B[…] | fim, `)`, `,`, `]` ou um conectivo | E1 |
+| ∀ ou ∃ | algo que não é nome | E0 |
+| ∀x | um índice na variável | E0 |
+| ∀x e ∀x∈S | fim, `)`, `,`, `]`, conectivo ou relação (falta o corpo) | E1 |
+| o ∈ de ∀x∈ | fim, `)`, `,`, `]`, conectivo, relação ou ¬ | E1 |
+| uma relação | fim, `)`, `,`, `]`, conectivo, outra relação, ¬, ∀ ou ∃ | E1 |
+| + − · / ^ ⋂ ⋃, inclusive o − de sinal | algo que não começa um termo | E1 |
+
+Uma relação depois de ¬, □, ◇ ou B[…] cai na tabela anterior (E1 na relação).
+Depois de uma relação, o que não está na linha dela é lido como termo: em
+`a ≤ / b`, o `/` dá E0 pela tabela seguinte.
+
+**Esperando um termo** (depois de uma relação, no domínio de ∀x∈, nos
+argumentos de uma aplicação):
+
+| Encontra | Código |
+| --- | --- |
+| fim, `)`, `,` ou conectivo | E1 |
+| ℝ ou ℤ, um subscrito sem nome ou outro símbolo | E0 |
+| `f()`, aplicação sem argumentos | E0 |
+
+**Depois de uma fórmula completa** (no fim do texto ou dentro de um grupo de
+fórmula), esperando fim, `)` ou conectivo:
+
+| Encontra | Código |
+| --- | --- |
+| algo que começa uma fórmula | E3 |
+| uma relação | E0 (relação aplicada a uma fórmula, ou relações encadeadas) |
+| outro símbolo | E0 |
+
+**Dentro de um termo** — num `(` de termo, esperando `)`, e nos argumentos de
+`f(…)`, esperando `,` ou `)` — qualquer outro símbolo dá E0. Ali não há duas
+fórmulas lado a lado, e o E3 não se aplica.
+
+**Átomos.** Um termo sem relação depois, que não é aplicação colada ao nome nem
+proposição do dicionário, dá E2; também ¬, □, ◇ ou B[…] aplicados a um termo.
+**Crença.** `B[]`, `[` sem `]` e algo que não é nome dentro de `B[…]`: E0.
+
 ## 3. Etapas e escolha dos diagnósticos
 
 A leitura tem três etapas. A ordem exata em que os diagnósticos são escolhidos
@@ -272,18 +332,19 @@ Cada termo tem uma sorte: número, objeto ou desconhecida.
 - Número: numeral, conta (+ − · / ^), sinal (−t) e variável ligada por ∀x∈ℝ,
   ∀x∈ℤ, ∃x∈ℝ ou ∃x∈ℤ.
 - Objeto: as outras variáveis ligadas, ∅, ⋂ e ⋃.
-- Pela ficha: um nome livre, ou uma aplicação f(…) em que f não é variável
-  ligada, é número se a ficha diz `numerico` e objeto se não diz.
-- Desconhecida: um nome livre ou uma aplicação sem ficha, e uma aplicação cujo
-  nome é variável ligada.
+- Pela ficha: um nome livre com ficha de constante, ou uma aplicação f(…) com
+  ficha de função (f não é variável ligada), é número se a ficha diz `numerico`
+  e objeto se não diz. Uma ficha de outro tipo, que já dá E10, não diz nada.
+- Desconhecida: um nome livre ou uma aplicação sem ficha do tipo do uso, e uma
+  aplicação cujo nome é variável ligada.
 
 Cada lugar pede número, objeto ou qualquer um.
 
-- Argumento de predicado: o que a ficha diz em `argumentos` para aquela
-  posição; senão, objeto.
-- Argumento de função: o que a ficha diz em `argumentos`; senão, número se a
-  função é número, ou se ela é desconhecida e o lugar dela pede número; senão,
-  objeto.
+- Argumento de predicado: o que a ficha de predicado diz em `argumentos` para
+  aquela posição; senão, objeto.
+- Argumento de função, inclusive o índice de `x_i`: o que a ficha de função diz
+  em `argumentos`; senão, número se a função é número, ou se ela é desconhecida
+  e o lugar dela pede número; senão, objeto.
 - Os dois lados de < ≤ > ≥, os operandos das contas e o do sinal: número.
 - = e ≠: se as sortes dos dois lados são conhecidas e diferentes, E15 na
   relação, e os dois lados passam a pedir qualquer um. Senão, os dois pedem

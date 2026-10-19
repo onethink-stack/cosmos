@@ -1,0 +1,929 @@
+{
+ "traducao": "t1",
+ "semantica": "m2",
+ "formato": "ver especificacao/traducao-z3-t1.md, seção 5",
+ "exemplos": [
+  {
+   "id": "Z01",
+   "regra": "constantes rígidas",
+   "formulas": [
+    "a = b",
+    "◇(a ≠ b)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z02",
+   "regra": "funções de objeto variam com o mundo",
+   "formulas": [
+    "mae(a) = b",
+    "◇(mae(a) ≠ b)"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 2,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z03",
+   "regra": "∈ varia com o mundo",
+   "formulas": [
+    "a ∈ A",
+    "◇(a ∉ A)"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z04",
+   "regra": "predicados variam com o mundo",
+   "formulas": [
+    "P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z05",
+   "regra": "constantes numéricas rígidas",
+   "formulas": [
+    "n = 1",
+    "◇(n ≠ 1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z06",
+   "regra": "funções numéricas rígidas",
+   "formulas": [
+    "f(n) = 1",
+    "◇(f(n) ≠ 1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z07",
+   "regra": "função de objeto com argumento numérico varia com o mundo",
+   "formulas": [
+    "g(n, a) = b",
+    "◇(g(n, a) ≠ b)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "sat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z08",
+   "regra": "predicado com argumento numérico varia com o mundo",
+   "formulas": [
+    "Q(1)",
+    "◇¬Q(1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "sat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z09",
+   "regra": "as fórmulas valem no mundo real, que é um dos mundos",
+   "formulas": [
+    "P(a)",
+    "¬◇P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z10",
+   "regra": "□ vale também no mundo real",
+   "formulas": [
+    "□P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z11",
+   "regra": "S5: axioma T",
+   "formulas": [
+    "¬(□P(a) ⟹ P(a))"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z12",
+   "regra": "S5: axioma 4",
+   "formulas": [
+    "¬(□P(a) ⟹ □□P(a))"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z13",
+   "regra": "S5: axioma 5",
+   "formulas": [
+    "¬(◇P(a) ⟹ □◇P(a))"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z14",
+   "regra": "◇ e ◇¬ juntos",
+   "formulas": [
+    "◇P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z15",
+   "regra": "crença não é verdade (sem T)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z16",
+   "regra": "KD45: D (serial)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "B[Ana] ¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z17",
+   "regra": "KD45: 4 (transitiva)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "¬B[Ana] B[Ana] P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z18",
+   "regra": "KD45: 5 (euclidiana)",
+   "formulas": [
+    "¬B[Ana] P(a)",
+    "¬B[Ana] ¬B[Ana] P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z19",
+   "regra": "titulares independentes",
+   "formulas": [
+    "B[Ana] P(a)",
+    "B[Bia] ¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unknown",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z20",
+   "regra": "□ chega aos mundos de cada titular",
+   "formulas": [
+    "□P(a)",
+    "B[Ana] ¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z21",
+   "regra": "crer numa necessidade é tê-la (□ sobre todos os mundos)",
+   "formulas": [
+    "B[Ana] □P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z22",
+   "regra": "crença e possibilidade",
+   "formulas": [
+    "B[Ana] P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unknown",
+   "motorFinito": {
+    "status": "modelo",
+    "objetos": 1,
+    "mundos": 2
+   }
+  },
+  {
+   "id": "Z23",
+   "regra": "domínio constante (Barcan)",
+   "formulas": [
+    "∀x □P(x)",
+    "¬□∀x P(x)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 3
+   }
+  },
+  {
+   "id": "Z24",
+   "regra": "domínio não vazio",
+   "formulas": [
+    "∀x P(x)",
+    "∀x ¬P(x)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z25",
+   "regra": "igualdade e substituição",
+   "formulas": [
+    "a = b",
+    "P(a)",
+    "¬P(b)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z26",
+   "regra": "⟺ como igualdade de verdades",
+   "formulas": [
+    "P(a) ⟺ Q(a)",
+    "P(a)",
+    "¬Q(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z27",
+   "regra": "⊆ expandido",
+   "formulas": [
+    "A ⊆ B",
+    "a ∈ A",
+    "a ∉ B"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z28",
+   "regra": "⋂ expandido",
+   "formulas": [
+    "a ∈ A ⋂ B",
+    "a ∉ A"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z29",
+   "regra": "∅: nada pertence",
+   "formulas": [
+    "a ∈ ∅"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z30",
+   "regra": "∅ ⊆ qualquer conjunto",
+   "formulas": [
+    "¬(∅ ⊆ A)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z31",
+   "regra": "∀x∈S expandido",
+   "formulas": [
+    "∀x∈A P(x)",
+    "a ∈ A",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": {
+    "status": "sem-modelo",
+    "ateObjetos": 8,
+    "ateMundos": 1
+   }
+  },
+  {
+   "id": "Z32",
+   "regra": "número mais um",
+   "formulas": [
+    "n + 1 = n"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z33",
+   "regra": "raiz de 2 nos reais",
+   "formulas": [
+    "n · n = 2"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "sat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z34",
+   "regra": "raiz de 2 nos inteiros",
+   "formulas": [
+    "∃x∈ℤ x · x = 2"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z35",
+   "regra": "raiz de 2 com ∃x∈ℝ",
+   "formulas": [
+    "∃x∈ℝ x · x = 2"
+   ],
+   "fichas": [],
+   "z3": "sat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z36",
+   "regra": "potência à direita",
+   "formulas": [
+    "¬(2^3^2 = 512)"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z37",
+   "regra": "quadrado não negativo",
+   "formulas": [
+    "¬∀x∈ℝ x · x ≥ 0"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z38",
+   "regra": "ímpar não é dobro",
+   "formulas": [
+    "¬∀x∈ℤ 2 · x ≠ 1"
+   ],
+   "fichas": [],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z39",
+   "regra": "divisão por zero dá algum número",
+   "formulas": [
+    "n / 0 = 5"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "sat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z40",
+   "regra": "divisão por zero é função do numerador",
+   "formulas": [
+    "n / 0 = 5",
+    "m / 0 = 7",
+    "n = m"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z41",
+   "regra": "função numérica é função",
+   "formulas": [
+    "f(1) = 2",
+    "f(1) = 3"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  },
+  {
+   "id": "Z42",
+   "regra": "função numérica quantificada",
+   "formulas": [
+    "∀x∈ℝ f(x) = x · x",
+    "f(3) ≠ 9"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "z3": "unsat",
+   "motorFinito": null
+  }
+ ]
+}

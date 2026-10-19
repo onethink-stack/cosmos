@@ -9,8 +9,10 @@ olhar o código do Caderno, e comparar os dois.
 | `lexico-m2.json` | Os símbolos e todas as grafias aceitas, na ordem em que o léxico os tenta; regras de nome, índice e número; adjacências |
 | `diagnosticos-m2.json` | Os códigos E0 a E18: nível, etapa, condição exata, posição e a ordem em que são escolhidos |
 | `exemplos-m2.json` | Os exemplos normativos: texto, fichas do dicionário, se as fichas são exigidas, se é aceito, árvore, árvore expandida e diagnósticos |
+| `traducao-z3-t1.md` | A tradução da árvore expandida para o Z3 (versão t1): semântica, tipos, símbolos, tabela de tradução, axiomas e limitações conhecidas |
+| `traducao-z3-t1-exemplos.json` | Os exemplos normativos da tradução: fórmulas, fichas, o veredito do Z3 no Caderno e o resultado do motor finito |
 
-Os quatro arquivos são conferidos pelo Caderno a cada mudança: `testes/gramatica.test.ts`
+Os arquivos são conferidos pelo Caderno a cada mudança: `testes/traducao-z3.test.ts` refaz os vereditos da tradução, e `testes/gramatica.test.ts`
 lê `exemplos-m2.json`, `lexico-m2.json` e `diagnosticos-m2.json` e falha se o
 leitor do Caderno discordar de qualquer linha.
 

@@ -49,6 +49,8 @@ export type Formula =
       corpo: Formula
       /** o corpo começa com "(" mas continua depois do ")" que o fecha (posição desse ")") — ver E14 */
       parentesesEnganoso?: number
+      /** o corpo não começa com "(" e tem ∧, ∨, ⟹ ou ⟺ no topo — ver E16 */
+      corpoAberto?: true
     } & Span)
   | ({ k: 'const'; valor: boolean } & Span)
 
@@ -69,6 +71,8 @@ export type Codigo =
   | 'E13' // aviso: nome sem ficha parecido com um nome do dicionário ("você quis dizer…?")
   | 'E14' // aviso: o escopo do quantificador passa do ")" que parecia fechá-lo
   | 'E15' // número usado como objeto, ou objeto usado como número
+  | 'E16' // aviso: o corpo do quantificador tem um conectivo e vai até o fim, sem parênteses (pode surpreender)
+  | 'E17' // aviso: nome com sobrescrito (x² é um nome, não x ao quadrado)
 
 export interface Diag extends Span {
   codigo: Codigo

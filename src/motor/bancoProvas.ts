@@ -15,6 +15,7 @@ import type { Formula } from '../logica/ast'
 import { canonica } from '../logica/canonica'
 import { resumo } from '../logica/resumo'
 import type { Modelo } from './motor'
+import { VERSAO_TRADUCAO_Z3 } from './z3'
 
 /**
  * muda quando a semântica do motor (ou o formato da chave) muda: invalida o que
@@ -29,8 +30,12 @@ const LOJA_Z3 = 'z3'
 const MAX_ENTRADAS = 20_000
 /** acima disso, as respostas do Z3 guardadas são apagadas (cada uma é pequena; é só um teto) */
 const MAX_Z3 = 50_000
-/** as chaves das respostas do Z3 começam assim (um resumo); as antigas, com o texto inteiro, são apagadas */
-export const PREFIXO_CHAVE_Z3 = 'h1:'
+/**
+ * As chaves das respostas do Z3 começam assim: formato da chave (h2) e versão da
+ * tradução. As de formato ou tradução anterior são apagadas; nenhuma resposta de
+ * outra versão é usada.
+ */
+export const PREFIXO_CHAVE_Z3 = `h2:${VERSAO_TRADUCAO_Z3}|`
 
 export type Prova =
   /** K: mundos testados na busca que achou o modelo */
@@ -116,13 +121,15 @@ export async function lerZ3Guardados(): Promise<RespostaZ3Guardada[]> {
   if (typeof indexedDB === 'undefined') return []
   const db = await abrirDb()
   try {
-    // as do formato antigo (a chave era o texto inteiro, dezenas de KB cada) saem sem serem lidas
+    // as de formato ou tradução anterior saem sem serem lidas
     await pedido(db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).delete(IDBKeyRange.upperBound(PREFIXO_CHAVE_Z3, true)))
     if ((await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).count())) > MAX_Z3) {
       await pedido(db.transaction(LOJA_Z3, 'readwrite').objectStore(LOJA_Z3).clear())
       return []
     }
-    return (await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).getAll())) as RespostaZ3Guardada[]
+    const todas = (await pedido(db.transaction(LOJA_Z3).objectStore(LOJA_Z3).getAll())) as RespostaZ3Guardada[]
+    // de uma versão mais nova (o app voltou para uma anterior): ficam lá, mas não valem aqui
+    return todas.filter((r) => r.chave.startsWith(PREFIXO_CHAVE_Z3))
   } finally {
     db.close()
   }

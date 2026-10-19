@@ -16,6 +16,13 @@ import { ORDEM, type Formula, type Termo } from '../logica/ast'
 
 export type ResultadoZ3 = 'sat' | 'unsat' | 'unknown'
 
+/**
+ * Versão desta tradução. Mude sempre que a tradução (ou a versão do Z3) mudar
+ * o que uma fórmula quer dizer: ela entra na chave das respostas guardadas, e
+ * as de outra versão deixam de ser usadas.
+ */
+export const VERSAO_TRADUCAO_Z3 = 't1'
+
 export const TEMPO_Z3_MS = 20_000
 
 type Expr = any

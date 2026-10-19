@@ -51,7 +51,7 @@ export function AvisosNaTela() {
   )
 }
 
-/** Opções: notificações do sistema e tela acesa enquanto calcula. */
+/** Opções: notificações do sistema, tela acesa enquanto calcula e o aviso E16. */
 export function ConfigSegundoPlano() {
   const av = useAvisos()
   const perm = av.permissao()
@@ -83,6 +83,10 @@ export function ConfigSegundoPlano() {
         Manter a tela acesa enquanto o motor calcula (o celular não bloqueia no meio)
       </label>
       {!temWakeLock && <p class="suave">Este navegador não permite manter a tela acesa.</p>}
+      <label class="alternar">
+        <input type="checkbox" checked={av.avisoEscopo} onChange={(e) => av.definirAvisoEscopo((e.target as HTMLInputElement).checked)} />
+        Avisar quando o escopo de um quantificador pode surpreender (E16): ∀x P(x) ⟹ Q é lido como ∀x (P(x) ⟹ Q)
+      </label>
     </details>
   )
 }

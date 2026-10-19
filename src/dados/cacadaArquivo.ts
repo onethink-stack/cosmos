@@ -3,6 +3,12 @@
 // existe fica com a versão mais nova, e os achados dos dois lados se somam.
 
 import type { Achado, Alvo, EstadoAchado, PromessaAlvo, RegraAlvo } from './cacada'
+import type { Formula } from '../logica/ast'
+import { expandir } from '../logica/acucar'
+import { validar } from '../logica/validador'
+import { Avaliador, type PassoExplicacao } from '../motor/avaliar'
+import type { Modelo } from '../motor/motor'
+import { falhasQuadro } from '../motor/quadro'
 
 export interface PacoteDeAlvos {
   app: 'caderno-logico'
@@ -27,17 +33,67 @@ function promessa(x: unknown): PromessaAlvo | null {
   return { id: o.id, titulo: texto(o.titulo), citacao: texto(o.citacao), formula: o.formula, fonte: texto(o.fonte) }
 }
 
+/** Os titulares de B[…] que aparecem na fórmula. */
+function agentesDe(f: Formula): string[] {
+  switch (f.k) {
+    case 'crenca':
+      return [f.agente, ...agentesDe(f.f)]
+    case 'not':
+    case 'nec':
+    case 'pos':
+      return agentesDe(f.f)
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return [...agentesDe(f.l), ...agentesDe(f.r)]
+    case 'forall':
+    case 'exists':
+      return agentesDe(f.corpo)
+    default:
+      return []
+  }
+}
+
+/**
+ * Reconfere um cenário vindo de outro aparelho sem confiar em nada dele: o
+ * quadro de cada titular que aparece é KD45, as regras valem no mundo real e a
+ * promessa falha nele. Devolve a explicação refeita aqui, ou null.
+ */
+function conferirCenario(promessa: string, regras: string[], modelo: Modelo): PassoExplicacao | null {
+  try {
+    const p = validar(promessa, [])
+    const rs = regras.map((r) => validar(r, []))
+    if (!p.ok || !p.ast || rs.some((r) => !r.ok || !r.ast)) return null
+    const agentes = [...new Set([p.ast, ...rs.map((r) => r.ast!)].flatMap(agentesDe))]
+    if (falhasQuadro(modelo, agentes).length) return null
+    const av = new Avaliador(modelo)
+    if (!rs.every((r) => av.avaliar(expandir(r.ast!)))) return null
+    if (av.avaliar(expandir(p.ast))) return null
+    return av.explicar(p.ast)
+  } catch {
+    // modelo malformado: não é um cenário que se possa conferir
+    return null
+  }
+}
+
 function achado(x: unknown): Achado | null {
   const o = x as Achado
   const m = o?.mundo
   if (!o || typeof o.id !== 'string' || typeof o.promessaId !== 'string' || !m || typeof m.n !== 'number' || !m.modelo || !m.passos) return null
+  const regras = Array.isArray(o.regras)
+    ? o.regras.filter((r) => r && typeof r.formula === 'string').map((r) => ({ id: texto(r.id), titulo: texto(r.titulo), formula: r.formula, fonte: texto(r.fonte) }))
+    : []
+  // o cenário vem de outro aparelho: só entra se for mesmo um contraexemplo, conferido aqui
+  const passos = conferirCenario(texto(o.promessa), regras.map((r) => r.formula), m.modelo)
+  if (!passos) return null
   return {
     id: o.id,
     promessaId: o.promessaId,
     quando: typeof o.quando === 'number' ? o.quando : 0,
     promessa: texto(o.promessa),
-    regras: Array.isArray(o.regras) ? o.regras.filter((r) => r && typeof r.formula === 'string').map((r) => ({ id: texto(r.id), titulo: texto(r.titulo), formula: r.formula, fonte: texto(r.fonte) })) : [],
-    mundo: m,
+    regras,
+    mundo: { ...m, passos },
     estado: ESTADOS.includes(o.estado) ? o.estado : 'pista',
     anotacao: texto(o.anotacao),
     poc: texto(o.poc),

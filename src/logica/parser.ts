@@ -7,6 +7,38 @@ export class ErroSintaxe extends Error {
   }
 }
 
+/** Erro de limite: não é engolido pela tentativa de ler '(' como termo (ver `parenteses`). */
+export class ErroLimite extends ErroSintaxe {}
+
+/**
+ * Descidas do parser (fórmula, termo, operador prefixo, sinal) abertas ao mesmo tempo.
+ * Cada nível de parênteses gasta duas; acima disso a fórmula é recusada em vez de
+ * estourar a pilha do navegador.
+ */
+export const ANINHAMENTO_MAXIMO = 500
+/**
+ * Profundidade máxima da fórmula montada. Uma cadeia A ∧ B ∧ … de n termos tem
+ * profundidade n, e quem percorre a fórmula depois (validador, motor, Z3) desce
+ * um nível por vez.
+ */
+export const PROFUNDIDADE_MAXIMA = 2_000
+
+/** Profundidade da árvore de uma fórmula ou termo, sem recursão. */
+export function profundidade(raiz: Formula | Termo): number {
+  let max = 0
+  const pilha: [object, number][] = [[raiz, 1]]
+  while (pilha.length) {
+    const [no, d] = pilha.pop()!
+    if (d > max) max = d
+    for (const v of Object.values(no)) {
+      if (Array.isArray(v)) {
+        for (const x of v) if (x && typeof x === 'object' && 'k' in x) pilha.push([x, d + 1])
+      } else if (v && typeof v === 'object' && 'k' in v) pilha.push([v, d + 1])
+    }
+  }
+  return max
+}
+
 const BINARIOS: TipoToken[] = ['and', 'or', 'imp', 'iff']
 const RELACOES: Partial<Record<TipoToken, Rel>> = { eq: '=', neq: '≠', in: '∈', notin: '∉', subset: '⊆', lt: '<', le: '≤', gt: '>', ge: '≥' }
 const SOMA: Partial<Record<TipoToken, OpArit>> = { plus: '+', minus: '−' }
@@ -28,6 +60,8 @@ export function parseTokens(tokens: Token[], op: OpcoesParser = {}): Formula {
 
 class Parser {
   private i = 0
+  /** descidas abertas agora (ver ANINHAMENTO_MAXIMO) */
+  private nivel = 0
 
   constructor(
     private toks: Token[],
@@ -50,6 +84,25 @@ class Parser {
     return `coluna ${tk.pos + 1}`
   }
 
+  /** Desce um nível; aninhamento demais vira erro, não estouro de pilha. */
+  private descer<T>(f: () => T): T {
+    if (++this.nivel > ANINHAMENTO_MAXIMO) {
+      const tk = this.at()
+      throw new ErroLimite({
+        codigo: 'E0',
+        nivel: 'erro',
+        msg: `Fórmula aninhada demais (${this.col(tk)}): mais de ${ANINHAMENTO_MAXIMO / 2} níveis. Divida em fórmulas menores.`,
+        pos: tk.pos,
+        end: Math.max(tk.end, tk.pos + 1),
+      })
+    }
+    try {
+      return f()
+    } finally {
+      this.nivel--
+    }
+  }
+
   /** Erro para um token que sobrou onde se esperava fim, ')' ou conectivo. */
   private erroInesperado(tk: Token, esperado: string): never {
     if (INICIO_FORMULA.includes(tk.t))
@@ -69,12 +122,21 @@ class Parser {
     if (this.at().t === 'eof') this.erro('E0', 'Fórmula vazia', this.at())
     const f = this.formula()
     if (this.at().t !== 'eof') this.erroInesperado(this.at(), 'um conectivo ou o fim da fórmula')
+    const p = profundidade(f)
+    if (p > PROFUNDIDADE_MAXIMA)
+      throw new ErroLimite({
+        codigo: 'E0',
+        nivel: 'erro',
+        msg: `Fórmula grande demais: ${p} níveis (o máximo é ${PROFUNDIDADE_MAXIMA}). Divida em várias fórmulas.`,
+        pos: f.pos,
+        end: Math.max(f.end, f.pos + 1),
+      })
     return f
   }
 
   // formula := iff ; precedência ¬ > ∧ > ∨ > ⟹ > ⟺
   private formula(): Formula {
-    return this.iff()
+    return this.descer(() => this.iff())
   }
 
   private operandoDireita(opTk: Token, prox: () => Formula): Formula {
@@ -125,6 +187,10 @@ class Parser {
 
   /** `apos`: símbolo do operador prefixo logo antes (¬, □, ◇, B[…]), para a mensagem de E2 */
   private unaria(apos: string | null): Formula {
+    return this.descer(() => this.unariaDentro(apos))
+  }
+
+  private unariaDentro(apos: string | null): Formula {
     const tk = this.at()
     switch (tk.t) {
       case 'not': {
@@ -229,7 +295,19 @@ class Parser {
     const fecha = this.at().t === 'lpar' ? this.fechamento(this.i) : -1
     const corpo = this.formula()
     const enganoso = fecha >= 0 && corpo.end > this.toks[fecha].end ? this.toks[fecha].pos : undefined
-    return { k: q.t as 'forall' | 'exists', v: v.v, vPos: v.pos, dom, corpo, pos: q.pos, end: corpo.end, parentesesEnganoso: enganoso }
+    // "∀x P(x) ⟹ Q": sem parêntese logo depois, o conectivo do topo fica dentro do escopo (E16)
+    const aberto = fecha < 0 && (corpo.k === 'and' || corpo.k === 'or' || corpo.k === 'imp' || corpo.k === 'iff')
+    return {
+      k: q.t as 'forall' | 'exists',
+      v: v.v,
+      vPos: v.pos,
+      dom,
+      corpo,
+      pos: q.pos,
+      end: corpo.end,
+      parentesesEnganoso: enganoso,
+      ...(aberto ? { corpoAberto: true as const } : {}),
+    }
   }
 
   /** Índice do ")" que fecha o "(" na posição i (os parênteses já foram conferidos). */
@@ -249,7 +327,7 @@ class Parser {
       const t = this.termo()
       if (RELACOES[this.at().t]) return this.relacao(t)
     } catch (e) {
-      if (!(e instanceof ErroSintaxe)) throw e
+      if (!(e instanceof ErroSintaxe) || e instanceof ErroLimite) throw e
     }
     this.i = salvo
     const abre = this.avancar()
@@ -290,6 +368,10 @@ class Parser {
   // termo := produto { (+|−) produto } ; produto := sinal { (·|/) sinal } ; sinal := − sinal | potencia
   // potencia := conjunto [ ^ sinal ] ; conjunto := inter { ⋃ inter } ; inter := prim { ⋂ prim }
   private termo(): Termo {
+    return this.descer(() => this.termoDentro())
+  }
+
+  private termoDentro(): Termo {
     let l = this.produto()
     for (let op = SOMA[this.at().t]; op; op = SOMA[this.at().t]) {
       const tk = this.avancar()
@@ -310,6 +392,10 @@ class Parser {
   }
 
   private sinal(): Termo {
+    return this.descer(() => this.sinalDentro())
+  }
+
+  private sinalDentro(): Termo {
     const tk = this.at()
     if (tk.t === 'minus') {
       this.avancar()

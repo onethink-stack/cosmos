@@ -241,13 +241,13 @@ export const MODELOS: ModeloInicial[] = [
         id: 'lz-tipos',
         titulo: 'Tipos: nonces e hashes; vazio (0) e nulo (2²⁵⁶−1) são hashes especiais',
         formula:
-          '∀x ¬(Nonce(x) ∧ Hash(x)) ∧ Hash(vazio) ∧ Hash(nulo) ∧ vazio ≠ nulo ∧ Nonce(nn) ∧ Hash(hh) ∧ Nonce(lazyA) ∧ Nonce(lazyD) ∧ ∀n (Nonce(n) ⟹ Hash(slotA(n)) ∧ Hash(slotD(n)))',
+          '(∀x ¬(Nonce(x) ∧ Hash(x))) ∧ Hash(vazio) ∧ Hash(nulo) ∧ vazio ≠ nulo ∧ Nonce(nn) ∧ Hash(hh) ∧ Nonce(lazyA) ∧ Nonce(lazyD) ∧ ∀n (Nonce(n) ⟹ Hash(slotA(n)) ∧ Hash(slotD(n)))',
         fonte: `${MC}: EMPTY_PAYLOAD_HASH, NIL_PAYLOAD_HASH, inboundPayloadHash, lazyInboundNonce`,
       },
       {
         id: 'lz-ordem',
         titulo: 'Os nonces são ordenados',
-        formula: '∀x ¬Menor(x, x) ∧ ∀x ∀y ∀z (Menor(x, y) ∧ Menor(y, z) ⟹ Menor(x, z)) ∧ ∀x ∀y (Nonce(x) ∧ Nonce(y) ⟹ Menor(x, y) ∨ x = y ∨ Menor(y, x))',
+        formula: '(∀x ¬Menor(x, x)) ∧ (∀x ∀y ∀z (Menor(x, y) ∧ Menor(y, z) ⟹ Menor(x, z))) ∧ ∀x ∀y (Nonce(x) ∧ Nonce(y) ⟹ Menor(x, y) ∨ x = y ∨ Menor(y, x))',
         fonte: 'uint64',
       },
       {
@@ -358,7 +358,7 @@ MODELOS.push({
       id: 'ax-tipos',
       titulo: 'Tipos: comandos, chaves de aprovação e conjuntos de operadores',
       formula:
-        '∀x ¬(Comando(x) ∧ Chave(x)) ∧ ∀x ¬(Comando(x) ∧ Conjunto(x)) ∧ ∀x ¬(Chave(x) ∧ Conjunto(x)) ∧ Comando(cc) ∧ Chave(kk) ∧ Conjunto(ss) ∧ Conjunto(atualA) ∧ Conjunto(atualD) ∧ ∀c (Comando(c) ⟹ Chave(chaveDe(c)) ∧ Conjunto(novo(c)))',
+        '(∀x ¬(Comando(x) ∧ Chave(x))) ∧ (∀x ¬(Comando(x) ∧ Conjunto(x))) ∧ (∀x ¬(Chave(x) ∧ Conjunto(x))) ∧ Comando(cc) ∧ Chave(kk) ∧ Conjunto(ss) ∧ Conjunto(atualA) ∧ Conjunto(atualD) ∧ ∀c (Comando(c) ⟹ Chave(chaveDe(c)) ∧ Conjunto(novo(c)))',
       fonte: `${AG}: commandIds, _getIsContractCallApprovedKey; ${AW}: hashForEpoch`,
     },
     {

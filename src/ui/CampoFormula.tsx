@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks'
+import { useAvisos } from '../dados/avisos'
 import type { EntradaDicionario } from '../dados/tipos'
 import { expandir } from '../logica/acucar'
 import type { Diag } from '../logica/ast'
@@ -41,7 +42,8 @@ function realcar(texto: string, diags: Diag[]) {
 
 export function CampoFormula(p: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
-  const r = useMemo(() => validar(p.valor, p.dicionario, { exigirFichas: !p.semFichas }), [p.valor, p.dicionario, p.semFichas])
+  const { avisoEscopo } = useAvisos()
+  const r = useMemo(() => validar(p.valor, p.dicionario, { exigirFichas: !p.semFichas }), [p.valor, p.dicionario, p.semFichas, avisoEscopo])
 
   const ajustarAltura = () => {
     const el = ref.current

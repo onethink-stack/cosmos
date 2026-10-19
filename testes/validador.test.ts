@@ -156,7 +156,8 @@ describe('sintaxe', () => {
 
   it('quantificador depois de conectivo se estende até o fim', () => {
     const r = validar('P(a) ∧ ∀x Q(x) ∨ R(x)')
-    expect(r.diags).toEqual([])
+    // a leitura é a de sempre; o E16 só avisa que o escopo vai até o fim
+    expect(r.diags.map((d) => `${d.codigo}:${d.nivel}`)).toEqual(['E16:aviso'])
     expect(imprimir(r.ast!)).toBe('P(a) ∧ (∀x (Q(x) ∨ R(x)))')
   })
 
@@ -196,10 +197,10 @@ describe('E14: escopo do quantificador passa do parêntese', () => {
     expect(r.diags[0].nivel).toBe('aviso')
     expect(validar('∃y (P(y)) ∧ Q(a)').diags.map((d) => d.codigo)).toEqual(['E14'])
   })
-  it('não avisa quando o escopo termina no ")" ou não começa com "("', () => {
+  it('não dá E14 quando o escopo termina no ")" ou não começa com "(" (aí quem avisa é o E16)', () => {
     expect(validar('∀x ((¬∃y (y ≠ x ∧ P(x, y))) ⟹ P(x, x))').diags).toEqual([])
     expect(validar('∀x (x ∈ A ⟺ ∃i∈I (x ∈ f(i)))').diags).toEqual([])
     expect(validar('∃i∈I ∃j∈I (i ≠ j ∧ f(i) ≠ f(j))').diags).toEqual([])
-    expect(validar('∃x P(x) ∧ Q(a)').diags).toEqual([])
+    expect(codigos('∃x P(x) ∧ Q(a)')).toEqual(['E16'])
   })
 })

@@ -3,6 +3,7 @@
 // E a opção de manter a tela acesa enquanto o motor calcula.
 
 import { useEffect, useReducer } from 'preact/hooks'
+import { definirAvisoDeEscopo } from '../logica/validador'
 import { gravarConfig, lerConfig } from './db'
 
 export interface Aviso {
@@ -20,6 +21,8 @@ class Avisos {
   notificar = false
   /** manter a tela acesa enquanto o motor trabalha (fica gravado) */
   telaAcesa = false
+  /** aviso E16, do escopo do quantificador que pode surpreender (fica gravado) */
+  avisoEscopo = true
   /** avisos dentro do app, mais novo por último */
   lista: Aviso[] = []
   private proximo = 1
@@ -39,6 +42,8 @@ class Avisos {
     try {
       this.notificar = (await lerConfig<boolean>('notificar')) ?? false
       this.telaAcesa = (await lerConfig<boolean>('telaAcesa')) ?? false
+      this.avisoEscopo = (await lerConfig<boolean>('avisoEscopo')) ?? true
+      definirAvisoDeEscopo(this.avisoEscopo)
     } catch {
       /* sem banco */
     }
@@ -72,6 +77,13 @@ class Avisos {
   definirTelaAcesa(v: boolean) {
     this.telaAcesa = v
     void gravarConfig('telaAcesa', v).catch(() => {})
+    this.mudou()
+  }
+
+  definirAvisoEscopo(v: boolean) {
+    this.avisoEscopo = v
+    definirAvisoDeEscopo(v)
+    void gravarConfig('avisoEscopo', v).catch(() => {})
     this.mudou()
   }
 

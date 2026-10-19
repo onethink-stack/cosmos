@@ -187,6 +187,9 @@ Não faça isso.
   podem ser objetos diferentes. Se quiser, escreva-o como lei:
   `∀s ∀t ((∀z (z ∈ s ⟺ z ∈ t)) ⟹ s = t)`.
 - ⋂ e ⋃ só à direita de ∈/∉, nos lados de ⊆ ou em `∀x∈…`.
+- Uma fórmula com mais de 250 níveis de parênteses ou quantificadores, ou com mais de
+  2.000 níveis no total (por exemplo, 2.000 termos ligados por ∧), é recusada com
+  erro E0 em vez de travar o app.
 
 ## Códigos do validador
 
@@ -206,6 +209,10 @@ Não faça isso.
 | E11 | erro | ⋂/⋃ em posição não suportada |
 | E12 | aviso | nome sem ficha no dicionário |
 | E13 | aviso | nome sem ficha parecido com um do dicionário ("você quis dizer…?") |
+| E14 | aviso | o escopo de um quantificador passa do `)` que parecia fechá-lo: `∀x (P(x)) ⟹ Q` é `∀x (P(x) ⟹ Q)` |
+| E15 | erro | número usado como objeto, ou objeto usado como número |
+| E16 | aviso | quantificador sem parênteses com ∧, ∨, ⟹ ou ⟺ no corpo: `∀x P(x) ⟹ Q` é lido como `∀x (P(x) ⟹ Q)` (desliga em *Avisos e segundo plano*) |
+| E17 | aviso | nome com sobrescrito: `x²` é um nome, não x ao quadrado (potência é `x^2`) |
 
 ## Estrutura
 

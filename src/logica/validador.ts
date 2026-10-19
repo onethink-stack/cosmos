@@ -1,6 +1,7 @@
 import type { EntradaDicionario, TipoSimbolo } from '../dados/tipos'
 import { ORDEM, type Diag, type Formula, type Span, type Termo } from './ast'
-import { checarParenteses, lex } from './lexer'
+import { imprimir } from './impressao'
+import { checarParenteses, lex, type Token } from './lexer'
 import { ErroSintaxe, parseTokens } from './parser'
 import { nomeParecido } from './distancia'
 import { termosIguais, usosDeNomes } from './termos'
@@ -27,6 +28,27 @@ export interface OpcoesValidacao {
   exigirFichas?: boolean
 }
 
+/** E16 ligado: o app guarda a escolha da pessoa (avisos.ts) e a repassa aqui. */
+let avisarEscopo = true
+export function definirAvisoDeEscopo(ligado: boolean) {
+  avisarEscopo = ligado
+}
+
+/** Sobrescritos que parecem expoente; dentro de um nome, são parte do nome (E17). */
+const SOBRESCRITOS: Record<string, string> = {
+  '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', 'ⁿ': 'n', 'ⁱ': 'i',
+}
+
+function avisosDeSobrescrito(tokens: Token[]): Diag[] {
+  return tokens
+    .filter((tk) => tk.t === 'nome' && [...tk.v].some((c) => c in SOBRESCRITOS))
+    .map((tk) => {
+      const m = /^(.*?)([⁰¹²³⁴⁵⁶⁷⁸⁹ⁿⁱ]+)$/u.exec(tk.v)
+      const dica = m?.[1] ? ` Para potência, escreva ${m[1]}^${[...m[2]].map((c) => SOBRESCRITOS[c]).join('')}.` : ' Para potência, use ^.'
+      return { codigo: 'E17', nivel: 'aviso', msg: `'${tk.v}' é um nome: o sobrescrito faz parte dele, não é potência.${dica}`, pos: tk.pos, end: tk.end }
+    })
+}
+
 export function validar(texto: string, dicionario: EntradaDicionario[] = [], opcoes: OpcoesValidacao = {}): ResultadoValidacao {
   const dic = new Map(dicionario.map((e) => [e.simbolo, e]))
   const fim = (diags: Diag[], ast: Formula | null): ResultadoValidacao => {
@@ -51,13 +73,29 @@ export function validar(texto: string, dicionario: EntradaDicionario[] = [], opc
     })
   } catch (e) {
     if (e instanceof ErroSintaxe) return fim([e.diag], null)
+    if (e instanceof RangeError) return fim([grandeDemais(texto)], null)
     throw e
   }
 
-  const diags = checarSemantica(ast, dic)
-  if (opcoes.exigirFichas) diags.push(...checarFichas(ast, dic))
-  return fim(diags, ast)
+  try {
+    const diags = checarSemantica(ast, dic)
+    if (opcoes.exigirFichas) diags.push(...checarFichas(ast, dic))
+    diags.push(...avisosDeSobrescrito(tokens))
+    return fim(diags, ast)
+  } catch (e) {
+    // a pilha deste aparelho acabou antes do limite do parser: recusa em vez de quebrar a tela
+    if (e instanceof RangeError) return fim([grandeDemais(texto)], null)
+    throw e
+  }
 }
+
+const grandeDemais = (texto: string): Diag => ({
+  codigo: 'E0',
+  nivel: 'erro',
+  msg: 'Fórmula grande demais para conferir neste aparelho. Divida em fórmulas menores.',
+  pos: 0,
+  end: Math.max(texto.length, 1),
+})
 
 /** E12/E13: um aviso por nome sem ficha (na primeira ocorrência). */
 export function checarFichas(ast: Formula, dic: Map<string, EntradaDicionario>): Diag[] {
@@ -237,6 +275,17 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
             `O escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' não termina no ')' da coluna ${f.parentesesEnganoso + 1}: vai até o fim da fórmula. Se queria que terminasse ali, envolva o quantificador em parênteses: (${f.k === 'forall' ? '∀' : '∃'}${f.v} (…)) …`,
             { pos: f.pos, end: f.vPos + f.v.length },
           )
+        else if (f.corpoAberto && avisarEscopo && (f.corpo.k === 'and' || f.corpo.k === 'or' || f.corpo.k === 'imp' || f.corpo.k === 'iff')) {
+          const op = { and: '∧', or: '∨', imp: '⟹', iff: '⟺' }[f.corpo.k]
+          const direita = imprimir(f.corpo.r)
+          const so = `(${imprimir({ ...f, corpo: f.corpo.l })}) ${op} ${f.corpo.r.k === 'and' || f.corpo.r.k === 'or' || f.corpo.r.k === 'imp' || f.corpo.r.k === 'iff' ? `(${direita})` : direita}`
+          add(
+            'E16',
+            'aviso',
+            `Lido como ${imprimir(f)}: o escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' vai até o fim. Se ele devia valer só para a primeira parte, escreva ${so}. Para tirar este aviso sem mudar o sentido, ponha o corpo entre parênteses.`,
+            { pos: f.pos, end: f.vPos + f.v.length },
+          )
+        }
         if (escopo.includes(f.v))
           add('E5', 'aviso', `'${f.v}' já está quantificada num escopo externo; este quantificador esconde o anterior`, vSpan)
         const antes = reais

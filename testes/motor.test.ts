@@ -29,10 +29,13 @@ describe('SAT solver', () => {
   })
 
   it('3-SAT aleatório: todo modelo devolvido satisfaz as cláusulas', () => {
+    // mulberry32: contas inteiras de 32 bits (o gerador linear em ponto flutuante repetia depois de 10.466 sorteios)
     let semente = 12345
     const rnd = () => {
-      semente = (semente * 1103515245 + 12345) & 0x7fffffff
-      return semente / 0x7fffffff
+      semente = (semente + 0x6d2b79f5) | 0
+      let t = Math.imul(semente ^ (semente >>> 15), 1 | semente)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
     let sat = 0
     let unsat = 0

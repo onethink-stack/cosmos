@@ -80,9 +80,16 @@ type A =
   | { k: 'and' | 'or' | 'imp' | 'iff'; l: A; r: A }
   | { k: 'all' | 'ex'; v: string; dom?: string; a: A }
 
+/**
+ * Sorteio determinístico (mulberry32): a mesma semente dá sempre os mesmos casos.
+ * Contas inteiras de 32 bits; o gerador linear antigo, em ponto flutuante, perdia os
+ * bits de baixo e repetia tudo depois de 10.466 sorteios (220 com a semente 9).
+ */
 const sorteio = (semente: number) => () => {
-  semente = (semente * 1103515245 + 12345) % 2147483648
-  return semente / 2147483648
+  semente = (semente + 0x6d2b79f5) | 0
+  let t = Math.imul(semente ^ (semente >>> 15), 1 | semente)
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
 }
 const um = <T,>(r: () => number, xs: readonly T[]): T => xs[Math.floor(r() * xs.length)]
 /** aridade fixa por nome, para não cair no E10 */
@@ -222,6 +229,10 @@ function deCaderno(f: Formula): A | null {
 describe('oráculos independentes: árvores sorteadas, escritas pelos dois impressores', { timeout: 120_000 }, () => {
   const r = sorteio(2026)
   const arvores = Array.from({ length: 2000 }, () => sortear(r, 4))
+
+  it('as árvores sorteadas são de fato variadas (árvores pequenas se repetem)', () => {
+    expect(new Set(arvores.map(esperada)).size).toBeGreaterThan(1700)
+  })
 
   it('com todos os parênteses, o leitor monta a árvore sorteada', () => {
     for (const a of arvores) {
@@ -424,8 +435,10 @@ describe('quantificadores aninhados: a regra de consumo conferida pelo texto', {
   it('1.000 árvores com metade dos nós quantificadores: o leitor monta a árvore e cada escopo bate com o texto', () => {
     const r = sorteio(9)
     let aninhados = 0
+    const distintas = new Set<string>()
     for (let i = 0; i < 1000; i++) {
       const a = sortear(r, 6, 0.5)
+      distintas.add(esperada(a))
       for (const texto of [cheio(a), minimo(a)]) {
         const v = ler(texto)
         expect(v.erros, texto).toEqual([])
@@ -434,6 +447,7 @@ describe('quantificadores aninhados: a regra de consumo conferida pelo texto', {
       }
     }
     expect(aninhados).toBeGreaterThan(1000)
+    expect(distintas.size).toBeGreaterThan(900)
   })
 })
 
@@ -728,9 +742,11 @@ describe('expansão conferida por um oráculo próprio: ⊆, ⋂, ⋃, ∅, ∈,
     const r = sorteio(11)
     const escolhidas = new Map<string, number>()
     let titularIgual = 0
+    const distintos = new Set<string>()
     for (let i = 0; i < 3000; i++) {
       const x = sortearX(r, 4, true)
       const texto = textoX(x)
+      distintos.add(texto)
       const v = validar(texto, [])
       expect(v.diags.filter((d) => d.nivel === 'erro').map((d) => d.codigo), texto).toEqual([])
       expect(sx(v.ast!), texto).toBe(arvoreX(x))
@@ -742,14 +758,17 @@ describe('expansão conferida por um oráculo próprio: ⊆, ⋂, ⋃, ∅, ∈,
     // as colisões acontecem de fato: a variável nova pula z, z1, z2…, e um titular com o mesmo nome não a impede
     for (const n of ['z', 'z1', 'z2', 'z3', 'z4', 'z5']) expect(escolhidas.get(n) ?? 0, n).toBeGreaterThan(5)
     expect(titularIgual).toBeGreaterThan(50)
+    expect(distintos.size).toBeGreaterThan(2400)
   })
 
   it('o sentido não muda: em mundos finitos, a expandida vale exatamente quando a original vale', () => {
     const r = sorteio(12)
     let mundos = 0
+    const distintos = new Set<string>()
     for (let i = 0; i < 1500; i++) {
       const x = sortearX(r, 4, false)
       const texto = textoX(x)
+      distintos.add(texto)
       const expandida = expandir(validar(texto, []).ast!)
       for (let j = 0; j < 8; j++) {
         const m = sortearMundo(r)
@@ -758,6 +777,7 @@ describe('expansão conferida por um oráculo próprio: ⊆, ⋂, ⋃, ∅, ∈,
       }
     }
     expect(mundos).toBe(12_000)
+    expect(distintos.size).toBeGreaterThan(1200)
   })
 
   it('a variável do quantificador no próprio domínio é recusada (E18), em qualquer lugar do domínio', () => {
@@ -797,6 +817,7 @@ describe('prioridade dos diagnósticos: falhas de várias etapas no mesmo texto'
 
   it('3.000 textos: vale a falha da etapa mais cedo, com as posições certas', () => {
     const r = sorteio(13)
+    const distintos = new Set<string>()
     const vistos = { lexico: 0, parenteses: 0, sintaxe: 0, tipos: 0, nenhuma: 0 }
     for (let i = 0; i < 3000; i++) {
       let texto = minimo(sortear(r, 3))
@@ -845,6 +866,7 @@ describe('prioridade dos diagnósticos: falhas de várias etapas no mesmo texto'
         }
 
       texto = cps.join('')
+      distintos.add(texto)
       const v = validar(texto, [])
       const ds = v.diags.map((d) => ({ codigo: d.codigo, inicio: tamanho(texto.slice(0, d.pos)) }))
       // a ordem: pelo inicio e, no mesmo inicio, pelo número do código
@@ -874,5 +896,6 @@ describe('prioridade dos diagnósticos: falhas de várias etapas no mesmo texto'
       }
     }
     for (const [etapa, n] of Object.entries(vistos)) expect(n, etapa).toBeGreaterThan(150)
+    expect(distintos.size).toBeGreaterThan(2800)
   })
 })

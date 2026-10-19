@@ -16,8 +16,10 @@ em silêncio.
 
 ## 1. Léxico
 
-O texto é dividido em símbolos antes da análise. Em cada posição, o leitor
-tenta nesta ordem:
+O texto é dividido em símbolos antes da análise. Caractere, em todo este
+arquivo, é um caractere Unicode inteiro (ponto de código): `𝑥` (U+1D465) é uma
+letra e começa um nome, e um emoji é um só E8. Em cada posição, o leitor tenta
+nesta ordem:
 
 1. Espaço em branco: separa símbolos. O leitor anota se havia espaço antes de
    cada símbolo, porque isso decide a aplicação, a crença e o índice (seção 1.4).

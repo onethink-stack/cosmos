@@ -103,12 +103,14 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
     tokens.push({ t, v, pos, end, espacoAntes: espaco })
     espaco = false
   }
+  // o caractere Unicode inteiro na posição k: 𝑥 (fora do plano básico) ocupa duas unidades de UTF-16
+  const car = (k: number) => String.fromCodePoint(texto.codePointAt(k)!)
 
   while (i < n) {
-    const c = texto[i]
+    const c = car(i)
     if (/\s/.test(c)) {
       espaco = true
-      i++
+      i += c.length
       continue
     }
     if (c in SUBSCRITOS) {
@@ -121,7 +123,11 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
     if (c === '_') {
       const ini = i++
       let v = ''
-      while (i < n && (ehCharDeNome(texto[i]) || texto[i] === "'")) v += texto[i++]
+      while (i < n && (ehCharDeNome(car(i)) || texto[i] === "'")) {
+        const d = car(i)
+        v += d
+        i += d.length
+      }
       if (!v) {
         erros.push({ codigo: 'E8', nivel: 'erro', pos: ini, end: ini + 1, msg: "'_' sem índice depois (use f_i para fᵢ)" })
         espaco = false
@@ -153,7 +159,7 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
     }
     if (ehCharDeNome(c)) {
       const ini = i
-      while (i < n && (ehCharDeNome(texto[i]) || texto[i] === "'")) i++
+      while (i < n && (ehCharDeNome(car(i)) || texto[i] === "'")) i += car(i).length
       push('nome', texto.slice(ini, i), ini, i)
       continue
     }
@@ -163,8 +169,8 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
       i += sim[0].length
       continue
     }
-    // símbolo desconhecido: se for comando com barra, pega o comando inteiro
-    let fim = i + 1
+    // símbolo desconhecido (um caractere inteiro); se for comando com barra, pega o comando inteiro
+    let fim = i + c.length
     if (c === '\\') while (fim < n && /[A-Za-z]/.test(texto[fim])) fim++
     const trecho = texto.slice(i, fim)
     erros.push({

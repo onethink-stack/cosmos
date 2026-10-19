@@ -163,6 +163,21 @@ describe('E16: aviso de escopo, nunca erro, e dá para desligar', () => {
   })
 })
 
+describe('caracteres fora do plano básico do Unicode contam como um caractere só', () => {
+  const inicio = (texto: string, pos: number) => [...texto.slice(0, pos)].length
+  it('𝑥 e 𝒜 são letras e começam nomes', () => {
+    const v = validar('P(𝑥) ∧ 𝒜 ≠ 𝑥', [])
+    expect(v.ok).toBe(true)
+    expect(f(v.ast!)).toBe('(∧ (P 𝑥) (≠ 𝒜 𝑥))')
+  })
+  it('um emoji é um só E8, e as posições contam pontos de código', () => {
+    const e8 = validar('😀 = y', []).diags
+    expect(e8.map((d) => [d.codigo, inicio('😀 = y', d.pos)])).toEqual([['E8', 0]])
+    const t = '𝒜 ⊆ B ∧ 𝑥 ≠ 𝑥'
+    expect(validar(t, []).diags.map((d) => [d.codigo, inicio(t, d.pos)])).toEqual([['E9', 8]])
+  })
+})
+
 describe('E17: sobrescrito em nome é aviso, e o nome continua sendo outro nome', () => {
   it('sugere a potência com ^ quando o sobrescrito está no fim', () => {
     expect(validar('x² = 4', []).diags[0].msg).toContain('x^2')
@@ -179,9 +194,12 @@ describe('E17: sobrescrito em nome é aviso, e o nome continua sendo outro nome'
 // prazo maior: com todos os arquivos de teste rodando juntos, 3.000 leituras passam de 5 s
 describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a mesma árvore', { timeout: 60_000 }, () => {
   // sorteio determinístico: a mesma semente dá sempre as mesmas fórmulas
+  // mulberry32: contas inteiras de 32 bits (o gerador linear em ponto flutuante repetia depois de 10.466 sorteios)
   const sorteio = (semente: number) => () => {
-    semente = (semente * 1103515245 + 12345) % 2147483648
-    return semente / 2147483648
+    semente = (semente + 0x6d2b79f5) | 0
+    let t = Math.imul(semente ^ (semente >>> 15), 1 | semente)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
   const ATOMOS = ['P(a)', 'Q(x)', 'R(x, y)', 'a = b', 'x ∈ A', 'f(x) = y', 'P(x)', 'Q(b)']
   const gerar = (r: () => number, prof: number): string => {
@@ -213,8 +231,10 @@ describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a 
   it('3.000 fórmulas sorteadas: imprimir a árvore e ler de novo dá a mesma árvore', () => {
     const r = sorteio(42)
     let validas = 0
+    const distintas = new Set<string>()
     for (let i = 0; i < 3000; i++) {
       const t = gerar(r, 4)
+      distintas.add(t)
       const v = validar(t, [])
       if (!v.ok || !v.ast) continue
       validas++
@@ -223,16 +243,20 @@ describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a 
       expect(outra.ast ? f(outra.ast) : null, `${t}  →  ${impresso}`).toBe(f(v.ast))
     }
     expect(validas).toBeGreaterThan(1000)
+    expect(distintas.size).toBeGreaterThan(2400)
   })
 
   it('3.000 textos aleatórios com os símbolos da linguagem: sempre árvore ou erro, nunca exceção', () => {
     const r = sorteio(7)
     const PECAS = ['∀x', '∃y', '¬', '∧', '∨', '⟹', '⟺', '(', ')', 'P(a)', 'x', '=', '∈', 'A', ',', 'B[Ana]', '□', '◇', '²', '⋂', '−', '2', 'f(', '[', ']']
+    const distintos = new Set<string>()
     for (let i = 0; i < 3000; i++) {
       const t = Array.from({ length: 1 + Math.floor(r() * 12) }, () => PECAS[Math.floor(r() * PECAS.length)]).join(' ')
+      distintos.add(t)
       const v = validar(t, [])
       expect(v.ok ? !!v.ast : v.diags.length > 0, t).toBe(true)
     }
+    expect(distintos.size).toBeGreaterThan(2500)
   })
 })
 

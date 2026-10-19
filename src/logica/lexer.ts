@@ -57,8 +57,9 @@ export const SUBSCRITOS: Record<string, string> = {
   '₇': '7', '₈': '8', '₉': '9',
 }
 
-// Ordem importa: o mais longo primeiro quando um é prefixo de outro.
-const SIMBOLOS: [string, TipoToken][] = [
+// Ordem importa: o mais longo primeiro quando um é prefixo de outro. (Exportada para o
+// pacote de conformidade em especificacao/, que lista as grafias aceitas.)
+export const SIMBOLOS: [string, TipoToken][] = [
   ['\\notin', 'notin'], ['\\empty', 'empty'], ['\\sub', 'subset'], ['\\cap', 'cap'],
   ['\\cup', 'cup'], ['\\in', 'in'], ['\\A', 'forall'], ['\\E', 'exists'],
   ['\\nec', 'nec'], ['\\pos', 'pos'],

@@ -1,0 +1,361 @@
+{
+ "versao": "m2",
+ "ordemDeLeitura": [
+  "espaço em branco (\\s): separa símbolos e é anotado (decide aplicação, crença e índice)",
+  "subscritos Unicode: uma sequência deles vira um índice",
+  "'_' seguido de caracteres de nome ou apóstrofo: índice; '_' sozinho é E8",
+  "dígitos 0 a 9: número, com parte decimal opcional (0.5)",
+  "ℝ e ℤ",
+  "caractere de nome (classes Unicode L ou N, menos subscritos): nome, que continua com caracteres de nome e apóstrofo",
+  "símbolos da lista abaixo, na ordem dada (a grafia mais longa vem antes de quem é prefixo dela)",
+  "qualquer outra coisa: E8; depois de '\\', o comando inteiro (letras A-Z, a-z) vira um só E8"
+ ],
+ "simbolos": [
+  {
+   "token": "notin",
+   "canonico": "∉",
+   "grafias": [
+    "\\notin",
+    "∉"
+   ]
+  },
+  {
+   "token": "empty",
+   "canonico": "∅",
+   "grafias": [
+    "\\empty",
+    "∅"
+   ]
+  },
+  {
+   "token": "subset",
+   "canonico": "⊆",
+   "grafias": [
+    "\\sub",
+    "⊆"
+   ]
+  },
+  {
+   "token": "cap",
+   "canonico": "⋂",
+   "grafias": [
+    "\\cap",
+    "⋂",
+    "∩"
+   ]
+  },
+  {
+   "token": "cup",
+   "canonico": "⋃",
+   "grafias": [
+    "\\cup",
+    "⋃",
+    "∪"
+   ]
+  },
+  {
+   "token": "in",
+   "canonico": "∈",
+   "grafias": [
+    "\\in",
+    "∈"
+   ]
+  },
+  {
+   "token": "forall",
+   "canonico": "∀",
+   "grafias": [
+    "\\A",
+    "∀"
+   ]
+  },
+  {
+   "token": "exists",
+   "canonico": "∃",
+   "grafias": [
+    "\\E",
+    "∃"
+   ]
+  },
+  {
+   "token": "nec",
+   "canonico": "□",
+   "grafias": [
+    "\\nec",
+    "[]",
+    "□",
+    "◻"
+   ]
+  },
+  {
+   "token": "pos",
+   "canonico": "◇",
+   "grafias": [
+    "\\pos",
+    "<>",
+    "◇",
+    "◊",
+    "⋄"
+   ]
+  },
+  {
+   "token": "iff",
+   "canonico": "⟺",
+   "grafias": [
+    "<->",
+    "<=>",
+    "⟺",
+    "⇔",
+    "↔"
+   ]
+  },
+  {
+   "token": "imp",
+   "canonico": "⟹",
+   "grafias": [
+    "->",
+    "⟹",
+    "⇒",
+    "→"
+   ]
+  },
+  {
+   "token": "neq",
+   "canonico": "≠",
+   "grafias": [
+    "!=",
+    "≠"
+   ]
+  },
+  {
+   "token": "le",
+   "canonico": "≤",
+   "grafias": [
+    "<=",
+    "≤",
+    "⩽"
+   ]
+  },
+  {
+   "token": "ge",
+   "canonico": "≥",
+   "grafias": [
+    ">=",
+    "≥",
+    "⩾"
+   ]
+  },
+  {
+   "token": "lt",
+   "canonico": "<",
+   "grafias": [
+    "<"
+   ]
+  },
+  {
+   "token": "gt",
+   "canonico": ">",
+   "grafias": [
+    ">"
+   ]
+  },
+  {
+   "token": "plus",
+   "canonico": "+",
+   "grafias": [
+    "+"
+   ]
+  },
+  {
+   "token": "minus",
+   "canonico": "−",
+   "grafias": [
+    "−",
+    "-"
+   ]
+  },
+  {
+   "token": "times",
+   "canonico": "·",
+   "grafias": [
+    "·",
+    "*",
+    "×"
+   ]
+  },
+  {
+   "token": "div",
+   "canonico": "/",
+   "grafias": [
+    "/"
+   ]
+  },
+  {
+   "token": "pow",
+   "canonico": "^",
+   "grafias": [
+    "^"
+   ]
+  },
+  {
+   "token": "reais",
+   "canonico": "ℝ",
+   "grafias": [
+    "\\R"
+   ]
+  },
+  {
+   "token": "inteiros",
+   "canonico": "ℤ",
+   "grafias": [
+    "\\Z"
+   ]
+  },
+  {
+   "token": "not",
+   "canonico": "¬",
+   "grafias": [
+    "¬",
+    "~"
+   ]
+  },
+  {
+   "token": "and",
+   "canonico": "∧",
+   "grafias": [
+    "∧",
+    "&"
+   ]
+  },
+  {
+   "token": "or",
+   "canonico": "∨",
+   "grafias": [
+    "∨",
+    "|"
+   ]
+  },
+  {
+   "token": "eq",
+   "canonico": "=",
+   "grafias": [
+    "="
+   ]
+  },
+  {
+   "token": "lpar",
+   "canonico": "(",
+   "grafias": [
+    "("
+   ]
+  },
+  {
+   "token": "rpar",
+   "canonico": ")",
+   "grafias": [
+    ")"
+   ]
+  },
+  {
+   "token": "comma",
+   "canonico": ",",
+   "grafias": [
+    ","
+   ]
+  },
+  {
+   "token": "lbrack",
+   "canonico": "[",
+   "grafias": [
+    "["
+   ]
+  },
+  {
+   "token": "rbrack",
+   "canonico": "]",
+   "grafias": [
+    "]"
+   ]
+  }
+ ],
+ "especiais": [
+  {
+   "token": "reais",
+   "grafias": [
+    "ℝ",
+    "\\R"
+   ],
+   "nota": "só como domínio de quantificador"
+  },
+  {
+   "token": "inteiros",
+   "grafias": [
+    "ℤ",
+    "\\Z"
+   ],
+   "nota": "só como domínio de quantificador"
+  }
+ ],
+ "nome": {
+  "inicio": "um caractere das classes Unicode L ou N, menos os subscritos e menos os dígitos 0 a 9 (que começam números)",
+  "continuacao": "caracteres das classes L ou N (menos subscritos) e o apóstrofo",
+  "exemplos": [
+   "x",
+   "x'",
+   "Ω",
+   "αβ",
+   "²x",
+   "٣x",
+   "xᵃ"
+  ],
+  "sobrescritosComAvisoE17": [
+   "⁰",
+   "¹",
+   "²",
+   "³",
+   "⁴",
+   "⁵",
+   "⁶",
+   "⁷",
+   "⁸",
+   "⁹",
+   "ⁿ",
+   "ⁱ"
+  ]
+ },
+ "subscritos": {
+  "ₐ": "a",
+  "ₑ": "e",
+  "ₒ": "o",
+  "ₓ": "x",
+  "ₕ": "h",
+  "ₖ": "k",
+  "ₗ": "l",
+  "ₘ": "m",
+  "ₙ": "n",
+  "ₚ": "p",
+  "ₛ": "s",
+  "ₜ": "t",
+  "ᵢ": "i",
+  "ⱼ": "j",
+  "ᵣ": "r",
+  "ᵤ": "u",
+  "ᵥ": "v",
+  "₀": "0",
+  "₁": "1",
+  "₂": "2",
+  "₃": "3",
+  "₄": "4",
+  "₅": "5",
+  "₆": "6",
+  "₇": "7",
+  "₈": "8",
+  "₉": "9"
+ },
+ "numero": "[0-9]+(\\.[0-9]+)?",
+ "adjacencias": [
+  "aplicação: '(' colado ao nome, sem espaço; com espaço não é aplicação",
+  "crença: 'B' colado ao '['; com espaço, B é um nome comum",
+  "índice: colado ao nome, sem espaço"
+ ]
+}

@@ -1,0 +1,853 @@
+{
+ "versao": "m2",
+ "formato": "ver especificacao/gramatica-m2.md, seção Formato das árvores",
+ "exemplos": [
+  {
+   "id": "G001",
+   "texto": "P(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(P a)",
+   "arvoreExpandida": "(P a)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G002",
+   "texto": "P(a, f(b))",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(P a (f b))",
+   "arvoreExpandida": "(P a (f b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G003",
+   "texto": "x_i = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (_ x i) y)",
+   "arvoreExpandida": "(= (_ x i) y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G004",
+   "texto": "xᵢ = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (_ x i) y)",
+   "arvoreExpandida": "(= (_ x i) y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G005",
+   "texto": "x' = x''",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= x' x'')",
+   "arvoreExpandida": "(= x' x'')",
+   "diagnosticos": []
+  },
+  {
+   "id": "G006",
+   "texto": "a ≠ b",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(≠ a b)",
+   "arvoreExpandida": "(¬ (= a b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G007",
+   "texto": "a != b",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(≠ a b)",
+   "arvoreExpandida": "(¬ (= a b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G008",
+   "texto": "a ∈ A ⋂ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ a (⋂ A B))",
+   "arvoreExpandida": "(∧ (∈ a A) (∈ a B))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G009",
+   "texto": "A ⋂ B ⊆ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ (⋂ A B) C)",
+   "arvoreExpandida": "(∀ z (⟹ (∧ (∈ z A) (∈ z B)) (∈ z C)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G010",
+   "texto": "(A ⋃ B) ⊆ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ (⋃ A B) C)",
+   "arvoreExpandida": "(∀ z (⟹ (∨ (∈ z A) (∈ z B)) (∈ z C)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G011",
+   "texto": "x + 2 · y ≤ 3",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(≤ (+ x (· 2 y)) 3)",
+   "arvoreExpandida": "(≤ (+ x (· 2 y)) 3)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G012",
+   "texto": "−x^2 = −4",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (− (^ x 2)) (− 4))",
+   "arvoreExpandida": "(= (− (^ x 2)) (− 4))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G013",
+   "texto": "2^3^2 = 512",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (^ 2 (^ 3 2)) 512)",
+   "arvoreExpandida": "(= (^ 2 (^ 3 2)) 512)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G014",
+   "texto": "a ∈ ∅",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ a ∅)",
+   "arvoreExpandida": "⊥",
+   "diagnosticos": []
+  },
+  {
+   "id": "G015",
+   "texto": "P(a) ∨ Q(a) ∧ R(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∨ (P a) (∧ (Q a) (R a)))",
+   "arvoreExpandida": "(∨ (P a) (∧ (Q a) (R a)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G016",
+   "texto": "P(a) ⟹ Q(a) ⟹ R(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (P a) (⟹ (Q a) (R a)))",
+   "arvoreExpandida": "(⟹ (P a) (⟹ (Q a) (R a)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G017",
+   "texto": "P(a) ⟺ Q(a) ⟺ R(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟺ (⟺ (P a) (Q a)) (R a))",
+   "arvoreExpandida": "(⟺ (⟺ (P a) (Q a)) (R a))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G018",
+   "texto": "¬P(a) ∧ Q(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (¬ (P a)) (Q a))",
+   "arvoreExpandida": "(∧ (¬ (P a)) (Q a))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G019",
+   "texto": "~P(a) & Q(a) -> R(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (∧ (¬ (P a)) (Q a)) (R a))",
+   "arvoreExpandida": "(⟹ (∧ (¬ (P a)) (Q a)) (R a))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G020",
+   "texto": "∀x P(x) ⟹ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (⟹ (P x) (Q b)))",
+   "arvoreExpandida": "(∀ x (⟹ (P x) (Q b)))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G021",
+   "texto": "(∀x P(x)) ⟹ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (∀ x (P x)) (Q b))",
+   "arvoreExpandida": "(⟹ (∀ x (P x)) (Q b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G022",
+   "texto": "∀x (P(x)) ⟹ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (⟹ (P x) (Q b)))",
+   "arvoreExpandida": "(∀ x (⟹ (P x) (Q b)))",
+   "diagnosticos": [
+    {
+     "codigo": "E14",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G023",
+   "texto": "∀x (P(x) ⟹ Q(b))",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (⟹ (P x) (Q b)))",
+   "arvoreExpandida": "(∀ x (⟹ (P x) (Q b)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G024",
+   "texto": "¬∀x P(x) ∨ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(¬ (∀ x (∨ (P x) (Q b))))",
+   "arvoreExpandida": "(¬ (∀ x (∨ (P x) (Q b))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G025",
+   "texto": "P(a) ∧ ∀x P(x) ⟹ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (P a) (∀ x (⟹ (P x) (Q b))))",
+   "arvoreExpandida": "(∧ (P a) (∀ x (⟹ (P x) (Q b))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G026",
+   "texto": "∀x∈S P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x ∈ S (P x))",
+   "arvoreExpandida": "(∀ x (⟹ (∈ x S) (P x)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G027",
+   "texto": "∃x∈ℝ x · x = 2",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∃ x ∈ ℝ (= (· x x) 2))",
+   "arvoreExpandida": "(∃ x ∈ ℝ (= (· x x) 2))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G028",
+   "texto": "∀x ∃y R(x, y)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∃ y (R x y)))",
+   "arvoreExpandida": "(∀ x (∃ y (R x y)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G029",
+   "texto": "∀x (P(x) ∧ ∀x Q(x))",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∧ (P x) (∀ x (Q x))))",
+   "arvoreExpandida": "(∀ x (∧ (P x) (∀ x (Q x))))",
+   "diagnosticos": [
+    {
+     "codigo": "E5",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G030",
+   "texto": "□P(a) ⟹ ◇P(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (□ (P a)) (◇ (P a)))",
+   "arvoreExpandida": "(⟹ (□ (P a)) (◇ (P a)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G031",
+   "texto": "B[Igreja Católica] P(a) ∧ Q(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (B \"Igreja Católica\" (P a)) (Q a))",
+   "arvoreExpandida": "(∧ (B \"Igreja Católica\" (P a)) (Q a))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G032",
+   "texto": "B[x] B[y] P(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(B \"x\" (B \"y\" (P a)))",
+   "arvoreExpandida": "(B \"x\" (B \"y\" (P a)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G033",
+   "texto": "[]P(a) -> <>P(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (□ (P a)) (◇ (P a)))",
+   "arvoreExpandida": "(⟹ (□ (P a)) (◇ (P a)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G034",
+   "texto": "P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(P x)",
+   "arvoreExpandida": "(P x)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G035",
+   "texto": "(∀x P(x)) ∧ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (∀ x (P x)) (Q x))",
+   "arvoreExpandida": "(∧ (∀ x (P x)) (Q x))",
+   "diagnosticos": [
+    {
+     "codigo": "E6",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G036",
+   "texto": "A ⟹ B",
+   "fichas": [
+    {
+     "simbolo": "A",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "B",
+     "tipo": "predicado",
+     "aridade": 0
+    },
+    {
+     "simbolo": "C",
+     "tipo": "predicado",
+     "aridade": 0
+    }
+   ],
+   "aceita": true,
+   "arvore": "(⟹ A B)",
+   "arvoreExpandida": "(⟹ A B)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G037",
+   "texto": "A ⟹ B",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G038",
+   "texto": "P(a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G039",
+   "texto": "P(a) ∧",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G040",
+   "texto": "P(a) Q(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E3",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G041",
+   "texto": "¬a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G042",
+   "texto": "∀x",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G043",
+   "texto": "a = b = c",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G044",
+   "texto": "f() = a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G045",
+   "texto": "P(a) $ Q(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G046",
+   "texto": "ℝ = a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G047",
+   "texto": "B[] P(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E0",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G048",
+   "texto": "(A ⋂ B) = C",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(= (⋂ A B) C)",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E11",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G049",
+   "texto": "a ≠ a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(≠ a a)",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E9",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G050",
+   "texto": "P (a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G051",
+   "texto": "ac\u0327a\u0303o = b",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro"
+    },
+    {
+     "codigo": "E8",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G052",
+   "texto": "∀x P(x) ∧ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∧ (P x) (Q x)))",
+   "arvoreExpandida": "(∀ x (∧ (P x) (Q x)))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G053",
+   "texto": "∃x (P(x) ∧ Q(x))",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∃ x (∧ (P x) (Q x)))",
+   "arvoreExpandida": "(∃ x (∧ (P x) (Q x)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G054",
+   "texto": "∀x ∃y R(x, y) ∧ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∃ y (∧ (R x y) (Q b))))",
+   "arvoreExpandida": "(∀ x (∃ y (∧ (R x y) (Q b))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G055",
+   "texto": "∀x∈S P(x) ⟹ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x ∈ S (⟹ (P x) (Q x)))",
+   "arvoreExpandida": "(∀ x (⟹ (∈ x S) (⟹ (P x) (Q x))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G056",
+   "texto": "∀x P(x) ⟹ Q(b) ⟺ R(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (⟺ (⟹ (P x) (Q b)) (R b)))",
+   "arvoreExpandida": "(∀ x (⟺ (⟹ (P x) (Q b)) (R b)))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G057",
+   "texto": "x² = 4",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= x² 4)",
+   "arvoreExpandida": "(= x² 4)",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G058",
+   "texto": "x^2 = 4",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (^ x 2) 4)",
+   "arvoreExpandida": "(= (^ x 2) 4)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G059",
+   "texto": "x2 = 4",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= x2 4)",
+   "arvoreExpandida": "(= x2 4)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G060",
+   "texto": "xⁿ = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= xⁿ y)",
+   "arvoreExpandida": "(= xⁿ y)",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G061",
+   "texto": "²x = 4",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= ²x 4)",
+   "arvoreExpandida": "(= ²x 4)",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G062",
+   "texto": "∀x P(x²)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (P x²))",
+   "arvoreExpandida": "(∀ x (P x²))",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G063",
+   "texto": "B[Ana²] P(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(B \"Ana²\" (P a))",
+   "arvoreExpandida": "(B \"Ana²\" (P a))",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso"
+    }
+   ]
+  },
+  {
+   "id": "G064",
+   "texto": "xᵃ = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= xᵃ y)",
+   "arvoreExpandida": "(= xᵃ y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G065",
+   "texto": "x⁺ = y",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G066",
+   "texto": "٣x = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= ٣x y)",
+   "arvoreExpandida": "(= ٣x y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G067",
+   "texto": "x₁ = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (_ x 1) y)",
+   "arvoreExpandida": "(= (_ x 1) y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G068",
+   "texto": "x_1 = y",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(= (_ x 1) y)",
+   "arvoreExpandida": "(= (_ x 1) y)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G069",
+   "texto": "2x = 4",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G070",
+   "texto": "B [Ana] P(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G071",
+   "texto": "f (a) = b",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E2",
+     "nivel": "erro"
+    }
+   ]
+  },
+  {
+   "id": "G072",
+   "texto": "P(a)∧Q(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (P a) (Q a))",
+   "arvoreExpandida": "(∧ (P a) (Q a))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G073",
+   "texto": "(P(a) ∧ ∀x P(x)) ⟹ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (∧ (P a) (∀ x (P x))) (Q b))",
+   "arvoreExpandida": "(⟹ (∧ (P a) (∀ x (P x))) (Q b))",
+   "diagnosticos": []
+  }
+ ]
+}

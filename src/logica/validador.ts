@@ -28,6 +28,40 @@ export interface OpcoesValidacao {
   exigirFichas?: boolean
 }
 
+/** A fórmula com o nó `alvo` (o mesmo objeto) trocado por `novo`; o resto fica igual. */
+function trocar(f: Formula, alvo: Formula, novo: Formula): Formula {
+  if (f === alvo) return novo
+  switch (f.k) {
+    case 'not':
+    case 'nec':
+    case 'pos':
+    case 'crenca':
+      return { ...f, f: trocar(f.f, alvo, novo) }
+    case 'and':
+    case 'or':
+    case 'imp':
+    case 'iff':
+      return { ...f, l: trocar(f.l, alvo, novo), r: trocar(f.r, alvo, novo) }
+    case 'forall':
+    case 'exists':
+      return { ...f, corpo: trocar(f.corpo, alvo, novo) }
+    default:
+      return f
+  }
+}
+
+/**
+ * As duas formas que o E16 mostra, sempre com a fórmula inteira: a mesma
+ * fórmula escrita com os parênteses explícitos (não tem aviso) e a outra
+ * fórmula, em que o quantificador `q` vale só para a primeira parte do corpo.
+ */
+export function formasDoEscopo(raiz: Formula, q: Formula): { mesma: string; outra: string } | null {
+  if ((q.k !== 'forall' && q.k !== 'exists') || (q.corpo.k !== 'and' && q.corpo.k !== 'or' && q.corpo.k !== 'imp' && q.corpo.k !== 'iff')) return null
+  const { corpoAberto: _, ...fechado } = q
+  const novo: Formula = { k: q.corpo.k, l: { ...fechado, corpo: q.corpo.l }, r: q.corpo.r, pos: q.pos, end: q.end }
+  return { mesma: imprimir(raiz), outra: imprimir(trocar(raiz, q, novo)) }
+}
+
 /** E16 ligado: o app guarda a escolha da pessoa (avisos.ts) e a repassa aqui. */
 let avisarEscopo = true
 export function definirAvisoDeEscopo(ligado: boolean) {
@@ -275,16 +309,16 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
             `O escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' não termina no ')' da coluna ${f.parentesesEnganoso + 1}: vai até o fim da fórmula. Se queria que terminasse ali, envolva o quantificador em parênteses: (${f.k === 'forall' ? '∀' : '∃'}${f.v} (…)) …`,
             { pos: f.pos, end: f.vPos + f.v.length },
           )
-        else if (f.corpoAberto && avisarEscopo && (f.corpo.k === 'and' || f.corpo.k === 'or' || f.corpo.k === 'imp' || f.corpo.k === 'iff')) {
-          const op = { and: '∧', or: '∨', imp: '⟹', iff: '⟺' }[f.corpo.k]
-          const direita = imprimir(f.corpo.r)
-          const so = `(${imprimir({ ...f, corpo: f.corpo.l })}) ${op} ${f.corpo.r.k === 'and' || f.corpo.r.k === 'or' || f.corpo.r.k === 'imp' || f.corpo.r.k === 'iff' ? `(${direita})` : direita}`
-          add(
-            'E16',
-            'aviso',
-            `Lido como ${imprimir(f)}: o escopo de '${f.k === 'forall' ? '∀' : '∃'}${f.v}' vai até o fim. Escrito assim, com o corpo inteiro entre parênteses, o aviso some e o sentido é o mesmo. Se o quantificador devia valer só para ${imprimir(f.corpo.l)}, a fórmula é outra: ${so}.`,
-            { pos: f.pos, end: f.vPos + f.v.length },
-          )
+        else if (f.corpoAberto && avisarEscopo) {
+          const formas = formasDoEscopo(ast, f)
+          const q = `${f.k === 'forall' ? '∀' : '∃'}${f.v}`
+          if (formas && (f.corpo.k === 'and' || f.corpo.k === 'or' || f.corpo.k === 'imp' || f.corpo.k === 'iff'))
+            add(
+              'E16',
+              'aviso',
+              `Lido como ${formas.mesma}: o escopo de '${q}' vai até onde a fórmula, ou o parêntese em volta dele, termina. Escrita assim, com o corpo de '${q}' inteiro entre parênteses, a fórmula é a mesma e o aviso some. Se '${q}' devia valer só para ${imprimir(f.corpo.l)}, a fórmula é outra: ${formas.outra}.`,
+              { pos: f.pos, end: f.vPos + f.v.length },
+            )
         }
         if (escopo.includes(f.v))
           add('E5', 'aviso', `'${f.v}' já está quantificada num escopo externo; este quantificador esconde o anterior`, vSpan)

@@ -1,6 +1,7 @@
-// Exemplos normativos da gramática do Caderno (versão semântica m2). Cada linha diz
-// como um texto é lido: a árvore, escrita entre parênteses, e os avisos (?) e erros.
-// Mudar uma linha daqui é mudar o sentido de fórmulas: só com uma nova versão semântica.
+// A gramática do Caderno (versão semântica m2) conferida contra o pacote de
+// conformidade em especificacao/: cada exemplo de exemplos-m2.json, as grafias de
+// lexico-m2.json e os códigos de diagnosticos-m2.json. Mudar um exemplo é mudar o
+// sentido de fórmulas: só com uma nova versão semântica.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { init, killThreads } from 'z3-solver'
 import type { EntradaDicionario } from '../src/dados/tipos'
@@ -8,9 +9,13 @@ import type { Formula, Termo } from '../src/logica/ast'
 import { expandir } from '../src/logica/acucar'
 import { canonica } from '../src/logica/canonica'
 import { imprimir } from '../src/logica/impressao'
+import { lex } from '../src/logica/lexer'
 import { definirAvisoDeEscopo, validar } from '../src/logica/validador'
 import { nao, OPCOES_PADRAO, perguntar, prepararFormulas, type Grupo } from '../src/motor/motor'
 import { checarZ3 } from '../src/motor/z3'
+import textoDiagnosticos from '../especificacao/diagnosticos-m2.json?raw'
+import textoExemplos from '../especificacao/exemplos-m2.json?raw'
+import textoLexico from '../especificacao/lexico-m2.json?raw'
 
 /** A árvore entre parênteses: (conectivo filhos…); termos e fórmulas no mesmo formato. */
 const t = (x: Termo): string => {
@@ -65,97 +70,63 @@ const f = (x: Formula): string => {
   }
 }
 
-const PROP: EntradaDicionario[] = ['A', 'B', 'C'].map((s) => ({ id: s, termo: s, simbolo: s, tipo: 'predicado', aridade: 0, definicao: '' }))
 const codigos = (texto: string) =>
   validar(texto, [])
     .diags.map((d) => `${d.codigo}${d.nivel === 'aviso' ? '?' : ''}`)
     .join(',')
 
-/** [texto, dicionário, árvore (null = recusado), códigos ('?' = aviso)] */
-const EXEMPLOS: [string, EntradaDicionario[], string | null, string][] = [
-  ["P(a)", [], "(P a)", ""],
-  ["P(a, f(b))", [], "(P a (f b))", ""],
-  ["x_i = y", [], "(= (_ x i) y)", ""],
-  ["xᵢ = y", [], "(= (_ x i) y)", ""],
-  ["x' = x''", [], "(= x' x'')", ""],
-  ["a ≠ b", [], "(≠ a b)", ""],
-  ["a != b", [], "(≠ a b)", ""],
-  ["a ∈ A ⋂ B", [], "(∈ a (⋂ A B))", ""],
-  ["A ⋂ B ⊆ C", [], "(⊆ (⋂ A B) C)", ""],
-  ["(A ⋃ B) ⊆ C", [], "(⊆ (⋃ A B) C)", ""],
-  ["x + 2 · y ≤ 3", [], "(≤ (+ x (· 2 y)) 3)", ""],
-  ["−x^2 = −4", [], "(= (− (^ x 2)) (− 4))", ""],
-  ["2^3^2 = 512", [], "(= (^ 2 (^ 3 2)) 512)", ""],
-  ["a ∈ ∅", [], "(∈ a ∅)", ""],
-  ["P(a) ∨ Q(a) ∧ R(a)", [], "(∨ (P a) (∧ (Q a) (R a)))", ""],
-  ["P(a) ⟹ Q(a) ⟹ R(a)", [], "(⟹ (P a) (⟹ (Q a) (R a)))", ""],
-  ["P(a) ⟺ Q(a) ⟺ R(a)", [], "(⟺ (⟺ (P a) (Q a)) (R a))", ""],
-  ["¬P(a) ∧ Q(a)", [], "(∧ (¬ (P a)) (Q a))", ""],
-  ["~P(a) & Q(a) -> R(a)", [], "(⟹ (∧ (¬ (P a)) (Q a)) (R a))", ""],
-  ["∀x P(x) ⟹ Q(b)", [], "(∀ x (⟹ (P x) (Q b)))", "E16?"],
-  ["(∀x P(x)) ⟹ Q(b)", [], "(⟹ (∀ x (P x)) (Q b))", ""],
-  ["∀x (P(x)) ⟹ Q(b)", [], "(∀ x (⟹ (P x) (Q b)))", "E14?"],
-  ["∀x (P(x) ⟹ Q(b))", [], "(∀ x (⟹ (P x) (Q b)))", ""],
-  ["¬∀x P(x) ∨ Q(b)", [], "(¬ (∀ x (∨ (P x) (Q b))))", "E16?"],
-  ["P(a) ∧ ∀x P(x) ⟹ Q(b)", [], "(∧ (P a) (∀ x (⟹ (P x) (Q b))))", "E16?"],
-  ["∀x∈S P(x)", [], "(∀ x ∈ S (P x))", ""],
-  ["∃x∈ℝ x · x = 2", [], "(∃ x ∈ ℝ (= (· x x) 2))", ""],
-  ["∀x ∃y R(x, y)", [], "(∀ x (∃ y (R x y)))", ""],
-  ["∀x (P(x) ∧ ∀x Q(x))", [], "(∀ x (∧ (P x) (∀ x (Q x))))", "E5?"],
-  ["□P(a) ⟹ ◇P(a)", [], "(⟹ (□ (P a)) (◇ (P a)))", ""],
-  ["B[Igreja Católica] P(a) ∧ Q(a)", [], "(∧ (B \"Igreja Católica\" (P a)) (Q a))", ""],
-  ["B[x] B[y] P(a)", [], "(B \"x\" (B \"y\" (P a)))", ""],
-  ["[]P(a) -> <>P(a)", [], "(⟹ (□ (P a)) (◇ (P a)))", ""],
-  ["P(x)", [], "(P x)", ""],
-  ["(∀x P(x)) ∧ Q(x)", [], "(∧ (∀ x (P x)) (Q x))", "E6?"],
-  ["A ⟹ B", PROP, "(⟹ A B)", ""],
-  ["A ⟹ B", [], null, "E2"],
-  ["P(a", [], null, "E7"],
-  ["P(a) ∧", [], null, "E1"],
-  ["P(a) Q(a)", [], null, "E3"],
-  ["¬a", [], null, "E2"],
-  ["∀x", [], null, "E1"],
-  ["a = b = c", [], null, "E0"],
-  ["f() = a", [], null, "E0"],
-  ["P(a) $ Q(a)", [], null, "E8"],
-  ["ℝ = a", [], null, "E0"],
-  ["B[] P(a)", [], null, "E0"],
-  ["(A ⋂ B) = C", [], "(= (⋂ A B) C)", "E11"],
-  ["a ≠ a", [], "(≠ a a)", "E9"],
-  ["P (a)", [], null, "E2"],
-  ['ação = b'.normalize('NFD'), [], null, "E8,E8"], // o mesmo nome em NFD: recusado, não vira outro objeto
-  ["∀x P(x) ∧ Q(x)", [], "(∀ x (∧ (P x) (Q x)))", "E16?"],
-  ["∃x (P(x) ∧ Q(x))", [], "(∃ x (∧ (P x) (Q x)))", ""],
-  ["∀x ∃y R(x, y) ∧ Q(b)", [], "(∀ x (∃ y (∧ (R x y) (Q b))))", "E16?"],
-  ["∀x∈S P(x) ⟹ Q(x)", [], "(∀ x ∈ S (⟹ (P x) (Q x)))", "E16?"],
-  ["∀x P(x) ⟹ Q(b) ⟺ R(b)", [], "(∀ x (⟺ (⟹ (P x) (Q b)) (R b)))", "E16?"],
-  ["x² = 4", [], "(= x² 4)", "E17?"],
-  ["x^2 = 4", [], "(= (^ x 2) 4)", ""],
-  ["x2 = 4", [], "(= x2 4)", ""],
-  ["xⁿ = y", [], "(= xⁿ y)", "E17?"],
-  ["²x = 4", [], "(= ²x 4)", "E17?"],
-  ["∀x P(x²)", [], "(∀ x (P x²))", "E17?"],
-  ["B[Ana²] P(a)", [], "(B \"Ana²\" (P a))", "E17?"],
-  ["xᵃ = y", [], "(= xᵃ y)", ""],
-  ["x⁺ = y", [], null, "E8"],
-  ["٣x = y", [], "(= ٣x y)", ""],
-  ["x₁ = y", [], "(= (_ x 1) y)", ""],
-  ["x_1 = y", [], "(= (_ x 1) y)", ""],
-  ["2x = 4", [], null, "E2"],
-  ["B [Ana] P(a)", [], null, "E2"],
-  ["f (a) = b", [], null, "E2"],
-  ["P(a)∧Q(a)", [], "(∧ (P a) (Q a))", ""],
-  ["(P(a) ∧ ∀x P(x)) ⟹ Q(b)", [], "(⟹ (∧ (P a) (∀ x (P x))) (Q b))", ""],
-]
+/** O pacote de conformidade (especificacao/): exemplos normativos, léxico e diagnósticos. */
+interface Exemplo {
+  id: string
+  texto: string
+  fichas: Omit<EntradaDicionario, 'id' | 'termo' | 'definicao'>[]
+  aceita: boolean
+  arvore: string | null
+  arvoreExpandida: string | null
+  diagnosticos: { codigo: string; nivel: string }[]
+}
+const PACOTE: { versao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
-describe('gramática normativa: cada exemplo é lido sempre do mesmo jeito', () => {
-  it('são 73 exemplos', () => expect(EXEMPLOS).toHaveLength(73))
-  for (const [texto, dic, arvore, cods] of EXEMPLOS)
-    it(texto, () => {
-      const v = validar(texto, dic)
-      expect(v.ast ? f(v.ast) : null).toBe(arvore)
-      expect(v.diags.map((d) => `${d.codigo}${d.nivel === 'aviso' ? '?' : ''}`).join(',')).toBe(cods)
+describe('gramática normativa: cada exemplo do pacote é lido como o arquivo diz', () => {
+  it('versão m2, 73 exemplos', () => {
+    expect(PACOTE.versao).toBe('m2')
+    expect(PACOTE.exemplos).toHaveLength(73)
+  })
+  for (const e of PACOTE.exemplos)
+    it(`${e.id} ${e.texto}`, () => {
+      const dic: EntradaDicionario[] = e.fichas.map((x) => ({ id: x.simbolo, termo: x.simbolo, definicao: '', ...x }))
+      const v = validar(e.texto, dic)
+      expect(v.ok).toBe(e.aceita)
+      expect(v.ast ? f(v.ast) : null).toBe(e.arvore)
+      expect(v.ok && v.ast ? f(expandir(v.ast)) : null).toBe(e.arvoreExpandida)
+      expect(v.diags.map((d) => ({ codigo: d.codigo, nivel: d.nivel }))).toEqual(e.diagnosticos)
     })
+})
+
+describe('o léxico e os diagnósticos do pacote batem com o Caderno', () => {
+  const lexico: {
+    simbolos: { token: string; grafias: string[] }[]
+    especiais: { token: string; grafias: string[] }[]
+    nome: { sobrescritosComAvisoE17: string[] }
+  } = JSON.parse(textoLexico)
+
+  it('cada grafia vira o símbolo que o arquivo diz', () => {
+    for (const s of [...lexico.simbolos, ...lexico.especiais])
+      for (const g of s.grafias) {
+        const { tokens, erros } = lex(g)
+        expect(erros, g).toEqual([])
+        expect(tokens.map((k) => k.t), g).toEqual([s.token, 'eof'])
+      }
+  })
+
+  it('os sobrescritos do E17 são os que o validador avisa', () => {
+    for (const c of lexico.nome.sobrescritosComAvisoE17) expect(validar(`x${c} = y`, []).diags.map((d) => d.codigo), c).toEqual(['E17'])
+  })
+
+  it('o arquivo de diagnósticos tem os códigos do Caderno, E0 a E17', () => {
+    const d: { codigos: { codigo: string }[] } = JSON.parse(textoDiagnosticos)
+    expect(d.codigos.map((x) => x.codigo)).toEqual(Array.from({ length: 18 }, (_, i) => `E${i}`))
+  })
 })
 
 describe('E16: aviso de escopo, nunca erro, e dá para desligar', () => {

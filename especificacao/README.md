@@ -7,7 +7,7 @@ olhar o código do Caderno, e comparar os dois.
 | --- | --- |
 | `gramatica-m2.md` | A especificação: léxico, PEG normativa, escopo, precedência, etapas, dicionário, expansão, formato das árvores, limites, avisos e conformidade |
 | `lexico-m2.json` | Os símbolos e todas as grafias aceitas, na ordem em que o léxico os tenta; regras de nome, índice e número; adjacências |
-| `diagnosticos-m2.json` | Os códigos E0 a E17: nível, etapa, condição exata e a ordem em que são escolhidos |
+| `diagnosticos-m2.json` | Os códigos E0 a E18: nível, etapa, condição exata, posição e a ordem em que são escolhidos |
 | `exemplos-m2.json` | Os exemplos normativos: texto, fichas do dicionário, se é aceito, árvore, árvore expandida e diagnósticos |
 
 Os quatro arquivos são conferidos pelo Caderno a cada mudança: `testes/gramatica.test.ts`
@@ -17,8 +17,11 @@ leitor do Caderno discordar de qualquer linha.
 ## Como usar
 
 Para cada exemplo de `exemplos-m2.json`, leia `texto` com as `fichas` e compare
-com `aceita`, `arvore`, `arvoreExpandida` e `diagnosticos` (código e nível, na
-ordem). O formato das árvores está na seção 6 de `gramatica-m2.md`.
+com `aceita`, `arvore`, `arvoreExpandida` e `diagnosticos` (código, nível e
+`inicio`, na ordem). O formato das árvores está na seção 6 de `gramatica-m2.md`;
+a posição e a ordem dos diagnósticos, na seção 3.1. O `inicio` conta caracteres
+Unicode (pontos de código), não unidades de UTF-16; nos erros de sintaxe, E0 a
+E3, ele é informativo.
 
 Uma divergência é classificada como falha de implementação, lacuna da
 especificação ou decisão pendente; ela não é resolvida a favor de nenhum dos

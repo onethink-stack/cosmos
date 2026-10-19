@@ -83,14 +83,14 @@ interface Exemplo {
   aceita: boolean
   arvore: string | null
   arvoreExpandida: string | null
-  diagnosticos: { codigo: string; nivel: string }[]
+  diagnosticos: { codigo: string; nivel: string; inicio: number }[]
 }
 const PACOTE: { versao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
 describe('gramática normativa: cada exemplo do pacote é lido como o arquivo diz', () => {
-  it('versão m2, 73 exemplos', () => {
+  it('versão m2, 128 exemplos', () => {
     expect(PACOTE.versao).toBe('m2')
-    expect(PACOTE.exemplos).toHaveLength(73)
+    expect(PACOTE.exemplos).toHaveLength(128)
   })
   for (const e of PACOTE.exemplos)
     it(`${e.id} ${e.texto}`, () => {
@@ -99,7 +99,8 @@ describe('gramática normativa: cada exemplo do pacote é lido como o arquivo di
       expect(v.ok).toBe(e.aceita)
       expect(v.ast ? f(v.ast) : null).toBe(e.arvore)
       expect(v.ok && v.ast ? f(expandir(v.ast)) : null).toBe(e.arvoreExpandida)
-      expect(v.diags.map((d) => ({ codigo: d.codigo, nivel: d.nivel }))).toEqual(e.diagnosticos)
+      // o inicio do pacote conta pontos de código; o Caderno guarda posições em UTF-16
+      expect(v.diags.map((d) => ({ codigo: d.codigo, nivel: d.nivel, inicio: [...e.texto.slice(0, d.pos)].length }))).toEqual(e.diagnosticos)
     })
 })
 
@@ -123,9 +124,10 @@ describe('o léxico e os diagnósticos do pacote batem com o Caderno', () => {
     for (const c of lexico.nome.sobrescritosComAvisoE17) expect(validar(`x${c} = y`, []).diags.map((d) => d.codigo), c).toEqual(['E17'])
   })
 
-  it('o arquivo de diagnósticos tem os códigos do Caderno, E0 a E17', () => {
-    const d: { codigos: { codigo: string }[] } = JSON.parse(textoDiagnosticos)
-    expect(d.codigos.map((x) => x.codigo)).toEqual(Array.from({ length: 18 }, (_, i) => `E${i}`))
+  it('o arquivo de diagnósticos tem os códigos do Caderno, E0 a E18, cada um com o seu inicio', () => {
+    const d: { codigos: { codigo: string; inicio: string }[] } = JSON.parse(textoDiagnosticos)
+    expect(d.codigos.map((x) => x.codigo)).toEqual(Array.from({ length: 19 }, (_, i) => `E${i}`))
+    for (const c of d.codigos) expect(c.inicio, c.codigo).toBeTruthy()
   })
 })
 

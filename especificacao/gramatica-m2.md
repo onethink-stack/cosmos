@@ -136,6 +136,19 @@ O corpo do quantificador é lido pela regra `Formula`, a de menor precedência.
 | `P(a) ∧ ∀x P(x) ⟹ Q(b)` | `(∧ (P a) (∀ x (⟹ (P x) (Q b))))` |
 | `(P(a) ∧ ∀x P(x)) ⟹ Q(b)` | `(⟹ (∧ (P a) (∀ x (P x))) (Q b))` |
 | `¬∀x P(x) ∨ Q(b)` | `(¬ (∀ x (∨ (P x) (Q b))))` |
+| `∀x ∃y P(x) ⟹ Q(y)` | `(∀ x (∃ y (⟹ (P x) (Q y))))` |
+| `∃x ∀y R(x, y) ∧ ∃z P(z) ⟹ Q(x)` | `(∃ x (∀ y (∧ (R x y) (∃ z (⟹ (P z) (Q x))))))` |
+| `(∀x P(x) ∧ Q(x)) ∨ ∃y R(y, y) ⟹ P(y)` | `(∨ (∀ x (∧ (P x) (Q x))) (∃ y (⟹ (R y y) (P y))))` |
+| `B[Ana] ∀x P(x) ∧ Q(x)` | `(B "Ana" (∀ x (∧ (P x) (Q x))))` |
+
+Com quantificadores aninhados, a regra vale para cada um. Os que estão no mesmo
+grupo terminam todos no mesmo ponto; um quantificador dentro de um grupo próprio
+termina no `)` desse grupo. Um conectivo à direita de um quantificador fica com
+ele, mesmo prendendo menos que o conectivo de fora: em
+`(∀x P(x) ∧ Q(x)) ∨ ∃y R(y, y) ⟹ P(y)`, o ⟹ é do ∃y. Isso se confere só pelo
+texto: os predicados e relações do corpo de um quantificador são exatamente os
+que estão entre o ∀ ou ∃ e o `)` que fecha o grupo em volta dele, ou o fim do
+texto, quando não há grupo.
 
 ### 2.3 Precedência e associação
 
@@ -165,7 +178,7 @@ está em `diagnosticos-m2.json`, campo `selecao`.
 1. **Léxico e sintaxe**: texto em símbolos, símbolos em árvore. Consulta o
    dicionário só para a proposição (2.1). Erros: E0, E1, E2, E3, E7, E8.
 2. **Nomes e tipos**: confere o uso de cada nome na árvore inteira, com o
-   dicionário quando há. Erros: E4, E9, E10, E11, E15. Avisos: E5, E6, E14, E16,
+   dicionário quando há. Erros: E4, E9, E10, E11, E15, E18. Avisos: E5, E6, E14, E16,
    E17; E12 e E13 só quando as fichas são exigidas.
 3. **Avaliação**: motor finito, Z3 e avaliador de cenários. Não emite códigos:
    responde segue, não segue, contradiz ou não decidiu.
@@ -173,6 +186,44 @@ está em `diagnosticos-m2.json`, campo `selecao`.
 Uma árvore pode ser montada e a fórmula ainda ser recusada na etapa 2:
 `a ≠ a` (E9) e `(A ⋂ B) = C` (E11). A fórmula é aceita quando não tem nenhum
 diagnóstico de nível erro.
+
+### 3.1 Posição e ordem dos diagnósticos
+
+Cada diagnóstico tem um `inicio`: a posição do primeiro caractere a que ele se
+refere, contando os caracteres Unicode (pontos de código) do texto como foi
+escrito, a partir de 0. Nos exemplos, o `inicio` é normativo em E7, E8 e em
+todos os códigos da etapa de nomes e tipos. Nos erros de sintaxe (E0 a E3) ele
+é informativo: o código é que tem de bater.
+
+O trecho de um nó da árvore começa: numa relação, num conectivo, em ⋂ ou ⋃ e
+nas contas, no operando da esquerda; num prefixo (¬ □ ◇ B[…] e o − de sinal) e
+num quantificador, no seu símbolo; numa aplicação ou num nome com índice, no
+nome. O próprio índice começa no `_`, ou no primeiro subscrito: em `A_x`, o `x`
+do índice começa na posição do `_`. Um termo ou uma fórmula entre parênteses
+começa no `(` (no de fora, quando há vários pares em volta).
+
+| Código | `inicio` |
+| --- | --- |
+| E4, E5 | a variável do quantificador (no E5, a do quantificador de dentro) |
+| E6 | o trecho da ocorrência livre; uma por ocorrência |
+| E7 | o parêntese escolhido |
+| E8 | o primeiro caractere do símbolo desconhecido; num comando, a `\` |
+| E9 | o trecho da relação |
+| E10 | o trecho da ocorrência que discorda (predicado, aplicação ou nome); num quantificador, a variável |
+| E11 | o trecho do termo ⋂ ou ⋃ |
+| E12, E13 | o nome na primeira ocorrência, sem os parênteses em volta |
+| E14, E16 | o trecho do quantificador |
+| E15 | o trecho do termo de sorte errada; ou o da relação, quando os dois lados de = ou ≠ discordam |
+| E17 | o nome, sem os parênteses em volta |
+| E18 | o trecho da ocorrência no domínio |
+
+No E10, a primeira ocorrência de um nome, na ordem do texto, decide o uso dele;
+cada ocorrência seguinte que discorda recebe um E10. Com ficha, cada ocorrência
+que discorda da ficha recebe um.
+
+Ordem: pelo `inicio`; no mesmo `inicio`, pelo número do código. Em
+`x ≠ x ∧ ∀x P(x)` vêm E6 e E9, ambos no 0, e depois E6 no 4. Dois
+diagnósticos com o mesmo código e o mesmo `inicio` não se distinguem no pacote.
 
 ## 4. Dicionário
 
@@ -201,8 +252,23 @@ O motor finito e o Z3 recebem a árvore expandida. A expansão troca:
 | `t ≠ u` | `¬(t = u)` |
 | `t ∉ u` | `¬(t ∈ u)` |
 
-A variável nova do ⊆ é `z`, ou `z1`, `z2`… se `z` já aparece na fórmula. `∀x∈ℝ`
-e `∀x∈ℤ` não são expandidos: marcam a variável como número.
+**Variável nova do ⊆.** Antes de expandir, junta-se o conjunto U dos nomes da
+fórmula: constantes, funções, predicados (inclusive proposições), variáveis de
+quantificador e nomes nos domínios. Os titulares de `B[…]` não entram em U:
+são outra espécie de nome, que nenhum ∀ prende. Os ⊆ são expandidos na ordem
+em que aparecem no texto. Cada um recebe o primeiro nome da sequência `z`, `z1`,
+`z2`, … que não está em U, e esse nome entra em U. Por isso dois ⊆ na mesma
+fórmula recebem `z` e `z1` (exemplo G088), `z ⊆ z1` recebe `z2` (G093) e
+`B[z] (A ⊆ B)` recebe `z` (G096). Como a variável nova não aparece em nenhum
+outro lugar da fórmula, ela não prende nem é presa por nada.
+
+**Domínio.** Em `∀x∈S φ` e `∃x∈S φ`, `S` é lido fora do quantificador. Por isso
+a variável `x` não pode aparecer em `S` como termo, nem dentro de argumento ou
+de índice (E18): a expansão põe `x ∈ S` dentro do ∀x, e ali essa ocorrência
+seria presa. O nome de uma função não conta. `∀x∈A ∀y∈x P(y)` é aceita: o `x`
+do domínio de dentro é o do quantificador de fora (G113).
+
+`∀x∈ℝ` e `∀x∈ℤ` não são expandidos: marcam a variável como número.
 
 ## 6. Formato das árvores
 
@@ -256,8 +322,9 @@ Uma implementação está conforme os exemplos quando, para cada exemplo de
 1. aceita ou recusa como `aceita`;
 2. monta a árvore `arvore` (ou nenhuma, quando é `null`);
 3. monta a árvore expandida `arvoreExpandida`, quando aceita;
-4. emite os diagnósticos de `diagnosticos`, com o mesmo código e o mesmo nível,
-   na mesma ordem.
+4. emite os diagnósticos de `diagnosticos`, com o mesmo código, o mesmo nível e
+   o mesmo `inicio`, na mesma ordem (seção 3.1); nos erros de sintaxe, E0 a E3,
+   o `inicio` é informativo.
 
 Os textos das mensagens não fazem parte da conformidade. Os exemplos foram
 tirados do leitor atual: são exemplos de caracterização, não interpretações

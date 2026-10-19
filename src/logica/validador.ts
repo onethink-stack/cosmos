@@ -86,7 +86,8 @@ function avisosDeSobrescrito(tokens: Token[]): Diag[] {
 export function validar(texto: string, dicionario: EntradaDicionario[] = [], opcoes: OpcoesValidacao = {}): ResultadoValidacao {
   const dic = new Map(dicionario.map((e) => [e.simbolo, e]))
   const fim = (diags: Diag[], ast: Formula | null): ResultadoValidacao => {
-    diags.sort((a, b) => a.pos - b.pos)
+    // pela posição; na mesma posição, pelo número do código: a ordem só depende de quais diagnósticos há
+    diags.sort((a, b) => a.pos - b.pos || Number(a.codigo.slice(1)) - Number(b.codigo.slice(1)))
     return { ast, diags, ok: !diags.some((d) => d.nivel === 'erro') }
   }
 
@@ -150,7 +151,7 @@ export function checarFichas(ast: Formula, dic: Map<string, EntradaDicionario>):
   return diags
 }
 
-/** Checagens que dependem da árvore inteira: E4, E5, E6, E9, E10, E11, E15. */
+/** Checagens que dependem da árvore inteira: E4, E5, E6, E9, E10, E11, E14, E15, E16, E18. */
 export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario>): Diag[] {
   const diags: Diag[] = []
   const add = (codigo: Diag['codigo'], nivel: Diag['nivel'], msg: string, span: Span) =>
@@ -326,7 +327,13 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         if (f.dom?.k === 'reais' || f.dom?.k === 'inteiros') reais = [...reais, f.v]
         else {
           if (reais.includes(f.v)) reais = reais.filter((x) => x !== f.v)
-          if (f.dom) termo(f.dom, escopo, true)
+          if (f.dom) {
+            termo(f.dom, escopo, true)
+            // o domínio é lido fora do quantificador; a expansão (x ∈ S dentro de ∀x) prenderia este x
+            const q = `${f.k === 'forall' ? '∀' : '∃'}${f.v}`
+            for (const o of nomesNoTermo(f.dom, f.v))
+              add('E18', 'erro', `'${f.v}' não pode aparecer no domínio de '${q}∈…': o domínio é lido fora do quantificador, e ali '${f.v}' seria outro '${f.v}'. Use outra letra no quantificador.`, o)
+          }
         }
         formula(f.corpo, [...escopo, f.v])
         reais = antes
@@ -339,6 +346,15 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
 
   formula(ast, [])
   return diags
+}
+
+/** As ocorrências do nome v num termo, como termo (não como nome de função). */
+function nomesNoTermo(t: Termo, v: string, r: Termo[] = []): Termo[] {
+  if (t.k === 'nome' && t.nome === v) r.push(t)
+  else if (t.k === 'app') t.args.forEach((a) => nomesNoTermo(a, v, r))
+  else if (t.k === 'inter' || t.k === 'uniao' || t.k === 'arit') (nomesNoTermo(t.l, v, r), nomesNoTermo(t.r, v, r))
+  else if (t.k === 'neg') nomesNoTermo(t.t, v, r)
+  return r
 }
 
 function coletarLigados(f: Formula, s: Set<string>): void {

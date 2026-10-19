@@ -1,11 +1,13 @@
 {
  "versao": "m2",
+ "inicio": "Posição do primeiro caractere a que o diagnóstico se refere, em caracteres Unicode (pontos de código) do texto como foi escrito, a partir de 0. Normativo em E7, E8 e nos códigos da etapa de nomes e tipos; informativo em E0 a E3.",
+ "trecho": "O trecho de um nó começa: numa relação, num conectivo, em ⋂ ou ⋃ e nas contas, no operando da esquerda; num prefixo (¬ □ ◇ B[…], − de sinal) e num quantificador, no seu símbolo; numa aplicação ou num nome com índice, no nome; o próprio índice começa no '_', ou no primeiro subscrito. Um termo ou uma fórmula entre parênteses começa no '(' (no de fora, quando há vários pares).",
  "selecao": [
   "Texto vazio ou só com espaços: nenhuma árvore e nenhum diagnóstico.",
   "1. Léxico: todos os E8 do texto, na ordem em que aparecem. Se houver algum, a leitura para aqui.",
   "2. Parênteses: um só E7 — o primeiro ')' sem par, lendo da esquerda; se não houver, o último '(' sem par. A leitura para aqui.",
   "3. Sintaxe: o primeiro erro que o leitor encontra no caminho que ele toma (E0, E1, E2 ou E3). A leitura para aqui. Na única volta atrás da gramática (o '(' em posição de fórmula, lido primeiro como termo seguido de relação), o erro da tentativa é descartado; um erro de limite não é descartado.",
-  "4. Nomes e tipos: todos os diagnósticos da árvore, erros e avisos, ordenados pela posição no texto. E12 e E13 só quando as fichas são exigidas.",
+  "4. Nomes e tipos: todos os diagnósticos da árvore, erros e avisos, ordenados pelo inicio e, no mesmo inicio, pelo número do código. E12 e E13 só quando as fichas são exigidas.",
   "Se a pilha do aparelho acabar em qualquer etapa, um só E0 cobre o texto inteiro.",
   "A fórmula é aceita quando não tem nenhum diagnóstico de nível erro. Avisos não impedem a aceitação."
  ],
@@ -14,109 +16,134 @@
    "codigo": "E0",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Erro de sintaxe que não é E1, E2, E3 nem E7: fórmula vazia; relação aplicada a fórmula ou relações encadeadas (a = b = c); B[] sem titular, B[ sem fechar ou algo que não é nome dentro de B[…]; quantificador sem variável ou com variável indexada; ℝ ou ℤ fora do domínio de quantificador; ']' sem '['; parênteses vazios; aplicação sem argumentos (f()); falta ',' entre argumentos; índice sem nome antes; termo esperado e outro símbolo encontrado; símbolo inesperado; aninhamento acima do limite; profundidade da árvore acima de 2.000."
+   "quando": "Erro de sintaxe que não é E1, E2, E3 nem E7: fórmula vazia; relação aplicada a fórmula ou relações encadeadas (a = b = c); B[] sem titular, B[ sem fechar ou algo que não é nome dentro de B[…]; quantificador sem variável ou com variável indexada; ℝ ou ℤ fora do domínio de quantificador; ']' sem '['; parênteses vazios; aplicação sem argumentos (f()); falta ',' entre argumentos; índice sem nome antes; termo esperado e outro símbolo encontrado; símbolo inesperado; aninhamento acima do limite; profundidade da árvore acima de 2.000.",
+   "inicio": "informativo: o símbolo em que o leitor parou"
   },
   {
    "codigo": "E1",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Operador sem operando: conectivo (∧ ∨ ⟹ ⟺) seguido de fim, ')', ',', ']', outro conectivo ou relação; prefixo (¬ □ ◇ B[…]) seguido de fim, ')', ',', ']' ou conectivo; fórmula que começa com conectivo, relação, operador de conta ou ⋂/⋃; quantificador sem corpo; '∈' sem termo depois da variável do quantificador; operador de termo (+ − · / ^ ⋂ ⋃) sem termo à direita; termo que falta antes de ')', ',', conectivo ou fim."
+   "quando": "Operador sem operando: conectivo (∧ ∨ ⟹ ⟺) seguido de fim, ')', ',', ']', outro conectivo ou relação; prefixo (¬ □ ◇ B[…]) seguido de fim, ')', ',', ']' ou conectivo; fórmula que começa com conectivo, relação, operador de conta ou ⋂/⋃; quantificador sem corpo; '∈' sem termo depois da variável do quantificador; operador de termo (+ − · / ^ ⋂ ⋃) sem termo à direita; termo que falta antes de ')', ',', conectivo ou fim.",
+   "inicio": "informativo: o operador sem operando, ou o símbolo em que falta o termo"
   },
   {
    "codigo": "E2",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Um termo onde se esperava fórmula: termo sem relação depois, que não é aplicação de predicado nem proposição do dicionário. Exemplos: ¬a, P (a) com espaço, A sozinho sem ficha de aridade 0, 2x = 4, B [Ana] P(a)."
+   "quando": "Um termo onde se esperava fórmula: termo sem relação depois, que não é aplicação de predicado nem proposição do dicionário. Exemplos: ¬a, P (a) com espaço, A sozinho sem ficha de aridade 0, 2x = 4, B [Ana] P(a).",
+   "inicio": "informativo: o trecho do termo"
   },
   {
    "codigo": "E3",
    "nivel": "erro",
    "etapa": "sintaxe",
-   "quando": "Sobra texto depois de uma fórmula completa, e a sobra começa uma fórmula: duas fórmulas lado a lado, sem conectivo."
+   "quando": "Sobra texto depois de uma fórmula completa, e a sobra começa uma fórmula: duas fórmulas lado a lado, sem conectivo.",
+   "inicio": "informativo: o primeiro símbolo da sobra"
   },
   {
    "codigo": "E4",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Quantificador sobre um nome que o dicionário diz ser constante."
+   "quando": "Quantificador sobre um nome que o dicionário diz ser constante.",
+   "inicio": "a variável do quantificador"
   },
   {
    "codigo": "E5",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "Quantificador que liga de novo uma variável já ligada por um quantificador de fora; o de dentro esconde o de fora no seu corpo."
+   "quando": "Quantificador que liga de novo uma variável já ligada por um quantificador de fora; o de dentro esconde o de fora no seu corpo.",
+   "inicio": "a variável do quantificador de dentro"
   },
   {
    "codigo": "E6",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "Um nome aparece livre (vale como constante) e também é ligado por algum quantificador em outro lugar da mesma fórmula."
+   "quando": "Um nome aparece livre (vale como constante) e também é ligado por algum quantificador em outro lugar da mesma fórmula.",
+   "inicio": "o trecho da ocorrência livre; uma por ocorrência"
   },
   {
    "codigo": "E7",
    "nivel": "erro",
    "etapa": "parênteses",
-   "quando": "Parênteses desbalanceados, conferidos antes da sintaxe."
+   "quando": "Parênteses desbalanceados, conferidos antes da sintaxe.",
+   "inicio": "o parêntese escolhido"
   },
   {
    "codigo": "E8",
    "nivel": "erro",
    "etapa": "léxico",
-   "quando": "Símbolo desconhecido; '_' sem índice depois. Um comando com barra desconhecido conta como um só símbolo."
+   "quando": "Símbolo desconhecido; '_' sem índice depois. Um comando com barra desconhecido conta como um só símbolo.",
+   "inicio": "o primeiro caractere do símbolo desconhecido; num comando, a '\\'"
   },
   {
    "codigo": "E9",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "t ≠ t com os dois termos iguais."
+   "quando": "t ≠ t com os dois termos iguais.",
+   "inicio": "o trecho da relação"
   },
   {
    "codigo": "E10",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Nome usado de jeitos incompatíveis: tipo ou aridade diferente da ficha; o mesmo nome como constante, função ou predicado, ou com aridades diferentes, na mesma fórmula; variável ligada usada como função ou predicado; quantificador sobre um nome que é função ou predicado no dicionário."
+   "quando": "Nome usado de jeitos incompatíveis: tipo ou aridade diferente da ficha; o mesmo nome como constante, função ou predicado, ou com aridades diferentes, na mesma fórmula; variável ligada usada como função ou predicado; quantificador sobre um nome que é função ou predicado no dicionário.",
+   "inicio": "o trecho da ocorrência que discorda (predicado, aplicação ou nome); num quantificador, a variável. A primeira ocorrência, na ordem do texto, decide o uso; com ficha, cada ocorrência que discorda dela"
   },
   {
    "codigo": "E11",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "⋂ ou ⋃ fora do lado direito de ∈ ou ∉, dos dois lados de ⊆ e do domínio de ∀x∈ ou ∃x∈."
+   "quando": "⋂ ou ⋃ fora do lado direito de ∈ ou ∉, dos dois lados de ⊆ e do domínio de ∀x∈ ou ∃x∈.",
+   "inicio": "o trecho do termo ⋂ ou ⋃"
   },
   {
    "codigo": "E12",
    "nivel": "aviso",
    "etapa": "nomes e tipos, só com fichas exigidas",
-   "quando": "Nome sem ficha no dicionário, na primeira ocorrência; nomes ligados por quantificador não contam."
+   "quando": "Nome sem ficha no dicionário, na primeira ocorrência; nomes ligados por quantificador não contam.",
+   "inicio": "o nome na primeira ocorrência, sem os parênteses em volta"
   },
   {
    "codigo": "E13",
    "nivel": "aviso",
    "etapa": "nomes e tipos, só com fichas exigidas",
-   "quando": "Como o E12, quando há no dicionário um nome parecido, que vira a sugestão."
+   "quando": "Como o E12, quando há no dicionário um nome parecido, que vira a sugestão.",
+   "inicio": "o nome na primeira ocorrência, sem os parênteses em volta"
   },
   {
    "codigo": "E14",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "O corpo de um quantificador começa com '(' e continua depois do ')' que fecha esse '('."
+   "quando": "O corpo de um quantificador começa com '(' e continua depois do ')' que fecha esse '('.",
+   "inicio": "o trecho do quantificador"
   },
   {
    "codigo": "E15",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Número onde se espera objeto, ou objeto onde se espera número: contas, comparações < ≤ > ≥, os dois lados de = e ≠, e argumentos de funções numéricas."
+   "quando": "Número onde se espera objeto, ou objeto onde se espera número: contas, comparações < ≤ > ≥, os dois lados de = e ≠, e argumentos de funções numéricas.",
+   "inicio": "o trecho do termo de sorte errada; ou o da relação, quando os dois lados de = ou ≠ discordam"
   },
   {
    "codigo": "E16",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "O corpo de um quantificador não começa com '(' e tem ∧, ∨, ⟹ ou ⟺ no topo. Nunca junto com o E14 no mesmo quantificador. Um aviso por quantificador. Pode ser desligado sem mudar a árvore."
+   "quando": "O corpo de um quantificador não começa com '(' e tem ∧, ∨, ⟹ ou ⟺ no topo. Nunca junto com o E14 no mesmo quantificador. Um aviso por quantificador. Pode ser desligado sem mudar a árvore.",
+   "inicio": "o trecho do quantificador"
   },
   {
    "codigo": "E17",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "Nome com um dos sobrescritos ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁿ ⁱ, em qualquer posição. Um aviso por ocorrência do nome."
+   "quando": "Nome com um dos sobrescritos ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁿ ⁱ, em qualquer posição. Um aviso por ocorrência do nome.",
+   "inicio": "o nome, sem os parênteses em volta"
+  },
+  {
+   "codigo": "E18",
+   "nivel": "erro",
+   "etapa": "nomes e tipos",
+   "quando": "A variável de ∀x∈S ou ∃x∈S aparece como termo dentro do próprio domínio S, inclusive em argumento de função ou em índice. O domínio é lido fora do quantificador, e a expansão x ∈ S, que fica dentro do ∀x, prenderia essa ocorrência. Um erro por ocorrência; o E6 da mesma ocorrência continua. O nome de uma função não conta.",
+   "inicio": "o trecho da ocorrência no domínio"
   }
  ]
 }

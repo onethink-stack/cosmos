@@ -213,6 +213,7 @@ Não faça isso.
 | E15 | erro | número usado como objeto, ou objeto usado como número |
 | E16 | aviso | quantificador sem parênteses com ∧, ∨, ⟹ ou ⟺ no corpo: `∀x P(x) ⟹ Q` é lido como `∀x (P(x) ⟹ Q)` (desliga em *Avisos e segundo plano*) |
 | E17 | aviso | nome com sobrescrito: `x²` é um nome, não x ao quadrado (potência é `x^2`) |
+| E18 | erro | a variável do quantificador aparece no próprio domínio: `∀x∈x P(x)` (o domínio é lido fora do quantificador) |
 
 ## Estrutura
 

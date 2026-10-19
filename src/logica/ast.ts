@@ -73,6 +73,7 @@ export type Codigo =
   | 'E15' // número usado como objeto, ou objeto usado como número
   | 'E16' // aviso: o corpo do quantificador tem um conectivo e vai até o fim, sem parênteses (pode surpreender)
   | 'E17' // aviso: nome com sobrescrito (x² é um nome, não x ao quadrado)
+  | 'E18' // a variável de ∀x∈S aparece no próprio domínio S (o domínio é lido fora do quantificador)
 
 export interface Diag extends Span {
   codigo: Codigo

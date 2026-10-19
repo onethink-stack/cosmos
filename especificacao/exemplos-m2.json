@@ -183,7 +183,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -206,7 +207,8 @@
    "diagnosticos": [
     {
      "codigo": "E14",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -229,7 +231,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 1
     }
    ]
   },
@@ -243,7 +246,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 7
     }
    ]
   },
@@ -284,7 +288,8 @@
    "diagnosticos": [
     {
      "codigo": "E5",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 12
     }
    ]
   },
@@ -343,7 +348,8 @@
    "diagnosticos": [
     {
      "codigo": "E6",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 14
     }
    ]
   },
@@ -382,7 +388,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -396,7 +403,8 @@
    "diagnosticos": [
     {
      "codigo": "E7",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 1
     }
    ]
   },
@@ -410,7 +418,8 @@
    "diagnosticos": [
     {
      "codigo": "E1",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 5
     }
    ]
   },
@@ -424,7 +433,8 @@
    "diagnosticos": [
     {
      "codigo": "E3",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 5
     }
    ]
   },
@@ -438,7 +448,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 1
     }
    ]
   },
@@ -452,7 +463,8 @@
    "diagnosticos": [
     {
      "codigo": "E1",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -466,7 +478,8 @@
    "diagnosticos": [
     {
      "codigo": "E0",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 6
     }
    ]
   },
@@ -480,7 +493,8 @@
    "diagnosticos": [
     {
      "codigo": "E0",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 1
     }
    ]
   },
@@ -494,7 +508,8 @@
    "diagnosticos": [
     {
      "codigo": "E8",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 5
     }
    ]
   },
@@ -508,7 +523,8 @@
    "diagnosticos": [
     {
      "codigo": "E0",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -522,7 +538,8 @@
    "diagnosticos": [
     {
      "codigo": "E0",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -536,7 +553,8 @@
    "diagnosticos": [
     {
      "codigo": "E11",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -550,7 +568,8 @@
    "diagnosticos": [
     {
      "codigo": "E9",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -564,7 +583,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -578,11 +598,13 @@
    "diagnosticos": [
     {
      "codigo": "E8",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 2
     },
     {
      "codigo": "E8",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 4
     }
    ]
   },
@@ -596,7 +618,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -619,7 +642,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 3
     }
    ]
   },
@@ -633,7 +657,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -647,7 +672,8 @@
    "diagnosticos": [
     {
      "codigo": "E16",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -661,7 +687,8 @@
    "diagnosticos": [
     {
      "codigo": "E17",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -693,7 +720,8 @@
    "diagnosticos": [
     {
      "codigo": "E17",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -707,7 +735,8 @@
    "diagnosticos": [
     {
      "codigo": "E17",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 0
     }
    ]
   },
@@ -721,7 +750,8 @@
    "diagnosticos": [
     {
      "codigo": "E17",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 5
     }
    ]
   },
@@ -735,7 +765,8 @@
    "diagnosticos": [
     {
      "codigo": "E17",
-     "nivel": "aviso"
+     "nivel": "aviso",
+     "inicio": 2
     }
    ]
   },
@@ -758,7 +789,8 @@
    "diagnosticos": [
     {
      "codigo": "E8",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 1
     }
    ]
   },
@@ -799,7 +831,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -813,7 +846,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -827,7 +861,8 @@
    "diagnosticos": [
     {
      "codigo": "E2",
-     "nivel": "erro"
+     "nivel": "erro",
+     "inicio": 0
     }
    ]
   },
@@ -848,6 +883,740 @@
    "arvore": "(⟹ (∧ (P a) (∀ x (P x))) (Q b))",
    "arvoreExpandida": "(⟹ (∧ (P a) (∀ x (P x))) (Q b))",
    "diagnosticos": []
+  },
+  {
+   "id": "G074",
+   "texto": "∀x ∃y P(x) ⟹ Q(y)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∃ y (⟹ (P x) (Q y))))",
+   "arvoreExpandida": "(∀ x (∃ y (⟹ (P x) (Q y))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 3
+    }
+   ]
+  },
+  {
+   "id": "G075",
+   "texto": "(∀x ∃y R(x, y)) ∧ Q(b)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (∀ x (∃ y (R x y))) (Q b))",
+   "arvoreExpandida": "(∧ (∀ x (∃ y (R x y))) (Q b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G076",
+   "texto": "∀x (∃y R(x, y)) ∧ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∧ (∃ y (R x y)) (Q x)))",
+   "arvoreExpandida": "(∀ x (∧ (∃ y (R x y)) (Q x)))",
+   "diagnosticos": [
+    {
+     "codigo": "E14",
+     "nivel": "aviso",
+     "inicio": 0
+    }
+   ]
+  },
+  {
+   "id": "G077",
+   "texto": "∀x P(x) ∧ (∃y Q(y) ⟹ R(x)) ∨ S(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∨ (∧ (P x) (∃ y (⟹ (Q y) (R x)))) (S x)))",
+   "arvoreExpandida": "(∀ x (∨ (∧ (P x) (∃ y (⟹ (Q y) (R x)))) (S x)))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 0
+    },
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 10
+    }
+   ]
+  },
+  {
+   "id": "G078",
+   "texto": "¬(∀x P(x) ∨ ∃y Q(y)) ∧ R(a)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (¬ (∀ x (∨ (P x) (∃ y (Q y))))) (R a))",
+   "arvoreExpandida": "(∧ (¬ (∀ x (∨ (P x) (∃ y (Q y))))) (R a))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 1
+    }
+   ]
+  },
+  {
+   "id": "G079",
+   "texto": "∀x (∀y R(x, y) ⟹ ∃z R(y, z)) ⟹ P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (⟹ (∀ y (⟹ (R x y) (∃ z (R y z)))) (P x)))",
+   "arvoreExpandida": "(∀ x (⟹ (∀ y (⟹ (R x y) (∃ z (R y z)))) (P x)))",
+   "diagnosticos": [
+    {
+     "codigo": "E14",
+     "nivel": "aviso",
+     "inicio": 0
+    },
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 3
+    }
+   ]
+  },
+  {
+   "id": "G080",
+   "texto": "∃x ∀y R(x, y) ∧ ∃z P(z) ⟹ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∃ x (∀ y (∧ (R x y) (∃ z (⟹ (P z) (Q x))))))",
+   "arvoreExpandida": "(∃ x (∀ y (∧ (R x y) (∃ z (⟹ (P z) (Q x))))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 3
+    },
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 16
+    }
+   ]
+  },
+  {
+   "id": "G081",
+   "texto": "∀x ∃y (P(x)) ∧ Q(y)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∃ y (∧ (P x) (Q y))))",
+   "arvoreExpandida": "(∀ x (∃ y (∧ (P x) (Q y))))",
+   "diagnosticos": [
+    {
+     "codigo": "E14",
+     "nivel": "aviso",
+     "inicio": 3
+    }
+   ]
+  },
+  {
+   "id": "G082",
+   "texto": "(∀x P(x) ∧ Q(x)) ∨ ∃y R(y, y) ⟹ P(y)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∨ (∀ x (∧ (P x) (Q x))) (∃ y (⟹ (R y y) (P y))))",
+   "arvoreExpandida": "(∨ (∀ x (∧ (P x) (Q x))) (∃ y (⟹ (R y y) (P y))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 0
+    },
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 19
+    }
+   ]
+  },
+  {
+   "id": "G083",
+   "texto": "B[Ana] ∀x P(x) ∧ Q(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(B \"Ana\" (∀ x (∧ (P x) (Q x))))",
+   "arvoreExpandida": "(B \"Ana\" (∀ x (∧ (P x) (Q x))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 7
+    }
+   ]
+  },
+  {
+   "id": "G084",
+   "texto": "∀x∈A ∃y∈B R(x, y) ∧ P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x ∈ A (∃ y ∈ B (∧ (R x y) (P x))))",
+   "arvoreExpandida": "(∀ x (⟹ (∈ x A) (∃ y (∧ (∈ y B) (∧ (R x y) (P x))))))",
+   "diagnosticos": [
+    {
+     "codigo": "E16",
+     "nivel": "aviso",
+     "inicio": 5
+    }
+   ]
+  },
+  {
+   "id": "G085",
+   "texto": "∀x (∃y (R(x, y)) ∨ Q(y)) ∧ P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x (∧ (∃ y (∨ (R x y) (Q y))) (P x)))",
+   "arvoreExpandida": "(∀ x (∧ (∃ y (∨ (R x y) (Q y))) (P x)))",
+   "diagnosticos": [
+    {
+     "codigo": "E14",
+     "nivel": "aviso",
+     "inicio": 0
+    },
+    {
+     "codigo": "E14",
+     "nivel": "aviso",
+     "inicio": 3
+    }
+   ]
+  },
+  {
+   "id": "G086",
+   "texto": "A ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ A B)",
+   "arvoreExpandida": "(∀ z (⟹ (∈ z A) (∈ z B)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G087",
+   "texto": "z ∈ A ∧ A ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (∈ z A) (⊆ A B))",
+   "arvoreExpandida": "(∧ (∈ z A) (∀ z1 (⟹ (∈ z1 A) (∈ z1 B))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G088",
+   "texto": "A ⊆ B ∧ B ⊆ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (⊆ A B) (⊆ B C))",
+   "arvoreExpandida": "(∧ (∀ z (⟹ (∈ z A) (∈ z B))) (∀ z1 (⟹ (∈ z1 B) (∈ z1 C))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G089",
+   "texto": "∀z (z ∈ A ∧ A ⊆ B)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ z (∧ (∈ z A) (⊆ A B)))",
+   "arvoreExpandida": "(∀ z (∧ (∈ z A) (∀ z1 (⟹ (∈ z1 A) (∈ z1 B)))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G090",
+   "texto": "a ⊆ b ⟹ ∀z P(z)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⟹ (⊆ a b) (∀ z (P z)))",
+   "arvoreExpandida": "(⟹ (∀ z1 (⟹ (∈ z1 a) (∈ z1 b))) (∀ z (P z)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G091",
+   "texto": "z ∈ A ∧ z1 ∈ B ∧ A ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (∧ (∈ z A) (∈ z1 B)) (⊆ A B))",
+   "arvoreExpandida": "(∧ (∧ (∈ z A) (∈ z1 B)) (∀ z2 (⟹ (∈ z2 A) (∈ z2 B))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G092",
+   "texto": "z1 ∈ A ∧ A ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (∈ z1 A) (⊆ A B))",
+   "arvoreExpandida": "(∧ (∈ z1 A) (∀ z (⟹ (∈ z A) (∈ z B))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G093",
+   "texto": "z ⊆ z1",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ z z1)",
+   "arvoreExpandida": "(∀ z2 (⟹ (∈ z2 z) (∈ z2 z1)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G094",
+   "texto": "z(a) ∧ A ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∧ (z a) (⊆ A B))",
+   "arvoreExpandida": "(∧ (z a) (∀ z1 (⟹ (∈ z1 A) (∈ z1 B))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G095",
+   "texto": "f(z) ⊆ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ (f z) B)",
+   "arvoreExpandida": "(∀ z1 (⟹ (∈ z1 (f z)) (∈ z1 B)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G096",
+   "texto": "B[z] (A ⊆ B)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(B \"z\" (⊆ A B))",
+   "arvoreExpandida": "(B \"z\" (∀ z (⟹ (∈ z A) (∈ z B))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G097",
+   "texto": "∅ ⊆ A",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ ∅ A)",
+   "arvoreExpandida": "(∀ z (⟹ ⊥ (∈ z A)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G098",
+   "texto": "A ⊆ ∅",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ A ∅)",
+   "arvoreExpandida": "(∀ z (⟹ (∈ z A) ⊥))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G099",
+   "texto": "∀z∈A (z ⊆ B)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ z ∈ A (⊆ z B))",
+   "arvoreExpandida": "(∀ z (⟹ (∈ z A) (∀ z1 (⟹ (∈ z1 z) (∈ z1 B)))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G100",
+   "texto": "x ∈ A ⋂ B ⋃ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ x (⋃ (⋂ A B) C))",
+   "arvoreExpandida": "(∨ (∧ (∈ x A) (∈ x B)) (∈ x C))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G101",
+   "texto": "x ∈ A ⋃ B ⋂ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ x (⋃ A (⋂ B C)))",
+   "arvoreExpandida": "(∨ (∈ x A) (∧ (∈ x B) (∈ x C)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G102",
+   "texto": "x ∉ A ⋃ B",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∉ x (⋃ A B))",
+   "arvoreExpandida": "(¬ (∨ (∈ x A) (∈ x B)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G103",
+   "texto": "x ∉ A ⋂ (B ⋃ C)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∉ x (⋂ A (⋃ B C)))",
+   "arvoreExpandida": "(¬ (∧ (∈ x A) (∨ (∈ x B) (∈ x C))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G104",
+   "texto": "A ⋂ B ⊆ C ⋃ D",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(⊆ (⋂ A B) (⋃ C D))",
+   "arvoreExpandida": "(∀ z (⟹ (∧ (∈ z A) (∈ z B)) (∨ (∈ z C) (∈ z D))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G105",
+   "texto": "∀x∈A ⋂ B P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x ∈ (⋂ A B) (P x))",
+   "arvoreExpandida": "(∀ x (⟹ (∧ (∈ x A) (∈ x B)) (P x)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G106",
+   "texto": "∃x∈A P(x)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∃ x ∈ A (P x))",
+   "arvoreExpandida": "(∃ x (∧ (∈ x A) (P x)))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G107",
+   "texto": "∃x∈A ⋃ B x ∉ C",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∃ x ∈ (⋃ A B) (∉ x C))",
+   "arvoreExpandida": "(∃ x (∧ (∨ (∈ x A) (∈ x B)) (¬ (∈ x C))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G108",
+   "texto": "x ∈ ∅ ⋃ A",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ x (⋃ ∅ A))",
+   "arvoreExpandida": "(∨ ⊥ (∈ x A))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G109",
+   "texto": "x ∈ A ⋂ ∅",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∈ x (⋂ A ∅))",
+   "arvoreExpandida": "(∧ (∈ x A) ⊥)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G110",
+   "texto": "∀x∈x P(x)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∀ x ∈ x (P x))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E6",
+     "nivel": "aviso",
+     "inicio": 3
+    },
+    {
+     "codigo": "E18",
+     "nivel": "erro",
+     "inicio": 3
+    }
+   ]
+  },
+  {
+   "id": "G111",
+   "texto": "∀x∈A ∀x∈x P(x)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∀ x ∈ A (∀ x ∈ x (P x)))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E5",
+     "nivel": "aviso",
+     "inicio": 6
+    },
+    {
+     "codigo": "E18",
+     "nivel": "erro",
+     "inicio": 8
+    }
+   ]
+  },
+  {
+   "id": "G112",
+   "texto": "∃y∈f(y) Q(y)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∃ y ∈ (f y) (Q y))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E6",
+     "nivel": "aviso",
+     "inicio": 5
+    },
+    {
+     "codigo": "E18",
+     "nivel": "erro",
+     "inicio": 5
+    }
+   ]
+  },
+  {
+   "id": "G113",
+   "texto": "∀x∈A ∀y∈x P(y)",
+   "fichas": [],
+   "aceita": true,
+   "arvore": "(∀ x ∈ A (∀ y ∈ x (P y)))",
+   "arvoreExpandida": "(∀ x (⟹ (∈ x A) (∀ y (⟹ (∈ y x) (P y)))))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G114",
+   "texto": "P(a $ ∧",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G115",
+   "texto": "a ≠ a ∧ (P(b $ ∧",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 13
+    }
+   ]
+  },
+  {
+   "id": "G116",
+   "texto": "\\foo ∧ ¬ $",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 0
+    },
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 9
+    }
+   ]
+  },
+  {
+   "id": "G117",
+   "texto": "x⁺ = y ∧ (P(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 1
+    }
+   ]
+  },
+  {
+   "id": "G118",
+   "texto": "_ ∧ P(a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 0
+    }
+   ]
+  },
+  {
+   "id": "G119",
+   "texto": "(P(a) ∧ Q(b)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro",
+     "inicio": 0
+    }
+   ]
+  },
+  {
+   "id": "G120",
+   "texto": "((P(a)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro",
+     "inicio": 1
+    }
+   ]
+  },
+  {
+   "id": "G121",
+   "texto": "P(a)) ∧ ¬",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G122",
+   "texto": "P(a)) ∧ (Q(b)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G123",
+   "texto": "a ≠ a ∧ P(b ∧",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E7",
+     "nivel": "erro",
+     "inicio": 9
+    }
+   ]
+  },
+  {
+   "id": "G124",
+   "texto": "P(a) Q(b) ∧ a ≠ a",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E3",
+     "nivel": "erro",
+     "inicio": 5
+    }
+   ]
+  },
+  {
+   "id": "G125",
+   "texto": "a ≠ a ∧ ∧ P(b)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G126",
+   "texto": "a ≠ a ∧ (∀x P(x)) ∧ Q(x) ∧ x² = y",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∧ (∧ (∧ (≠ a a) (∀ x (P x))) (Q x)) (= x² y))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E9",
+     "nivel": "erro",
+     "inicio": 0
+    },
+    {
+     "codigo": "E6",
+     "nivel": "aviso",
+     "inicio": 22
+    },
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 27
+    }
+   ]
+  },
+  {
+   "id": "G127",
+   "texto": "f(a) = b ∧ f(a, b) = c",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∧ (= (f a) b) (= (f a b) c))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E10",
+     "nivel": "erro",
+     "inicio": 11
+    }
+   ]
+  },
+  {
+   "id": "G128",
+   "texto": "x ≠ x ∧ ∀x P(x)",
+   "fichas": [],
+   "aceita": false,
+   "arvore": "(∧ (≠ x x) (∀ x (P x)))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E6",
+     "nivel": "aviso",
+     "inicio": 0
+    },
+    {
+     "codigo": "E9",
+     "nivel": "erro",
+     "inicio": 0
+    },
+    {
+     "codigo": "E6",
+     "nivel": "aviso",
+     "inicio": 4
+    }
+   ]
   }
  ]
 }

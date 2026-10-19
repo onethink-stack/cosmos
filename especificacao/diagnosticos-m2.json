@@ -44,7 +44,7 @@
    "codigo": "E4",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Quantificador sobre um nome que o dicionário diz ser constante.",
+   "quando": "Quantificador sobre um nome que o dicionário diz ser constante (seção 4.2).",
    "inicio": "a variável do quantificador"
   },
   {
@@ -86,7 +86,7 @@
    "codigo": "E10",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Nome usado de jeitos incompatíveis: tipo ou aridade diferente da ficha; o mesmo nome como constante, função ou predicado, ou com aridades diferentes, na mesma fórmula; variável ligada usada como função ou predicado; quantificador sobre um nome que é função ou predicado no dicionário.",
+   "quando": "Nome usado de jeitos incompatíveis (seção 4.2): tipo ou aridade diferente da ficha; sem ficha, um uso diferente do primeiro (constante, função ou predicado, ou outra aridade) na mesma fórmula; variável ligada usada como função ou predicado; quantificador sobre um nome que é função ou predicado no dicionário.",
    "inicio": "o trecho da ocorrência que discorda (predicado, aplicação ou nome); num quantificador, a variável. A primeira ocorrência, na ordem do texto, decide o uso; com ficha, cada ocorrência que discorda dela"
   },
   {
@@ -100,14 +100,14 @@
    "codigo": "E12",
    "nivel": "aviso",
    "etapa": "nomes e tipos, só com fichas exigidas",
-   "quando": "Nome sem ficha no dicionário, na primeira ocorrência; nomes ligados por quantificador não contam.",
+   "quando": "Só com as fichas exigidas: nome sem ficha no dicionário, na primeira ocorrência. Não contam os nomes ligados por algum quantificador, os titulares de B[…] e os números (seção 4.4).",
    "inicio": "o nome na primeira ocorrência, sem os parênteses em volta"
   },
   {
    "codigo": "E13",
    "nivel": "aviso",
    "etapa": "nomes e tipos, só com fichas exigidas",
-   "quando": "Como o E12, quando há no dicionário um nome parecido, que vira a sugestão.",
+   "quando": "Como o E12, quando há no dicionário um nome parecido: 3 caracteres ou mais, tamanhos com no máximo 2 de diferença e distância de Damerau (OSA) até 2; o de menor distância e, no empate, a primeira ficha. O diagnóstico traz esse nome em sugestao (seção 4.4).",
    "inicio": "o nome na primeira ocorrência, sem os parênteses em volta"
   },
   {
@@ -121,7 +121,7 @@
    "codigo": "E15",
    "nivel": "erro",
    "etapa": "nomes e tipos",
-   "quando": "Número onde se espera objeto, ou objeto onde se espera número: contas, comparações < ≤ > ≥, os dois lados de = e ≠, e argumentos de funções numéricas.",
+   "quando": "Termo de sorte conhecida (número ou objeto) num lugar que pede a outra: contas, comparações < ≤ > ≥, argumentos de funções e predicados, ∈, ∉, ⊆, ⋂, ⋃ e domínios; ou = e ≠ entre um número e um objeto (seção 4.3).",
    "inicio": "o trecho do termo de sorte errada; ou o da relação, quando os dois lados de = ou ≠ discordam"
   },
   {

@@ -58,6 +58,12 @@ export function parseTokens(tokens: Token[], op: OpcoesParser = {}): Formula {
   return new Parser(tokens, op).formulaCompleta()
 }
 
+/** O trecho cresce até os parênteses em volta; a posição do próprio nome fica guardada (renomear, E12, E13). */
+function alargar<T extends { k: string; pos: number; end: number; nomePos?: number }>(n: T, pos: number, end: number): T {
+  const guarda = (n.k === 'nome' || n.k === 'app' || n.k === 'pred') && n.nomePos === undefined
+  return { ...n, ...(guarda ? { nomePos: n.pos } : {}), pos, end }
+}
+
 class Parser {
   private i = 0
   /** descidas abertas agora (ver ANINHAMENTO_MAXIMO) */
@@ -335,7 +341,7 @@ class Parser {
     const f = this.formula()
     if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')' ou um conectivo")
     const fecha = this.avancar()
-    return { ...f, pos: abre.pos, end: fecha.end }
+    return alargar(f, abre.pos, fecha.end)
   }
 
   private atomo(apos: string | null): Formula {
@@ -467,7 +473,7 @@ class Parser {
       const t = this.termo()
       if (this.at().t !== 'rpar') this.erroInesperado(this.at(), "')'")
       const fecha = this.avancar()
-      return { ...t, pos: tk.pos, end: fecha.end }
+      return alargar(t, tk.pos, fecha.end)
     }
     if (tk.t === 'subscr') this.erro('E0', `Subscrito '${tk.v}' sem nome antes (${this.col(tk)})`, tk)
     if (tk.t === 'eof' || tk.t === 'rpar' || tk.t === 'comma' || BINARIOS.includes(tk.t))

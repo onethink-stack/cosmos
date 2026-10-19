@@ -54,6 +54,11 @@ describe('nomes não declarados (E12) e "você quis dizer" (E13)', () => {
     expect(distancia('Pessoa', 'Amigo')).toBeGreaterThan(2)
   })
 
+  it('distância e tamanho contam caracteres Unicode, não unidades de UTF-16', () => {
+    expect(distancia('𝑥𝑦z', 'xyz')).toBe(2)
+    expect(nomeParecido('𝑥ab', ['xab'])).toBe('xab')
+  })
+
   it('não sugere entre nomes curtos', () => {
     expect(nomeParecido('B', ['A'])).toBeNull()
     expect(nomeParecido('fi', ['f'])).toBeNull()
@@ -64,6 +69,14 @@ describe('nomes não declarados (E12) e "você quis dizer" (E13)', () => {
   it('renomear troca só ocorrências livres', () => {
     expect(renomear('Amgio(a) ∧ ∀Amgio (Amgio = a)', 'Amgio', 'Amigo')).toBe('Amigo(a) ∧ ∀Amgio (Amgio = a)')
     expect(renomear('f(f(x)) ∈ fᵢ', 'f', 'g')).toBe('g(g(x)) ∈ gᵢ')
+  })
+
+  it('renomear mantém os parênteses em volta do nome (o E13 aponta para o nome)', () => {
+    expect(renomear('(Pesoa(a)) ∧ Q(b)', 'Pesoa', 'Pessoa')).toBe('(Pessoa(a)) ∧ Q(b)')
+    expect(renomear('(fnc(a)) = b', 'fnc', 'func')).toBe('(func(a)) = b')
+    expect(renomear('P((Joa))', 'Joa', 'Joao')).toBe('P((Joao))')
+    const d = validar('(Pesoa(a))', [ficha('Pessoa', 'predicado', 1)], { exigirFichas: true }).diags.find((x) => x.codigo === 'E13')!
+    expect([d.pos, d.end]).toEqual([1, 6])
   })
 })
 

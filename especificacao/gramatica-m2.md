@@ -178,7 +178,7 @@ está em `diagnosticos-m2.json`, campo `selecao`.
 1. **Léxico e sintaxe**: texto em símbolos, símbolos em árvore. Consulta o
    dicionário só para a proposição (2.1). Erros: E0, E1, E2, E3, E7, E8.
 2. **Nomes e tipos**: confere o uso de cada nome na árvore inteira, com o
-   dicionário quando há. Erros: E4, E9, E10, E11, E15, E18. Avisos: E5, E6, E14, E16,
+   dicionário quando há (seção 4). Erros: E4, E9, E10, E11, E15, E18. Avisos: E5, E6, E14, E16,
    E17; E12 e E13 só quando as fichas são exigidas.
 3. **Avaliação**: motor finito, Z3 e avaliador de cenários. Não emite códigos:
    responde segue, não segue, contradiz ou não decidiu.
@@ -225,17 +225,94 @@ Ordem: pelo `inicio`; no mesmo `inicio`, pelo número do código. Em
 `x ≠ x ∧ ∀x P(x)` vêm E6 e E9, ambos no 0, e depois E6 no 4. Dois
 diagnósticos com o mesmo código e o mesmo `inicio` não se distinguem no pacote.
 
-## 4. Dicionário
+## 4. Dicionário e nomes
+
+### 4.1 Fichas
 
 Cada ficha tem `simbolo`, `tipo` (constante, função ou predicado), `aridade`,
-`numerico` (constante ou função com valor real) e `argumentos` (lista de `num`
-e `obj`, quando a função mistura números e objetos).
+`numerico` (constante ou função cujo valor é número) e `argumentos` (lista de
+`num` e `obj`, um por argumento, quando a função ou o predicado mistura números
+e objetos). Um predicado de aridade 0 é uma proposição (2.1).
 
 Sem ficha, um nome vale pelo uso: aplicado em posição de fórmula é predicado;
-aplicado dentro de um termo é função; sozinho num termo é constante. O mesmo
-nome usado de dois jeitos incompatíveis dá E10. Por isso um verificador
-independente precisa receber, junto com a fórmula, as fichas dos nomes que ela
-usa; nos exemplos normativos, elas estão no campo `fichas`.
+aplicado dentro de um termo é função; sozinho num termo é constante. Por isso
+um verificador independente precisa receber, junto com a fórmula, as fichas dos
+nomes que ela usa; nos exemplos normativos, elas estão no campo `fichas`.
+
+**Fichas exigidas.** Na maior parte das telas, o Caderno exige uma ficha para
+cada nome, e aí entram o E12 e o E13 (4.4). É uma opção da leitura: nos
+exemplos, o campo `exigirFichas` diz se ela vale. Ela não muda a árvore nem os
+outros diagnósticos.
+
+### 4.2 Usos dos nomes (E4, E10)
+
+A etapa de nomes e tipos percorre a árvore na ordem do texto, levando as
+variáveis ligadas em volta. O domínio de um quantificador é lido antes do corpo
+e fora dele (seção 5).
+
+1. Cada ocorrência livre de um nome é um uso: constante (nome sozinho num
+   termo), função com aridade n (aplicação num termo, inclusive o nome de um
+   índice: `x_i` é x aplicada a i) ou predicado com aridade n (a proposição tem
+   aridade 0).
+2. Se o nome tem ficha e o uso discorda dela (outro tipo; ou, numa função ou num
+   predicado, outra aridade), E10 nessa ocorrência, e esse uso não conta para o
+   passo 3.
+3. Sem ficha, o primeiro uso, na ordem do texto, decide; cada uso seguinte com
+   outro tipo ou outra aridade dá E10 nessa ocorrência.
+4. Uma variável ligada usada como função ou como predicado dá E10 na ocorrência.
+5. Um quantificador sobre um nome que tem ficha dá E4, se a ficha é de
+   constante, ou E10, se é de função ou de predicado, na variável.
+
+### 4.3 Números e objetos (E15)
+
+Cada termo tem uma sorte: número, objeto ou desconhecida.
+
+- Número: numeral, conta (+ − · / ^), sinal (−t) e variável ligada por ∀x∈ℝ,
+  ∀x∈ℤ, ∃x∈ℝ ou ∃x∈ℤ.
+- Objeto: as outras variáveis ligadas, ∅, ⋂ e ⋃.
+- Pela ficha: um nome livre, ou uma aplicação f(…) em que f não é variável
+  ligada, é número se a ficha diz `numerico` e objeto se não diz.
+- Desconhecida: um nome livre ou uma aplicação sem ficha, e uma aplicação cujo
+  nome é variável ligada.
+
+Cada lugar pede número, objeto ou qualquer um.
+
+- Argumento de predicado: o que a ficha diz em `argumentos` para aquela
+  posição; senão, objeto.
+- Argumento de função: o que a ficha diz em `argumentos`; senão, número se a
+  função é número, ou se ela é desconhecida e o lugar dela pede número; senão,
+  objeto.
+- Os dois lados de < ≤ > ≥, os operandos das contas e o do sinal: número.
+- = e ≠: se as sortes dos dois lados são conhecidas e diferentes, E15 na
+  relação, e os dois lados passam a pedir qualquer um. Senão, os dois pedem
+  número se um deles é número, objeto se um deles é objeto, e qualquer um se os
+  dois são desconhecidos.
+- Os dois lados de ∈, ∉ e ⊆, os operandos de ⋂ e ⋃ e o domínio de ∀x∈S:
+  objeto.
+
+Um termo de sorte conhecida num lugar que pede a outra dá E15 nesse termo. O
+termo inteiro é conferido antes dos seus pedaços, e os pedaços também são
+conferidos. Exemplos G134 a G143.
+
+### 4.4 Fichas exigidas (E12, E13)
+
+Só com `exigirFichas`. Para cada nome sem ficha, na primeira ocorrência, na
+ordem do texto, sai um E12 ou um E13, no nome, sem os parênteses em volta. Não
+contam os nomes ligados por algum quantificador em qualquer lugar da fórmula
+(nem nas ocorrências livres, que já têm o E6), os titulares de `B[…]` e os
+números.
+
+Sai o E13 no lugar do E12 quando há um nome parecido no dicionário, e esse nome
+vai no campo `sugestao`:
+
+- os dois nomes têm 3 caracteres ou mais, e os tamanhos diferem em no máximo 2;
+- a distância de edição entre eles é no máximo 2: inserir, remover ou trocar um
+  caractere, ou trocar dois vizinhos de lugar, cada um valendo 1, sem editar
+  duas vezes o mesmo trecho (distância de Damerau na versão restrita, OSA);
+- vale o nome de menor distância; no empate, o primeiro na ordem das fichas.
+
+Caracteres, aqui, são caracteres Unicode (pontos de código). Exemplos G144 a
+G153.
 
 ## 5. Expansão
 
@@ -317,14 +394,15 @@ O Caderno recusa acima de 500 descidas abertas no leitor, cerca de 250 níveis.
 ## 9. Conformidade
 
 Uma implementação está conforme os exemplos quando, para cada exemplo de
-`exemplos-m2.json`, lendo `texto` com as `fichas`:
+`exemplos-m2.json`, lendo `texto` com as `fichas` e com a opção
+`exigirFichas`:
 
 1. aceita ou recusa como `aceita`;
 2. monta a árvore `arvore` (ou nenhuma, quando é `null`);
 3. monta a árvore expandida `arvoreExpandida`, quando aceita;
-4. emite os diagnósticos de `diagnosticos`, com o mesmo código, o mesmo nível e
-   o mesmo `inicio`, na mesma ordem (seção 3.1); nos erros de sintaxe, E0 a E3,
-   o `inicio` é informativo.
+4. emite os diagnósticos de `diagnosticos`, com o mesmo código, o mesmo nível,
+   o mesmo `inicio` e, no E13, a mesma `sugestao`, na mesma ordem (seção 3.1);
+   nos erros de sintaxe, E0 a E3, o `inicio` é informativo.
 
 Os textos das mensagens não fazem parte da conformidade. Os exemplos foram
 tirados do leitor atual: são exemplos de caracterização, não interpretações

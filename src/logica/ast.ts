@@ -8,8 +8,9 @@ export interface Span {
 }
 
 export type Termo =
-  | ({ k: 'nome'; nome: string } & Span)
-  | ({ k: 'app'; fn: string; args: Termo[]; subscrito: boolean } & Span)
+  // nomePos: onde o nome começa, quando o trecho (pos) cresceu até os parênteses em volta
+  | ({ k: 'nome'; nome: string; nomePos?: number } & Span)
+  | ({ k: 'app'; fn: string; args: Termo[]; subscrito: boolean; nomePos?: number } & Span)
   | ({ k: 'inter' | 'uniao'; l: Termo; r: Termo } & Span)
   | ({ k: 'vazio' } & Span)
   /** número (real), como escrito: "2", "0.5" */
@@ -33,7 +34,7 @@ export const ORDEM: Rel[] = ['<', '≤', '>', '≥']
 export type Conectivo = 'and' | 'or' | 'imp' | 'iff'
 
 export type Formula =
-  | ({ k: 'pred'; nome: string; args: Termo[] } & Span)
+  | ({ k: 'pred'; nome: string; args: Termo[]; nomePos?: number } & Span)
   | ({ k: 'rel'; op: Rel; l: Termo; r: Termo } & Span)
   | ({ k: 'not'; f: Formula } & Span)
   /** □φ: necessário (vale em todo mundo) · ◇φ: possível (vale em algum mundo) */

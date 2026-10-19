@@ -136,12 +136,16 @@ export function usosDeNomes(f: Formula): UsoNome[] {
   // `num`: o termo está num lugar de número
   const termo = (t: Termo, escopo: string[], num = false): void => {
     switch (t.k) {
-      case 'nome':
-        if (!escopo.includes(t.nome)) usos.push({ nome: t.nome, tipo: 'constante', aridade: 0, pos: t.pos, end: t.end, numerico: num || undefined })
+      case 'nome': {
+        const p = t.nomePos ?? t.pos
+        if (!escopo.includes(t.nome)) usos.push({ nome: t.nome, tipo: 'constante', aridade: 0, pos: p, end: p + t.nome.length, numerico: num || undefined })
         return
+      }
       case 'app':
-        if (!escopo.includes(t.fn))
-          usos.push({ nome: t.fn, tipo: 'funcao', aridade: t.args.length, pos: t.pos, end: t.pos + t.fn.length, numerico: num || undefined })
+        if (!escopo.includes(t.fn)) {
+          const p = t.nomePos ?? t.pos
+          usos.push({ nome: t.fn, tipo: 'funcao', aridade: t.args.length, pos: p, end: p + t.fn.length, numerico: num || undefined })
+        }
         // uma função numérica recebe números
         t.args.forEach((a) => termo(a, escopo, num))
         return
@@ -167,7 +171,10 @@ export function usosDeNomes(f: Formula): UsoNome[] {
   const formula = (f: Formula, escopo: string[]): void => {
     switch (f.k) {
       case 'pred':
-        if (!escopo.includes(f.nome)) usos.push({ nome: f.nome, tipo: 'predicado', aridade: f.args.length, pos: f.pos, end: f.pos + f.nome.length })
+        if (!escopo.includes(f.nome)) {
+          const p = f.nomePos ?? f.pos
+          usos.push({ nome: f.nome, tipo: 'predicado', aridade: f.args.length, pos: p, end: p + f.nome.length })
+        }
         f.args.forEach((a) => termo(a, escopo))
         return
       case 'rel': {

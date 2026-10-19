@@ -80,27 +80,28 @@ interface Exemplo {
   id: string
   texto: string
   fichas: Omit<EntradaDicionario, 'id' | 'termo' | 'definicao'>[]
+  exigirFichas: boolean
   aceita: boolean
   arvore: string | null
   arvoreExpandida: string | null
-  diagnosticos: { codigo: string; nivel: string; inicio: number }[]
+  diagnosticos: { codigo: string; nivel: string; inicio: number; sugestao?: string }[]
 }
 const PACOTE: { versao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
 describe('gramática normativa: cada exemplo do pacote é lido como o arquivo diz', () => {
-  it('versão m2, 128 exemplos', () => {
+  it('versão m2, 153 exemplos', () => {
     expect(PACOTE.versao).toBe('m2')
-    expect(PACOTE.exemplos).toHaveLength(128)
+    expect(PACOTE.exemplos).toHaveLength(153)
   })
   for (const e of PACOTE.exemplos)
     it(`${e.id} ${e.texto}`, () => {
       const dic: EntradaDicionario[] = e.fichas.map((x) => ({ id: x.simbolo, termo: x.simbolo, definicao: '', ...x }))
-      const v = validar(e.texto, dic)
+      const v = validar(e.texto, dic, { exigirFichas: e.exigirFichas })
       expect(v.ok).toBe(e.aceita)
       expect(v.ast ? f(v.ast) : null).toBe(e.arvore)
       expect(v.ok && v.ast ? f(expandir(v.ast)) : null).toBe(e.arvoreExpandida)
       // o inicio do pacote conta pontos de código; o Caderno guarda posições em UTF-16
-      expect(v.diags.map((d) => ({ codigo: d.codigo, nivel: d.nivel, inicio: [...e.texto.slice(0, d.pos)].length }))).toEqual(e.diagnosticos)
+      expect(v.diags.map((d) => ({ codigo: d.codigo, nivel: d.nivel, inicio: [...e.texto.slice(0, d.pos)].length, ...(d.sugestao ? { sugestao: d.sugestao } : {}) }))).toEqual(e.diagnosticos)
     })
 })
 
@@ -175,7 +176,8 @@ describe('E17: sobrescrito em nome é aviso, e o nome continua sendo outro nome'
   })
 })
 
-describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a mesma árvore', () => {
+// prazo maior: com todos os arquivos de teste rodando juntos, 3.000 leituras passam de 5 s
+describe('testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a mesma árvore', { timeout: 60_000 }, () => {
   // sorteio determinístico: a mesma semente dá sempre as mesmas fórmulas
   const sorteio = (semente: number) => () => {
     semente = (semente * 1103515245 + 12345) % 2147483648

@@ -16,7 +16,7 @@ interface Exemplo {
   z3: 'sat' | 'unsat' | 'unknown'
   motorFinito: { status: 'modelo'; objetos: number; mundos: number } | { status: 'sem-modelo'; ateObjetos: number; ateMundos: number } | null
 }
-const PACOTE: { traducao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
+const PACOTE: { traducao: string; z3: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
 describe('tradução para o Z3: cada exemplo do pacote dá o veredito que o arquivo diz', { timeout: 120_000 }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,6 +26,10 @@ describe('tradução para o Z3: cada exemplo do pacote dá o veredito que o arqu
   }, 60_000)
   afterAll(async () => {
     await killThreads(api.em)
+  })
+
+  it('a versão do Z3 é a registrada no pacote: trocar de versão é uma decisão, não um acaso', () => {
+    expect(api.Z3.get_full_version()).toBe(`Z3 ${PACOTE.z3}`)
   })
 
   it('versão t1, 42 exemplos, e os dois motores nunca se contradizem', () => {

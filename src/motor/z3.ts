@@ -27,8 +27,6 @@ export const TEMPO_Z3_MS = 20_000
 
 type Expr = any
 
-let contador = 0
-
 /**
  * Um contexto novo por checagem: reaproveitar o mesmo contexto depois de
  * checagens interrompidas pelo tempo limite fazia o Z3 (WebAssembly) quebrar
@@ -122,6 +120,9 @@ export async function checarUmaVez(
 ): Promise<RespostaComNucleo> {
   const espera = liberacoes(api)
   const ctx = obterContexto(api)
+  // nomes das variáveis novas contados a partir de 0 em cada checagem: a mesma lista de fórmulas
+  // chega ao Z3 sempre com os mesmos nomes, e o resultado não depende do que rodou antes
+  let contador = 0
   const { Sort, Function: Funcao, Const, ForAll, Exists, And, Or, Not, Implies, Eq, Bool, Solver, Real, IsInt } = ctx
   const Obj = Sort.declare('Obj')
   const Mundo = Sort.declare('Mundo')

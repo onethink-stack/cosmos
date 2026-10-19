@@ -156,7 +156,20 @@ resultado do motor finito (até 8 objetos e 3 mundos). Os dois motores
 concordam em todos os exemplos: onde o Z3 diz `unsat`, o motor finito não acha
 modelo; onde há modelo finito, o Z3 não diz `unsat`.
 
-## 6. Conformidade
+## 6. Ambiente do Caderno
+
+O Caderno roda o **Z3 5.1.0.0**, em WebAssembly, pelo pacote `z3-solver` 5.2.0,
+com um contexto novo a cada checagem e prazo de 20 s. Os nomes das variáveis
+novas são contados a partir de zero em cada checagem, então a mesma lista de
+fórmulas chega ao Z3 sempre com o mesmo texto, e a resposta não depende do que
+rodou antes. A versão está registrada em
+`traducao-z3-t1-exemplos.json` (campo `z3`), e o teste da tradução falha se ela
+mudar, para que uma troca de versão nunca passe em silêncio. Um `unknown` pode
+mudar com a versão do Z3, a plataforma e o prazo. Um veredito decidido não deve
+mudar. A auditoria independente de 19/10/2026, com o Z3 4.13.3 nativo,
+reproduziu os 42 vereditos.
+
+## 7. Conformidade
 
 Uma tradução independente está conforme os exemplos quando:
 

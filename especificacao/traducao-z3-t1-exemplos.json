@@ -1,6 +1,7 @@
 {
  "traducao": "t1",
  "semantica": "m2",
+ "z3": "5.1.0.0",
  "formato": "ver especificacao/traducao-z3-t1.md, seção 5",
  "exemplos": [
   {

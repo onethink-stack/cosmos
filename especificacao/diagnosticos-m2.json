@@ -72,7 +72,7 @@
    "codigo": "E8",
    "nivel": "erro",
    "etapa": "léxico",
-   "quando": "Símbolo desconhecido; '_' sem índice depois. Um comando com barra desconhecido conta como um só símbolo.",
+   "quando": "Símbolo desconhecido: um caractere que não é espaço (campo espacos de lexico-m2.json), nem caractere de nome (letra ou número do Unicode 16.0, campo letrasENumeros), nem começo de um símbolo do léxico; U+0085 e U+001F, por exemplo. '_' sem índice depois. Um comando com barra desconhecido conta como um só símbolo.",
    "inicio": "o primeiro caractere do símbolo desconhecido; num comando, a '\\'"
   },
   {
@@ -135,8 +135,8 @@
    "codigo": "E17",
    "nivel": "aviso",
    "etapa": "nomes e tipos",
-   "quando": "Nome com um dos sobrescritos ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁿ ⁱ, em qualquer posição. Um aviso por ocorrência do nome.",
-   "inicio": "o nome, sem os parênteses em volta"
+   "quando": "Nome com um dos sobrescritos ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁿ ⁱ, em qualquer posição, inclusive a variável de um quantificador e o nome de um índice escrito com _ (x_²). Um aviso por ocorrência do nome.",
+   "inicio": "o nome, sem os parênteses em volta; num índice, o _"
   },
   {
    "codigo": "E18",

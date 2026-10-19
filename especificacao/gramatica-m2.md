@@ -23,6 +23,10 @@ nesta ordem:
 
 1. Espaço em branco: separa símbolos. O leitor anota se havia espaço antes de
    cada símbolo, porque isso decide a aplicação, a crença e o índice (seção 1.4).
+   São espaço exatamente os 25 caracteres do campo `espacos` de
+   `lexico-m2.json`, os do `\s` do ECMAScript: U+0009 a U+000D, U+0020, U+00A0,
+   U+1680, U+2000 a U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 e U+FEFF.
+   U+0085 e U+001F não são espaço: dão E8.
 2. Subscritos Unicode: uma sequência deles vira um índice.
 3. `_` seguido de caracteres de nome ou apóstrofo: índice. `_` sozinho é E8.
 4. Dígitos 0 a 9: número, com parte decimal opcional (`2`, `0.5`).
@@ -35,9 +39,12 @@ nesta ordem:
 
 ### 1.1 Nomes
 
-Um nome começa por um caractere das classes Unicode L ou N, menos os subscritos
-e menos os dígitos 0 a 9, que começam números. Continua com caracteres das
-classes L ou N (menos subscritos) e com apóstrofo.
+Um nome começa por um caractere das classes L ou N do **Unicode 16.0**, menos os
+subscritos e menos os dígitos 0 a 9, que começam números. Continua com
+caracteres das classes L ou N (menos subscritos) e com apóstrofo. As faixas de L
+e N do Unicode 16.0 estão no campo `letrasENumeros` de `lexico-m2.json`; elas são
+a definição, e não a tabela de Unicode do ambiente, que muda de versão para
+versão. Assim, U+11380, U+1E5D0 e U+10D50, letras novas no 16.0, começam nomes.
 
 - `x`, `x'`, `Ω`, `αβ`, `²x`, `٣x` e `xᵃ` são nomes.
 - Maiúsculas e minúsculas são nomes diferentes.
@@ -355,7 +362,9 @@ Cada lugar pede número, objeto ou qualquer um.
 
 Um termo de sorte conhecida num lugar que pede a outra dá E15 nesse termo. O
 termo inteiro é conferido antes dos seus pedaços, e os pedaços também são
-conferidos. Exemplos G134 a G143.
+conferidos. O domínio de ∀x∈S é lido fora do quantificador, com a sorte que as
+variáveis têm lá fora: em `∃u∈ℝ ∃u∈u P(u)`, o `u` do domínio de dentro é o de
+fora, um número, e dá E15, além do E18. Exemplos G134 a G143.
 
 ### 4.4 Fichas exigidas (E12, E13)
 
@@ -452,7 +461,10 @@ O Caderno recusa acima de 500 descidas abertas no leitor, cerca de 250 níveis.
   mesma fórmula, com o corpo do quantificador entre parênteses (sem aviso), e a
   outra fórmula, em que o quantificador vale só para a primeira parte do corpo.
   Pode ser desligado sem mudar a árvore nem o certificado.
-- **E17**: aparece em todo nome que tem um dos doze sobrescritos da seção 1.1.
+- **E17**: aparece em todo nome que tem um dos doze sobrescritos da seção 1.1,
+  inclusive a variável de um quantificador e o nome de um índice escrito com `_`
+  (`x_²`), que é nome como os outros (seção 4.2); o trecho do índice começa no
+  `_`.
 
 ## 9. Conformidade
 

@@ -1,4 +1,5 @@
 import type { Diag } from './ast'
+import { ehLetraOuNumero16 } from './unicode16'
 
 export type TipoToken =
   | 'nome'
@@ -86,10 +87,19 @@ export const SIMBOLO_DE: Record<TipoToken, string> = {
   eof: 'fim da fórmula',
 }
 
-const LETRA = /[\p{L}\p{N}']/u
+/**
+ * Espaço em branco: os 25 caracteres do \s do ECMAScript, fixados aqui para o léxico não
+ * depender do ambiente. U+0085 e U+001F não estão (são E8); U+FEFF está.
+ */
+export const ESPACOS: ReadonlySet<number> = new Set([
+  0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x20, 0xa0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200a,
+  0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff,
+])
 
+/** Caractere de nome: letra (L) ou número (N) do Unicode 16.0, menos os subscritos. O apóstrofo só continua um nome. */
 export function ehCharDeNome(c: string): boolean {
-  return LETRA.test(c) && !(c in SUBSCRITOS) && c !== "'"
+  const cp = c.codePointAt(0)
+  return cp !== undefined && ehLetraOuNumero16(cp) && !(c in SUBSCRITOS)
 }
 
 export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
@@ -108,7 +118,7 @@ export function lex(texto: string): { tokens: Token[]; erros: Diag[] } {
 
   while (i < n) {
     const c = car(i)
-    if (/\s/.test(c)) {
+    if (ESPACOS.has(c.codePointAt(0)!)) {
       espaco = true
       i += c.length
       continue

@@ -75,8 +75,11 @@ const SOBRESCRITOS: Record<string, string> = {
 
 function avisosDeSobrescrito(tokens: Token[]): Diag[] {
   return tokens
-    .filter((tk) => tk.t === 'nome' && [...tk.v].some((c) => c in SOBRESCRITOS))
+    .filter((tk) => (tk.t === 'nome' || tk.t === 'subscr') && [...tk.v].some((c) => c in SOBRESCRITOS))
     .map((tk) => {
+      // o nome de um índice (x_²) também é nome; o trecho dele começa no _
+      if (tk.t === 'subscr')
+        return { codigo: 'E17', nivel: 'aviso', msg: `'${tk.v}', o índice, é um nome: o sobrescrito faz parte dele, não é potência.`, pos: tk.pos, end: tk.end }
       const m = /^(.*?)([⁰¹²³⁴⁵⁶⁷⁸⁹ⁿⁱ]+)$/u.exec(tk.v)
       const dica = m?.[1] ? ` Para potência, escreva ${m[1]}^${[...m[2]].map((c) => SOBRESCRITOS[c]).join('')}.` : ' Para potência, use ^.'
       return { codigo: 'E17', nivel: 'aviso', msg: `'${tk.v}' é um nome: o sobrescrito faz parte dele, não é potência.${dica}`, pos: tk.pos, end: tk.end }
@@ -330,9 +333,10 @@ export function checarSemantica(ast: Formula, dic: Map<string, EntradaDicionario
         const antes = reais
         if (f.dom?.k === 'reais' || f.dom?.k === 'inteiros') reais = [...reais, f.v]
         else {
+          // o domínio é lido fora do quantificador: com a sorte que as variáveis têm lá fora
+          if (f.dom) termo(f.dom, escopo, true)
           if (reais.includes(f.v)) reais = reais.filter((x) => x !== f.v)
           if (f.dom) {
-            termo(f.dom, escopo, true)
             // o domínio é lido fora do quantificador; a expansão (x ∈ S dentro de ∀x) prenderia este x
             const q = `${f.k === 'forall' ? '∀' : '∃'}${f.v}`
             for (const o of nomesNoTermo(f.dom, f.v))

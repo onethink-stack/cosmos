@@ -3080,6 +3080,189 @@
      "inicio": 18
     }
    ]
+  },
+  {
+   "id": "G174",
+   "texto": "∃u∈ℝ ∃u∈u P(u)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": "(∃ u ∈ ℝ (∃ u ∈ u (P u)))",
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E5",
+     "nivel": "aviso",
+     "inicio": 6
+    },
+    {
+     "codigo": "E15",
+     "nivel": "erro",
+     "inicio": 8
+    },
+    {
+     "codigo": "E18",
+     "nivel": "erro",
+     "inicio": 8
+    }
+   ]
+  },
+  {
+   "id": "G175",
+   "texto": "x_² = y",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(= (_ x ²) y)",
+   "arvoreExpandida": "(= (_ x ²) y)",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 1
+    }
+   ]
+  },
+  {
+   "id": "G176",
+   "texto": "∀x² P(x²)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(∀ x² (P x²))",
+   "arvoreExpandida": "(∀ x² (P x²))",
+   "diagnosticos": [
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 1
+    },
+    {
+     "codigo": "E17",
+     "nivel": "aviso",
+     "inicio": 6
+    }
+   ]
+  },
+  {
+   "id": "G177",
+   "texto": "P(a) ∨, Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 5
+    }
+   ]
+  },
+  {
+   "id": "G178",
+   "texto": "∃y∈] P(y)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 2
+    }
+   ]
+  },
+  {
+   "id": "G179",
+   "texto": "P(a) ⟹ ] Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E1",
+     "nivel": "erro",
+     "inicio": 5
+    }
+   ]
+  },
+  {
+   "id": "G180",
+   "texto": "P(a)\ufeff∧ Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(∧ (P a) (Q b))",
+   "arvoreExpandida": "(∧ (P a) (Q b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G181",
+   "texto": "P(a)\u0085∧ Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G182",
+   "texto": "P(a)\u001f∧ Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": false,
+   "arvore": null,
+   "arvoreExpandida": null,
+   "diagnosticos": [
+    {
+     "codigo": "E8",
+     "nivel": "erro",
+     "inicio": 4
+    }
+   ]
+  },
+  {
+   "id": "G183",
+   "texto": "P(a)\u00a0∧\u3000Q(b)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(∧ (P a) (Q b))",
+   "arvoreExpandida": "(∧ (P a) (Q b))",
+   "diagnosticos": []
+  },
+  {
+   "id": "G184",
+   "texto": "P(𑎀)",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(P 𑎀)",
+   "arvoreExpandida": "(P 𑎀)",
+   "diagnosticos": []
+  },
+  {
+   "id": "G185",
+   "texto": "P(𞗐x) ∧ 𐵐 = a",
+   "fichas": [],
+   "exigirFichas": false,
+   "aceita": true,
+   "arvore": "(∧ (P 𞗐x) (= 𐵐 a))",
+   "arvoreExpandida": "(∧ (P 𞗐x) (= 𐵐 a))",
+   "diagnosticos": []
   }
  ]
 }

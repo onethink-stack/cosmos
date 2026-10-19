@@ -9,7 +9,8 @@ import type { Formula, Termo } from '../src/logica/ast'
 import { expandir } from '../src/logica/acucar'
 import { canonica } from '../src/logica/canonica'
 import { imprimir } from '../src/logica/impressao'
-import { lex } from '../src/logica/lexer'
+import { ESPACOS, lex } from '../src/logica/lexer'
+import { faixasLetraNumero16 } from '../src/logica/unicode16'
 import { definirAvisoDeEscopo, validar } from '../src/logica/validador'
 import { nao, OPCOES_PADRAO, perguntar, prepararFormulas, type Grupo } from '../src/motor/motor'
 import { checarZ3 } from '../src/motor/z3'
@@ -89,9 +90,9 @@ interface Exemplo {
 const PACOTE: { versao: string; exemplos: Exemplo[] } = JSON.parse(textoExemplos)
 
 describe('gramática normativa: cada exemplo do pacote é lido como o arquivo diz', () => {
-  it('versão m2, 173 exemplos', () => {
+  it('versão m2, 185 exemplos', () => {
     expect(PACOTE.versao).toBe('m2')
-    expect(PACOTE.exemplos).toHaveLength(173)
+    expect(PACOTE.exemplos).toHaveLength(185)
   })
   for (const e of PACOTE.exemplos)
     it(`${e.id} ${e.texto}`, () => {
@@ -110,7 +111,15 @@ describe('o léxico e os diagnósticos do pacote batem com o Caderno', () => {
     simbolos: { token: string; grafias: string[] }[]
     especiais: { token: string; grafias: string[] }[]
     nome: { sobrescritosComAvisoE17: string[] }
+    espacos: string[]
+    letrasENumeros: { unicode: string; faixas: [string, string][] }
   } = JSON.parse(textoLexico)
+
+  it('os espaços e as letras do pacote são os que o léxico usa (Unicode 16.0, não o do ambiente)', () => {
+    expect(lexico.espacos.map((u) => parseInt(u.slice(2), 16))).toEqual([...ESPACOS])
+    expect(lexico.letrasENumeros.unicode).toBe('16.0')
+    expect(lexico.letrasENumeros.faixas.map(([a, b]) => [parseInt(a, 16), parseInt(b, 16)])).toEqual(faixasLetraNumero16())
+  })
 
   it('cada grafia vira o símbolo que o arquivo diz', () => {
     for (const s of [...lexico.simbolos, ...lexico.especiais])

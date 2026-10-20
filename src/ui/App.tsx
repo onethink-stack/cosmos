@@ -138,6 +138,17 @@ export function App() {
           <PainelContradicoes />
         )}
       </main>
+      <footer class="rodape">
+        Caderno Lógico © 2026 Gustavo Phadua Silva da Costa e os autores do Caderno Lógico. Software livre sob a AGPL-3.0 ou
+        posterior, sem nenhuma garantia.{' '}
+        <a href="https://github.com/onethink-stack/cosmos" target="_blank" rel="noopener">
+          Código-fonte
+        </a>{' '}
+        ·{' '}
+        <a href="https://github.com/onethink-stack/cosmos/blob/master/LICENCAS.md" target="_blank" rel="noopener">
+          Licenças
+        </a>
+      </footer>
     </>
   )
 }

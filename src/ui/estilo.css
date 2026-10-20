@@ -70,6 +70,8 @@ main { max-width: 760px; margin: 0 auto; padding: 12px 16px 48px; }
 h1 { font-size: 1.25rem; margin: 8px 0 4px; }
 h2 { font-size: 1.05rem; margin: 20px 0 8px; }
 p.suave, .suave { color: var(--texto-suave); font-size: .9rem; }
+.rodape { max-width: 760px; margin: 0 auto; padding: 0 16px 24px; color: var(--texto-suave); font-size: .78rem; text-align: center; }
+.rodape a { color: inherit; }
 
 button {
   font: inherit;

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readdirSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import preact from '@preact/preset-vite'
 import type { Plugin } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
@@ -142,6 +142,47 @@ self.addEventListener('fetch', (e) => {
 `
 }
 
+const AVISO_DO_CADERNO = `Caderno Lógico
+Copyright (C) 2026 Gustavo Phadua Silva da Costa e os autores do Caderno Lógico
+Software livre sob a GNU Affero General Public License, versão 3 ou posterior, SEM NENHUMA GARANTIA.
+Código-fonte e licenças: https://github.com/onethink-stack/cosmos (LICENCAS.md e THIRD_PARTY_NOTICES.md).`
+
+/**
+ * Os avisos de licença vão junto do app: o empacotamento tira os do Preact e os do trecho do Vite. No site, como
+ * arquivos (LICENSE, LICENCAS.md, THIRD_PARTY_NOTICES.md e a pasta LICENSES/). No arquivo único, que não leva
+ * arquivos soltos, num comentário no fim do <head> com os textos inteiros: a AGPL e os avisos que as licenças MIT e a
+ * do Unicode pedem que acompanhem as cópias. Fica no fim, e não no começo, para o <meta charset> continuar nos
+ * primeiros 1.024 bytes, como os navegadores esperam num arquivo aberto do disco.
+ */
+function avisosDeLicenca(arquivo: boolean): Plugin {
+  const comentario = (texto: string) => {
+    // os textos entram sem mudança nenhuma (a AGPL proíbe mudar o texto dela): se algum fechasse o comentário, o
+    // build para
+    if (/<!--|-->|--!>/.test(texto)) throw new Error('um aviso de licença tem uma sequência que fecha o comentário do HTML')
+    return `<!--\n${texto}\n-->`
+  }
+  return {
+    name: 'caderno-avisos-de-licenca',
+    apply: 'build',
+    transformIndexHtml(html) {
+      const texto = arquivo
+        ? [
+            AVISO_DO_CADERNO,
+            'Este arquivo inclui o Preact, o Z3 e um trecho do Vite, com os avisos abaixo, e dados do Unicode.',
+            ...['MIT-preact.txt', 'MIT-z3-solver.txt', 'MIT-vite.txt', 'Unicode-3.0.txt'].map((n) => readFileSync(`LICENSES/${n}`, 'utf8').trim()),
+            readFileSync('LICENSE', 'utf8').trim(),
+          ].join('\n\n')
+        : AVISO_DO_CADERNO
+      return html.replace('</head>', `${comentario(texto)}\n  </head>`)
+    },
+    generateBundle() {
+      if (arquivo) return
+      const nomes = ['LICENSE', 'LICENCAS.md', 'THIRD_PARTY_NOTICES.md', ...readdirSync('LICENSES').map((n) => `LICENSES/${n}`)]
+      for (const fileName of nomes) this.emitFile({ type: 'asset', fileName, source: readFileSync(fileName) })
+    },
+  }
+}
+
 /** No arquivo único não há manifesto nem ícones externos: tira os links do HTML. */
 function semLinksExternos(): Plugin {
   return {
@@ -156,7 +197,7 @@ export default defineConfig(({ mode }) => {
   const arquivo = mode === 'arquivo'
   return {
     base: './',
-    plugins: [preact(), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [serviceWorker()])],
+    plugins: [preact(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [serviceWorker()])],
     publicDir: arquivo ? false : 'public',
     server: { headers: ISOLAMENTO },
     preview: { headers: ISOLAMENTO },

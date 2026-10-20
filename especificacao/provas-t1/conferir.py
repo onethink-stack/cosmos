@@ -117,14 +117,22 @@ def estragos(id_, linhas):
 
 
 def carcara(caminho, prova, problema, regras):
-    """A primeira linha da saída do Carcara ('valid', 'holey', 'invalid' ou o erro)."""
+    """O veredito do Carcara ('valid', 'holey', 'invalid' ou 'erro') e o motivo que ele deu, se deu."""
     try:
         r = subprocess.run([caminho, 'check', *OPCOES, '--rare-file', regras, prova, problema],
                            capture_output=True, text=True, timeout=600)
     except subprocess.TimeoutExpired:
-        return 'tempo esgotado'
-    texto = (r.stdout.strip() or r.stderr.strip() or f'saiu com {r.returncode}').splitlines()
-    return texto[0][:200] if texto else f'saiu com {r.returncode}'
+        return 'tempo esgotado', ''
+    saida = r.stdout.strip().splitlines()
+    motivo = ' '.join(r.stderr.strip().split())[:400]
+    return (saida[0].strip() if saida else 'erro'), motivo
+
+
+def anotacao(nivel, titulo, texto):
+    """Uma anotação do GitHub: aparece na página da execução para qualquer pessoa, sem login."""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        texto = texto.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+        print(f'::{nivel} title={titulo}::{texto}', flush=True)
 
 
 def main():
@@ -133,6 +141,14 @@ def main():
     ap.add_argument('--sem-carcara', action='store_true')
     ap.add_argument('--relatorio')
     args = ap.parse_args()
+
+    if not args.sem_carcara:
+        try:
+            r = subprocess.run([args.carcara, '--version'], capture_output=True, text=True, timeout=60)
+            anotacao('notice', 'Carcara', ' '.join((r.stdout or r.stderr).split())[:200] or f'saiu com {r.returncode}')
+        except OSError as erro:
+            anotacao('error', 'Carcara', f'não deu para rodar {args.carcara}: {erro}')
+            raise
 
     with open(os.path.join(PASTA, 'certificados.json'), encoding='utf-8') as f:
         registro = json.load(f)
@@ -162,20 +178,22 @@ def main():
                 falhas.append(f"{c['id']}: estragos mal montados ({len(lista)}; iguais à prova: {len(iguais)})")
             linhas_relatorio.append(f"| {c['id']} | (não rodado) | {len(lista)} montados |")
             continue
-        veredito = carcara(args.carcara, prova, problema, regras)
+        veredito, motivo = carcara(args.carcara, prova, problema, regras)
         if veredito == 'valid':
             validas += 1
         else:
-            falhas.append(f"{c['id']}: o Carcara disse {veredito!r}")
+            falhas.append(f"{c['id']}: o Carcara disse {veredito!r}" + (f' ({motivo})' if motivo else ''))
+            anotacao('error', f"{c['id']} {veredito}", motivo or '(sem motivo na saída de erro)')
         recusados_aqui = []
         with tempfile.TemporaryDirectory() as tmp:
             for tipo, l in lista:
                 arquivo = os.path.join(tmp, 'estrago.alethe')
                 with open(arquivo, 'w', encoding='utf-8', newline='\n') as f:
                     f.write('\n'.join(l) + '\n')
-                v = carcara(args.carcara, arquivo, problema, regras)
+                v, _ = carcara(args.carcara, arquivo, problema, regras)
                 if v == 'valid':
                     falhas.append(f"{c['id']}: o Carcara aceitou um estrago ({tipo})")
+                    anotacao('error', f"{c['id']} estrago aceito", tipo)
                 else:
                     recusados_aqui.append(tipo)
         recusados += len(recusados_aqui)
@@ -194,6 +212,8 @@ def main():
     ]
     texto = '\n'.join(resumo) + '\n'
     print(texto)
+    if not args.sem_carcara:
+        anotacao('notice', 'Resultado', resumo[2] + ' ' + ('Nenhuma falha.' if not falhas else f'{len(falhas)} falhas.'))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:
         if destino:
             with open(destino, 'a', encoding='utf-8') as f:

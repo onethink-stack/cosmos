@@ -321,15 +321,28 @@ ANSI = re.compile(r'\x1b\[[0-9;]*m')
 
 
 def carcara(caminho, prova, problema, regras, extra=()):
-    """O veredito do Carcara ('valid', 'holey', 'invalid' ou 'erro') e o motivo que ele deu, se deu."""
+    """O veredito do Carcara ('valid', 'holey', 'invalid' ou 'erro') e tudo o que ele escreveu, sem as cores (a linha
+    de comando dele pinta os erros mesmo com --no-color)."""
     try:
         r = subprocess.run([caminho, '--no-color', 'check', *OPCOES, *extra, '--rare-file', regras, prova, problema],
                            capture_output=True, text=True, timeout=600)
     except subprocess.TimeoutExpired:
         return 'tempo esgotado', ''
     saida = r.stdout.strip().splitlines()
-    motivo = ' '.join(ANSI.sub('', r.stderr).split())[:400]
+    motivo = ' '.join(ANSI.sub('', r.stderr).split())
     return (saida[0].strip() if saida else 'erro'), motivo
+
+
+def curto(motivo, n=400):
+    """O motivo encurtado para o relatório. O Carcara escreve primeiro o erro, às vezes com termos enormes, e só no fim
+    em que passo e com que regra ('note: checking failed on step ... with rule ...'): a nota vem para a frente, e o
+    caminho do arquivo sai (fica a linha e a coluna, quando há)."""
+    m = re.search(r'note: (checking failed on step \S+ with rule \S+)', motivo)
+    texto = motivo[:m.start()] + motivo[m.end():] if m else motivo
+    # sem a nota, o caminho do arquivo é o fim do texto (e pode ter espaços)
+    texto = re.sub(r' ?--> in file .*?(?::(\d+:\d+))?$', lambda x: f' (em {x.group(1)})' if x.group(1) else '',
+                   texto.strip()).strip()
+    return ((m.group(1) + ': ' if m else '') + texto)[:n]
 
 
 def conferir(caminho, prova, problema, regras):
@@ -345,20 +358,41 @@ def conferir(caminho, prova, problema, regras):
 
 
 def classe(motivo):
-    """De onde veio a recusa, pelo que o Carcara escreveu: da leitura (um passo citado fora do escopo dele, um tipo
-    errado, ou outro erro), da regra de um passo, ou da falta da cláusula vazia no fim."""
-    if 'parser error' in motivo:
-        if re.search(r"step id '[^']*' is not defined", motivo):
-            return 'leitura: passo fora do escopo'
-        if re.search(r'sort error|cannot be matched|is not a function sort', motivo):
-            return 'leitura: tipo'
-        return 'leitura'
+    """De onde veio a recusa, pelo texto inteiro que o Carcara escreveu: da regra de um passo (a nota 'checking failed
+    on step ... with rule ...'), da falta da cláusula vazia no fim, ou da leitura (um passo citado fora do escopo
+    dele, um tipo errado, ou outro erro com linha e coluna). A linha de comando escreve os erros de leitura sem
+    prefixo, só a mensagem e o lugar ('--> in file ARQUIVO:LINHA:COLUNA')."""
     m = re.search(r"checking failed on step '?[^ ']+'? with rule '?([a-z_0-9]+)", motivo)
     if m:
         return 'regra ' + m.group(1)
     if 'does not conclude empty clause' in motivo:
         return 'sem cláusula vazia'
+    if re.search(r"step id '[^']*' is not defined", motivo):
+        return 'leitura: passo fora do escopo'
+    if re.search(r'sort error|cannot be matched|is not a function sort', motivo):
+        return 'leitura: tipo'
+    if re.search(r'parser error|in file .*:\d+:\d+$', motivo):
+        return 'leitura'
     return 'outro' if motivo else 'sem motivo'
+
+
+def ambiente():
+    """O sistema e o Rust da máquina, para a anotação do Carcara: a mesma compilação depende dos dois."""
+    partes = []
+    try:
+        with open('/etc/os-release', encoding='utf-8') as f:
+            m = re.search(r'^PRETTY_NAME="?([^"\n]+)', f.read(), re.M)
+        if m:
+            partes.append(m.group(1))
+    except OSError:
+        pass
+    try:
+        r = subprocess.run(['rustc', '--version'], capture_output=True, text=True, timeout=60)
+        if r.returncode == 0 and r.stdout.strip():
+            partes.append(r.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return partes
 
 
 def anotacao(nivel, titulo, texto):
@@ -379,7 +413,8 @@ def main():
     if not args.sem_carcara:
         try:
             r = subprocess.run([args.carcara, '--version'], capture_output=True, text=True, timeout=60)
-            anotacao('notice', 'Carcara', ' '.join((r.stdout or r.stderr).split())[:200] or f'saiu com {r.returncode}')
+            versao = ' '.join((r.stdout or r.stderr).split())[:200] or f'saiu com {r.returncode}'
+            anotacao('notice', 'Carcara', '; '.join([versao, *ambiente()]))
         except OSError as erro:
             anotacao('error', 'Carcara', f'não deu para rodar {args.carcara}: {erro}')
             raise
@@ -425,11 +460,11 @@ def main():
             if 'valid' in (v_pivos, v_rup):
                 validas += 1
                 if v_pivos != 'valid':
-                    so_um_modo.append(f"{c['id']} valid só por RUP; pelos pivôs do cvc5: {v_pivos} {m_pivos}")
+                    so_um_modo.append(f"{c['id']} valid só por RUP; pelos pivôs do cvc5: {v_pivos} {curto(m_pivos)}")
                 if v_rup != 'valid':
-                    so_um_modo.append(f"{c['id']} valid só pelos pivôs; por RUP: {v_rup} {m_rup}")
+                    so_um_modo.append(f"{c['id']} valid só pelos pivôs; por RUP: {v_rup} {curto(m_rup)}")
             else:
-                motivo = f'pelos pivôs: {v_pivos} {m_pivos} | por RUP: {v_rup} {m_rup}'
+                motivo = f'pelos pivôs: {v_pivos} {curto(m_pivos)} | por RUP: {v_rup} {curto(m_rup)}'
                 falhas.append(f"{c['id']}: o Carcara não deu 'valid' ({motivo})")
                 anotacao('error', f"{c['id']} {v_pivos}", motivo)
             provas_md.append(f"| {c['id']} | {v_pivos} | {v_rup} |")
@@ -461,7 +496,7 @@ def main():
                 falhas.append(f'{caso}: o Carcara aceitou uma prova falsa ({modo})')
                 anotacao('error', f'{caso} aceito', f'prova falsa aceita ({modo})')
             else:
-                adv_notas.append(f'{caso}: recusado. Pelos pivôs: {v} {m_pivos} | por RUP: {m_rup}')
+                adv_notas.append(f'{caso}: recusado. Pelos pivôs: {v} {curto(m_pivos)} | por RUP: {curto(m_rup)}')
             adv_md.append(f"| {caso} | {'ACEITA' if v == 'valid' else 'recusada'} | {classe(m_rup) if v != 'valid' else modo} |")
             atacante = os.path.join(PASTA, 'adversarios', 'atacante.rare')
             if caso == 'regra-fora-do-arquivo-confiado' and os.path.exists(atacante):

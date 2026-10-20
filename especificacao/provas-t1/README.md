@@ -72,8 +72,10 @@ mas ficam fora do formato de certificado.
 
 O fluxo `../../.github/workflows/conferir-provas.yml` roda numa máquina do
 GitHub a cada mudança nesta pasta. Ele compila o Carcara da versão em
-desenvolvimento, no commit fixo `20bf49c5ce31089ac83118574c888669355aaae1`, e
-roda `conferir.py`, que
+desenvolvimento, no commit fixo `20bf49c5ce31089ac83118574c888669355aaae1`,
+com o Rust 1.99.1 numa máquina `ubuntu-24.04` (os três fixos: o mesmo commit
+compilado por outro Rust, ou noutro sistema, não é a mesma compilação), e roda
+`conferir.py`, que
 
 - confere o SHA-256 de cada arquivo com o registro;
 - roda, para cada prova,
@@ -171,6 +173,15 @@ lógica: 11 das 28 premissas trocadas apontavam para passos posteriores, as
 regras trocadas por `false` guardavam premissas e argumentos, e nenhum estrago
 atacava um `rare_rewrite`. Os estragos foram refeitos como acima, e os casos
 adversários entraram.
+
+**A quarta rodada** (commit `3ed62b5`, a primeira com os sete estragos) deu
+`valid` nas 28 provas, 27 pelos pivôs e as 28 por RUP sozinho; os 176 estragos
+e os 5 casos adversários foram recusados, e com o arquivo de regras do atacante
+a prova falsa passou. As classes das recusas saíram incompletas: a linha de
+comando do Carcara escreve os erros de leitura sem prefixo, e põe o passo e a
+regra no fim da mensagem, que era cortada antes de ser classificada. A
+classificação passou a usar a mensagem inteira, e o sistema da máquina ficou
+fixo.
 
 ## As regras RARE
 

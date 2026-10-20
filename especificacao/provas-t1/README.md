@@ -9,7 +9,7 @@ confere sem confiar em nenhum solucionador.
 | --- | --- |
 | `problemas/Zxx.smt2` | O problema em SMT-LIB 2: as declarações e as asserções que a tradução t1 produz (a função `problemaSmt` de `src/motor/z3.ts`), com as fórmulas do exemplo num comentário no topo |
 | `provas/Zxx.alethe` | A prova Alethe do cvc5 para esse problema, só os comandos (a linha `unsat` e os parênteses de fora foram tirados) |
-| `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas sem mudança do Carcara |
+| `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas do Carcara (com uma única mudança de escrita, anotada no topo do arquivo) |
 | `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256 |
 | `conferir.py` | Confere as provas com o Carcara e testa provas estragadas de propósito |
 
@@ -59,20 +59,31 @@ mas ficam fora do formato de certificado.
 ## A conferência independente
 
 O fluxo `../../.github/workflows/conferir-provas.yml` roda numa máquina do
-GitHub a cada mudança nesta pasta. Ele compila o Carcara no commit
-`394edbb15ba95c47893f1d821fddde7e016af178`, o que o roteiro
-`contrib/get-carcara-checker` do cvc5 1.4.2 indica (o fork de onde o roteiro
-baixava foi incorporado ao repositório `ufmg-smite/carcara`), e roda
-`conferir.py`, que
+GitHub a cada mudança nesta pasta. Ele compila o Carcara da versão em
+desenvolvimento, no commit fixo `20bf49c5ce31089ac83118574c888669355aaae1`, e
+roda `conferir.py`, que
 
 - confere o SHA-256 de cada arquivo com o registro;
 - roda, para cada prova,
   `carcara check --allow-int-real-subtyping --expand-let-bindings --rare-file regras.rare provas/Zxx.alethe problemas/Zxx.smt2`
   e exige `valid`;
 - faz três estragos em cada prova (um literal negado, uma premissa trocada ou
-  tirada, uma regra trocada), e o Carcara tem de recusar os três.
+  tirada, e a regra de um passo trocada pela regra `false`), e o Carcara tem de
+  recusar os três.
 
-O resultado fica na aba Actions do repositório.
+O resultado sai em anotações na página de cada execução, na aba Actions, que
+qualquer pessoa vê sem login (o registro completo só abre para administradores).
+
+**A primeira rodada** usou o commit `394edbb15ba95c47893f1d821fddde7e016af178`,
+o que o roteiro `contrib/get-carcara-checker` do cvc5 1.4.2 indica (o fork de
+onde o roteiro baixava foi incorporado ao `ufmg-smite/carcara`). Ela deu `valid`
+em 26 das 28 provas. Z34 e Z37 foram recusadas por usar duas regras de
+aritmética não linear que essa versão não conhece (`la_mult_sign` e
+`la_mult_abs_comparison`); a versão em desenvolvimento conhece as duas. Dos 84
+estragos, 83 foram recusados. O aceito não era estrago: a regra `bind` de um
+passo que conclui `(= t t)` tinha sido trocada por `refl`, que também prova
+isso, e a prova continuava certa. Desde então a regra de um passo é trocada
+por `false`, que só prova `(cl (not false))`, e esses passos ficam de fora.
 
 ## As regras RARE
 
@@ -82,7 +93,11 @@ que as provas usam, e cada uma é uma identidade simples que se confere à mão,
 como ¬¬t = t ou (t ⟹ s) = (¬t ∨ s). O arquivo completo do Carcara tem regras que
 os próprios autores marcam como não necessariamente válidas, como x/0 = 0, que
 contradiz a t1 (nela, x/0 é algum número que só depende de x). Nenhuma delas
-entra aqui.
+entra aqui. A única mudança em relação ao arquivo do Carcara é de escrita: em
+`or-not-refl`, o parâmetro de tipo declarado `T0` e usado como `@T0` passou a
+ser declarado `@T0`, como nas outras regras. A versão 394edbb aceita as duas
+formas, mas o trecho que aceita a primeira não está na versão em
+desenvolvimento.
 
 ## O que isto não prova
 

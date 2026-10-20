@@ -104,15 +104,18 @@ def estragos(id_, linhas):
             novo = l[:i] + ' '.join(premissas) + l[f:]
             saida.append((tipo + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
 
-    # a regra de um passo trocada por outra
+    # a regra de um passo trocada pela regra false, que só prova (cl (not false)). Ficam de fora os passos
+    # que a regra nova também provaria (a própria (cl (not false))) e os que já usam false: trocar a regra
+    # de um passo que conclui (= t t) por refl, por exemplo, dava outra prova certa, e não um estrago
     rng = random.Random(f'{id_}-regra')
-    k = rng.choice(passos)
-    l = linhas[k]
-    m = re.search(r':rule (\S+)', l)
-    regra = m.group(1).rstrip(')')
-    outra = 'refl' if regra != 'refl' else 'trans'
-    novo = l[:m.start(1)] + outra + l[m.start(1) + len(regra):]
-    saida.append((f'regra {regra} trocada por {outra} no passo ' + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
+    candidatos = [k for k in passos if '(cl (not false))' not in linhas[k] and ':rule false' not in linhas[k]]
+    if candidatos:
+        k = rng.choice(candidatos)
+        l = linhas[k]
+        m = re.search(r':rule (\S+)', l)
+        regra = m.group(1).rstrip(')')
+        novo = l[:m.start(1)] + 'false' + l[m.start(1) + len(regra):]
+        saida.append((f'regra {regra} trocada por false no passo ' + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
     return saida
 
 

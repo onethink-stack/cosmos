@@ -1,7 +1,9 @@
-; Regras RARE usadas pelas provas desta pasta: só elas, copiadas sem mudança do arquivo rewrites.eo do
-; Carcara no commit 394edbb15ba95c47893f1d821fddde7e016af178 (a versão que o cvc5 1.4.2 indica para
-; conferir as provas dele), SHA-256 24c5083754312842b951b1af2a59c2c29f571562b94d7fc8c04c5469e87b82ea. Cada regra é um axioma para o Carcara:
+; Regras RARE usadas pelas provas desta pasta: só elas, copiadas do arquivo rewrites.eo do Carcara no
+; commit 394edbb15ba95c47893f1d821fddde7e016af178 (a versão que o cvc5 1.4.2 indica para conferir as
+; provas dele), SHA-256 24c5083754312842b951b1af2a59c2c29f571562b94d7fc8c04c5469e87b82ea. Cada regra é um axioma para o Carcara:
 ; por isso a lista é a menor possível e cada uma pode ser lida por uma pessoa.
+; Única mudança: o parâmetro de tipo declarado sem "@" e usado com "@" passou a ser declarado com "@",
+; como nas outras regras (o sentido não muda): or-not-refl (T0 → @T0).
 ;   arith-abs-eq
 ;   arith-abs-real-gt
 ;   arith-elim-gt
@@ -83,6 +85,6 @@
   :args (x1 y1)
   :conclusion (= (ite true x1 y1) x1)
 )
-(declare-rare-rule or-not-refl ((T0 Type) (t @T0) (xs Bool :list))
+(declare-rare-rule or-not-refl ((@T0 Type) (t @T0) (xs Bool :list))
    :args (t xs)
    :conclusion (= (or (not (= t t)) xs) (or xs)))

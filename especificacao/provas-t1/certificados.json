@@ -5,7 +5,7 @@
  "exemplos": "traducao-z3-t1-exemplos.json",
  "regrasRare": {
   "arquivo": "regras.rare",
-  "sha256": "f0a37bd1eb9092b6f363cfa4603087d0342725595ba8e00d7998069ba7910686",
+  "sha256": "ffbfc076411a039624a55dfbb9f0c588996aeac10bb8e72161cd64039b071fad",
   "regras": [
    "arith-abs-eq",
    "arith-abs-real-gt",
@@ -56,7 +56,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 15,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -196,7 +196,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 10,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -264,7 +264,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 10,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -416,7 +416,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 23,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -448,7 +448,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 12,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -478,7 +478,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 15,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -508,7 +508,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 15,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -538,7 +538,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 18,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -618,7 +618,7 @@
     "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 74,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -650,7 +650,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 99,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -682,7 +682,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 105,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -738,7 +738,7 @@
     "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 63,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -770,7 +770,7 @@
     "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 46,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -826,7 +826,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 18,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -858,7 +858,7 @@
     "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 14,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -892,7 +892,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 26,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -926,7 +926,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 4,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -960,7 +960,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 22,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -992,7 +992,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 2,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1022,7 +1022,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 2,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1052,7 +1052,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 11,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1086,7 +1086,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 22,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1152,7 +1152,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 28,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1240,7 +1240,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 2026,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1316,7 +1316,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 258,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1346,7 +1346,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 47,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1536,7 +1536,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 14,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   },
   {
@@ -1604,7 +1604,7 @@
     "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
     "passos": 27,
     "conferenciaInterna": "aceita (cvc5 --check-proofs)",
-    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+    "conferenciaIndependente": "Carcara 20bf49c, pelo fluxo conferir-provas do GitHub"
    }
   }
  ]

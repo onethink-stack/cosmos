@@ -11,7 +11,19 @@ confere sem confiar em nenhum solucionador.
 | `provas/Zxx.alethe` | A prova Alethe do cvc5 para esse problema, só os comandos (a linha `unsat` e os parênteses de fora foram tirados) |
 | `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas do Carcara (com uma única mudança de escrita, anotada no topo do arquivo) |
 | `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256 |
-| `conferir.py` | Confere as provas com o Carcara e testa provas estragadas de propósito |
+| `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos e roda os casos adversários |
+| `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, que o verificador tem de recusar |
+
+## O que é do verificador e o que é do certificado
+
+Quem emite um certificado não escolhe os axiomas com que ele vai ser conferido.
+O verificador é `conferir.py`, o Carcara (num commit fixo, compilado por um Rust
+de versão fixa) e o arquivo `regras.rare`, cujo SHA-256 está escrito no próprio
+`conferir.py` (`REGRAS_CONFIADAS_SHA256`). O certificado é o problema, a prova e
+o registro. Se um pacote trouxesse outro arquivo de regras, com uma regra falsa
+e o hash atualizado no registro, o verificador recusaria, porque compara o
+arquivo com o hash dele, e não com o do pacote. Mudar uma regra exige mudar o
+verificador, e essa mudança é revista.
 
 ## O certificado
 
@@ -66,13 +78,70 @@ roda `conferir.py`, que
 - confere o SHA-256 de cada arquivo com o registro;
 - roda, para cada prova,
   `carcara check --allow-int-real-subtyping --expand-let-bindings --rare-file regras.rare provas/Zxx.alethe problemas/Zxx.smt2`
-  e exige `valid`. A resolução é conferida primeiro pelos pivôs que o cvc5 dá
-  em cada passo; se não der `valid`, de novo com `--rup-resolution`, que
-  confere cada resolução por propagação de unidades, sem depender dos pivôs. Os
-  dois modos são corretos, e o relatório diz qual valeu para cada prova;
-- faz três estragos em cada prova (um literal negado, uma premissa trocada ou
-  tirada, e a regra de um passo trocada pela regra `false`), e o Carcara tem de
-  recusar os três.
+  pelos dois modos, cada um sozinho: a resolução conferida pelos pivôs que o
+  cvc5 dá em cada passo, e com `--rup-resolution`, que confere cada resolução
+  por propagação de unidades, sem depender dos pivôs. Os dois modos são
+  corretos; o fluxo exige `valid` em pelo menos um, e o relatório mostra os
+  dois para cada prova;
+- estraga cada prova de até sete jeitos, um de cada vez, e o Carcara tem de
+  recusar todos, pelos dois modos (veja abaixo). O relatório diz de onde veio
+  cada recusa, pelo modo em que a prova original passa;
+- roda os casos de `adversarios/`, que também têm de ser recusados.
+
+### Os estragos
+
+Cada estrago muda uma coisa só e deixa a prova bem escrita, para que a recusa
+venha da lógica e não da forma. O relatório diz de onde veio cada recusa: da
+leitura (um passo citado fora do escopo dele, um tipo errado, ou outro erro de
+leitura), da regra de um passo (e qual), ou da falta da cláusula vazia no fim.
+
+| Estrago | O que testa |
+| --- | --- |
+| um literal negado | a conclusão de um passo trocada por outra |
+| um literal tirado de uma resolução | uma cláusula mais forte do que a resolução dá, como concluir q de p ∨ q e ¬p ∨ r |
+| uma premissa trocada por um passo anterior visível no mesmo escopo | uma inferência errada com premissas que estão disponíveis |
+| uma premissa trocada por um passo de uma subprova já fechada | a disciplina de escopo |
+| a regra de um passo trocada por `false`, sem premissas nem argumentos | uma regra que não justifica a conclusão |
+| a conclusão de um `rare_rewrite` (= L R) trocada por (= L L) | uma igualdade verdadeira que não é instância da regra |
+| uma suposição trocada pela negação dela | o elo entre a prova e o problema |
+
+Ficam de fora os estragos que deixariam o passo certo, porque aí aceitar não
+seria erro:
+
+- numa resolução, o passo estragado que ainda segue das premissas por
+  propagação de unidades, o critério do segundo modo. Isso pega, por exemplo,
+  tirar uma de duas cópias do mesmo literal, negar uma de duas cópias (a
+  cláusula vira X ∨ ¬X) ou trocar uma premissa por outra que também dá a
+  conclusão;
+- a premissa trocada por um passo com a mesma cláusula, sem contar a ordem dos
+  literais nem a dos lados das igualdades, que regras como `symm`, `trans` e
+  `cong` não distinguem;
+- os passos que a regra `false` provaria;
+- os `rare_rewrite` em que L e R só diferem pela ordem dos lados de
+  igualdades: ali (= L L) é a própria instância a menos dessa ordem, e aceitar
+  não seria erro.
+
+A propagação de unidades desse filtro copia a do Carcara (a função `rup` de
+`src/checker/rules/resolution.rs`, no commit fixo): ela compara os literais sem
+as negações de fora e usa só as premissas do passo. O filtro só escolhe os
+estragos; não confere prova nenhuma. A troca de premissa por um passo de
+subprova fechada fica sem filtro: usar um passo fora do escopo dele é erro
+mesmo que a cláusula feche a conta.
+
+### Os casos adversários
+
+| Caso | O ataque |
+| --- | --- |
+| `rup-resolvente-falso` | de p ∨ q e ¬p ∨ r, concluir q (o resolvente certo é q ∨ r) |
+| `rare-tipo-errado` | aplicar `arith-leq-norm`, que só vale para inteiros, a dois reais |
+| `forall-inst-errado` | instanciar um ∀ e tirar a condição dele |
+| `premissa-fora-do-problema` | supor uma fórmula que não está no problema |
+| `regra-fora-do-arquivo-confiado` | trazer uma regra falsa (p = true) num arquivo de regras do próprio certificado (`atacante.rare`) |
+
+Os cinco problemas são satisfazíveis (o cvc5 confere), então aceitar qualquer
+uma dessas "provas" seria erro do verificador. No último, o relatório mostra
+também o que aconteceria se o verificador usasse o arquivo de regras do
+atacante.
 
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).
@@ -94,6 +163,14 @@ recusada num passo de resolução (`t423.t8`): o pivô que o cvc5 indica, um
 literal com um termo `choice` que ele criou para um quantificador, não foi
 achado na cláusula da premissa. Daí o segundo modo, por propagação de unidades,
 que não depende dos pivôs.
+
+**A terceira rodada** (commit `61c602c`) deu `valid` nas 28 provas, 27 pelos
+pivôs e Z34 por RUP, e os 84 estragos de então foram recusados. Uma auditoria
+independente desses estragos mostrou que eles testavam mais a forma do que a
+lógica: 11 das 28 premissas trocadas apontavam para passos posteriores, as
+regras trocadas por `false` guardavam premissas e argumentos, e nenhum estrago
+atacava um `rare_rewrite`. Os estragos foram refeitos como acima, e os casos
+adversários entraram.
 
 ## As regras RARE
 

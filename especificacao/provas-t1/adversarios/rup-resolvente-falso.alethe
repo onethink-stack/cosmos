@@ -1,0 +1,7 @@
+(assume a0 (or p q))
+(assume a1 (or (not p) r))
+(assume a2 (not q))
+(step t0 (cl p q) :rule or :premises (a0))
+(step t1 (cl (not p) r) :rule or :premises (a1))
+(step t2 (cl q) :rule resolution :premises (t0 t1))
+(step t3 (cl) :rule resolution :premises (t2 a2))

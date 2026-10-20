@@ -1,0 +1,6 @@
+; Arquivo de regras de um atacante: a regra p-e-verdade é falsa (p = true para todo p).
+; O verificador nunca usa este arquivo; ele só serve para mostrar o que aconteceria se usasse.
+(declare-rare-rule p-e-verdade ((p Bool))
+  :args (p)
+  :conclusion (= p true)
+)

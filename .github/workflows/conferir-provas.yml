@@ -21,17 +21,19 @@ jobs:
     timeout-minutes: 60
     env:
       CARCARA_COMMIT: 20bf49c5ce31089ac83118574c888669355aaae1
+      # o Rust também fica fixo: o mesmo commit compilado por outro Rust não é a mesma compilação
+      RUST_VERSAO: 1.99.1
     steps:
       - uses: actions/checkout@v4
       - name: Rust
-        run: rustup toolchain install stable --profile minimal && rustup default stable && rustc --version
+        run: rustup toolchain install "$RUST_VERSAO" --profile minimal && rustup default "$RUST_VERSAO" && rustc --version
       - name: m4, que a GMP do Carcara precisa para compilar
         run: sudo apt-get update && sudo apt-get install -y m4
       - uses: actions/cache/restore@v4
         id: cache
         with:
           path: ~/.cargo/bin/carcara
-          key: carcara-${{ env.CARCARA_COMMIT }}-${{ runner.os }}
+          key: carcara-${{ env.CARCARA_COMMIT }}-rust-${{ env.RUST_VERSAO }}-${{ runner.os }}
       - name: Compilar o Carcara
         if: steps.cache.outputs.cache-hit != 'true'
         run: cargo install --locked --git https://github.com/ufmg-smite/carcara.git --rev "$CARCARA_COMMIT" carcara
@@ -40,6 +42,6 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ~/.cargo/bin/carcara
-          key: carcara-${{ env.CARCARA_COMMIT }}-${{ runner.os }}
+          key: carcara-${{ env.CARCARA_COMMIT }}-rust-${{ env.RUST_VERSAO }}-${{ runner.os }}
       - name: Conferir as provas e os estragos
         run: python3 especificacao/provas-t1/conferir.py --carcara ~/.cargo/bin/carcara

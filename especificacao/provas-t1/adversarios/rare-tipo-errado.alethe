@@ -1,0 +1,6 @@
+(assume a0 (not (<= x y)))
+(assume a1 (not (>= x (+ y 1))))
+(step t0 (cl (= (<= x y) (not (>= x (+ y 1))))) :rule rare_rewrite :args ("arith-leq-norm" x y))
+(step t1 (cl (not (= (<= x y) (not (>= x (+ y 1))))) (<= x y) (not (not (>= x (+ y 1))))) :rule equiv_pos1)
+(step t2 (cl (not (not (>= x (+ y 1))))) :rule resolution :premises (t1 t0 a0))
+(step t3 (cl) :rule resolution :premises (t2 a1))

@@ -1,0 +1,5 @@
+(assume a0 (forall ((x Real)) (=> (> x 5.0) (> (f x) 0.0))))
+(assume a1 (not (> (f 1.0) 0.0)))
+(step t0 (cl (or (not (forall ((x Real)) (=> (> x 5.0) (> (f x) 0.0)))) (> (f 1.0) 0.0))) :rule forall_inst :args (1.0))
+(step t1 (cl (not (forall ((x Real)) (=> (> x 5.0) (> (f x) 0.0)))) (> (f 1.0) 0.0)) :rule or :premises (t0))
+(step t2 (cl) :rule resolution :premises (t1 a0 a1))

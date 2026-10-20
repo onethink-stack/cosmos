@@ -1,23 +1,39 @@
 #!/usr/bin/env python3
-"""Confere as provas Alethe desta pasta com o Carcara e testa provas estragadas de propósito.
+"""Confere as provas Alethe desta pasta com o Carcara e tenta enganar o verificador de propósito.
 
 Uso: python3 conferir.py [--carcara CAMINHO] [--sem-carcara] [--relatorio ARQUIVO]
 
-1. Confere o SHA-256 de cada problema, de cada prova e do arquivo de regras com certificados.json.
+O que é do verificador e o que é do certificado:
+  - do verificador: este roteiro, o Carcara (commit fixo no fluxo) e o arquivo de regras RARE, cujo SHA-256
+    está fixo aqui embaixo (REGRAS_CONFIADAS_SHA256). Um certificado não escolhe os axiomas: mudar uma regra
+    exige mudar este arquivo, e não só o registro de certificados.
+  - do certificado: o problema, a prova e o registro (certificados.json).
+
+1. Confere o SHA-256 de cada problema e de cada prova com o registro, e o do arquivo de regras com o valor fixo.
 2. Roda, para cada prova,
        carcara check --allow-int-real-subtyping --expand-let-bindings --rare-file regras.rare PROVA PROBLEMA
-   e exige a saída "valid" (nem "holey" nem "invalid"). A resolução é conferida primeiro pelos pivôs que
-   o cvc5 dá; se não der "valid", de novo com --rup-resolution, que confere cada resolução por propagação
-   de unidades, sem depender dos pivôs. Os dois modos são corretos, e o relatório diz qual valeu.
-3. Faz, em cada prova, três estragos, um de cada vez, que o Carcara tem de recusar: um literal da
-   conclusão de um passo trocado pela negação dele, uma premissa de um passo trocada por outra e a
-   regra de um passo trocada por outra. O sorteio tem semente fixa: os estragos são sempre os mesmos.
+   pelos dois modos, cada um sozinho: a resolução conferida pelos pivôs que o cvc5 dá, e com --rup-resolution,
+   que confere cada resolução por propagação de unidades, sem depender dos pivôs. Os dois modos são corretos;
+   exige "valid" (nem "holey" nem "invalid") em pelo menos um, e o relatório mostra os dois.
+3. Estraga cada prova de até sete jeitos, um de cada vez, sempre deixando a prova bem escrita, para que a recusa
+   venha da lógica e não da forma: um literal negado; um literal tirado de uma resolução (a conclusão fica mais
+   forte do que a resolução dá); uma premissa trocada por um passo anterior visível no mesmo escopo; uma premissa
+   trocada por um passo de dentro de uma subprova já fechada; a regra de um passo trocada por false, sem
+   premissas nem argumentos; a conclusão de um passo rare_rewrite trocada por outra igualdade verdadeira que não é
+   instância da regra; uma suposição trocada pela negação dela, que não está no problema. Cada estrago tem de ser
+   recusado pelos dois modos. O sorteio tem semente fixa, e se repete enquanto o estrago deixar o passo certo
+   (uma resolução que ainda segue das premissas por propagação de unidades, uma premissa trocada por outra com a
+   mesma cláusula): aí aceitar não seria erro.
+4. Roda os casos de adversarios/: problemas satisfazíveis com "provas" de que não são, escritas à mão para atacar
+   pontos certos (resolvente falso, regra RARE com tipo errado, instância errada de um ∀, suposição fora do
+   problema, regra falsa trazida pelo próprio certificado). Todos têm de ser recusados.
 
-Sai com código 1 se alguma prova não der "valid" ou se algum estrago for aceito.
-Com --sem-carcara, só confere os hashes e monta os estragos (serve para testar este roteiro).
-Só usa a biblioteca padrão do Python.
+Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, ou se algum
+SHA-256 não bater. Com --sem-carcara, só confere os hashes e monta os estragos. Só usa a biblioteca padrão.
 """
 import argparse
+import collections
+import glob
 import hashlib
 import json
 import os
@@ -29,6 +45,9 @@ import tempfile
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
 OPCOES = ['--allow-int-real-subtyping', '--expand-let-bindings']
+# os axiomas em que o verificador confia: as 17 regras RARE auditadas (rodadas 22 a 24)
+REGRAS_CONFIADAS = os.path.join(PASTA, 'regras.rare')
+REGRAS_CONFIADAS_SHA256 = 'ffbfc076411a039624a55dfbb9f0c588996aeac10bb8e72161cd64039b071fad'
 
 
 def sha256(caminho):
@@ -65,60 +84,240 @@ def fim_do_termo(s, i):
     raise ValueError('parênteses sem fim')
 
 
+def termos(s, i, fim):
+    """Os termos em s[i:fim], separados por espaço."""
+    saida = []
+    while i < fim:
+        if s[i] == ' ':
+            i += 1
+            continue
+        f = fim_do_termo(s, i)
+        saida.append(s[i:f])
+        i = f
+    return saida
+
+
+def clausula(l):
+    """(início, fim, literais) da cláusula (cl ...) de um passo."""
+    c0 = l.index('(cl')
+    c1 = fim_do_termo(l, c0)
+    return c0, c1, termos(l, c0 + 3, c1 - 1)
+
+
+def campo(l, nome):
+    """(início, fim) de ' :nome (...)' num passo, ou None."""
+    i = l.find(f' :{nome} (')
+    if i < 0:
+        return None
+    return i, fim_do_termo(l, i + len(f' :{nome} '))
+
+
+def forma(s):
+    """O termo como lista aninhada, com os dois lados de cada igualdade em ordem fixa: muitas regras do Carcara
+    (assume, symm, trans, cong) comparam termos sem ligar para a ordem dos lados de uma igualdade, então para elas
+    (= a b) e (= b a) contam como o mesmo termo."""
+    if not s.startswith('('):
+        return s
+    partes = [forma(x) for x in termos(s, 1, len(s) - 1)]
+    if len(partes) == 3 and partes[0] == '=':
+        partes = ['='] + sorted(partes[1:], key=repr)
+    return partes
+
+
+def escopo(id_):
+    """O prefixo da subprova de um passo: 't5.t3.t1' está em 't5.t3.'; 't7' está fora de subprova ('')."""
+    return id_.rsplit('.', 1)[0] + '.' if '.' in id_ else ''
+
+
+def literal(l):
+    """O literal sem as negações de fora, com a polaridade: t dá (True, t), (not t) dá (False, t) e
+    (not (not t)) dá (True, t). É assim que o Carcara compara os literais de uma resolução."""
+    p = True
+    while l.startswith('(not ') and l.endswith(')'):
+        l, p = l[5:-1], not p
+    return p, l
+
+
+def segue_por_rup(conclusao, premissas):
+    """Se a conclusão segue das premissas por propagação de unidades, como no modo --rup-resolution do Carcara
+    (função rup de src/checker/rules/resolution.rs, no commit fixo): supondo falso cada literal da conclusão, a
+    propagação deixa alguma premissa falsa. Aqui só serve para escolher os estragos; não confere prova nenhuma."""
+    valor = {}
+    for p, t in map(literal, conclusao):
+        if valor.setdefault(t, not p) != (not p):
+            return True
+    clausulas = [set(map(literal, c)) for c in premissas]
+    mudou = True
+    while mudou:
+        mudou = False
+        for c in clausulas:
+            if any(valor.get(t) == p for p, t in c):
+                continue
+            livres = [(p, t) for p, t in c if t not in valor]
+            if not livres:
+                return True
+            if len(livres) == 1:
+                valor[livres[0][1]] = livres[0][0]
+                mudou = True
+    return False
+
+
+def mesma_clausula(a, b):
+    return {(p, repr(forma(t))) for p, t in map(literal, a)} == {(p, repr(forma(t))) for p, t in map(literal, b)}
+
+
+TENTATIVAS = 200
+
+
 def estragos(id_, linhas):
-    """Três provas estragadas, cada uma com uma única mudança: [(tipo, linhas)]."""
+    """As provas estragadas, cada uma com uma única mudança: [(tipo, descrição, linhas)]."""
+    nome = lambda l: l.split()[1]
     passos = [k for k, l in enumerate(linhas) if l.startswith('(step ')]
-    nomes = [m.group(1) for l in linhas for m in [re.match(r'\((?:assume|step) (\S+) ', l)] if m]
+    posicao = {}
+    for k, l in enumerate(linhas):
+        m = re.match(r'\((?:assume|step) (\S+) ', l)
+        if m:
+            posicao.setdefault(m.group(1), k)
     saida = []
 
-    # um literal da conclusão trocado pela negação dele
+    def troca(tipo, k, novo, descricao):
+        saida.append((tipo, f'{descricao} no passo {nome(linhas[k])}', linhas[:k] + [novo] + linhas[k + 1:]))
+
+    def clausula_de(x):
+        """A cláusula de um passo, ou a de uma suposição, que vale como cláusula de um literal só."""
+        l = linhas[posicao[x]]
+        if l.startswith('(assume '):
+            return [l[l.index(' ', len('(assume ')) + 1:-1]]
+        return clausula(l)[2]
+
+    def premissas(l):
+        p = campo(l, 'premises')
+        return termos(l, p[0] + len(' :premises ('), p[1] - 1) if p else []
+
+    def ainda_segue(l):
+        """Se o passo estragado é uma resolução que ainda segue das premissas dela por propagação de unidades: o
+        Carcara a aceitaria com razão no modo RUP (e uma resolução que segue pelos pivôs segue por RUP também)."""
+        return (re.search(r':rule resolution\b', l) is not None
+                and segue_por_rup(clausula(l)[2], [clausula_de(x) for x in premissas(l)]))
+
+    # O sorteio de cada estrago se repete (até TENTATIVAS vezes) enquanto o estrago deixar o passo certo: aí
+    # aceitar não seria erro do verificador
+
+    # 1. um literal da conclusão trocado pela negação dele
     rng = random.Random(f'{id_}-literal')
-    candidatos = [k for k in passos if '(cl (' in linhas[k] or re.search(r'\(cl [^)]', linhas[k])]
-    if candidatos:
-        k = rng.choice(candidatos)
+    cand = [k for k in passos if clausula(linhas[k])[2]]
+    for _ in range(TENTATIVAS if cand else 0):
+        k = rng.choice(cand)
         l = linhas[k]
-        i = l.index('(cl ') + 4
-        f = fim_do_termo(l, i)
-        novo = l[:i] + '(not ' + l[i:f] + ')' + l[f:]
-        saida.append(('literal negado no passo ' + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
+        c0, c1, lits = clausula(l)
+        i = rng.randrange(len(lits))
+        lits[i] = f'(not {lits[i]})'
+        novo = l[:c0] + '(cl ' + ' '.join(lits) + ')' + l[c1:]
+        if not ainda_segue(novo):
+            troca('literal negado', k, novo, 'literal negado')
+            break
 
-    # uma premissa trocada por outro passo ou suposição
-    rng = random.Random(f'{id_}-premissa')
-    candidatos = [k for k in passos if ':premises (' in linhas[k]]
-    if candidatos:
-        k = rng.choice(candidatos)
+    # 2. um literal tirado da conclusão de uma resolução: a cláusula fica mais forte do que a resolução dá (fica de
+    # fora, por exemplo, tirar uma de duas cópias do mesmo literal, que deixa a mesma cláusula)
+    rng = random.Random(f'{id_}-resolvente')
+    cand = [k for k in passos if ':rule resolution' in linhas[k] and clausula(linhas[k])[2]]
+    for _ in range(TENTATIVAS if cand else 0):
+        k = rng.choice(cand)
         l = linhas[k]
-        i = l.index(':premises (') + len(':premises (')
-        f = l.index(')', i)
-        premissas = l[i:f].split()
-        alvo = rng.randrange(len(premissas))
-        outras = [n for n in nomes if n not in premissas and n != l.split()[1]]
-        if outras:
-            premissas[alvo] = rng.choice(outras)
-            tipo = 'premissa trocada no passo '
-        elif len(premissas) > 1:
-            # prova curta demais para trocar: a premissa sai
-            del premissas[alvo]
-            tipo = 'premissa tirada do passo '
-        else:
-            premissas = None
-        if premissas is not None:
-            novo = l[:i] + ' '.join(premissas) + l[f:]
-            saida.append((tipo + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
+        c0, c1, lits = clausula(l)
+        del lits[rng.randrange(len(lits))]
+        novo = l[:c0] + '(cl' + ''.join(' ' + x for x in lits) + ')' + l[c1:]
+        if not ainda_segue(novo):
+            troca('literal tirado de uma resolução', k, novo, 'literal tirado')
+            break
 
-    # a regra de um passo trocada pela regra false, que só prova (cl (not false)). Ficam de fora os passos
-    # que a regra nova também provaria (a própria (cl (not false))) e os que já usam false: trocar a regra
-    # de um passo que conclui (= t t) por refl, por exemplo, dava outra prova certa, e não um estrago
+    # 3. uma premissa trocada por um passo anterior visível no mesmo escopo (ou num escopo que o envolve). Ficam de
+    # fora os passos com a mesma cláusula da premissa trocada e as resoluções que ainda seguem
+    # 4. uma premissa trocada por um passo de dentro de uma subprova já fechada. Aqui não há filtro: mesmo que a
+    # cláusula feche a conta, usar um passo fora do escopo dele é erro
+    for tipo, visivel in [('premissa anterior trocada', True), ('premissa de subprova fechada', False)]:
+        rng = random.Random(f'{id_}-{tipo}')
+        cand = []
+        for k in passos:
+            atuais = premissas(linhas[k])
+            if not atuais:
+                continue
+            meu = escopo(nome(linhas[k]))
+            outros = []
+            for x, j in posicao.items():
+                if j >= k or x in atuais or x == nome(linhas[k]):
+                    continue
+                dentro = meu.startswith(escopo(x))
+                # uma subprova fechada: x está dentro dela, e o passo que a fecha já veio antes de k
+                fechada = (not dentro) and escopo(x) and posicao.get(escopo(x)[:-1], 10**9) < k
+                if (visivel and dentro) or (not visivel and fechada):
+                    outros.append(x)
+            if outros:
+                cand.append((k, atuais, sorted(outros)))
+        for _ in range(TENTATIVAS if cand else 0):
+            k, atuais, outros = rng.choice(cand)
+            l = linhas[k]
+            p = campo(l, 'premises')
+            novas = list(atuais)
+            i = rng.randrange(len(novas))
+            novas[i] = rng.choice(outros)
+            novo = l[:p[0]] + ' :premises (' + ' '.join(novas) + ')' + l[p[1]:]
+            # a mesma cláusula, sem ligar para a ordem dos literais nem para a dos lados das igualdades (regras como
+            # symm, trans e cong do Carcara não ligam para ela)
+            mesma = mesma_clausula(clausula_de(novas[i]), clausula_de(atuais[i]))
+            if visivel and (mesma or ainda_segue(novo)):
+                continue
+            troca(tipo, k, novo, tipo)
+            break
+
+    # 5. a regra de um passo trocada por false, sem premissas nem argumentos: só a conclusão pode ser o motivo da
+    # recusa. Ficam de fora os passos que false provaria (a própria (cl (not false)))
     rng = random.Random(f'{id_}-regra')
-    candidatos = [k for k in passos if '(cl (not false))' not in linhas[k] and ':rule false' not in linhas[k]]
-    if candidatos:
-        k = rng.choice(candidatos)
+    cand = [k for k in passos if '(cl (not false))' not in linhas[k] and ':rule false' not in linhas[k]]
+    if cand:
+        k = rng.choice(cand)
         l = linhas[k]
-        m = re.search(r':rule (\S+)', l)
-        regra = m.group(1).rstrip(')')
-        novo = l[:m.start(1)] + 'false' + l[m.start(1) + len(regra):]
-        saida.append((f'regra {regra} trocada por false no passo ' + l.split()[1], linhas[:k] + [novo] + linhas[k + 1:]))
+        regra = re.search(r':rule (\S+)', l).group(1).rstrip(')')
+        novo = l
+        for c in ('args', 'premises'):
+            p = campo(novo, c)
+            if p:
+                novo = novo[:p[0]] + novo[p[1]:]
+        novo = re.sub(r':rule \S+?(?=[ )])', ':rule false', novo, count=1)
+        troca('regra trocada por false', k, novo, f'regra {regra} trocada por false')
+
+    # 6. a conclusão de um rare_rewrite (= L R) trocada por (= L L): verdadeira, mas não é instância da regra.
+    # Ficam de fora os passos em que L e R só diferem pela ordem dos lados de igualdades (como no eq-symm): ali
+    # (= L L) é a própria instância a menos dessa ordem, e aceitar não seria erro (o rare_rewrite do Carcara compara
+    # a conclusão exatamente, mas os passos seguintes não ligam para essa ordem)
+    rng = random.Random(f'{id_}-rare')
+    cand = []
+    for k in passos:
+        l = linhas[k]
+        if ':rule rare_rewrite' not in l:
+            continue
+        c0, c1, lits = clausula(l)
+        if len(lits) == 1 and lits[0].startswith('(= '):
+            lados = termos(lits[0], 3, len(lits[0]) - 1)
+            if len(lados) == 2 and forma(lados[0]) != forma(lados[1]):
+                cand.append((k, lados))
+    if cand:
+        k, lados = rng.choice(cand)
+        l = linhas[k]
+        c0, c1, _ = clausula(l)
+        troca('rare_rewrite com outra conclusão', k, l[:c0] + f'(cl (= {lados[0]} {lados[0]}))' + l[c1:], 'conclusão do rare_rewrite trocada')
+
+    # 7. uma suposição trocada pela negação dela, que não está no problema
+    supos = [k for k, l in enumerate(linhas) if l.startswith('(assume ')]
+    if supos:
+        k = supos[0]
+        l = linhas[k]
+        i = l.index(' ', len('(assume ')) + 1
+        troca('suposição fora do problema', k, l[:i] + '(not ' + l[i:-1] + '))', 'suposição negada')
     return saida
+
+
+ANSI = re.compile(r'\x1b\[[0-9;]*m')
 
 
 def carcara(caminho, prova, problema, regras, extra=()):
@@ -129,21 +328,37 @@ def carcara(caminho, prova, problema, regras, extra=()):
     except subprocess.TimeoutExpired:
         return 'tempo esgotado', ''
     saida = r.stdout.strip().splitlines()
-    motivo = ' '.join(r.stderr.strip().split())[:400]
+    motivo = ' '.join(ANSI.sub('', r.stderr).split())[:400]
     return (saida[0].strip() if saida else 'erro'), motivo
 
 
 def conferir(caminho, prova, problema, regras):
-    """Primeiro pelos pivôs que o cvc5 dá em cada resolução; se não der 'valid', de novo conferindo a
-    resolução por propagação de unidades (RUP), que não depende dos pivôs. Os dois modos são corretos.
-    Devolve (veredito final, modo que valeu ou '', motivo da primeira recusa)."""
+    """Primeiro pelos pivôs que o cvc5 dá em cada resolução; se não der 'valid', de novo por RUP.
+    Devolve (veredito final, modo que valeu ou '', motivo da recusa pelos pivôs, motivo da recusa por RUP)."""
     v, motivo = carcara(caminho, prova, problema, regras)
     if v == 'valid':
-        return v, 'pivôs', ''
+        return v, 'pivôs', '', ''
     v2, motivo2 = carcara(caminho, prova, problema, regras, ('--rup-resolution',))
     if v2 == 'valid':
-        return v2, 'RUP', motivo
-    return v, '', motivo + (f' | com RUP: {v2} {motivo2}' if motivo2 else f' | com RUP: {v2}')
+        return v2, 'RUP', motivo, ''
+    return v, '', motivo, f'{v2} {motivo2}'.strip()
+
+
+def classe(motivo):
+    """De onde veio a recusa, pelo que o Carcara escreveu: da leitura (um passo citado fora do escopo dele, um tipo
+    errado, ou outro erro), da regra de um passo, ou da falta da cláusula vazia no fim."""
+    if 'parser error' in motivo:
+        if re.search(r"step id '[^']*' is not defined", motivo):
+            return 'leitura: passo fora do escopo'
+        if re.search(r'sort error|cannot be matched|is not a function sort', motivo):
+            return 'leitura: tipo'
+        return 'leitura'
+    m = re.search(r"checking failed on step '?[^ ']+'? with rule '?([a-z_0-9]+)", motivo)
+    if m:
+        return 'regra ' + m.group(1)
+    if 'does not conclude empty clause' in motivo:
+        return 'sem cláusula vazia'
+    return 'outro' if motivo else 'sem motivo'
 
 
 def anotacao(nivel, titulo, texto):
@@ -159,6 +374,7 @@ def main():
     ap.add_argument('--sem-carcara', action='store_true')
     ap.add_argument('--relatorio')
     args = ap.parse_args()
+    falhas = []
 
     if not args.sem_carcara:
         try:
@@ -168,73 +384,127 @@ def main():
             anotacao('error', 'Carcara', f'não deu para rodar {args.carcara}: {erro}')
             raise
 
+    if sha256(REGRAS_CONFIADAS) != REGRAS_CONFIADAS_SHA256:
+        falhas.append('regras.rare não é o arquivo de regras auditado: o SHA-256 não bate com o fixado no verificador')
     with open(os.path.join(PASTA, 'certificados.json'), encoding='utf-8') as f:
         registro = json.load(f)
-    regras = os.path.join(PASTA, registro['regrasRare']['arquivo'])
-    falhas = []
-    if sha256(regras) != registro['regrasRare']['sha256']:
-        falhas.append('regras.rare: SHA-256 diferente do registro')
+    if registro['regrasRare']['sha256'] != REGRAS_CONFIADAS_SHA256:
+        falhas.append('o registro de certificados aponta para outro arquivo de regras')
 
-    linhas_relatorio = ['| Exemplo | Carcara | Estragos recusados |', '| --- | --- | --- |']
-    total_estragos = recusados = validas = 0
-    for c in registro['certificados']:
-        problema = os.path.join(PASTA, c['problema']['arquivo'])
-        if sha256(problema) != c['problema']['sha256']:
-            falhas.append(f"{c['id']}: SHA-256 do problema diferente do registro")
-        if not c.get('prova'):
-            continue
-        prova = os.path.join(PASTA, c['prova']['arquivo'])
-        if sha256(prova) != c['prova']['sha256']:
-            falhas.append(f"{c['id']}: SHA-256 da prova diferente do registro")
-        with open(prova, encoding='utf-8') as f:
-            linhas = f.read().splitlines()
-        lista = estragos(c['id'], linhas)
-        total_estragos += len(lista)
-        if args.sem_carcara:
-            iguais = [t for t, l in lista if l == linhas]
-            if iguais or len(lista) != 3:
-                falhas.append(f"{c['id']}: estragos mal montados ({len(lista)}; iguais à prova: {len(iguais)})")
-            linhas_relatorio.append(f"| {c['id']} | (não rodado) | {len(lista)} montados |")
-            continue
-        veredito, modo, motivo = conferir(args.carcara, prova, problema, regras)
-        if veredito == 'valid':
-            validas += 1
-            if modo == 'RUP':
-                anotacao('notice', f"{c['id']} valid por RUP", f'pelos pivôs do cvc5: {motivo}')
-        else:
-            falhas.append(f"{c['id']}: o Carcara disse {veredito!r}" + (f' ({motivo})' if motivo else ''))
-            anotacao('error', f"{c['id']} {veredito}", motivo or '(sem motivo na saída de erro)')
-        recusados_aqui = []
-        with tempfile.TemporaryDirectory() as tmp:
-            for tipo, l in lista:
+    # O GitHub mostra no máximo 10 anotações de cada nível por etapa: os avisos são poucos e juntam várias linhas
+    provas_md = ['| Exemplo | Pelos pivôs | Por RUP |', '| --- | --- | --- |']
+    por_tipo = collections.OrderedDict()
+    validas = com_prova = pelos_pivos = por_rup = 0
+    so_um_modo = []
+    adv_notas = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for c in registro['certificados']:
+            problema = os.path.join(PASTA, c['problema']['arquivo'])
+            if sha256(problema) != c['problema']['sha256']:
+                falhas.append(f"{c['id']}: SHA-256 do problema diferente do registro")
+            if not c.get('prova'):
+                continue
+            com_prova += 1
+            prova = os.path.join(PASTA, c['prova']['arquivo'])
+            if sha256(prova) != c['prova']['sha256']:
+                falhas.append(f"{c['id']}: SHA-256 da prova diferente do registro")
+            with open(prova, encoding='utf-8') as f:
+                linhas = f.read().splitlines()
+            lista = estragos(c['id'], linhas)
+            for tipo, descricao, l in lista:
+                if l == linhas:
+                    falhas.append(f"{c['id']}: estrago igual à prova ({descricao})")
+                por_tipo.setdefault(tipo, {'montados': 0, 'recusados': 0, 'classes': collections.Counter()})['montados'] += 1
+            if args.sem_carcara:
+                continue
+            # a prova original pelos dois modos, cada um sozinho: só assim a recusa de um estrago por um modo diz algo
+            v_pivos, m_pivos = carcara(args.carcara, prova, problema, REGRAS_CONFIADAS)
+            v_rup, m_rup = carcara(args.carcara, prova, problema, REGRAS_CONFIADAS, ('--rup-resolution',))
+            pelos_pivos += v_pivos == 'valid'
+            por_rup += v_rup == 'valid'
+            if 'valid' in (v_pivos, v_rup):
+                validas += 1
+                if v_pivos != 'valid':
+                    so_um_modo.append(f"{c['id']} valid só por RUP; pelos pivôs do cvc5: {v_pivos} {m_pivos}")
+                if v_rup != 'valid':
+                    so_um_modo.append(f"{c['id']} valid só pelos pivôs; por RUP: {v_rup} {m_rup}")
+            else:
+                motivo = f'pelos pivôs: {v_pivos} {m_pivos} | por RUP: {v_rup} {m_rup}'
+                falhas.append(f"{c['id']}: o Carcara não deu 'valid' ({motivo})")
+                anotacao('error', f"{c['id']} {v_pivos}", motivo)
+            provas_md.append(f"| {c['id']} | {v_pivos} | {v_rup} |")
+            for tipo, descricao, l in lista:
                 arquivo = os.path.join(tmp, 'estrago.alethe')
                 with open(arquivo, 'w', encoding='utf-8', newline='\n') as f:
                     f.write('\n'.join(l) + '\n')
-                # o mesmo critério das provas: um estrago aceito por qualquer dos dois modos conta como aceito
-                v, _, _ = conferir(args.carcara, arquivo, problema, regras)
+                v, modo, e_pivos, e_rup = conferir(args.carcara, arquivo, problema, REGRAS_CONFIADAS)
                 if v == 'valid':
-                    falhas.append(f"{c['id']}: o Carcara aceitou um estrago ({tipo})")
-                    anotacao('error', f"{c['id']} estrago aceito", tipo)
+                    falhas.append(f"{c['id']}: o Carcara aceitou um estrago ({descricao}, {modo})")
+                    anotacao('error', f"{c['id']} estrago aceito", f'{descricao} ({modo})')
                 else:
-                    recusados_aqui.append(tipo)
-        recusados += len(recusados_aqui)
-        linhas_relatorio.append(f"| {c['id']} | {veredito}{' (RUP)' if modo == 'RUP' else ''} | {len(recusados_aqui)} de {len(lista)} |")
+                    # a classe vem do modo em que a prova original passa, preferindo RUP: pelos pivôs, Z34 para
+                    # sempre no mesmo passo (t423.t8), antes de chegar ao estrago
+                    por_tipo[tipo]['recusados'] += 1
+                    por_tipo[tipo]['classes'][classe(e_rup if v_rup == 'valid' else e_pivos)] += 1
 
-    com_prova = sum(1 for c in registro['certificados'] if c.get('prova'))
+        adv_md = ['| Caso | Pelos pivôs e por RUP | De onde veio a recusa |', '| --- | --- | --- |']
+        casos = sorted(glob.glob(os.path.join(PASTA, 'adversarios', '*.alethe')))
+        demonstracao = ''
+        for prova in casos:
+            caso = os.path.basename(prova)[:-len('.alethe')]
+            problema = prova[:-len('.alethe')] + '.smt2'
+            if args.sem_carcara:
+                adv_md.append(f'| {caso} | (não rodado) | |')
+                continue
+            v, modo, m_pivos, m_rup = conferir(args.carcara, prova, problema, REGRAS_CONFIADAS)
+            if v == 'valid':
+                falhas.append(f'{caso}: o Carcara aceitou uma prova falsa ({modo})')
+                anotacao('error', f'{caso} aceito', f'prova falsa aceita ({modo})')
+            else:
+                adv_notas.append(f'{caso}: recusado. Pelos pivôs: {v} {m_pivos} | por RUP: {m_rup}')
+            adv_md.append(f"| {caso} | {'ACEITA' if v == 'valid' else 'recusada'} | {classe(m_rup) if v != 'valid' else modo} |")
+            atacante = os.path.join(PASTA, 'adversarios', 'atacante.rare')
+            if caso == 'regra-fora-do-arquivo-confiado' and os.path.exists(atacante):
+                # só para mostrar o risco: com o arquivo de regras do atacante, a mesma prova falsa
+                va, modoa, _, _ = conferir(args.carcara, prova, problema, atacante)
+                demonstracao = (f'Com o arquivo de regras do próprio atacante (atacante.rare), a prova falsa de '
+                                f'{caso} deu {va!r}{f" ({modoa})" if modoa else ""}; com o arquivo do verificador, '
+                                f'{"recusada" if v != "valid" else "ACEITA"}.')
+
+    est_md = ['| Estrago | Montados | Recusados | De onde vieram as recusas |', '| --- | --- | --- | --- |']
+    total = recusados = 0
+    for tipo, x in por_tipo.items():
+        total += x['montados']
+        recusados += x['recusados']
+        x['texto'] = ', '.join(f'{k} ({n})' for k, n in x['classes'].most_common())
+        est_md.append(f"| {tipo} | {x['montados']} | {x['recusados'] if not args.sem_carcara else '—'} | {x['texto']} |")
+
+    if args.sem_carcara:
+        linha = f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários.'
+    else:
+        linha = (f'{validas} de {com_prova} provas deram "valid" ({pelos_pivos} pelos pivôs, {por_rup} por RUP); '
+                 f'{recusados} de {total} estragos e {sum(1 for x in adv_md[2:] if "recusada" in x)} de '
+                 f'{len(casos)} casos adversários foram recusados.')
     resumo = [
-        '## Provas Alethe da t1 conferidas pelo Carcara',
-        '',
-        (f'{validas} de {com_prova} provas deram "valid"; {recusados} de {total_estragos} estragos foram recusados.'
-         if not args.sem_carcara else f'Sem o Carcara: hashes conferidos e {total_estragos} estragos montados.'),
-        '',
-        *linhas_relatorio,
-        '',
-        *([f'**Falhas:** ' + '; '.join(falhas)] if falhas else ['Nenhuma falha.']),
+        '## Provas Alethe da t1 conferidas pelo Carcara', '', linha, '',
+        '### Provas', '', *provas_md, '',
+        '### Estragos', '', *est_md, '',
+        '### Casos adversários', '', *adv_md, '',
+        *([demonstracao, ''] if demonstracao else []),
+        f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
     print(texto)
     if not args.sem_carcara:
-        anotacao('notice', 'Resultado', resumo[2] + ' ' + ('Nenhuma falha.' if not falhas else f'{len(falhas)} falhas.'))
+        anotacao('notice', 'Provas', f'{validas} de {com_prova} deram "valid": {pelos_pivos} pelos pivôs, '
+                 f'{por_rup} por RUP.' + ''.join('\n' + x for x in so_um_modo))
+        anotacao('notice', 'Estragos', f'{recusados} de {total} recusados.' + ''.join(
+            f"\n{tipo}: {x['recusados']} de {x['montados']} recusados; {x['texto']}" for tipo, x in por_tipo.items()))
+        anotacao('notice', 'Casos adversários', '\n'.join(adv_notas) or 'nenhum recusado')
+        if demonstracao:
+            anotacao('notice', 'Arquivo do atacante', demonstracao)
+        anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
+                                                         f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:
         if destino:
             with open(destino, 'a', encoding='utf-8') as f:

@@ -1,0 +1,5 @@
+(assume a0 (not p))
+(step t0 (cl (= p true)) :rule rare_rewrite :args ("p-e-verdade" p))
+(step t1 (cl (not (= p true)) p (not true)) :rule equiv_pos1)
+(step t2 (cl true) :rule true)
+(step t3 (cl) :rule resolution :premises (t1 t0 t2 a0))

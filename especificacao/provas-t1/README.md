@@ -164,6 +164,18 @@ implementação independente da pasta `independente/` (o leitor da m2 e a
 tradução t1 que o GPT escreveu só pela especificação), e o compara com o
 problema do certificado.
 
+Antes de comparar, cada problema tem de estar no perfil da t1: só os comandos,
+as sortes e os operadores embutidos que a tradução emite, só nomes declarados no
+padrão da seção 3 (`c:`, `n:`, `f:`, `fn:`, `p:`, `R:`, `pertence`, `w0`), e
+nenhuma variável ligada que esconda outro símbolo. Sem isso, a comparação seria
+enganada: o GPT mostrou, na rodada 28, dois pares de problemas de sentido
+diferente que a versão anterior dava como iguais, porque declaravam funções
+chamadas `and` e `-` e o comparador as tratava como a conjunção e a negação. Os
+dois pares ficam em `adversarios/comparador/`, e o verificador exige que sejam
+recusados. No uso real não havia brecha (a tradução refeita nunca declara esses
+nomes, e as declarações sairiam diferentes), mas a comparação tem de valer por
+si.
+
 A comparação é estrutural e ignora só o que não muda o sentido: comentários,
 `(set-logic)` e `(check-sat)`, as barras em volta dos símbolos, os nomes das
 variáveis ligadas, os `let`, a forma de escrever um número (`2` e `2.0`), `and`
@@ -181,6 +193,7 @@ O vínculo também é atacado:
 | A fórmula com um operador trocado pelo dual (□ e ◇, ∀ e ∃, ∧ e ∨), ou negada, se não houver nenhum deles | Recusada, nos 42 certificados |
 | As fórmulas de outro exemplo, com o problema e a prova deste | Recusadas, nos 42 × 41 pares |
 | `adversarios/vinculo-trocado.json`: as fórmulas P(a) e ¬□P(a), que têm modelo, com o problema e a prova verdadeira de Z09, que são de P(a) e ¬◇P(a) | A prova passa no Carcara, e o vínculo recusa |
+| `adversarios/comparador/`: os dois pares do GPT, com funções declaradas chamadas `and` e `-` | O comparador recusa os dois |
 
 Um achado da comparação: a especificação diz que o sufixo `[:sig]` aparece
 quando os argumentos misturam números e objetos, e é assim que a implementação

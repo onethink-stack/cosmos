@@ -2,6 +2,10 @@
 independente da t1 (a pasta independente/, escrita pelo GPT só pela especificação), e o compara com o problema do
 certificado. Um hash não faz isso: quem emite o certificado calcula os hashes que quiser.
 
+Antes de comparar, cada problema tem de estar no perfil da t1: só os comandos, as sortes e os operadores embutidos que a
+tradução emite, e só nomes declarados no padrão da seção 3 (c:, n:, f:, fn:, p:, R:, pertence, w0). Assim ninguém
+declara uma função chamada and ou -, e as normalizações abaixo só valem para os operadores de verdade.
+
 A comparação é estrutural e ignora só o que não muda o sentido: comentários, (set-logic) e (check-sat), as barras em
 volta dos símbolos, os nomes das variáveis ligadas, os let, a forma de escrever um número, and/or aninhados, a ordem das
 declarações e das asserções, e as declarações que nenhuma asserção usa. Cada símbolo declarado entra pelo nome-base e
@@ -51,6 +55,76 @@ def refazer(fichas, formulas):
         sys.path.insert(0, INDEPENDENTE)
     from tradutor_t1_independente import Translator
     return Translator(fichas).translate(formulas)
+
+
+# ---- o perfil da t1: o que a tradução emite, e nada mais. Um problema fora dele é recusado antes da comparação, para
+# que as normalizações (achatar and/or, ler (- n) e (/ n m) como números) só valham para os operadores embutidos: uma
+# função declarada com o nome and, ou -, não é associativa nem é a negação (achado do GPT na rodada 28)
+
+COMANDOS = {'set-logic', 'declare-sort', 'declare-fun', 'declare-const', 'assert', 'check-sat'}
+SORTES_DECLARADAS = {'Obj', 'Mundo'}
+SORTES = SORTES_DECLARADAS | {'Bool', 'Real'}
+EMBUTIDOS = {'true', 'false', 'not', 'and', 'or', '=>', '=', '+', '-', '*', '/', '^', '<', '<=', '>', '>=', 'is_int'}
+LIGADORES = {'forall', 'exists', 'let'}
+# os nomes que a t1 declara (seção 3 de traducao-z3-t1.md): w0, pertence, c:, n:, f:, fn:, p: e R:
+NOME_DECLARADO = re.compile(r'w0|pertence|(?:c|n):[^\s|]+|(?:f|fn|p):[^\s|/]+/\d+(?::[RO]+)?|R:[^\s|]+')
+
+
+def conferir_perfil(comandos):
+    """Recusa (ValueError) um problema fora do perfil da t1."""
+    declarados = set()
+    for cmd in comandos:
+        if not cmd or not isinstance(cmd[0], tuple) or cmd[0][1] not in COMANDOS:
+            raise ValueError(f'comando fora do perfil da t1: {cmd[:1]}')
+        nome = cmd[0][1]
+        if nome == 'set-logic' and cmd[1:] != [('sim', 'ALL')]:
+            raise ValueError('a t1 usa (set-logic ALL)')
+        if nome == 'declare-sort' and (len(cmd) != 3 or cmd[1][1] not in SORTES_DECLARADAS or numero(cmd[2]) != 0):
+            raise ValueError(f'sorte fora do perfil da t1: {cmd[1:]}')
+        if nome in ('declare-fun', 'declare-const'):
+            simbolo = cmd[1][1]
+            sortes = [s[1] for s in cmd[2]] + [cmd[3][1]] if nome == 'declare-fun' else [cmd[2][1]]
+            if not NOME_DECLARADO.fullmatch(simbolo):
+                raise ValueError(f'nome declarado fora do perfil da t1: {simbolo}')
+            if simbolo in declarados:
+                raise ValueError(f'{simbolo} declarado duas vezes')
+            if any(s not in SORTES for s in sortes):
+                raise ValueError(f'{simbolo} com sorte fora do perfil da t1: {sortes}')
+            declarados.add(simbolo)
+
+    def termo(e, presos):
+        if isinstance(e, tuple):
+            if e[0] == 'sim' and e[1] not in presos and e[1] not in declarados and e[1] not in EMBUTIDOS:
+                raise ValueError(f'símbolo fora do perfil da t1: {e[1]}')
+            return
+        if not e:
+            raise ValueError('aplicação vazia')
+        cabeca = e[0][1] if isinstance(e[0], tuple) else None
+        if cabeca in LIGADORES:
+            if len(e) != 3 or not isinstance(e[1], list):
+                raise ValueError(f'{cabeca} mal formado')
+            nomes = set()
+            for par in e[1]:
+                if not (isinstance(par, list) and len(par) == 2 and isinstance(par[0], tuple)):
+                    raise ValueError(f'{cabeca} mal formado')
+                n = par[0][1]
+                if n in EMBUTIDOS or n in LIGADORES or n in declarados:
+                    raise ValueError(f'{cabeca} liga um nome que esconde outro símbolo: {n}')
+                if cabeca == 'let':
+                    termo(par[1], presos)  # o termo de um let vê só os nomes de fora
+                elif par[1] not in [('sim', s) for s in SORTES]:
+                    raise ValueError(f'variável ligada com sorte fora do perfil da t1: {par[1]}')
+                nomes.add(n)
+            termo(e[2], presos | nomes)
+            return
+        for x in e:
+            termo(x, presos)
+
+    for cmd in comandos:
+        if cmd[0][1] == 'assert':
+            if len(cmd) != 2:
+                raise ValueError('assert mal formado')
+            termo(cmd[1], set())
 
 
 # ---- leitura e forma normal de um problema SMT-LIB
@@ -169,12 +243,15 @@ def normal(e, ligadas, contador, canon):
 
 @functools.lru_cache(maxsize=None)
 def forma(texto):
-    """(declarações usadas, asserções) de um problema, comparáveis sem ligar para a ordem."""
+    """(declarações usadas, asserções) de um problema, comparáveis sem ligar para a ordem. Recusa (ValueError) um
+    problema fora do perfil da t1."""
     decl = {}
     corpos = []
-    for cmd in ler(texto):
+    comandos = ler(texto)
+    conferir_perfil(comandos)
+    for cmd in comandos:
         nome = cmd[0][1]
-        if nome in ('set-logic', 'check-sat', 'set-option', 'get-model', 'exit', 'declare-sort'):
+        if nome in ('set-logic', 'check-sat', 'declare-sort'):
             continue
         if nome == 'declare-const':
             decl[cmd[1][1]] = ((), cmd[2][1])

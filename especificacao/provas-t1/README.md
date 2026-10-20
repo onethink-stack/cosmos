@@ -1,18 +1,20 @@
-# Certificados dos exemplos da t1 — versão c1
+# Certificados dos exemplos da t1 — versão c2
 
 Esta pasta guarda, para os 42 exemplos normativos da tradução t1
-(`../traducao-z3-t1-exemplos.json`), o problema exato que o Caderno manda ao Z3
-e, para os unsat, uma prova passo a passo no formato Alethe, que outro programa
-confere sem confiar em nenhum solucionador.
+(`../traducao-z3-t1-exemplos.json`), o problema exato que o Caderno manda ao Z3;
+para os unsat, uma prova passo a passo no formato Alethe; e para os sat sem
+números, um modelo finito. Outros programas conferem as provas e os modelos sem
+confiar em nenhum solucionador e sem fazer busca.
 
 | Arquivo | O que é |
 | --- | --- |
 | `problemas/Zxx.smt2` | O problema em SMT-LIB 2: as declarações e as asserções que a tradução t1 produz (a função `problemaSmt` de `src/motor/z3.ts`), com as fórmulas do exemplo num comentário no topo |
 | `provas/Zxx.alethe` | A prova Alethe do cvc5 para esse problema, só os comandos (a linha `unsat` e os parênteses de fora foram tirados) |
 | `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas do Carcara (com uma única mudança de escrita, anotada no topo do arquivo) |
-| `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256 |
+| `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256, e o modelo dos sat sem números |
 | `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
 | `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
+| `modelos.py` | A parte do verificador que confere os modelos dos sat com a conferência independente |
 | `independente/` | A implementação independente da t1 (leitor da m2 e tradução), escrita pelo GPT só pela especificação, sem mudança nenhuma |
 | `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
 
@@ -68,7 +70,8 @@ independente.
 | unsat | 28 | Prova Alethe |
 | unsat | Z36 (potência à direita) | **Nenhum.** A tradução usa a potência real do Z3 (`^`), que o Alethe não tem |
 | unsat | Z40 (divisão por zero) | **Nenhum.** O cvc5 resolve com um símbolo interno (`div_by_zero`) que o Alethe não escreve |
-| sat | 10 | O de um sat é um modelo, não uma prova |
+| sat | Z02, Z03, Z04, Z14, Z15 (sem números) | Modelo finito, do motor do Caderno, no formato do lote cego Z3 2 |
+| sat | Z07, Z08, Z33, Z35, Z39 (com números) | **Nenhum ainda.** O modelo não é finito (em Z33, n · n = 2 pede n = √2), e falta um formato de testemunha numérica |
 | unknown | Z19, Z22 | Nenhum. O cvc5 com `--finite-model-find` dá sat nos dois |
 
 Z36 e Z40 são unsat pela palavra dos solucionadores (o Z3 e o cvc5 concordam),
@@ -187,6 +190,24 @@ função numérica são objetos. As duas também chamam as constantes numéricas
 jeitos diferentes (`n:n` no Caderno, `c:n` na outra). Como os nomes são
 informativos, nada disso muda o sentido.
 
+### Os modelos dos sat
+
+O certificado de um sat é um modelo: os objetos, os mundos, as tabelas completas
+das funções, os predicados verdadeiros, o pertence e os acessos de cada titular
+(o formato está em `src/motor/certificadoModelo.ts`). Quem confere não faz busca
+nenhuma: checa a forma, as tabelas, o quadro KD45 de cada titular e se cada
+fórmula vale no mundo real.
+
+Os modelos saem do motor finito do Caderno e são conferidos por duas
+implementações: a do Caderno, em `testes/provas-t1.test.ts`, e a independente
+(`independente/verificar_certificados_sem_z3.py`), em `modelos.py`. As duas
+conferências também são atacadas: cada modelo tem de ser recusado com a primeira
+fórmula negada, porque o modelo de F não satisfaz ¬F; e o verificador
+independente também tem de recusar uma tabela de função sem uma linha e um
+quadro de crença sem os acessos do mundo real. O modelo de um exemplo com as
+fórmulas de outro não serve de ataque, porque um modelo pode valer para os
+dois: o de Z04 vale para Z14.
+
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).
 
@@ -247,5 +268,5 @@ desenvolvimento.
   nenhuma foi provada correta: um erro que as duas cometam do mesmo jeito passa.
 - O Carcara também é um programa, e as regras RARE entram nele como axiomas.
 - Z36 e Z40 ficam sem certificado.
-- Os 10 exemplos sat ainda não guardam o modelo no registro, e falta perceber
+- Os 5 exemplos sat com números ainda não têm certificado, e falta perceber
   quando as premissas, sozinhas, já são contraditórias.

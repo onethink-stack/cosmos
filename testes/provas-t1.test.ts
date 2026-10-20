@@ -1,10 +1,13 @@
 // Os certificados dos exemplos da t1 (especificacao/provas-t1): cada problema publicado é exatamente o
 // texto que a tradução t1 manda ao Z3, e os SHA-256 do registro conferem com os arquivos. Assim uma prova
-// fica presa à tradução: se a tradução mudar, este teste falha e as provas têm de ser refeitas.
-// (A conferência das provas em si é a do Carcara, no fluxo conferir-provas do GitHub.)
+// fica presa à tradução: se a tradução mudar, este teste falha e as provas têm de ser refeitas. Os modelos dos
+// sat sem números passam pela conferência do Caderno, sem busca.
+// (A conferência das provas em si é a do Carcara, e a dos modelos e do vínculo também é feita pela implementação
+// independente, no fluxo conferir-provas do GitHub.)
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { init, killThreads } from 'z3-solver'
 import type { EntradaDicionario } from '../src/dados/tipos'
+import { falhasDoCertificado, type CertificadoDeModelo } from '../src/motor/certificadoModelo'
 import { analisar, nomesNumericos } from '../src/motor/motor'
 import { problemaSmt, VERSAO_TRADUCAO_Z3 } from '../src/motor/z3'
 import textoExemplos from '../especificacao/traducao-z3-t1-exemplos.json?raw'
@@ -26,8 +29,10 @@ interface Certificado {
   problema: { arquivo: string; sha256: string }
   prova: { arquivo: string; sha256: string } | null
   semCertificado?: { cvc5: string }
+  modelo?: CertificadoDeModelo
 }
-const EXEMPLOS: { z3: string; exemplos: { id: string; formulas: string[]; z3: string }[] } = JSON.parse(textoExemplos)
+const EXEMPLOS: { z3: string; exemplos: { id: string; formulas: string[]; z3: string; motorFinito: { status: string } | null }[] } =
+  JSON.parse(textoExemplos)
 const REGISTRO: { traducao: string; regrasRare: { arquivo: string; sha256: string; regras: string[] }; certificados: Certificado[] } =
   JSON.parse(textoRegistro)
 
@@ -70,6 +75,23 @@ describe('certificados da t1: o problema provado é o da tradução', { timeout:
     for (const c of REGISTRO.certificados) {
       expect(await sha256(arquivo(c.problema.arquivo)), c.id).toBe(c.problema.sha256)
       if (c.prova) expect(await sha256(arquivo(c.prova.arquivo)), c.id).toBe(c.prova.sha256)
+    }
+  })
+
+  it('cada sat sem números traz um modelo, que a conferência do Caderno aceita sem busca; com a primeira fórmula negada, recusa', () => {
+    for (const [i, c] of REGISTRO.certificados.entries()) {
+      const e = EXEMPLOS.exemplos[i]
+      if (e.z3 !== 'sat' || e.motorFinito === null) {
+        expect(c.modelo, c.id).toBeUndefined()
+        continue
+      }
+      expect(c.modelo, c.id).toBeDefined()
+      const dic: EntradaDicionario[] = c.fichas.map((x) => ({ id: x.simbolo, termo: x.simbolo, definicao: '', ...x }))
+      const expandidas = analisar(c.formulas, dic, true).map((x) => x.expandida)
+      expect(falhasDoCertificado(c.modelo, expandidas), c.id).toEqual([])
+      const [primeira, ...resto] = expandidas
+      const negada = [{ k: 'not' as const, f: primeira, pos: 0, end: 0 }, ...resto]
+      expect(falhasDoCertificado(c.modelo, negada), c.id).toContain('a fórmula 1 é falsa no mundo 0')
     }
   })
 

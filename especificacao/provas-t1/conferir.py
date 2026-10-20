@@ -34,9 +34,12 @@ O que é do verificador e o que é do certificado:
    cada certificado com um operador trocado na fórmula, e com as fórmulas de cada um dos outros exemplos, tem de
    ser recusado; e o caso adversarios/vinculo-trocado.json, com a prova verdadeira de Z09 e fórmulas que têm modelo,
    tem de passar no Carcara e ser recusado pelo vínculo.
+6. Confere os modelos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem de
+   ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
+   sem os acessos do mundo real.
 
 Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
-bater, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem
+bater, se um modelo for recusado ou um modelo estragado aceito, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem
 rodar o Carcara. Só usa a biblioteca padrão e o código da pasta independente/.
 """
 import argparse
@@ -53,6 +56,7 @@ import tempfile
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PASTA)
+import modelos  # noqa: E402
 import vinculo  # noqa: E402
 
 OPCOES = ['--allow-int-real-subtyping', '--expand-let-bindings']
@@ -543,6 +547,13 @@ def main():
         prova_troca = f'{v} ({modo})' if modo else v
         if v != 'valid':
             falhas.append(f'vinculo-trocado: a prova que o ataque usa deveria passar no Carcara, e deu {v!r}')
+    # os modelos dos sat, pela conferência independente
+    mod = modelos.conferir(registro['certificados'])
+    falhas += mod['falhas']
+    mod_md = ['| O quê | Resultado |', '| --- | --- |',
+              f"| Modelos dos sat sem números | {mod['aceitos']} de {mod['modelos']} aceitos |",
+              f"| Modelos estragados (fórmula negada, tabela sem uma linha, quadro sem os acessos do mundo real) | "
+              f"{mod['estragos_recusados']} de {mod['estragos']} recusados |"]
     invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
     pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
     resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
@@ -565,7 +576,8 @@ def main():
     alteradas = vin['trocados'] + vin['pares']
     alteradas_recusadas = vin['trocados_recusados'] + vin['pares_recusados']
     linha_vinculo = (f"O vínculo bateu em {vin['iguais']} de {vin['total']} certificados e recusou {alteradas_recusadas} "
-                     f"de {alteradas} fórmulas alteradas.")
+                     f"de {alteradas} fórmulas alteradas. {mod['aceitos']} de {mod['modelos']} modelos aceitos e "
+                     f"{mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados.")
     if args.sem_carcara:
         linha = (f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários. '
                  + linha_vinculo)
@@ -582,6 +594,9 @@ def main():
         '### Vínculo da fórmula com o problema', '',
         'Pela implementação independente da t1 (independente/, escrita pelo GPT só pela especificação).', '',
         *vin_md, '',
+        '### Modelos dos sat', '',
+        'Pela conferência independente (independente/verificar_certificados_sem_z3.py), sem busca.', '',
+        *mod_md, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
@@ -598,6 +613,8 @@ def main():
                  f"independente iguais ao do certificado.\nFórmula com um operador trocado: {vin['trocados_recusados']} "
                  f"de {vin['trocados']} recusadas{invalidos}.\nFórmulas de outro exemplo: {vin['pares_recusados']} de "
                  f"{vin['pares']} pares recusados{pares_iguais}.\nCaso □/◇: {resultado_troca}.")
+        anotacao('notice', 'Modelos', f"{mod['aceitos']} de {mod['modelos']} modelos dos sat aceitos pela conferência "
+                 f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados.")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

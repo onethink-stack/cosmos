@@ -10,7 +10,7 @@ histórico do Git diz quem fez o quê.
 | --- | --- | --- |
 | O código: tudo o que não está nas linhas abaixo | GNU Affero General Public License, versão 3 ou posterior (AGPL-3.0-or-later) | [LICENSE](LICENSE) |
 | A pasta `especificacao/` (especificações, exemplos normativos e certificados), menos as exceções abaixo, e os textos `.md` | Creative Commons Atribuição 4.0 Internacional (CC BY 4.0) | [LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt) |
-| `especificacao/provas-t1/conferir.py` e `especificacao/provas-t1/vinculo.py` | AGPL-3.0-or-later (é código) | [LICENSE](LICENSE) |
+| `especificacao/provas-t1/conferir.py`, `vinculo.py` e `modelos.py` | AGPL-3.0-or-later (é código) | [LICENSE](LICENSE) |
 | `especificacao/provas-t1/independente/` (o código que o GPT, da OpenAI, escreveu a pedido do autor, só pela especificação; veja o README da pasta) | AGPL-3.0-or-later (é código) | [LICENSE](LICENSE) |
 | `especificacao/provas-t1/regras.rare` | Apache-2.0 (vem do Carcara) | [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) |
 | Axiomas e teorias publicados neste repositório | CC BY 4.0 | [LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt) |

@@ -1,6 +1,6 @@
 {
- "versao": "c1",
- "descricao": "Certificados dos exemplos normativos da tradução t1: para cada unsat, o problema exato que a tradução manda ao Z3 e uma prova Alethe do cvc5 para esse problema.",
+ "versao": "c2",
+ "descricao": "Certificados dos exemplos normativos da tradução t1: para cada unsat, o problema exato que a tradução manda ao Z3 e uma prova Alethe do cvc5 para esse problema; para cada sat sem números, um modelo finito que se confere sem busca.",
  "traducao": "t1",
  "exemplos": "traducao-z3-t1-exemplos.json",
  "regrasRare": {
@@ -81,7 +81,50 @@
     "sha256": "bc74331642a85e0630ed8b62d808b4014e32f74c70b3a6cc5b1299ca8dc133dd"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat: o certificado é o modelo, que se confere sem busca",
+   "modelo": {
+    "objetos": 2,
+    "mundos": 2,
+    "constantes": {
+     "a": 0,
+     "b": 1
+    },
+    "funcoes": {
+     "mae/1": [
+      [
+       0,
+       [
+        0
+       ],
+       1
+      ],
+      [
+       0,
+       [
+        1
+       ],
+       0
+      ],
+      [
+       1,
+       [
+        0
+       ],
+       0
+      ],
+      [
+       1,
+       [
+        1
+       ],
+       0
+      ]
+     ]
+    },
+    "predicados": {},
+    "pertence": [],
+    "acessos": {}
+   }
   },
   {
    "id": "Z03",
@@ -105,7 +148,25 @@
     "sha256": "6e12efddf7a8d3212ae2d035f198e959f739c0979ff326095ce34fbeee20ae7e"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat: o certificado é o modelo, que se confere sem busca",
+   "modelo": {
+    "objetos": 1,
+    "mundos": 2,
+    "constantes": {
+     "A": 0,
+     "a": 0
+    },
+    "funcoes": {},
+    "predicados": {},
+    "pertence": [
+     [
+      0,
+      0,
+      0
+     ]
+    ],
+    "acessos": {}
+   }
   },
   {
    "id": "Z04",
@@ -129,7 +190,27 @@
     "sha256": "299bd1472d19c1d91edd5d4c44afcaa1230735a2cd98b09c8db1c5bb5ddd4734"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat: o certificado é o modelo, que se confere sem busca",
+   "modelo": {
+    "objetos": 1,
+    "mundos": 2,
+    "constantes": {
+     "a": 0
+    },
+    "funcoes": {},
+    "predicados": {
+     "P/1": [
+      [
+       0,
+       [
+        0
+       ]
+      ]
+     ]
+    },
+    "pertence": [],
+    "acessos": {}
+   }
   },
   {
    "id": "Z05",
@@ -325,7 +406,7 @@
     "sha256": "1b77c6452b71456ba06c538f30f8af571187e8da1db0e5a442dc5631fa8adc8d"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
   },
   {
    "id": "Z08",
@@ -385,7 +466,7 @@
     "sha256": "c07f1e432b25b38f21848c8d4485ab798694861850a48333ce161d903d136b6b"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
   },
   {
    "id": "Z09",
@@ -563,7 +644,27 @@
     "sha256": "c14b0b273c7e2ec36ce41fbb9c57872401d9e5713a02dc620362121d8c2ab495"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat: o certificado é o modelo, que se confere sem busca",
+   "modelo": {
+    "objetos": 1,
+    "mundos": 2,
+    "constantes": {
+     "a": 0
+    },
+    "funcoes": {},
+    "predicados": {
+     "P/1": [
+      [
+       0,
+       [
+        0
+       ]
+      ]
+     ]
+    },
+    "pertence": [],
+    "acessos": {}
+   }
   },
   {
    "id": "Z15",
@@ -587,7 +688,38 @@
     "sha256": "4342b4cb283559d5ad59af2d476676b212ebc035c1c8bbf6087c30bf7e04a01b"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat: o certificado é o modelo, que se confere sem busca",
+   "modelo": {
+    "objetos": 1,
+    "mundos": 2,
+    "constantes": {
+     "a": 0
+    },
+    "funcoes": {},
+    "predicados": {
+     "P/1": [
+      [
+       1,
+       [
+        0
+       ]
+      ]
+     ]
+    },
+    "pertence": [],
+    "acessos": {
+     "Ana": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ]
+    }
+   }
   },
   {
    "id": "Z16",
@@ -1211,7 +1343,7 @@
     "sha256": "15f1e8980f17cc6351b68154c444f7cf08191a0d8a36803579b21b407a1dfa25"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
   },
   {
    "id": "Z34",
@@ -1263,7 +1395,7 @@
     "sha256": "287fada826400e9c366b541e0eeb660227dd98a48f979b72fa66ae931444effa"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
   },
   {
    "id": "Z36",
@@ -1405,7 +1537,7 @@
     "sha256": "0b84a5ecc72d6aa1d5176817f17751fc59bd88265a10bea7215091f5e07e50d5"
    },
    "prova": null,
-   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
   },
   {
    "id": "Z40",

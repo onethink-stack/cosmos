@@ -66,7 +66,10 @@ roda `conferir.py`, que
 - confere o SHA-256 de cada arquivo com o registro;
 - roda, para cada prova,
   `carcara check --allow-int-real-subtyping --expand-let-bindings --rare-file regras.rare provas/Zxx.alethe problemas/Zxx.smt2`
-  e exige `valid`;
+  e exige `valid`. A resolução é conferida primeiro pelos pivôs que o cvc5 dá
+  em cada passo; se não der `valid`, de novo com `--rup-resolution`, que
+  confere cada resolução por propagação de unidades, sem depender dos pivôs. Os
+  dois modos são corretos, e o relatório diz qual valeu para cada prova;
 - faz três estragos em cada prova (um literal negado, uma premissa trocada ou
   tirada, e a regra de um passo trocada pela regra `false`), e o Carcara tem de
   recusar os três.
@@ -84,6 +87,13 @@ estragos, 83 foram recusados. O aceito não era estrago: a regra `bind` de um
 passo que conclui `(= t t)` tinha sido trocada por `refl`, que também prova
 isso, e a prova continuava certa. Desde então a regra de um passo é trocada
 por `false`, que só prova `(cl (not false))`, e esses passos ficam de fora.
+
+**A segunda rodada**, já com o commit `20bf49c`, deu `valid` em 27 das 28
+provas, e os 84 estragos foram recusados. Z34 (raiz de 2 nos inteiros) foi
+recusada num passo de resolução (`t423.t8`): o pivô que o cvc5 indica, um
+literal com um termo `choice` que ele criou para um quantificador, não foi
+achado na cláusula da premissa. Daí o segundo modo, por propagação de unidades,
+que não depende dos pivôs.
 
 ## As regras RARE
 

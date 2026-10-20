@@ -27,7 +27,7 @@ jobs:
         run: rustup toolchain install stable --profile minimal && rustup default stable && rustc --version
       - name: m4, que a GMP do Carcara precisa para compilar
         run: sudo apt-get update && sudo apt-get install -y m4
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         id: cache
         with:
           path: ~/.cargo/bin/carcara
@@ -35,5 +35,11 @@ jobs:
       - name: Compilar o Carcara
         if: steps.cache.outputs.cache-hit != 'true'
         run: cargo install --locked --git https://github.com/ufmg-smite/carcara.git --rev "$CARCARA_COMMIT" carcara
+      # guardado logo depois de compilar: fica guardado mesmo que a conferência falhe
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/.cargo/bin/carcara
+          key: carcara-${{ env.CARCARA_COMMIT }}-${{ runner.os }}
       - name: Conferir as provas e os estragos
         run: python3 especificacao/provas-t1/conferir.py --carcara ~/.cargo/bin/carcara

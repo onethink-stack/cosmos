@@ -6,7 +6,9 @@ Uso: python3 conferir.py [--carcara CAMINHO] [--sem-carcara] [--relatorio ARQUIV
 1. Confere o SHA-256 de cada problema, de cada prova e do arquivo de regras com certificados.json.
 2. Roda, para cada prova,
        carcara check --allow-int-real-subtyping --expand-let-bindings --rare-file regras.rare PROVA PROBLEMA
-   e exige a saída "valid" (nem "holey" nem "invalid").
+   e exige a saída "valid" (nem "holey" nem "invalid"). A resolução é conferida primeiro pelos pivôs que
+   o cvc5 dá; se não der "valid", de novo com --rup-resolution, que confere cada resolução por propagação
+   de unidades, sem depender dos pivôs. Os dois modos são corretos, e o relatório diz qual valeu.
 3. Faz, em cada prova, três estragos, um de cada vez, que o Carcara tem de recusar: um literal da
    conclusão de um passo trocado pela negação dele, uma premissa de um passo trocada por outra e a
    regra de um passo trocada por outra. O sorteio tem semente fixa: os estragos são sempre os mesmos.
@@ -119,16 +121,29 @@ def estragos(id_, linhas):
     return saida
 
 
-def carcara(caminho, prova, problema, regras):
+def carcara(caminho, prova, problema, regras, extra=()):
     """O veredito do Carcara ('valid', 'holey', 'invalid' ou 'erro') e o motivo que ele deu, se deu."""
     try:
-        r = subprocess.run([caminho, 'check', *OPCOES, '--rare-file', regras, prova, problema],
+        r = subprocess.run([caminho, '--no-color', 'check', *OPCOES, *extra, '--rare-file', regras, prova, problema],
                            capture_output=True, text=True, timeout=600)
     except subprocess.TimeoutExpired:
         return 'tempo esgotado', ''
     saida = r.stdout.strip().splitlines()
     motivo = ' '.join(r.stderr.strip().split())[:400]
     return (saida[0].strip() if saida else 'erro'), motivo
+
+
+def conferir(caminho, prova, problema, regras):
+    """Primeiro pelos pivôs que o cvc5 dá em cada resolução; se não der 'valid', de novo conferindo a
+    resolução por propagação de unidades (RUP), que não depende dos pivôs. Os dois modos são corretos.
+    Devolve (veredito final, modo que valeu ou '', motivo da primeira recusa)."""
+    v, motivo = carcara(caminho, prova, problema, regras)
+    if v == 'valid':
+        return v, 'pivôs', ''
+    v2, motivo2 = carcara(caminho, prova, problema, regras, ('--rup-resolution',))
+    if v2 == 'valid':
+        return v2, 'RUP', motivo
+    return v, '', motivo + (f' | com RUP: {v2} {motivo2}' if motivo2 else f' | com RUP: {v2}')
 
 
 def anotacao(nivel, titulo, texto):
@@ -181,9 +196,11 @@ def main():
                 falhas.append(f"{c['id']}: estragos mal montados ({len(lista)}; iguais à prova: {len(iguais)})")
             linhas_relatorio.append(f"| {c['id']} | (não rodado) | {len(lista)} montados |")
             continue
-        veredito, motivo = carcara(args.carcara, prova, problema, regras)
+        veredito, modo, motivo = conferir(args.carcara, prova, problema, regras)
         if veredito == 'valid':
             validas += 1
+            if modo == 'RUP':
+                anotacao('notice', f"{c['id']} valid por RUP", f'pelos pivôs do cvc5: {motivo}')
         else:
             falhas.append(f"{c['id']}: o Carcara disse {veredito!r}" + (f' ({motivo})' if motivo else ''))
             anotacao('error', f"{c['id']} {veredito}", motivo or '(sem motivo na saída de erro)')
@@ -193,14 +210,15 @@ def main():
                 arquivo = os.path.join(tmp, 'estrago.alethe')
                 with open(arquivo, 'w', encoding='utf-8', newline='\n') as f:
                     f.write('\n'.join(l) + '\n')
-                v, _ = carcara(args.carcara, arquivo, problema, regras)
+                # o mesmo critério das provas: um estrago aceito por qualquer dos dois modos conta como aceito
+                v, _, _ = conferir(args.carcara, arquivo, problema, regras)
                 if v == 'valid':
                     falhas.append(f"{c['id']}: o Carcara aceitou um estrago ({tipo})")
                     anotacao('error', f"{c['id']} estrago aceito", tipo)
                 else:
                     recusados_aqui.append(tipo)
         recusados += len(recusados_aqui)
-        linhas_relatorio.append(f"| {c['id']} | {veredito} | {len(recusados_aqui)} de {len(lista)} |")
+        linhas_relatorio.append(f"| {c['id']} | {veredito}{' (RUP)' if modo == 'RUP' else ''} | {len(recusados_aqui)} de {len(lista)} |")
 
     com_prova = sum(1 for c in registro['certificados'] if c.get('prova'))
     resumo = [

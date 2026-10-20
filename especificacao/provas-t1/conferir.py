@@ -113,8 +113,8 @@ def campo(l, nome):
 
 
 def forma(s):
-    """O termo como lista aninhada, com os dois lados de cada igualdade em ordem fixa: muitas regras do Carcara
-    (assume, symm, trans, cong) comparam termos sem ligar para a ordem dos lados de uma igualdade, então para elas
+    """O termo como lista aninhada, com os dois lados de cada igualdade em ordem fixa: partes do Carcara (as
+    suposições, trans, cong) comparam termos sem ligar para a ordem dos lados de uma igualdade, então para elas
     (= a b) e (= b a) contam como o mesmo termo."""
     if not s.startswith('('):
         return s
@@ -262,8 +262,8 @@ def estragos(id_, linhas):
             i = rng.randrange(len(novas))
             novas[i] = rng.choice(outros)
             novo = l[:p[0]] + ' :premises (' + ' '.join(novas) + ')' + l[p[1]:]
-            # a mesma cláusula, sem ligar para a ordem dos literais nem para a dos lados das igualdades (regras como
-            # symm, trans e cong do Carcara não ligam para ela)
+            # a mesma cláusula, sem ligar para a ordem dos literais nem para a dos lados das igualdades (trans e cong
+            # do Carcara não ligam para ela; symm liga, e aí o filtro só deixa de fora um estrago que valeria)
             mesma = mesma_clausula(clausula_de(novas[i]), clausula_de(atuais[i]))
             if visivel and (mesma or ainda_segue(novo)):
                 continue

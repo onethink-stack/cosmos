@@ -116,8 +116,8 @@ seria erro:
   cláusula vira X ∨ ¬X) ou trocar uma premissa por outra que também dá a
   conclusão;
 - a premissa trocada por um passo com a mesma cláusula, sem contar a ordem dos
-  literais nem a dos lados das igualdades, que regras como `symm`, `trans` e
-  `cong` não distinguem;
+  literais nem a dos lados das igualdades, que `trans`, `cong` e a conferência
+  das suposições do Carcara não distinguem;
 - os passos que a regra `false` provaria;
 - os `rare_rewrite` em que L e R só diferem pela ordem dos lados de
   igualdades: ali (= L L) é a própria instância a menos dessa ordem, e aceitar

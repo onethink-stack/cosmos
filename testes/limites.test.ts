@@ -53,6 +53,45 @@ describe('limites do parser: erro controlado em vez de estourar a pilha', () => 
     expect(perguntar(grupos([t]), 'P0(a)', [], OPCOES_PADRAO).tipo).toBe('segue')
   }, 60_000)
 
+  it('cadeia de ⟹: associa à direita, aceita até o máximo e recusada pelo limite acima dele', () => {
+    const cadeia = (n: number) => Array.from({ length: n }, (_, i) => `P${i}(a)`).join(' ⟹ ')
+    const tres = validar('P(a) ⟹ Q(a) ⟹ P(b)', []).ast!
+    expect(tres.k === 'imp' && tres.r.k === 'imp' && tres.l.k === 'pred').toBe(true)
+    const v = validar(cadeia(PROFUNDIDADE_MAXIMA - 1), [])
+    expect(v.ok).toBe(true)
+    expect(profundidade(v.ast!)).toBe(PROFUNDIDADE_MAXIMA)
+    // acima do máximo, a recusa vem do limite da especificação, não da pilha do aparelho
+    recusa(cadeia(PROFUNDIDADE_MAXIMA), new RegExp(`grande demais: ${PROFUNDIDADE_MAXIMA + 1} níveis`))
+    recusa(cadeia(10_000), /grande demais: 10001 níveis/)
+  }, 60_000)
+
+  it('entradas de 100 mil níveis ou termos: erro com código, nunca exceção', () => {
+    const N = 100_000
+    const termos = (op: string) => Array.from({ length: N }, (_, i) => `P${i}(a)`).join(` ${op} `)
+    const casos = [
+      '('.repeat(N) + 'P(a)' + ')'.repeat(N),
+      '('.repeat(N) + 'P(a)',
+      'P(a)' + ')'.repeat(N),
+      '¬'.repeat(N) + 'P(a)',
+      '□'.repeat(N) + 'P(a)',
+      'B[Ana] '.repeat(N) + 'P(a)',
+      '−'.repeat(N) + 'a = b',
+      Array.from({ length: N }, (_, i) => `∀x${i} `).join('') + 'P(a)',
+      'f('.repeat(N) + 'a' + ')'.repeat(N) + ' = b',
+      termos('∧'),
+      termos('∨'),
+      termos('⟹'),
+      termos('⟺'),
+      Array.from({ length: N }, () => '1').join(' + ') + ' = n',
+    ]
+    for (const texto of casos) {
+      const v = validar(texto, [])
+      expect(v.ok).toBe(false)
+      expect(v.ast).toBeNull()
+      expect(['E0', 'E7']).toContain(v.diags[0].codigo)
+    }
+  }, 120_000)
+
   it('profundidade conta termos, quantificadores e operadores', () => {
     expect(profundidade(validar('P(a)', []).ast!)).toBe(2)
     expect(profundidade(validar('∀x (P(x) ∧ Q(f(x)))', []).ast!)).toBe(5)

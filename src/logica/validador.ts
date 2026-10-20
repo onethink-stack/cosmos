@@ -111,7 +111,7 @@ export function validar(texto: string, dicionario: EntradaDicionario[] = [], opc
     })
   } catch (e) {
     if (e instanceof ErroSintaxe) return fim([e.diag], null)
-    if (e instanceof RangeError) return fim([grandeDemais(texto)], null)
+    if (estouroDePilha(e)) return fim([grandeDemais(texto)], null)
     throw e
   }
 
@@ -122,10 +122,13 @@ export function validar(texto: string, dicionario: EntradaDicionario[] = [], opc
     return fim(diags, ast)
   } catch (e) {
     // a pilha deste aparelho acabou antes do limite do parser: recusa em vez de quebrar a tela
-    if (e instanceof RangeError) return fim([grandeDemais(texto)], null)
+    if (estouroDePilha(e)) return fim([grandeDemais(texto)], null)
     throw e
   }
 }
+
+// o Chrome e o Safari dão RangeError quando a pilha acaba; o Firefox dá InternalError ("too much recursion")
+const estouroDePilha = (e: unknown) => e instanceof RangeError || (e instanceof Error && e.name === 'InternalError')
 
 const grandeDemais = (texto: string): Diag => ({
   codigo: 'E0',

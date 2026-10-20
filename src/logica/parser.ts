@@ -169,12 +169,16 @@ class Parser {
   }
 
   private imp(): Formula {
-    const l = this.or()
-    if (this.at().t === 'imp') {
+    // ⟹ associa à direita (a ⟹ b ⟹ c é a ⟹ (b ⟹ c)), mas é lida num laço: uma cadeia longa
+    // chega ao limite de profundidade em vez de esgotar a pilha
+    const termos = [this.or()]
+    while (this.at().t === 'imp') {
       const tk = this.avancar()
-      return this.bin('imp', l, this.operandoDireita(tk, () => this.imp()))
+      termos.push(this.operandoDireita(tk, () => this.or()))
     }
-    return l
+    let r = termos.pop()!
+    while (termos.length) r = this.bin('imp', termos.pop()!, r)
+    return r
   }
 
   private or(): Formula {

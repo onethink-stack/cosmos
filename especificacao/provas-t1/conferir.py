@@ -34,7 +34,8 @@ O que é do verificador e o que é do certificado:
    cada certificado com um operador trocado na fórmula, e com as fórmulas de cada um dos outros exemplos, tem de
    ser recusado; e o caso adversarios/vinculo-trocado.json, com a prova verdadeira de Z09 e fórmulas que têm modelo,
    tem de passar no Carcara e ser recusado pelo vínculo. Os pares de adversarios/comparador/ (problemas de sentido
-   diferente, com funções declaradas chamadas and e -, ou um check-sat no meio) têm de sair diferentes na comparação.
+   diferente, com funções declaradas chamadas and e -, ou um check-sat no meio) têm de sair diferentes na comparação,
+   e os problemas *-recusar.smt2 (um termo mal tipado) têm de ser recusados pelo perfil da t1.
 6. Confere os modelos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem de
    ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
    sem os acessos do mundo real.
@@ -424,6 +425,10 @@ def main():
     ap.add_argument('--sem-carcara', action='store_true')
     ap.add_argument('--relatorio')
     args = ap.parse_args()
+    if sys.flags.optimize:
+        # a conferência independente (independente/) recusa com assert, e python -O tira os assert: tudo passaria
+        sys.exit('conferir.py não roda com python -O (nem PYTHONOPTIMIZE): sem os assert, a conferência independente '
+                 'aceitaria tudo')
     falhas = []
 
     if not args.sem_carcara:
@@ -541,7 +546,8 @@ def main():
         diferenca_troca = vinculo.diferenca(vinculo.refazer(troca['fichas'], troca['formulas']), f.read())
     if not diferenca_troca:
         falhas.append('vinculo-trocado: o vínculo aceitou fórmulas que não são as do problema')
-    # os controles do comparador: pares de sentido diferente que a versão anterior dava como iguais (rodada 28)
+    # os controles do comparador: pares de sentido diferente que versões anteriores davam como iguais (rodadas 28 e
+    # 29), e problemas fora do perfil, que nem chegam a ser comparados (rodada 30: um termo mal tipado)
     controles = sorted(glob.glob(os.path.join(PASTA, 'adversarios', 'comparador', '*-a.smt2')))
     controles_recusados = 0
     for a in controles:
@@ -551,6 +557,15 @@ def main():
             else:
                 falhas.append(f'{os.path.basename(a)[:-len("-a.smt2")]}: o comparador deu como iguais dois problemas de '
                               f'sentido diferente')
+    fora_do_perfil = sorted(glob.glob(os.path.join(PASTA, 'adversarios', 'comparador', '*-recusar.smt2')))
+    for arquivo in fora_do_perfil:
+        with open(arquivo, encoding='utf-8') as f:
+            texto_fora = f.read()
+        if vinculo.diferenca(texto_fora, texto_fora):
+            controles_recusados += 1
+        else:
+            falhas.append(f'{os.path.basename(arquivo)}: o perfil da t1 aceitou um problema que tinha de recusar')
+    controles += fora_do_perfil
     prova_troca = '(não rodado)'
     if not args.sem_carcara:
         v, modo, _, _ = conferir(args.carcara, os.path.join(PASTA, troca['prova']), os.path.join(PASTA, troca['problema']),
@@ -575,8 +590,8 @@ def main():
               f"| Fórmulas de outro exemplo, com o problema e a prova deste | {vin['pares_recusados']} de {vin['pares']} "
               f"pares recusados{pares_iguais} |",
               f'| Caso □/◇ (adversarios/vinculo-trocado.json) | {resultado_troca} |',
-              f'| Controles do comparador (adversarios/comparador/) | {controles_recusados} de {len(controles)} pares '
-              f'recusados |']
+              f'| Controles do comparador (adversarios/comparador/: pares de sentido diferente e problemas fora do perfil) '
+              f'| {controles_recusados} de {len(controles)} recusados |']
 
     est_md = ['| Estrago | Montados | Recusados | De onde vieram as recusas |', '| --- | --- | --- | --- |']
     total = recusados = 0
@@ -626,7 +641,7 @@ def main():
                  f"independente iguais ao do certificado.\nFórmula com um operador trocado: {vin['trocados_recusados']} "
                  f"de {vin['trocados']} recusadas{invalidos}.\nFórmulas de outro exemplo: {vin['pares_recusados']} de "
                  f"{vin['pares']} pares recusados{pares_iguais}.\nCaso □/◇: {resultado_troca}.\nControles do "
-                 f"comparador: {controles_recusados} de {len(controles)} pares recusados.")
+                 f"comparador: {controles_recusados} de {len(controles)} recusados.")
         anotacao('notice', 'Modelos', f"{mod['aceitos']} de {mod['modelos']} modelos dos sat aceitos pela conferência "
                  f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados.")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else

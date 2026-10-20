@@ -3,10 +3,11 @@ independente da t1 (a pasta independente/, escrita pelo GPT só pela especifica�
 certificado. Um hash não faz isso: quem emite o certificado calcula os hashes que quiser.
 
 Antes de comparar, cada problema tem de estar no perfil da t1: só os comandos, as sortes e os operadores embutidos que a
-tradução emite, só nomes declarados no padrão da seção 3 (c:, n:, f:, fn:, p:, R:, pertence, w0), e os comandos na
-ordem da t1 (set-logic, sortes, declarações, asserções e, se houver, um check-sat no fim). Assim ninguém declara uma
-função chamada and ou -, nenhuma asserção fica depois da consulta, e as normalizações abaixo só valem para os
-operadores de verdade sobre o conjunto de asserções que a consulta vê.
+tradução emite, só nomes declarados no padrão da seção 3 (c:, n:, f:, fn:, p:, R:, pertence, w0), os comandos na
+ordem da t1 (set-logic, sortes, declarações, asserções e, se houver, um check-sat no fim), e cada termo bem tipado
+(aridades e sortes de cada aplicação; toda asserção Bool). Assim ninguém declara uma função chamada and ou -, nenhuma
+asserção fica depois da consulta, e as normalizações abaixo só valem para os operadores de verdade sobre o conjunto de
+asserções que a consulta vê.
 
 A comparação é estrutural e ignora só o que não muda o sentido: comentários, (set-logic) e (check-sat), as barras em
 volta dos símbolos, os nomes das variáveis ligadas, os let, a forma de escrever um número, and/or aninhados, a ordem das
@@ -79,8 +80,8 @@ FASE = {'set-logic': 0, 'declare-sort': 1, 'declare-fun': 2, 'declare-const': 2,
 
 
 def conferir_perfil(comandos):
-    """Recusa (ValueError) um problema fora do perfil da t1."""
-    declarados = set()
+    """Recusa (ValueError) um problema fora do perfil da t1, inclusive um termo mal tipado."""
+    assinaturas = {}  # nome declarado -> (sortes dos argumentos, sorte do resultado)
     sortes_declaradas = set()
     fase = -1
     for i, cmd in enumerate(comandos):
@@ -102,49 +103,110 @@ def conferir_perfil(comandos):
             sortes_declaradas.add(cmd[1][1])
         if nome in ('declare-fun', 'declare-const'):
             simbolo = cmd[1][1]
-            sortes = [s[1] for s in cmd[2]] + [cmd[3][1]] if nome == 'declare-fun' else [cmd[2][1]]
+            if nome == 'declare-fun' and (len(cmd) != 4 or not isinstance(cmd[2], list)):
+                raise ValueError('declare-fun mal formado')
+            if nome == 'declare-const' and len(cmd) != 3:
+                raise ValueError('declare-const mal formado')
+            argumentos = tuple(s[1] for s in cmd[2]) if nome == 'declare-fun' else ()
+            resultado = cmd[3][1] if nome == 'declare-fun' else cmd[2][1]
             if not NOME_DECLARADO.fullmatch(simbolo):
                 raise ValueError(f'nome declarado fora do perfil da t1: {simbolo}')
-            if simbolo in declarados:
+            if simbolo in assinaturas:
                 raise ValueError(f'{simbolo} declarado duas vezes')
-            if any(s not in SORTES or (s in SORTES_DECLARADAS and s not in sortes_declaradas) for s in sortes):
-                raise ValueError(f'{simbolo} com sorte fora do perfil da t1, ou não declarada antes: {sortes}')
-            declarados.add(simbolo)
+            if any(s not in SORTES or (s in SORTES_DECLARADAS and s not in sortes_declaradas)
+                   for s in argumentos + (resultado,)):
+                raise ValueError(f'{simbolo} com sorte fora do perfil da t1, ou não declarada antes')
+            assinaturas[simbolo] = (argumentos, resultado)
 
-    def termo(e, presos):
+    def sorte_ligada(s):
+        if not (isinstance(s, tuple) and s[0] == 'sim' and s[1] in SORTES
+                and (s[1] not in SORTES_DECLARADAS or s[1] in sortes_declaradas)):
+            raise ValueError(f'variável ligada com sorte fora do perfil da t1, ou não declarada: {s}')
+        return s[1]
+
+    def sorte(e, ligadas):
+        """A sorte de um termo; recusa um termo mal tipado (a checagem de tipos que o GPT pediu na rodada 30)."""
         if isinstance(e, tuple):
-            if e[0] == 'sim' and e[1] not in presos and e[1] not in declarados and e[1] not in EMBUTIDOS:
-                raise ValueError(f'símbolo fora do perfil da t1: {e[1]}')
-            return
-        if not e:
-            raise ValueError('aplicação vazia')
-        cabeca = e[0][1] if isinstance(e[0], tuple) else None
+            if e[0] == 'num':
+                return 'Real'  # na t1, todo número é Real
+            n = e[1]
+            if n in ligadas:
+                return ligadas[n]
+            if n in ('true', 'false'):
+                return 'Bool'
+            if n in assinaturas and not assinaturas[n][0]:
+                return assinaturas[n][1]
+            raise ValueError(f'símbolo fora do perfil da t1, ou usado sem os argumentos: {n}')
+        if not e or not isinstance(e[0], tuple) or e[0][0] != 'sim':
+            raise ValueError('aplicação sem nome')
+        cabeca = e[0][1]
         if cabeca in LIGADORES:
-            if len(e) != 3 or not isinstance(e[1], list):
+            if len(e) != 3 or not isinstance(e[1], list) or not e[1]:
                 raise ValueError(f'{cabeca} mal formado')
-            nomes = set()
+            novas = dict(ligadas)
             for par in e[1]:
-                if not (isinstance(par, list) and len(par) == 2 and isinstance(par[0], tuple)):
+                if not (isinstance(par, list) and len(par) == 2 and isinstance(par[0], tuple) and par[0][0] == 'sim'):
                     raise ValueError(f'{cabeca} mal formado')
                 n = par[0][1]
-                if n in EMBUTIDOS or n in LIGADORES or n in declarados:
+                if n in EMBUTIDOS or n in LIGADORES or n in assinaturas:
                     raise ValueError(f'{cabeca} liga um nome que esconde outro símbolo: {n}')
-                if cabeca == 'let':
-                    termo(par[1], presos)  # o termo de um let vê só os nomes de fora
-                elif not (isinstance(par[1], tuple) and par[1][0] == 'sim' and par[1][1] in SORTES
-                          and (par[1][1] not in SORTES_DECLARADAS or par[1][1] in sortes_declaradas)):
-                    raise ValueError(f'variável ligada com sorte fora do perfil da t1, ou não declarada: {par[1]}')
-                nomes.add(n)
-            termo(e[2], presos | nomes)
-            return
-        for x in e:
-            termo(x, presos)
+                # o termo de um let vê só os nomes de fora
+                novas[n] = sorte(par[1], ligadas) if cabeca == 'let' else sorte_ligada(par[1])
+            corpo = sorte(e[2], novas)
+            if cabeca != 'let' and corpo != 'Bool':
+                raise ValueError(f'o corpo de um {cabeca} tem de ser Bool')
+            return corpo
+        if cabeca in ligadas:
+            raise ValueError(f'uma variável ligada não é aplicada: {cabeca}')
+        args = [sorte(x, ligadas) for x in e[1:]]
+        if cabeca in assinaturas:
+            esperados, resultado = assinaturas[cabeca]
+            if not esperados or tuple(args) != esperados:
+                raise ValueError(f'{cabeca} aplicado a {args}, esperava {list(esperados)}')
+            return resultado
+
+        def todos(sorte_dos_argumentos, minimo):
+            if len(args) < minimo or any(a != sorte_dos_argumentos for a in args):
+                raise ValueError(f'{cabeca} com argumentos {args}')
+        if cabeca == 'not':
+            todos('Bool', 1)
+            if len(args) != 1:
+                raise ValueError('not tem um argumento')
+            return 'Bool'
+        if cabeca in ('and', 'or', '=>'):
+            todos('Bool', 2)
+            return 'Bool'
+        if cabeca == '=':
+            if len(args) < 2 or len(set(args)) != 1:
+                raise ValueError(f'= com argumentos {args}')
+            return 'Bool'
+        if cabeca in ('+', '*', '/'):
+            todos('Real', 2)
+            return 'Real'
+        if cabeca == '-':
+            todos('Real', 1)
+            return 'Real'
+        if cabeca == '^':
+            todos('Real', 2)
+            if len(args) != 2:
+                raise ValueError('^ tem dois argumentos')
+            return 'Real'
+        if cabeca in ('<', '<=', '>', '>='):
+            todos('Real', 2)
+            return 'Bool'
+        if cabeca == 'is_int':
+            todos('Real', 1)
+            if len(args) != 1:
+                raise ValueError('is_int tem um argumento')
+            return 'Bool'
+        raise ValueError(f'símbolo fora do perfil da t1: {cabeca}')
 
     for cmd in comandos:
         if cmd[0][1] == 'assert':
             if len(cmd) != 2:
                 raise ValueError('assert mal formado')
-            termo(cmd[1], set())
+            if sorte(cmd[1], {}) != 'Bool':
+                raise ValueError('uma asserção tem de ser Bool')
 
 
 # ---- leitura e forma normal de um problema SMT-LIB

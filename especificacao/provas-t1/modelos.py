@@ -14,6 +14,9 @@ from vinculo import INDEPENDENTE
 
 def motivo_da_recusa(formulas, fichas, modelo):
     """'' se a conferência independente aceita o modelo para as fórmulas; senão, o motivo da recusa."""
+    if sys.flags.optimize:
+        # a conferência independente recusa com assert, e python -O tira os assert: tudo passaria
+        raise RuntimeError('a conferência dos modelos não roda com python -O')
     if INDEPENDENTE not in sys.path:
         sys.path.insert(0, INDEPENDENTE)
     from verificar_certificados_sem_z3 import verificar_caso

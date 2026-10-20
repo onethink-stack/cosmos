@@ -1,0 +1,7 @@
+{
+  "descricao": "Ataque ao vínculo: o certificado diz que as fórmulas são P(a) e ¬□P(a), que têm modelo (P(a) no mundo real e um mundo sem P(a)), mas traz o problema e a prova de Z09, que são de P(a) e ¬◇P(a). A prova é verdadeira para aquele problema e o Carcara a aceita; só o vínculo pode recusar o certificado.",
+  "formulas": ["P(a)", "¬□P(a)"],
+  "fichas": [],
+  "problema": "problemas/Z09.smt2",
+  "prova": "provas/Z09.alethe"
+}

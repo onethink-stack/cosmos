@@ -11,19 +11,23 @@ confere sem confiar em nenhum solucionador.
 | `provas/Zxx.alethe` | A prova Alethe do cvc5 para esse problema, só os comandos (a linha `unsat` e os parênteses de fora foram tirados) |
 | `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas do Carcara (com uma única mudança de escrita, anotada no topo do arquivo) |
 | `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256 |
-| `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos e roda os casos adversários |
-| `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, que o verificador tem de recusar |
+| `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
+| `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
+| `independente/` | A implementação independente da t1 (leitor da m2 e tradução), escrita pelo GPT só pela especificação, sem mudança nenhuma |
+| `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
 
 ## O que é do verificador e o que é do certificado
 
-Quem emite um certificado não escolhe os axiomas com que ele vai ser conferido.
-O verificador é `conferir.py`, o Carcara (num commit fixo, compilado por um Rust
-de versão fixa) e o arquivo `regras.rare`, cujo SHA-256 está escrito no próprio
-`conferir.py` (`REGRAS_CONFIADAS_SHA256`). O certificado é o problema, a prova e
-o registro. Se um pacote trouxesse outro arquivo de regras, com uma regra falsa
-e o hash atualizado no registro, o verificador recusaria, porque compara o
-arquivo com o hash dele, e não com o do pacote. Mudar uma regra exige mudar o
-verificador, e essa mudança é revista.
+Quem emite um certificado não escolhe os axiomas nem a tradução com que ele vai
+ser conferido. O verificador é `conferir.py` e `vinculo.py`, o Carcara (num
+commit fixo, compilado por um Rust de versão fixa), o arquivo `regras.rare`,
+cujo SHA-256 está escrito no próprio `conferir.py` (`REGRAS_CONFIADAS_SHA256`), e
+a implementação independente da pasta `independente/`, com o SHA-256 de cada
+arquivo escrito em `vinculo.py`. O certificado é as fórmulas, o problema, a
+prova e o registro. Se um pacote trouxesse outro arquivo de regras, com uma
+regra falsa e o hash atualizado no registro, o verificador recusaria, porque
+compara o arquivo com o hash dele, e não com o do pacote. Mudar uma regra ou a
+tradução exige mudar o verificador, e essa mudança é revista.
 
 ## O certificado
 
@@ -32,9 +36,11 @@ caminho diferente:
 
 1. **a fórmula à árvore expandida**, pela gramática m2, que dois leitores
    independentes leem igual (lotes cegos de 750 e 1.000 casos);
-2. **a árvore ao problema SMT**, pela tradução t1. `testes/provas-t1.test.ts`
-   refaz o texto de cada problema e falha se ele mudar; a auditoria da t1 está
-   na seção 8 de `../traducao-z3-t1.md`;
+2. **a fórmula ao problema SMT**, pela tradução t1. O verificador refaz o
+   problema a partir das fórmulas com a implementação independente (veja "O
+   vínculo da fórmula com o problema", abaixo), e `testes/provas-t1.test.ts`
+   refaz o texto exato com o código do Caderno. A auditoria da t1 está na seção 8
+   de `../traducao-z3-t1.md`;
 3. **o problema à prova**, pelo Carcara, que confere cada passo;
 4. **a prova à regra de cada passo**, pelas regras do Alethe e pelo arquivo
    `regras.rare`.
@@ -145,6 +151,42 @@ uma dessas "provas" seria erro do verificador. No último, o relatório mostra
 também o que aconteceria se o verificador usasse o arquivo de regras do
 atacante.
 
+### O vínculo da fórmula com o problema
+
+Uma prova vale para o problema que ela prova. Para valer para a fórmula, o
+problema tem de ser a tradução da fórmula, e um hash não garante isso: quem
+emite o certificado calcula os hashes que quiser. Por isso o verificador refaz o
+problema de cada certificado a partir das fórmulas e das fichas, com a
+implementação independente da pasta `independente/` (o leitor da m2 e a
+tradução t1 que o GPT escreveu só pela especificação), e o compara com o
+problema do certificado.
+
+A comparação é estrutural e ignora só o que não muda o sentido: comentários,
+`(set-logic)` e `(check-sat)`, as barras em volta dos símbolos, os nomes das
+variáveis ligadas, os `let`, a forma de escrever um número (`2` e `2.0`), `and`
+e `or` aninhados, a ordem das declarações e das asserções, e as declarações que
+nenhuma asserção usa. Cada símbolo entra pelo nome-base e pela assinatura,
+porque a seção 3 de `../traducao-z3-t1.md` diz que os nomes no Z3 são
+informativos e que o que conta é o tipo de cada símbolo e se ele recebe o
+mundo. Assim `c:n` e `n:n`, os dois `Real`, são o mesmo símbolo, e P(a) continua
+diferente de P(b).
+
+O vínculo também é atacado:
+
+| Ataque | O que tem de acontecer |
+| --- | --- |
+| A fórmula com um operador trocado pelo dual (□ e ◇, ∀ e ∃, ∧ e ∨), ou negada, se não houver nenhum deles | Recusada, nos 42 certificados |
+| As fórmulas de outro exemplo, com o problema e a prova deste | Recusadas, nos 42 × 41 pares |
+| `adversarios/vinculo-trocado.json`: as fórmulas P(a) e ¬□P(a), que têm modelo, com o problema e a prova verdadeira de Z09, que são de P(a) e ¬◇P(a) | A prova passa no Carcara, e o vínculo recusa |
+
+Um achado da comparação: a especificação diz que o sufixo `[:sig]` aparece
+quando os argumentos misturam números e objetos, e é assim que a implementação
+independente o escreve. O Caderno também o põe quando todos os argumentos de um
+predicado são números (em Z08, `p:Q/1:R`) e quando todos os argumentos de uma
+função numérica são objetos. As duas também chamam as constantes numéricas de
+jeitos diferentes (`n:n` no Caderno, `c:n` na outra). Como os nomes são
+informativos, nada disso muda o sentido.
+
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).
 
@@ -199,7 +241,11 @@ desenvolvimento.
 
 ## O que isto não prova
 
-- A prova vale para o problema SMT. O elo com a fórmula é a tradução t1, que
-  duas implementações conferiram, mas que não foi provada correta.
+- A prova vale para o problema SMT. O elo com a fórmula é a tradução t1, que o
+  verificador refaz a cada execução com uma segunda implementação. As duas
+  foram escritas por IAs, de lados diferentes e só pela especificação, e
+  nenhuma foi provada correta: um erro que as duas cometam do mesmo jeito passa.
 - O Carcara também é um programa, e as regras RARE entram nele como axiomas.
 - Z36 e Z40 ficam sem certificado.
+- Os 10 exemplos sat ainda não guardam o modelo no registro, e falta perceber
+  quando as premissas, sozinhas, já são contraditórias.

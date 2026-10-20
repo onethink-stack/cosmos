@@ -4,10 +4,12 @@
 Uso: python3 conferir.py [--carcara CAMINHO] [--sem-carcara] [--relatorio ARQUIVO]
 
 O que é do verificador e o que é do certificado:
-  - do verificador: este roteiro, o Carcara (commit fixo no fluxo) e o arquivo de regras RARE, cujo SHA-256
-    está fixo aqui embaixo (REGRAS_CONFIADAS_SHA256). Um certificado não escolhe os axiomas: mudar uma regra
-    exige mudar este arquivo, e não só o registro de certificados.
-  - do certificado: o problema, a prova e o registro (certificados.json).
+  - do verificador: este roteiro e vinculo.py, o Carcara (commit fixo no fluxo), o arquivo de regras RARE, cujo
+    SHA-256 está fixo aqui embaixo (REGRAS_CONFIADAS_SHA256), e a implementação independente da t1 (a pasta
+    independente/, escrita pelo GPT só pela especificação), com o SHA-256 de cada arquivo fixo em vinculo.py. Um
+    certificado não escolhe os axiomas nem a tradução: mudar uma regra ou a tradução exige mudar o verificador, e não
+    só o registro de certificados.
+  - do certificado: as fórmulas, o problema, a prova e o registro (certificados.json).
 
 1. Confere o SHA-256 de cada problema e de cada prova com o registro, e o do arquivo de regras com o valor fixo.
 2. Roda, para cada prova,
@@ -27,9 +29,15 @@ O que é do verificador e o que é do certificado:
 4. Roda os casos de adversarios/: problemas satisfazíveis com "provas" de que não são, escritas à mão para atacar
    pontos certos (resolvente falso, regra RARE com tipo errado, instância errada de um ∀, suposição fora do
    problema, regra falsa trazida pelo próprio certificado). Todos têm de ser recusados.
+5. Confere o vínculo da fórmula com o problema (vinculo.py): refaz o problema de cada certificado a partir das
+   fórmulas, com a implementação independente, e o compara com o problema do certificado. Também ataca o vínculo:
+   cada certificado com um operador trocado na fórmula, e com as fórmulas de cada um dos outros exemplos, tem de
+   ser recusado; e o caso adversarios/vinculo-trocado.json, com a prova verdadeira de Z09 e fórmulas que têm modelo,
+   tem de passar no Carcara e ser recusado pelo vínculo.
 
-Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, ou se algum
-SHA-256 não bater. Com --sem-carcara, só confere os hashes e monta os estragos. Só usa a biblioteca padrão.
+Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
+bater, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem
+rodar o Carcara. Só usa a biblioteca padrão e o código da pasta independente/.
 """
 import argparse
 import collections
@@ -44,6 +52,9 @@ import sys
 import tempfile
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PASTA)
+import vinculo  # noqa: E402
+
 OPCOES = ['--allow-int-real-subtyping', '--expand-let-bindings']
 # os axiomas em que o verificador confia: as 17 regras RARE auditadas (rodadas 22 a 24)
 REGRAS_CONFIADAS = os.path.join(PASTA, 'regras.rare')
@@ -425,6 +436,7 @@ def main():
         registro = json.load(f)
     if registro['regrasRare']['sha256'] != REGRAS_CONFIADAS_SHA256:
         falhas.append('o registro de certificados aponta para outro arquivo de regras')
+    falhas += vinculo.conferir_independente()
 
     # O GitHub mostra no máximo 10 anotações de cada nível por etapa: os avisos são poucos e juntam várias linhas
     provas_md = ['| Exemplo | Pelos pivôs | Por RUP |', '| --- | --- | --- |']
@@ -506,6 +518,42 @@ def main():
                                 f'{caso} deu {va!r}{f" ({modoa})" if modoa else ""}; com o arquivo do verificador, '
                                 f'{"recusada" if v != "valid" else "ACEITA"}.')
 
+    # o vínculo da fórmula com o problema, pela implementação independente da t1
+    textos = {}
+
+    def problema_de(c):
+        if c['id'] not in textos:
+            with open(os.path.join(PASTA, c['problema']['arquivo']), encoding='utf-8') as f:
+                textos[c['id']] = f.read()
+        return textos[c['id']]
+
+    vin = vinculo.conferir(registro['certificados'], problema_de)
+    falhas += vin['falhas']
+    # o caso □/◇: uma prova verdadeira, para o problema de outras fórmulas
+    with open(os.path.join(PASTA, 'adversarios', 'vinculo-trocado.json'), encoding='utf-8') as f:
+        troca = json.load(f)
+    with open(os.path.join(PASTA, troca['problema']), encoding='utf-8') as f:
+        diferenca_troca = vinculo.diferenca(vinculo.refazer(troca['fichas'], troca['formulas']), f.read())
+    if not diferenca_troca:
+        falhas.append('vinculo-trocado: o vínculo aceitou fórmulas que não são as do problema')
+    prova_troca = '(não rodado)'
+    if not args.sem_carcara:
+        v, modo, _, _ = conferir(args.carcara, os.path.join(PASTA, troca['prova']), os.path.join(PASTA, troca['problema']),
+                                 REGRAS_CONFIADAS)
+        prova_troca = f'{v} ({modo})' if modo else v
+        if v != 'valid':
+            falhas.append(f'vinculo-trocado: a prova que o ataque usa deveria passar no Carcara, e deu {v!r}')
+    invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
+    pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
+    resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
+    vin_md = ['| O quê | Resultado |', '| --- | --- |',
+              f"| Problemas refeitos a partir das fórmulas | {vin['iguais']} de {vin['total']} iguais ao do certificado, "
+              f"a menos da forma |",
+              f"| Fórmula com um operador trocado | {vin['trocados_recusados']} de {vin['trocados']} recusadas{invalidos} |",
+              f"| Fórmulas de outro exemplo, com o problema e a prova deste | {vin['pares_recusados']} de {vin['pares']} "
+              f"pares recusados{pares_iguais} |",
+              f'| Caso □/◇ (adversarios/vinculo-trocado.json) | {resultado_troca} |']
+
     est_md = ['| Estrago | Montados | Recusados | De onde vieram as recusas |', '| --- | --- | --- | --- |']
     total = recusados = 0
     for tipo, x in por_tipo.items():
@@ -514,18 +562,26 @@ def main():
         x['texto'] = ', '.join(f'{k} ({n})' for k, n in x['classes'].most_common())
         est_md.append(f"| {tipo} | {x['montados']} | {x['recusados'] if not args.sem_carcara else '—'} | {x['texto']} |")
 
+    alteradas = vin['trocados'] + vin['pares']
+    alteradas_recusadas = vin['trocados_recusados'] + vin['pares_recusados']
+    linha_vinculo = (f"O vínculo bateu em {vin['iguais']} de {vin['total']} certificados e recusou {alteradas_recusadas} "
+                     f"de {alteradas} fórmulas alteradas.")
     if args.sem_carcara:
-        linha = f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários.'
+        linha = (f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários. '
+                 + linha_vinculo)
     else:
         linha = (f'{validas} de {com_prova} provas deram "valid" ({pelos_pivos} pelos pivôs, {por_rup} por RUP); '
                  f'{recusados} de {total} estragos e {sum(1 for x in adv_md[2:] if "recusada" in x)} de '
-                 f'{len(casos)} casos adversários foram recusados.')
+                 f'{len(casos)} casos adversários foram recusados. ' + linha_vinculo)
     resumo = [
         '## Provas Alethe da t1 conferidas pelo Carcara', '', linha, '',
         '### Provas', '', *provas_md, '',
         '### Estragos', '', *est_md, '',
         '### Casos adversários', '', *adv_md, '',
         *([demonstracao, ''] if demonstracao else []),
+        '### Vínculo da fórmula com o problema', '',
+        'Pela implementação independente da t1 (independente/, escrita pelo GPT só pela especificação).', '',
+        *vin_md, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
@@ -538,6 +594,10 @@ def main():
         anotacao('notice', 'Casos adversários', '\n'.join(adv_notas) or 'nenhum recusado')
         if demonstracao:
             anotacao('notice', 'Arquivo do atacante', demonstracao)
+        anotacao('notice', 'Vínculo', f"{vin['iguais']} de {vin['total']} problemas refeitos pela implementação "
+                 f"independente iguais ao do certificado.\nFórmula com um operador trocado: {vin['trocados_recusados']} "
+                 f"de {vin['trocados']} recusadas{invalidos}.\nFórmulas de outro exemplo: {vin['pares_recusados']} de "
+                 f"{vin['pares']} pares recusados{pares_iguais}.\nCaso □/◇: {resultado_troca}.")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

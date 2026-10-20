@@ -209,4 +209,6 @@ A auditoria diferencial da t1 está encerrada. Ela não prova que as duas tradu�
 concordam em tudo; mostra que, nesses 642 casos, nenhuma decidiu o contrário da
 outra. Um `unsat` ainda é a palavra do Z3: o próximo passo é a prova verificável
 (Alethe, conferida por outro programa), presa à fórmula, à árvore expandida, à
-versão t1 e ao problema enviado ao solucionador.
+versão t1 e ao problema enviado ao solucionador. As primeiras estão em
+`provas-t1/`: 28 dos 30 exemplos unsat têm prova; Z36 e Z40 ficam fora do
+formato.

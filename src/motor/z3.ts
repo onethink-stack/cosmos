@@ -119,6 +119,40 @@ export async function checarUmaVez(
   opcoes: Record<string, string | number | boolean> = {},
 ): Promise<RespostaComNucleo> {
   const espera = liberacoes(api)
+  const solver = montarSolver(api, formulas, tempoMs, numericos, grupos, opcoes)
+  espera.checando++
+  try {
+    const resultado = (await solver.check()) as ResultadoZ3
+    let nucleo: number[] | null = null
+    if (resultado === 'unsat' && grupos) {
+      const usados = new Set<number>()
+      for (const e of solver.unsatCore().values()) usados.add(Number(String(e).replace('grupo!', '')))
+      nucleo = [...usados].sort((a, b) => a - b)
+    }
+    return { resultado, nucleo }
+  } finally {
+    if (--espera.checando === 0) for (const liberar of espera.adiadas.splice(0)) liberar()
+  }
+}
+
+/**
+ * O problema exato que a tradução t1 manda ao Z3, em SMT-LIB 2: as declarações e as asserções,
+ * sem o check-sat. É o que um certificado de unsat prova, e outro solucionador lê este texto.
+ */
+export function problemaSmt(api: any, formulas: Formula[], numericos: Set<string> = new Set()): string {
+  liberacoes(api)
+  return String(montarSolver(api, formulas, TEMPO_Z3_MS, numericos).toString()).trim()
+}
+
+/** A tradução t1: as fórmulas, os axiomas do ∅ e o quadro KD45 de cada titular, num solver do Z3. */
+function montarSolver(
+  api: any,
+  formulas: Formula[],
+  tempoMs: number,
+  numericos: Set<string>,
+  grupos?: (number | null)[],
+  opcoes: Record<string, string | number | boolean> = {},
+): any {
   const ctx = obterContexto(api)
   // nomes das variáveis novas contados a partir de 0 em cada checagem: a mesma lista de fórmulas
   // chega ao Z3 sempre com os mesmos nomes, e o resultado não depende do que rodou antes
@@ -293,17 +327,5 @@ export async function checarUmaVez(
     solver.add(ForAll([a, b, c], Implies(And(R.call(a, b), R.call(b, c)), R.call(a, c))))
     solver.add(ForAll([a, b, c], Implies(And(R.call(a, b), R.call(a, c)), R.call(b, c))))
   }
-  espera.checando++
-  try {
-    const resultado = (await solver.check()) as ResultadoZ3
-    let nucleo: number[] | null = null
-    if (resultado === 'unsat' && grupos) {
-      const usados = new Set<number>()
-      for (const e of solver.unsatCore().values()) usados.add(Number(String(e).replace('grupo!', '')))
-      nucleo = [...usados].sort((a, b) => a - b)
-    }
-    return { resultado, nucleo }
-  } finally {
-    if (--espera.checando === 0) for (const liberar of espera.adiadas.splice(0)) liberar()
-  }
+  return solver
 }

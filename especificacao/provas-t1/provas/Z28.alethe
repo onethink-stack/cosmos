@@ -1,0 +1,4 @@
+(assume a0 (and (pertence w0 |c:a| |c:A|) (pertence w0 |c:a| |c:B|)))
+(assume a1 (not (pertence w0 |c:a| |c:A|)))
+(step t0 (cl (pertence w0 |c:a| |c:A|)) :rule and :premises (a0) :args (0))
+(step t1 (cl) :rule resolution :premises (a1 t0) :args ((pertence w0 |c:a| |c:A|) false))

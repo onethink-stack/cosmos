@@ -1,0 +1,7 @@
+(assume a0 (= (|p:P/1| w0 |c:a|) (|p:Q/1| w0 |c:a|)))
+(assume a1 (|p:P/1| w0 |c:a|))
+(assume a2 (not (|p:Q/1| w0 |c:a|)))
+(step t0 (cl (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule equiv1 :premises (a0))
+(step t1 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|))) :rule reordering :premises (t0))
+(step t2 (cl (|p:Q/1| w0 |c:a|)) :rule resolution :premises (t1 a1) :args ((|p:P/1| w0 |c:a|) false))
+(step t3 (cl) :rule resolution :premises (a2 t2) :args ((|p:Q/1| w0 |c:a|) false))

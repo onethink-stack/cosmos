@@ -1,0 +1,3 @@
+(assume a0 false)
+(step t0 (cl (not false)) :rule false)
+(step t1 (cl) :rule resolution :premises (a0 t0) :args (false true))

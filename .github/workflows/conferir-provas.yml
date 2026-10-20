@@ -1,0 +1,38 @@
+# Confere as provas Alethe de especificacao/provas-t1 com o Carcara, numa máquina do GitHub, a cada
+# mudança nas provas (ou quando alguém pede, em Actions → Conferir as provas → Run workflow).
+# O Carcara é compilado do código-fonte, no commit que o cvc5 1.4.2 indica para conferir as provas dele.
+name: Conferir as provas
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'especificacao/provas-t1/**'
+      - '.github/workflows/conferir-provas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  carcara:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARCARA_COMMIT: 394edbb15ba95c47893f1d821fddde7e016af178
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable && rustc --version
+      - name: m4, que a GMP do Carcara precisa para compilar
+        run: sudo apt-get update && sudo apt-get install -y m4
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/.cargo/bin/carcara
+          key: carcara-${{ env.CARCARA_COMMIT }}-${{ runner.os }}
+      - name: Compilar o Carcara
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install --locked --git https://github.com/ufmg-smite/carcara.git --rev "$CARCARA_COMMIT" carcara-cli
+      - name: Conferir as provas e os estragos
+        run: python3 especificacao/provas-t1/conferir.py --carcara ~/.cargo/bin/carcara

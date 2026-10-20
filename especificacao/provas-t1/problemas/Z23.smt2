@@ -1,0 +1,11 @@
+; Z23: domínio constante (Barcan)
+; ∀x □P(x)
+; ¬□∀x P(x)
+; tradução t1 do Caderno; veredito do Z3 5.1.0.0: unsat
+(set-logic ALL)
+(declare-sort Obj 0)
+(declare-sort Mundo 0)
+(declare-fun |p:P/1| (Mundo Obj) Bool)
+(assert (forall ((x!1 Obj)) (forall ((w!2 Mundo)) (|p:P/1| w!2 x!1))))
+(assert (not (forall ((w!3 Mundo)) (forall ((x!4 Obj)) (|p:P/1| w!3 x!4)))))
+(check-sat)

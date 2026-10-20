@@ -1,0 +1,1611 @@
+{
+ "versao": "c1",
+ "descricao": "Certificados dos exemplos normativos da tradução t1: para cada unsat, o problema exato que a tradução manda ao Z3 e uma prova Alethe do cvc5 para esse problema.",
+ "traducao": "t1",
+ "exemplos": "traducao-z3-t1-exemplos.json",
+ "regrasRare": {
+  "arquivo": "regras.rare",
+  "sha256": "f0a37bd1eb9092b6f363cfa4603087d0342725595ba8e00d7998069ba7910686",
+  "regras": [
+   "arith-abs-eq",
+   "arith-abs-real-gt",
+   "arith-elim-gt",
+   "arith-elim-leq",
+   "arith-elim-lt",
+   "arith-eq-elim-real",
+   "arith-geq-norm1-real",
+   "arith-leq-norm",
+   "bool-and-de-morgan",
+   "bool-double-not-elim",
+   "bool-eq-false",
+   "bool-impl-elim",
+   "bool-impl-false2",
+   "eq-symm",
+   "is_int-elim",
+   "ite-true-cond",
+   "or-not-refl"
+  ]
+ },
+ "certificados": [
+  {
+   "id": "Z01",
+   "regra": "constantes rígidas",
+   "formulas": [
+    "a = b",
+    "◇(a ≠ b)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(= a b)",
+    "(◇ (¬ (= a b)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z01.smt2",
+    "sha256": "9d731ac655218e2593bb43fc05fa46590e2bebf1c1d6aa740288d8f9efba44db"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z01.alethe",
+    "sha256": "1ea4a205f13cf05795de91b7fc01c76940498d49e5f3eff2880750cc26dfd18e",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 15,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z02",
+   "regra": "funções de objeto variam com o mundo",
+   "formulas": [
+    "mae(a) = b",
+    "◇(mae(a) ≠ b)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(= (mae a) b)",
+    "(◇ (¬ (= (mae a) b)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z02.smt2",
+    "sha256": "bc74331642a85e0630ed8b62d808b4014e32f74c70b3a6cc5b1299ca8dc133dd"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z03",
+   "regra": "∈ varia com o mundo",
+   "formulas": [
+    "a ∈ A",
+    "◇(a ∉ A)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∈ a A)",
+    "(◇ (¬ (∈ a A)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z03.smt2",
+    "sha256": "6e12efddf7a8d3212ae2d035f198e959f739c0979ff326095ce34fbeee20ae7e"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z04",
+   "regra": "predicados variam com o mundo",
+   "formulas": [
+    "P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(P a)",
+    "(◇ (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z04.smt2",
+    "sha256": "299bd1472d19c1d91edd5d4c44afcaa1230735a2cd98b09c8db1c5bb5ddd4734"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z05",
+   "regra": "constantes numéricas rígidas",
+   "formulas": [
+    "n = 1",
+    "◇(n ≠ 1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= n 1)",
+    "(◇ (¬ (= n 1)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z05.smt2",
+    "sha256": "47f2dffa55ce1090aa310f412e05edf229398a520a4f1c3ec1a2320984728a4d"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z05.alethe",
+    "sha256": "7969a02b9e8ec60d6ce9681ef87e95c9d4dc81b33954bcad339b7c386fd3bbff",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 10,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z06",
+   "regra": "funções numéricas rígidas",
+   "formulas": [
+    "f(n) = 1",
+    "◇(f(n) ≠ 1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (f n) 1)",
+    "(◇ (¬ (= (f n) 1)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z06.smt2",
+    "sha256": "97d2aad585c01165cd13da131243ec3476cace2696261fa6f519b9e55fa18ed6"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z06.alethe",
+    "sha256": "9deb68c69a77e6acd15ed7c990184edec2d9d124b9874178f017128ef86ac3cb",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 10,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z07",
+   "regra": "função de objeto com argumento numérico varia com o mundo",
+   "formulas": [
+    "g(n, a) = b",
+    "◇(g(n, a) ≠ b)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (g n a) b)",
+    "(◇ (¬ (= (g n a) b)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z07.smt2",
+    "sha256": "1b77c6452b71456ba06c538f30f8af571187e8da1db0e5a442dc5631fa8adc8d"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z08",
+   "regra": "predicado com argumento numérico varia com o mundo",
+   "formulas": [
+    "Q(1)",
+    "◇¬Q(1)"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(Q 1)",
+    "(◇ (¬ (Q 1)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z08.smt2",
+    "sha256": "c07f1e432b25b38f21848c8d4485ab798694861850a48333ce161d903d136b6b"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z09",
+   "regra": "as fórmulas valem no mundo real, que é um dos mundos",
+   "formulas": [
+    "P(a)",
+    "¬◇P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(P a)",
+    "(¬ (◇ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z09.smt2",
+    "sha256": "84ecb7a88459b46f2f2a0b1b6db219ee7bd1ec0ef0b215b5a671b7cf16382825"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z09.alethe",
+    "sha256": "66fe9e6785d61f6f49b62c4ee46fe32748c537b523c7d7f0d9228122c11d8d2b",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 23,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z10",
+   "regra": "□ vale também no mundo real",
+   "formulas": [
+    "□P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(□ (P a))",
+    "(¬ (P a))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z10.smt2",
+    "sha256": "3a14ce7a4cabe6a516746f8665f362c12f796bd5e3340cf9743ba4270199c481"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z10.alethe",
+    "sha256": "6f0bcaee70d6fed7c70da5a93c787a1778b21f0c792bf367bc4b4c9b0955cdb3",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 12,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z11",
+   "regra": "S5: axioma T",
+   "formulas": [
+    "¬(□P(a) ⟹ P(a))"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (⟹ (□ (P a)) (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z11.smt2",
+    "sha256": "f6a1ad49e05524dfd391c76715562a1cd4d6006814c80ee40e1528edfd3345a3"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z11.alethe",
+    "sha256": "9523b00370f7d759bcbc73004b432f19049fd0b5ad82715528fe95c36502e499",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 15,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z12",
+   "regra": "S5: axioma 4",
+   "formulas": [
+    "¬(□P(a) ⟹ □□P(a))"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (⟹ (□ (P a)) (□ (□ (P a)))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z12.smt2",
+    "sha256": "ca830f8deb4819246ef0139810f6a05966ea477803d76846ecde640da564efd9"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z12.alethe",
+    "sha256": "50b05b02399378160b2d6b5da751486a28051fd23633438ac779009f7a0478fc",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 15,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z13",
+   "regra": "S5: axioma 5",
+   "formulas": [
+    "¬(◇P(a) ⟹ □◇P(a))"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (⟹ (◇ (P a)) (□ (◇ (P a)))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z13.smt2",
+    "sha256": "dc3a70452d880ea8f6c091d8b1427e885d7e2111428081c593b00b0526f456e1"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z13.alethe",
+    "sha256": "4203e786786f7ef693add3e6616d32cff45cc1143a8441fb2ff88b87c02ee7e5",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 18,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z14",
+   "regra": "◇ e ◇¬ juntos",
+   "formulas": [
+    "◇P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(◇ (P a))",
+    "(◇ (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z14.smt2",
+    "sha256": "c14b0b273c7e2ec36ce41fbb9c57872401d9e5713a02dc620362121d8c2ab495"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z15",
+   "regra": "crença não é verdade (sem T)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (P a))",
+    "(¬ (P a))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z15.smt2",
+    "sha256": "4342b4cb283559d5ad59af2d476676b212ebc035c1c8bbf6087c30bf7e04a01b"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z16",
+   "regra": "KD45: D (serial)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "B[Ana] ¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (P a))",
+    "(B \"Ana\" (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z16.smt2",
+    "sha256": "e25c72a5c39f608bb79dcf9f339803d8d76dfdb0331f428ee3b17ba25e49a198"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z16.alethe",
+    "sha256": "6168c1e9a72af01c378438eb1a9d02d12c00b009227f1d24ee4b25fabc7ff77c",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 74,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z17",
+   "regra": "KD45: 4 (transitiva)",
+   "formulas": [
+    "B[Ana] P(a)",
+    "¬B[Ana] B[Ana] P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (P a))",
+    "(¬ (B \"Ana\" (B \"Ana\" (P a))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z17.smt2",
+    "sha256": "f856425a5c6e55f4e161c37da3bf074f62505e5ac919e5a33de1df652db6f525"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z17.alethe",
+    "sha256": "11e3c867075dd3a7422122d0e5e10cdc3946cb157b174ebba970943eb230d7cd",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 99,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z18",
+   "regra": "KD45: 5 (euclidiana)",
+   "formulas": [
+    "¬B[Ana] P(a)",
+    "¬B[Ana] ¬B[Ana] P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (B \"Ana\" (P a)))",
+    "(¬ (B \"Ana\" (¬ (B \"Ana\" (P a)))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z18.smt2",
+    "sha256": "b9159458bea7149f330f8eff4672004a8242068632c4f906310b87b74c232346"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z18.alethe",
+    "sha256": "48a306ae09572dc852403ce09b6be333e4010c8eb976589754143ecf6fdbd8fe",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 105,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z19",
+   "regra": "titulares independentes",
+   "formulas": [
+    "B[Ana] P(a)",
+    "B[Bia] ¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (P a))",
+    "(B \"Bia\" (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unknown"
+   },
+   "problema": {
+    "arquivo": "problemas/Z19.smt2",
+    "sha256": "1b0d60e74d1c8ab1b92422db458de1465162db69d74c5182003c13737c85fcc1"
+   },
+   "prova": null,
+   "nota": "unknown: o Z3 não decidiu; sem certificado"
+  },
+  {
+   "id": "Z20",
+   "regra": "□ chega aos mundos de cada titular",
+   "formulas": [
+    "□P(a)",
+    "B[Ana] ¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(□ (P a))",
+    "(B \"Ana\" (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z20.smt2",
+    "sha256": "c23ab2d36ce4672d88ba50bf9126fd2e74fa698f13fab4918d8c2c4e88a116f5"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z20.alethe",
+    "sha256": "b0c9df766f31bbf59464248208c28aa88b98cb8dcf6c27cd11f34c54eb1e0ff4",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 63,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z21",
+   "regra": "crer numa necessidade é tê-la (□ sobre todos os mundos)",
+   "formulas": [
+    "B[Ana] □P(a)",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (□ (P a)))",
+    "(¬ (P a))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z21.smt2",
+    "sha256": "b1f295b1c2509399889dfef65c9e78c09995dc59feb392325dbaac56f48b340b"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z21.alethe",
+    "sha256": "fb6fd9a2d433072210cc9563885c49b57f49cdc3d0eab593150a50e3a717fadb",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 46,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z22",
+   "regra": "crença e possibilidade",
+   "formulas": [
+    "B[Ana] P(a)",
+    "◇¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(B \"Ana\" (P a))",
+    "(◇ (¬ (P a)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unknown"
+   },
+   "problema": {
+    "arquivo": "problemas/Z22.smt2",
+    "sha256": "4ccb40b0296d16c8eb3555f52f75bf8d9a8d59554c4d5cfeaebca7fdd81fb23a"
+   },
+   "prova": null,
+   "nota": "unknown: o Z3 não decidiu; sem certificado"
+  },
+  {
+   "id": "Z23",
+   "regra": "domínio constante (Barcan)",
+   "formulas": [
+    "∀x □P(x)",
+    "¬□∀x P(x)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∀ x (□ (P x)))",
+    "(¬ (□ (∀ x (P x))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z23.smt2",
+    "sha256": "14506aabad2eed975b79b5fd102eb4bd7d2c70828f97abf39e1f9b2a29656a54"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z23.alethe",
+    "sha256": "0cb9deec85a9b37911160c5bdc810f06ac467e95a44b12115f7994da9c48e9f8",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 18,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z24",
+   "regra": "domínio não vazio",
+   "formulas": [
+    "∀x P(x)",
+    "∀x ¬P(x)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∀ x (P x))",
+    "(∀ x (¬ (P x)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z24.smt2",
+    "sha256": "501def71d7f9e1192384b0dae691eb9e831e4571692f2ab8d45f5a65d12bfc4c"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z24.alethe",
+    "sha256": "544c61561d99c953cbba254049d2badcdf8d1fecd5c8f396c81600cb283598cc",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--enum-inst --dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 14,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z25",
+   "regra": "igualdade e substituição",
+   "formulas": [
+    "a = b",
+    "P(a)",
+    "¬P(b)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(= a b)",
+    "(P a)",
+    "(¬ (P b))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z25.smt2",
+    "sha256": "859482b680578aec268d737c641e9812cd3d32786e34f0bc7634a550ed76eeca"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z25.alethe",
+    "sha256": "58f5435766e9fd584925f6c50181f05bfedff2dd541f41334f05f1ca9cc107ad",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 26,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z26",
+   "regra": "⟺ como igualdade de verdades",
+   "formulas": [
+    "P(a) ⟺ Q(a)",
+    "P(a)",
+    "¬Q(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(⟺ (P a) (Q a))",
+    "(P a)",
+    "(¬ (Q a))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z26.smt2",
+    "sha256": "08e0a4003ac05b70cf5daf1a9fbaf103c3b5ef52bc36dd9231a78799d9cf6a22"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z26.alethe",
+    "sha256": "d3cf328d953502a544907b7bd780b8fec190d7f33194a4ea9494ee5bf07bacb9",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 4,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z27",
+   "regra": "⊆ expandido",
+   "formulas": [
+    "A ⊆ B",
+    "a ∈ A",
+    "a ∉ B"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∀ z (⟹ (∈ z A) (∈ z B)))",
+    "(∈ a A)",
+    "(¬ (∈ a B))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z27.smt2",
+    "sha256": "0d9bd5dd85a7e12805ef18e7c216741d314edf2349053c1b4c6174b14651dbc0"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z27.alethe",
+    "sha256": "7e51e34534a3f239a332044ded0d38abcbd0ddef89577ea517614e557deaa235",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 22,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z28",
+   "regra": "⋂ expandido",
+   "formulas": [
+    "a ∈ A ⋂ B",
+    "a ∉ A"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∧ (∈ a A) (∈ a B))",
+    "(¬ (∈ a A))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z28.smt2",
+    "sha256": "0dd1a0383403cc7fb20331067ea8e855e3306e1c32e8886ea44ea9b7f8b628cf"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z28.alethe",
+    "sha256": "5dcdcee32b4ec810c1e389efd64850077bf3f12d4bf4ed5a51c6ea591a08ef99",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 2,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z29",
+   "regra": "∅: nada pertence",
+   "formulas": [
+    "a ∈ ∅"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "⊥"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z29.smt2",
+    "sha256": "5fdc6d29b00af1a964726b03fe19b998c2de582a5b5f843147cbf8527500d91c"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z29.alethe",
+    "sha256": "41c1239f987c0081aaea48c60391dc06b08ae864d412f92ba48da1c1af240d54",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 2,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z30",
+   "regra": "∅ ⊆ qualquer conjunto",
+   "formulas": [
+    "¬(∅ ⊆ A)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (∀ z (⟹ ⊥ (∈ z A))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z30.smt2",
+    "sha256": "5702ad39b1175af7989c878a5f08ff998d7ab026241212de9010f1d03a335989"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z30.alethe",
+    "sha256": "bca79afdd5d0723249c7fbe962dfa828d4077d69927829453863e179eeb16950",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 11,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z31",
+   "regra": "∀x∈S expandido",
+   "formulas": [
+    "∀x∈A P(x)",
+    "a ∈ A",
+    "¬P(a)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∀ x (⟹ (∈ x A) (P x)))",
+    "(∈ a A)",
+    "(¬ (P a))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z31.smt2",
+    "sha256": "197e1989efd4e822aa90569e68a5344578a55ce328cf40aabacac13e6780aeec"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z31.alethe",
+    "sha256": "75b4ce10fe551de07a4f430e163c0dbd36612fb180d5bbe5a4116359efd7e1c0",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 22,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z32",
+   "regra": "número mais um",
+   "formulas": [
+    "n + 1 = n"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (+ n 1) n)"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z32.smt2",
+    "sha256": "08b17feb143e2a7bdff320cdaacfa9662bd33fcb0beea49f694056a2e838c6ed"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z32.alethe",
+    "sha256": "9b5f60b129f1e1085160a5b04d691d3d7dc552d99ab7dca173daee3421988329",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 28,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z33",
+   "regra": "raiz de 2 nos reais",
+   "formulas": [
+    "n · n = 2"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (· n n) 2)"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z33.smt2",
+    "sha256": "15f1e8980f17cc6351b68154c444f7cf08191a0d8a36803579b21b407a1dfa25"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z34",
+   "regra": "raiz de 2 nos inteiros",
+   "formulas": [
+    "∃x∈ℤ x · x = 2"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∃ x ∈ ℤ (= (· x x) 2))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z34.smt2",
+    "sha256": "f9acb8c3923790906539fcc742b5baf2a631c2a1aa2f299989bab646bdf322b9"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z34.alethe",
+    "sha256": "c3715b80ede3c454574dbe58d4827c189f33fa5c2623e3245f0144476d274219",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 2026,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z35",
+   "regra": "raiz de 2 com ∃x∈ℝ",
+   "formulas": [
+    "∃x∈ℝ x · x = 2"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(∃ x ∈ ℝ (= (· x x) 2))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z35.smt2",
+    "sha256": "287fada826400e9c366b541e0eeb660227dd98a48f979b72fa66ae931444effa"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z36",
+   "regra": "potência à direita",
+   "formulas": [
+    "¬(2^3^2 = 512)"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (= (^ 2 (^ 3 2)) 512))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z36.smt2",
+    "sha256": "b4ca748577375d87ede234c14b7e68e458e9c311ac96147152328700745ac7e7"
+   },
+   "prova": null,
+   "semCertificado": {
+    "cvc5": "unsat, mas a prova não cabe no Alethe: contains operator ^"
+   }
+  },
+  {
+   "id": "Z37",
+   "regra": "quadrado não negativo",
+   "formulas": [
+    "¬∀x∈ℝ x · x ≥ 0"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (∀ x ∈ ℝ (≥ (· x x) 0)))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z37.smt2",
+    "sha256": "ac0c20c130259f72a2c537d4bf667471641e22582d61ff163d4b213cab0ed1a0"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z37.alethe",
+    "sha256": "a3e1c405ed7ff6aa7d860a140fe4e03a2c7828cd834491b3a278a003fc04c448",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 258,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z38",
+   "regra": "ímpar não é dobro",
+   "formulas": [
+    "¬∀x∈ℤ 2 · x ≠ 1"
+   ],
+   "fichas": [],
+   "arvoresExpandidas": [
+    "(¬ (∀ x ∈ ℤ (¬ (= (· 2 x) 1))))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z38.smt2",
+    "sha256": "bec41b247a1d82794bb2b3fe9b7454f8da3761bdbb642dbf7d9faba90e354d36"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z38.alethe",
+    "sha256": "52ef42db9d43ba2b2717acceab2d26fb0e8d0d4f719d9bcf8d2f0d9b2c031ef0",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 47,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z39",
+   "regra": "divisão por zero dá algum número",
+   "formulas": [
+    "n / 0 = 5"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (/ n 0) 5)"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "sat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z39.smt2",
+    "sha256": "0b84a5ecc72d6aa1d5176817f17751fc59bd88265a10bea7215091f5e07e50d5"
+   },
+   "prova": null,
+   "nota": "sat: o certificado de um sat é um modelo, não uma prova"
+  },
+  {
+   "id": "Z40",
+   "regra": "divisão por zero é função do numerador",
+   "formulas": [
+    "n / 0 = 5",
+    "m / 0 = 7",
+    "n = m"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (/ n 0) 5)",
+    "(= (/ m 0) 7)",
+    "(= n m)"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z40.smt2",
+    "sha256": "f5c4df191595483ba445bb1ffc6434bb60c25f6761af23e552b53c8474122492"
+   },
+   "prova": null,
+   "semCertificado": {
+    "cvc5": "unsat, mas a prova não cabe no Alethe: contains Skolem (kind div_by_zero, term @div_by_zero_2"
+   }
+  },
+  {
+   "id": "Z41",
+   "regra": "função numérica é função",
+   "formulas": [
+    "f(1) = 2",
+    "f(1) = 3"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(= (f 1) 2)",
+    "(= (f 1) 3)"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z41.smt2",
+    "sha256": "cc202ebec700307e76ad147bad82f193a74d8ff8b2a0dd60860aa95205df8e1a"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z41.alethe",
+    "sha256": "3d2658dcbe574f8dc7012092aeeecae214e283be9378d9557dab700de51dd3f1",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 14,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  },
+  {
+   "id": "Z42",
+   "regra": "função numérica quantificada",
+   "formulas": [
+    "∀x∈ℝ f(x) = x · x",
+    "f(3) ≠ 9"
+   ],
+   "fichas": [
+    {
+     "simbolo": "n",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "m",
+     "tipo": "constante",
+     "aridade": 0,
+     "numerico": true
+    },
+    {
+     "simbolo": "f",
+     "tipo": "funcao",
+     "aridade": 1,
+     "numerico": true
+    },
+    {
+     "simbolo": "g",
+     "tipo": "funcao",
+     "aridade": 2,
+     "argumentos": [
+      "num",
+      "obj"
+     ]
+    },
+    {
+     "simbolo": "Q",
+     "tipo": "predicado",
+     "aridade": 1,
+     "argumentos": [
+      "num"
+     ]
+    }
+   ],
+   "arvoresExpandidas": [
+    "(∀ x ∈ ℝ (= (f x) (· x x)))",
+    "(¬ (= (f 3) 9))"
+   ],
+   "traducao": "t1",
+   "z3": {
+    "versao": "5.1.0.0",
+    "veredito": "unsat"
+   },
+   "problema": {
+    "arquivo": "problemas/Z42.smt2",
+    "sha256": "a820e3e731968b60b9fd18db564408427a2f16dfa3d4cdf42e7bb1af7d25d2f2"
+   },
+   "prova": {
+    "formato": "Alethe",
+    "arquivo": "provas/Z42.alethe",
+    "sha256": "c23f47333952b5caa195c3c577ccdb9d6a01c9051d6800b42ede841d2e757459",
+    "solucionador": "cvc5 1.4.2 [git 282d5e0 on branch HEAD]",
+    "opcoes": "--dump-proofs --proof-format-mode=alethe --proof-granularity=dsl-rewrite --proof-alethe-res-pivots --simplification=none --dag-thresh=0 --tlimit=20000",
+    "passos": 27,
+    "conferenciaInterna": "aceita (cvc5 --check-proofs)",
+    "conferenciaIndependente": "Carcara 394edbb, pelo fluxo conferir-provas do GitHub"
+   }
+  }
+ ]
+}

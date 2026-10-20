@@ -1,0 +1,3 @@
+# provas e problemas da t1: o SHA-256 de cada arquivo está em certificados.json,
+# então as linhas terminam em LF em todo sistema
+especificacao/provas-t1/** text eol=lf

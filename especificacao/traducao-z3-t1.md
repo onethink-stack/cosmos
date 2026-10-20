@@ -185,3 +185,28 @@ veredito do Z3: um `unsat` nunca pode ter modelo finito.
 A versão é **t1**. Uma mudança no que uma fórmula quer dizer para o Z3 (ou na
 versão do Z3) muda a versão, e as respostas guardadas da versão anterior deixam
 de valer: a chave delas começa com `h2:t1|`.
+
+## 8. Auditoria independente
+
+Uma segunda implementação, escrita a partir deste arquivo e de `gramatica-m2.md`,
+com o Z3 4.13.3 nativo, foi comparada com o Caderno em 19/10/2026. Em cada lote
+cego, um lado recebeu só as entradas, os dois guardaram as respostas com SHA-256
+antes de ver as do outro, e a comparação foi feita caso a caso.
+
+| Conjunto | Casos | Vereditos opostos (sat × unsat) | Diferenças | Motor finito |
+| --- | --- | --- | --- | --- |
+| exemplos normativos | 42 | 0 | nenhuma | igual nos 27 sem números |
+| lote cego Z3 1 | 300 | 0 | 7, todas de `unknown` | igual nos 68 sem números |
+| lote cego Z3 2 | 300 | 0 | 8, todas de `unknown` | igual nos 195 sem números |
+
+O lote 2 cobriu funções e nomes com índice em 2 e 3 mundos, crença KD45, índices
+presos por quantificador, funções numéricas de argumento não rígido e variáveis
+escondidas (E5). Nele, os modelos finitos foram trocados como certificados: os 90
+de cada lado passaram na conferência do outro, sem busca (forma, quadro KD45 de
+cada titular e cada fórmula no mundo real).
+
+A auditoria diferencial da t1 está encerrada. Ela não prova que as duas traduções
+concordam em tudo; mostra que, nesses 642 casos, nenhuma decidiu o contrário da
+outra. Um `unsat` ainda é a palavra do Z3: o próximo passo é a prova verificável
+(Alethe, conferida por outro programa), presa à fórmula, à árvore expandida, à
+versão t1 e ao problema enviado ao solucionador.

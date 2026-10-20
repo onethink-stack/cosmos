@@ -34,7 +34,7 @@ O que é do verificador e o que é do certificado:
    cada certificado com um operador trocado na fórmula, e com as fórmulas de cada um dos outros exemplos, tem de
    ser recusado; e o caso adversarios/vinculo-trocado.json, com a prova verdadeira de Z09 e fórmulas que têm modelo,
    tem de passar no Carcara e ser recusado pelo vínculo. Os pares de adversarios/comparador/ (problemas de sentido
-   diferente, com funções declaradas chamadas and e -) têm de sair diferentes na comparação.
+   diferente, com funções declaradas chamadas and e -, ou um check-sat no meio) têm de sair diferentes na comparação.
 6. Confere os modelos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem de
    ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
    sem os acessos do mundo real.

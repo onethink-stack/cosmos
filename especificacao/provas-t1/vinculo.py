@@ -3,8 +3,10 @@ independente da t1 (a pasta independente/, escrita pelo GPT só pela especifica�
 certificado. Um hash não faz isso: quem emite o certificado calcula os hashes que quiser.
 
 Antes de comparar, cada problema tem de estar no perfil da t1: só os comandos, as sortes e os operadores embutidos que a
-tradução emite, e só nomes declarados no padrão da seção 3 (c:, n:, f:, fn:, p:, R:, pertence, w0). Assim ninguém
-declara uma função chamada and ou -, e as normalizações abaixo só valem para os operadores de verdade.
+tradução emite, só nomes declarados no padrão da seção 3 (c:, n:, f:, fn:, p:, R:, pertence, w0), e os comandos na
+ordem da t1 (set-logic, sortes, declarações, asserções e, se houver, um check-sat no fim). Assim ninguém declara uma
+função chamada and ou -, nenhuma asserção fica depois da consulta, e as normalizações abaixo só valem para os
+operadores de verdade sobre o conjunto de asserções que a consulta vê.
 
 A comparação é estrutural e ignora só o que não muda o sentido: comentários, (set-logic) e (check-sat), as barras em
 volta dos símbolos, os nomes das variáveis ligadas, os let, a forma de escrever um número, and/or aninhados, a ordem das
@@ -70,17 +72,34 @@ LIGADORES = {'forall', 'exists', 'let'}
 NOME_DECLARADO = re.compile(r'w0|pertence|(?:c|n):[^\s|]+|(?:f|fn|p):[^\s|/]+/\d+(?::[RO]+)?|R:[^\s|]+')
 
 
+# a ordem dos comandos na t1: um (set-logic ALL), as sortes, as funções e constantes, as asserções e, se houver, um
+# (check-sat) no fim. Uma asserção depois de um check-sat mudaria a consulta sem mudar o conjunto das asserções, e a
+# comparação, que olha o conjunto, não veria (achado do GPT na rodada 29). Sem check-sat, a consulta é o conjunto todo
+FASE = {'set-logic': 0, 'declare-sort': 1, 'declare-fun': 2, 'declare-const': 2, 'assert': 3, 'check-sat': 4}
+
+
 def conferir_perfil(comandos):
     """Recusa (ValueError) um problema fora do perfil da t1."""
     declarados = set()
-    for cmd in comandos:
+    sortes_declaradas = set()
+    fase = -1
+    for i, cmd in enumerate(comandos):
         if not cmd or not isinstance(cmd[0], tuple) or cmd[0][1] not in COMANDOS:
             raise ValueError(f'comando fora do perfil da t1: {cmd[:1]}')
         nome = cmd[0][1]
+        if FASE[nome] < fase or (FASE[nome] == fase and nome in ('set-logic', 'check-sat')):
+            raise ValueError(f'{nome} fora da ordem da t1 (set-logic, sortes, declarações, asserções, check-sat)')
+        fase = FASE[nome]
+        if i == 0 and nome != 'set-logic':
+            raise ValueError('a t1 começa com (set-logic ALL)')
         if nome == 'set-logic' and cmd[1:] != [('sim', 'ALL')]:
             raise ValueError('a t1 usa (set-logic ALL)')
-        if nome == 'declare-sort' and (len(cmd) != 3 or cmd[1][1] not in SORTES_DECLARADAS or numero(cmd[2]) != 0):
-            raise ValueError(f'sorte fora do perfil da t1: {cmd[1:]}')
+        if nome == 'check-sat' and len(cmd) != 1:
+            raise ValueError('check-sat mal formado')
+        if nome == 'declare-sort':
+            if len(cmd) != 3 or cmd[1][1] not in SORTES_DECLARADAS or numero(cmd[2]) != 0 or cmd[1][1] in sortes_declaradas:
+                raise ValueError(f'sorte fora do perfil da t1: {cmd[1:]}')
+            sortes_declaradas.add(cmd[1][1])
         if nome in ('declare-fun', 'declare-const'):
             simbolo = cmd[1][1]
             sortes = [s[1] for s in cmd[2]] + [cmd[3][1]] if nome == 'declare-fun' else [cmd[2][1]]
@@ -88,8 +107,8 @@ def conferir_perfil(comandos):
                 raise ValueError(f'nome declarado fora do perfil da t1: {simbolo}')
             if simbolo in declarados:
                 raise ValueError(f'{simbolo} declarado duas vezes')
-            if any(s not in SORTES for s in sortes):
-                raise ValueError(f'{simbolo} com sorte fora do perfil da t1: {sortes}')
+            if any(s not in SORTES or (s in SORTES_DECLARADAS and s not in sortes_declaradas) for s in sortes):
+                raise ValueError(f'{simbolo} com sorte fora do perfil da t1, ou não declarada antes: {sortes}')
             declarados.add(simbolo)
 
     def termo(e, presos):
@@ -112,8 +131,9 @@ def conferir_perfil(comandos):
                     raise ValueError(f'{cabeca} liga um nome que esconde outro símbolo: {n}')
                 if cabeca == 'let':
                     termo(par[1], presos)  # o termo de um let vê só os nomes de fora
-                elif par[1] not in [('sim', s) for s in SORTES]:
-                    raise ValueError(f'variável ligada com sorte fora do perfil da t1: {par[1]}')
+                elif not (isinstance(par[1], tuple) and par[1][0] == 'sim' and par[1][1] in SORTES
+                          and (par[1][1] not in SORTES_DECLARADAS or par[1][1] in sortes_declaradas)):
+                    raise ValueError(f'variável ligada com sorte fora do perfil da t1, ou não declarada: {par[1]}')
                 nomes.add(n)
             termo(e[2], presos | nomes)
             return

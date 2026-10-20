@@ -166,15 +166,19 @@ problema do certificado.
 
 Antes de comparar, cada problema tem de estar no perfil da t1: só os comandos,
 as sortes e os operadores embutidos que a tradução emite, só nomes declarados no
-padrão da seção 3 (`c:`, `n:`, `f:`, `fn:`, `p:`, `R:`, `pertence`, `w0`), e
-nenhuma variável ligada que esconda outro símbolo. Sem isso, a comparação seria
-enganada: o GPT mostrou, na rodada 28, dois pares de problemas de sentido
-diferente que a versão anterior dava como iguais, porque declaravam funções
-chamadas `and` e `-` e o comparador as tratava como a conjunção e a negação. Os
-dois pares ficam em `adversarios/comparador/`, e o verificador exige que sejam
-recusados. No uso real não havia brecha (a tradução refeita nunca declara esses
-nomes, e as declarações sairiam diferentes), mas a comparação tem de valer por
-si.
+padrão da seção 3 (`c:`, `n:`, `f:`, `fn:`, `p:`, `R:`, `pertence`, `w0`),
+nenhuma variável ligada que esconda outro símbolo, e os comandos na ordem da t1:
+um `(set-logic ALL)`, as sortes, as declarações, as asserções e, se houver, um
+`(check-sat)` no fim. Sem isso, a comparação seria enganada. O GPT mostrou três
+pares de problemas de sentido diferente que versões anteriores davam como
+iguais: na rodada 28, dois que declaravam funções chamadas `and` e `-`, que o
+comparador tratava como a conjunção e a negação; na rodada 29, um com o
+`(check-sat)` antes de uma asserção, que a consulta não vê, enquanto a
+comparação olhava o conjunto todo. Os três pares ficam em
+`adversarios/comparador/`, e o verificador exige que sejam recusados. No uso real
+não havia brecha (a tradução refeita nunca declara esses nomes, e o Carcara
+confere a prova contra todas as asserções do problema), mas a comparação tem de
+valer por si.
 
 A comparação é estrutural e ignora só o que não muda o sentido: comentários,
 `(set-logic)` e `(check-sat)`, as barras em volta dos símbolos, os nomes das
@@ -193,7 +197,7 @@ O vínculo também é atacado:
 | A fórmula com um operador trocado pelo dual (□ e ◇, ∀ e ∃, ∧ e ∨), ou negada, se não houver nenhum deles | Recusada, nos 42 certificados |
 | As fórmulas de outro exemplo, com o problema e a prova deste | Recusadas, nos 42 × 41 pares |
 | `adversarios/vinculo-trocado.json`: as fórmulas P(a) e ¬□P(a), que têm modelo, com o problema e a prova verdadeira de Z09, que são de P(a) e ¬◇P(a) | A prova passa no Carcara, e o vínculo recusa |
-| `adversarios/comparador/`: os dois pares do GPT, com funções declaradas chamadas `and` e `-` | O comparador recusa os dois |
+| `adversarios/comparador/`: os três pares do GPT, com funções declaradas chamadas `and` e `-`, e com um `(check-sat)` no meio | O comparador recusa os três |
 
 Um achado da comparação: a especificação diz que o sufixo `[:sig]` aparece
 quando os argumentos misturam números e objetos, e é assim que a implementação

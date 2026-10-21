@@ -134,19 +134,20 @@ def smt_number(x):
   except ValueError:pass
  return None
 
-def smt_canon_node(node,env=None,let_env=None):
+def smt_canon_node(node,env=None,let_env=None,symbol_map=None):
  env={} if env is None else env
  let_env={} if let_env is None else let_env
+ symbol_map={} if symbol_map is None else symbol_map
  if type(node)==str:
   x=unbar(node)
   if x in env:return ('b',env[x])
   if x in let_env:return let_env[x]
   num=smt_number(x)
-  return num if num is not None else ('atom',x)
+  return num if num is not None else ('atom',symbol_map.get(x,x))
  if not node:return ('nil',)
  op=unbar(node[0]);args=node[1:]
  if op in ('forall','exists'):
-  assert len(args)==2
+  require(len(args)==2,'R9','quantificador SMT malformado na normalização')
   bindings=args[0]
   bound_env=dict(env)
   # De Bruijn-ish renaming local with shadowing
@@ -154,31 +155,51 @@ def smt_canon_node(node,env=None,let_env=None):
   for k,decl in enumerate(bindings):
    v=unbar(decl[0]);s=unbar(decl[1]);bound_env[v]='x'+str(len(env)+k)
    bds.append(s)
-  return (op,tuple(bds),smt_canon_node(args[1],bound_env,let_env))
+  return (op,tuple(bds),smt_canon_node(args[1],bound_env,let_env,symbol_map))
  if op=='let':
-  assert len(args)==2
+  require(len(args)==2,'R9','let SMT malformado na normalização')
   e=dict(let_env)
   # SMT let parallel bindings evaluate against incoming environment.
-  vals={unbar(k):smt_canon_node(v,env,let_env) for k,v in args[0]}
+  vals={unbar(k):smt_canon_node(v,env,let_env,symbol_map) for k,v in args[0]}
   e.update(vals)
-  return smt_canon_node(args[1],env,e)
+  return smt_canon_node(args[1],env,e,symbol_map)
  if op in ('+','*','-','/'):
   try:
    if op=='-' and len(args)==1:
-    v=smt_canon_node(args[0],env,let_env)
+    v=smt_canon_node(args[0],env,let_env,symbol_map)
     if v[0]=='num':return ('num',-v[1])
    if op=='/' and len(args)==2:
-    x,y=[smt_canon_node(a,env,let_env) for a in args]
+    x,y=[smt_canon_node(a,env,let_env,symbol_map) for a in args]
     if x[0]=='num' and y[0]=='num' and y[1]!=0:return ('num',x[1]/y[1])
   except (TypeError,ValueError):pass
- ns=[smt_canon_node(a,env,let_env) for a in args]
+ ns=[smt_canon_node(a,env,let_env,symbol_map) for a in args]
  if op in ('and','or'):
   flat=[]
   for n in ns:
    if type(n)==tuple and n and n[0]==op:flat.extend(n[1]);
    else:flat.append(n)
   return (op,tuple(flat))
- return (op,tuple(ns))
+ return (symbol_map.get(op,op),tuple(ns))
+
+def _nome_base_t1(nome):
+ """Nome-base da seção 5.1; assinatura é dada pelas sortes da declaração.
+
+ A classe de prefixo /k /:sig é informativa. A identificação semântica
+ depende do nome-base MAIS do domínio e da imagem da declaração.
+ """
+ if nome in ('w0','pertence'):
+  return nome
+ if nome.startswith(('c:','n:')):
+  return nome.split(':',1)[1]
+ if nome.startswith('R:'):
+  return nome[2:]
+ m=re.fullmatch(r'(?:f|fn|p):(.+)/[0-9]+(?::[RO]+)?',nome)
+ require(m is not None,'R9','nome declarado fora da forma t1: '+nome)
+ return m.group(1)
+
+def _id_semantico_t1(nome,assinatura):
+ base=_nome_base_t1(nome)
+ return ('simbolo',base,assinatura[0],assinatura[1])
 
 def smt_fingerprint(s):
  """Perfil t1 limitado + tipagem de asserções, antes da comparação.
@@ -265,17 +286,27 @@ def smt_fingerprint(s):
   require(tuple(st)==args,'R9','assinatura da aplicação não corresponde: '+op)
   return out
  for a in assertions:require(infer(a,{})=='Bool','R9','assert não booleano')
- normal=[smt_canon_node(a) for a in assertions]
+ # Resolução de nomes declarados segundo seção 5.1: apenas o nome-base
+ # e a assinatura têm significado. Rejeitar AMBIGUIDADE dentro do MESMO SMT,
+ # inclusive em declarações não usadas nas asserções.
+ aliases={};inverso={}
+ for nome,assinatura in decls.items():
+  identidade=_id_semantico_t1(nome,assinatura)
+  require(identidade not in inverso,'R9',
+          'duas declarações com o mesmo nome-base e assinatura: '+nome+' e '+str(inverso.get(identidade)))
+  inverso[identidade]=nome
+  aliases[nome]='@'+json.dumps(identidade,ensure_ascii=False,separators=(',',':'))
+ normal=[smt_canon_node(a,symbol_map=aliases) for a in assertions]
  used=set()
  def refs(n):
   if type(n)==tuple:
-   if n and n[0]=='atom' and n[1] in decls:used.add(n[1])
-   elif n and n[0] in decls:used.add(n[0])
+   if n and n[0]=='atom' and n[1] in aliases.values():used.add(n[1])
+   elif n and n[0] in aliases.values():used.add(n[0])
    for v in n:refs(v)
-  if type(n)==list:
+  elif type(n)==list:
    for v in n:refs(v)
  for a in normal:refs(a)
- return Counter(map(repr,normal)),{name:decls[name] for name in sorted(used)}
+ return Counter(map(repr,normal)),tuple(sorted(used))
 
 
 def check_translation(formulas,fichas,text):
@@ -345,11 +376,32 @@ def check_one(r):
   return {'veredito':'pendente-prova','motivo':None,'pendencias':proof_info,'modelos':models}
  return {'veredito':'aceito','motivo':None,'modelos':models}
 
+def objeto_sem_chave_repetida(pares):
+ """Recusa TODAS as chaves repetidas, inclusive dentro de objetos aninhados."""
+ obj={}
+ for k,v in pares:
+  if k in obj:raise Recusa('R1','chave JSON repetida: '+k)
+  obj[k]=v
+ return obj
+
+def decodificar_registro_texto(texto):
+ require(type(texto)==str,'R1','registroTexto deve ser string')
+ try:
+  registro=json.loads(texto,object_pairs_hook=objeto_sem_chave_repetida)
+ except Recusa:raise
+ except (ValueError,TypeError) as exc:raise Recusa('R1','registroTexto JSON inválido: '+str(exc))
+ require(type(registro)==dict,'R1','registroTexto não contém objeto')
+ return registro
+
 def avaliar_examples(path=None):
  f=Path(path) if path else EX_DIR/'exemplos.json'
- data=json.loads(f.read_text('utf-8'));outputs=[]
+ data=json.loads(f.read_text('utf-8'),object_pairs_hook=objeto_sem_chave_repetida);outputs=[]
  for example in data['exemplos']:
-  try:res=check_one(example['registro'])
+  try:
+   require(('registro' in example) != ('registroTexto' in example),
+           'R1','exemplo deve conter registro OU registroTexto')
+   registro=decodificar_registro_texto(example['registroTexto']) if 'registroTexto' in example else example['registro']
+   res=check_one(registro)
   except Recusa as exc:res={'veredito':'recusado','motivo':exc.code,'detalhe':exc.reason}
   except Exception as exc:res={'veredito':'erro-interno','motivo':None,'detalhe':repr(exc)}
   outputs.append({'id':example['id'],'descricao':example['descricao'],'esperado':example['esperado'],**res})
@@ -357,5 +409,5 @@ def avaliar_examples(path=None):
  return {'protocolo':'registro-v1','fonte':'especificação, leitor m2 e tradutor t1 independentes; sem vinculo.py; sem Carcara','casos':outputs}
 
 if __name__=='__main__':
- d=avaliar_examples();p=BASE/'resultado_26_registros.json';p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+ d=avaliar_examples();p=BASE/'resultado_28_registros.json';p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
  print('Salvo',p)

@@ -327,12 +327,13 @@ def _conferir(r, provar, pendencias):
 
 def no_leitor_do_gpt(e, provar):
     """(veredito, motivo, detalhe) do leitor de registros do GPT num exemplo; as provas que ele deixa pendentes vão para
-    o Carcara. Um registro dado como texto é lido com o json do Python, como o leitor dele leria."""
+    o Carcara. Um registro dado como texto é lido pelo próprio leitor dele (decodificar_registro_texto)."""
     import registros_independente as ri
     from pathlib import Path
     ri.EX_DIR = Path(PASTA)
     try:
-        res = ri.check_one(e['registro'] if 'registro' in e else json.loads(e['registroTexto']))
+        registro = e['registro'] if 'registro' in e else ri.decodificar_registro_texto(e['registroTexto'])
+        res = ri.check_one(registro)
     except ri.Recusa as recusa:
         return 'recusado', recusa.code, recusa.reason
     except Exception as erro:

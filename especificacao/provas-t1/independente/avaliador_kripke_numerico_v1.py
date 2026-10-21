@@ -15,7 +15,10 @@ from avaliador_kripke_puro import expand_formula
 X = S.Symbol('X')
 
 def rat(s):
-    q=Fraction(str(s));return S.Rational(q.numerator,q.denominator)
+    exigir(type(s)==str and bool(re.fullmatch(r'-?(?:[0-9]+|[0-9]+/0*[1-9][0-9]*|[0-9]+\.[0-9]+)',s)),
+           'racional fora da gramática v1')
+    q=Fraction(s)
+    return S.Rational(q.numerator,q.denominator)
 
 class CorpoReal:
     """Representação exata Q[alpha]/(p), com raiz alpha isolada em (a,b)."""
@@ -295,7 +298,7 @@ def _nome_obj(M,x):
 def _numero(M,x):
     exigir(type(x)==str or isinstance(x,dict),'número fora do formato v1')
     if type(x)==str and x!='alpha':
-        exigir(bool(re.fullmatch(r'-?(?:\d+|\d+/[1-9]\d*|\d+\.\d+)',x)), 'racional fora da gramática v1')
+        exigir(bool(re.fullmatch(r'-?(?:[0-9]+|[0-9]+/0*[1-9][0-9]*|[0-9]+\.[0-9]+)',x)), 'racional fora da gramática v1')
         # Fração exige denominador positivo; regexp já cobre.
     return M.K.el(x)
 

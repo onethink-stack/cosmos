@@ -29,7 +29,7 @@ import sys
 PASTA = os.path.dirname(os.path.abspath(__file__))
 INDEPENDENTE = os.path.join(PASTA, 'independente')
 # a implementação independente em que o verificador confia, byte a byte como o GPT a entregou (rodada 21; os três
-# últimos, no pacote da Fase 2)
+# últimos, no pacote da Fase 2, e o avaliador numérico e o leitor de registros revistos na rodada 33)
 INDEPENDENTE_SHA256 = {
     'parser_independente_m2.py': 'f416e2b8137b02d0f64c55efa7ef9955fdda95d028a58231d99576f14f73d2f7',
     'validador_independente_m2.py': '8482f9d89ce4971e031b3f2eeb9f50a26faa721c18e3d9015a53eea6c3ac54de',
@@ -37,8 +37,8 @@ INDEPENDENTE_SHA256 = {
     'avaliador_kripke_puro.py': '86400fe1c7b7349579c3c7193d40c27763a1888d29f2b9fa71c567bdd4fca272',
     'verificar_certificados_sem_z3.py': '36329ac9c336f4e011d33912be7cad07adf049d0392fb1a35dfc2c90d5493b15',
     'verificar_finito_reforcado.py': '21c56ea78a4e6e9c4e26c477bd81f68518349ee38ca3ca1feb89a171f113627e',
-    'avaliador_kripke_numerico_v1.py': '0c8d988e6823e99dea3b6c6ac6acc44f04705587c07525fd1e13fb1827e01a2d',
-    'registros_independente.py': 'e4459498da4df97507f191a92f1bf504c5afb1189a4370b0b4a7757102e8634e',
+    'avaliador_kripke_numerico_v1.py': '2f8d728b5b2ae6847edb74aaae40577294d162b8ba1b3ed5c536ed2b16378310',
+    'registros_independente.py': 'a4b52a0f098f391ea3932f7bd7119627a8619a430c151ab3c181810ce86c7001',
 }
 
 

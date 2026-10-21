@@ -43,10 +43,13 @@ O que é do verificador e o que é do certificado:
 7. Confere os registros de exemplo do formato aberto (registros.py, especificacao/registros-v1.md): cada exemplo de
    registros-v1/exemplos.json tem de dar o veredito esperado, com a leitura e a tradução independentes, as conferências
    independentes de modelo e o Carcara nas provas. Roda também o leitor de registros do GPT e conta onde ele diverge.
+8. Confere o lote cego 1 de registros (registros-v1/lote-cego-1/), já revelado: cada um dos registros tem de dar a
+   resposta que o Caderno registrou antes das respostas do GPT (caderno.json, o compromisso), e as provas que ela
+   deixou pendentes, o que ela previu para o Carcara. O leitor de registros do GPT passa pelo mesmo teste.
 
 Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
 bater, se um modelo for recusado ou um modelo estragado aceito, se um registro de exemplo não der o veredito esperado,
-ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem rodar o
+se um registro do lote cego não der a resposta registrada, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem rodar o
 Carcara. Só usa a biblioteca padrão e o código da pasta independente/.
 """
 import argparse
@@ -633,6 +636,18 @@ def main():
                      + (f"; divergências: {'; '.join(gpt['divergencias'])}" if gpt['divergencias'] else '') + '.')
     reg_md = ['| Exemplo | O que é | Esperado | Leitor do verificador | Leitor do GPT |', '| --- | --- | --- | --- | --- |',
               *reg['linhas']]
+    # o lote cego 1 de registros, já revelado: a resposta que o Caderno registrou antes, em cada registro
+    lote = registros.conferir_lote(provar, registros.LOTE_1, not args.sem_carcara)
+    falhas += lote['falhas']
+    pelo_carcara = ', '.join(f'{n} {k}' for k, n in sorted(lote['carcara'].items()))
+    linha_lote = (f"Lote cego 1 de registros: o verificador deu a resposta registrada antes em {lote['iguais']} de "
+                  f"{lote['registros']}" + (f" (as pendentes, pelo Carcara: {pelo_carcara})" if pelo_carcara else '')
+                  + '; ' + ('o leitor do GPT não rodou (sem o SymPy).' if lote['gpt']['sem_sympy'] else
+                            f"o leitor do GPT, em {lote['gpt']['iguais']} de {lote['registros']}"
+                            + (f"; divergências: {'; '.join(lote['gpt']['divergencias'])}"
+                               if lote['gpt']['divergencias'] else '') + '.'))
+    lote_md = ['| Registro | O caso | Resposta registrada | Leitor do verificador | Leitor do GPT |',
+               '| --- | --- | --- | --- | --- |', *lote['linhas']]
     invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
     pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
     resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
@@ -662,7 +677,8 @@ def main():
                      f"{mod['estragos']} finitos e {mod['estragos_exatos_recusados']} de {mod['estragos_exatos']} exatos "
                      f"estragados recusados. Registros: "
                      f"{reg['validos_aceitos']} de {reg['validos']} válidos aceitos e {reg['invalidos_recusados']} de "
-                     f"{reg['invalidos']} inválidos recusados com o motivo esperado{sem_conferir}. {linha_gpt}")
+                     f"{reg['invalidos']} inválidos recusados com o motivo esperado{sem_conferir}. {linha_gpt} "
+                     f"{linha_lote}")
     if args.sem_carcara:
         linha = (f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários. '
                  + linha_vinculo)
@@ -689,6 +705,10 @@ def main():
         'conferência independente, e a prova, pelo Carcara. O leitor do GPT (independente/registros_independente.py) é '
         'inteiro dele, com o comparador SMT dele; as provas que ele deixa pendentes vão para o Carcara.', '',
         *reg_md, '', linha_gpt, '',
+        '### Lote cego 1 de registros', '',
+        'Os registros de registros-v1/lote-cego-1/, já revelados. A resposta registrada é a do compromisso do Caderno '
+        '(caderno.json), dado antes das respostas do GPT; nas pendentes, a seta diz o que ele previu para o Carcara.', '',
+        *lote_md, '', linha_lote, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
@@ -713,6 +733,7 @@ def main():
         anotacao('notice', 'Registros', f"{reg['validos_aceitos']} de {reg['validos']} registros válidos aceitos; "
                  f"{reg['invalidos_recusados']} de {reg['invalidos']} inválidos recusados com o motivo esperado"
                  f"{sem_conferir}.\n{linha_gpt}")
+        anotacao('notice', 'Lote cego 1', linha_lote)
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

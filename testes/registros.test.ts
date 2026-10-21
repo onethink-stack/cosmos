@@ -9,8 +9,11 @@ import { analisar } from '../src/motor/motor'
 import { comoDicionario, compararPontos, conferirRegistro, conferirRegistroTexto, formaCanonica, lerJsonEstrito, sha256, textoDaTeoria, type Ficha } from '../src/motor/registro'
 import { problemaSmt } from '../src/motor/z3'
 import textoExemplos from '../especificacao/registros-v1/exemplos.json?raw'
+import textoCaderno from '../especificacao/registros-v1/lote-cego-1/caderno.json?raw'
+import textoLote from '../especificacao/registros-v1/lote-cego-1/entradas.json?raw'
 
 const arquivos = import.meta.glob<string>('../especificacao/registros-v1/arquivos/*', { eager: true, query: '?raw', import: 'default' })
+const arquivosDoLote = import.meta.glob<string>('../especificacao/registros-v1/lote-cego-1/arquivos/*', { eager: true, query: '?raw', import: 'default' })
 const ler = (texto: string, fichas: Ficha[]): Formula | null => analisar([texto], comoDicionario(fichas), true)[0]?.expandida ?? null
 const PQ: Ficha[] = [
   { simbolo: 'P', tipo: 'predicado', aridade: 1 },
@@ -72,6 +75,28 @@ describe('os exemplos de registros-v1', { timeout: 120_000 }, () => {
       const esperado = e.esperado.veredito === 'aceito' || e.esperado.motivo === 'R10' ? null : e.esperado.motivo
       expect(c.motivo, `${e.id}: ${c.detalhe}`).toBe(esperado)
       if (e.esperado.motivo === 'R10') expect(c.provasSemConferir, e.id).toBeGreaterThan(0)
+    }
+  })
+
+  it('cada registro do lote cego 1 dá a resposta que o Caderno registrou antes (sem o Carcara)', async () => {
+    const { registros } = JSON.parse(textoLote)
+    const respostas = new Map(JSON.parse(textoCaderno).resultados.map((r: { id: string }) => [r.id, r]))
+    expect(registros.length).toBe(62)
+    const amb = {
+      ler,
+      arquivo: (c: string) => {
+        const texto = arquivosDoLote[`../especificacao/registros-v1/lote-cego-1/${c}`]
+        return texto === undefined ? null : new TextEncoder().encode(texto)
+      },
+      traduzir: (fs: Formula[], numericos: Set<string>) => problemaSmt(api, fs, numericos),
+    }
+    for (const e of registros) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const r: any = respostas.get(e.id)
+      const c = await conferirRegistroTexto(e.registroTexto, amb)
+      // a pendente é a que só tinha a prova por conferir, e a prova é do Carcara
+      expect(c.motivo, `${e.id}: ${c.detalhe}`).toBe(r.veredito === 'recusado' ? r.motivo : null)
+      if (r.veredito !== 'recusado') expect(c.provasSemConferir > 0, e.id).toBe(r.veredito === 'pendente')
     }
   })
 })

@@ -29,7 +29,8 @@ import sys
 PASTA = os.path.dirname(os.path.abspath(__file__))
 INDEPENDENTE = os.path.join(PASTA, 'independente')
 # a implementação independente em que o verificador confia, byte a byte como o GPT a entregou (rodada 21; os três
-# últimos, no pacote da Fase 2, e o avaliador numérico e o leitor de registros revistos na rodada 33)
+# últimos, no pacote da Fase 2; o avaliador numérico e o leitor de registros revistos na rodada 33; e o avaliador
+# numérico consertado na rodada 35, depois do lote cego 1 de registros)
 INDEPENDENTE_SHA256 = {
     'parser_independente_m2.py': 'f416e2b8137b02d0f64c55efa7ef9955fdda95d028a58231d99576f14f73d2f7',
     'validador_independente_m2.py': '8482f9d89ce4971e031b3f2eeb9f50a26faa721c18e3d9015a53eea6c3ac54de',
@@ -37,7 +38,7 @@ INDEPENDENTE_SHA256 = {
     'avaliador_kripke_puro.py': '86400fe1c7b7349579c3c7193d40c27763a1888d29f2b9fa71c567bdd4fca272',
     'verificar_certificados_sem_z3.py': '36329ac9c336f4e011d33912be7cad07adf049d0392fb1a35dfc2c90d5493b15',
     'verificar_finito_reforcado.py': '21c56ea78a4e6e9c4e26c477bd81f68518349ee38ca3ca1feb89a171f113627e',
-    'avaliador_kripke_numerico_v1.py': '2f8d728b5b2ae6847edb74aaae40577294d162b8ba1b3ed5c536ed2b16378310',
+    'avaliador_kripke_numerico_v1.py': 'acdcf7177c8718e85e085c443f4fada925f75dba3e9596fcf678341b794d8c8e',
     'registros_independente.py': 'a4b52a0f098f391ea3932f7bd7119627a8619a430c151ab3c181810ce86c7001',
 }
 
@@ -259,6 +260,8 @@ def ler(texto):
             pilha.append([])
             i += 1
         elif c == ')':
+            if len(pilha) == 1:
+                raise ValueError('parênteses sem par')
             feito = pilha.pop()
             pilha[-1].append(feito)
             i += 1
@@ -387,16 +390,20 @@ def forma(texto):
 
 
 def diferenca(a, b):
-    """'' se os dois problemas são o mesmo a menos da forma; senão, a primeira diferença."""
+    """'' se os dois problemas são o mesmo a menos da forma; senão, a primeira diferença. Um problema que não se lê
+    (mal formado, de qualquer jeito) é diferente: a comparação falha fechada, sem derrubar a conferência."""
     try:
         da, aa = forma(a)
         db, ab = forma(b)
     except ValueError as erro:
         return f'não deu para comparar: {erro}'
+    except Exception as erro:
+        return f'não deu para comparar: problema mal formado ({type(erro).__name__}: {erro})'[:300]
     if da != db:
         return f'declarações diferentes: só no primeiro {sorted(da - db)[:3]}; só no segundo {sorted(db - da)[:3]}'
     if aa != ab:
-        return f'asserções diferentes: só no primeiro {list((aa - ab).elements())[:1]}'
+        return (f'asserções diferentes (contando as repetidas): só no primeiro {list((aa - ab).elements())[:1]}; '
+                f'só no segundo {list((ab - aa).elements())[:1]}')
     return ''
 
 

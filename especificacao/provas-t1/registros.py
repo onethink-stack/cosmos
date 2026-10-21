@@ -10,6 +10,10 @@ o SymPy) é contado à parte, e não vira aceite de um exemplo que tinha de ser 
 Os exemplos também passam pelo leitor de registros do GPT (independente/registros_independente.py), inteiro dele, com
 o comparador SMT dele; as provas que ele deixa pendentes vão para o Carcara. O que ele faz diferente do esperado é
 contado como divergência: a Fase 2 fecha quando não houver nenhuma.
+
+O lote cego 1 (registros-v1/lote-cego-1/), já revelado, passa pelos dois leitores do mesmo jeito: cada registro tem de
+dar a resposta que o Caderno registrou antes das respostas do GPT (caderno.json, o compromisso), e as provas que ela
+deixou pendentes, o que ela previu para o Carcara.
 """
 import hashlib
 import json
@@ -22,6 +26,7 @@ import vinculo
 from vinculo import INDEPENDENTE
 
 PASTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'registros-v1')
+LOTE_1 = os.path.join(PASTA, 'lote-cego-1')
 FORMATO = 'registro-v1'
 AFIRMACOES = ('segue', 'contradiz', 'nao-segue', 'consistente')
 TIPOS = ('axioma matemático', 'observação', 'hipótese', 'definição', 'norma', 'teorema')
@@ -134,11 +139,12 @@ def conferir_ficha(f):
             recusar('R1', f'argumentos mal formados: {f}')
 
 
-def conferir_registro(r, provar):
-    """(motivo ou None, detalhe, pendências). `provar(prova, problema)` dá True ou False pelo Carcara, ou None sem ele."""
+def conferir_registro(r, provar, pasta=PASTA):
+    """(motivo ou None, detalhe, pendências). `provar(prova, problema)` dá True ou False pelo Carcara, ou None sem ele.
+    Os caminhos dos arquivos são relativos a `pasta`, a raiz do conjunto de registros."""
     pendencias = []
     try:
-        _conferir(r, provar, pendencias)
+        _conferir(r, provar, pendencias, pasta)
         return None, '', pendencias
     except Recusa as recusa:
         return recusa.motivo, str(recusa), pendencias
@@ -165,7 +171,7 @@ def ler_registro(texto):
         recusar('R1', f'JSON: {erro}')
 
 
-def _conferir(r, provar, pendencias):
+def _conferir(r, provar, pendencias, pasta=PASTA):
     # R1, R2, R3: a forma
     if not isinstance(r, dict):
         recusar('R1', 'o registro não é um objeto')
@@ -277,8 +283,8 @@ def _conferir(r, provar, pendencias):
         # relativo à raiz do conjunto, com /, sem segmento vazio, . ou .., e sem sair da raiz, nem por link
         if '\\' in caminho or any(x in ('', '.', '..') for x in caminho.split('/')):
             recusar('R8', f'{onde}: caminho inválido {caminho}')
-        cheio = os.path.join(PASTA, *caminho.split('/'))
-        raiz = os.path.realpath(PASTA)
+        cheio = os.path.join(pasta, *caminho.split('/'))
+        raiz = os.path.realpath(pasta)
         if os.path.commonpath([raiz, os.path.realpath(cheio)]) != raiz:
             recusar('R8', f'{onde}: o caminho {caminho} sai da raiz do conjunto')
         if not os.path.isfile(cheio):
@@ -325,12 +331,12 @@ def _conferir(r, provar, pendencias):
         modelo(cert['modelo'], conjunto, raizes_conjunto, 'modelo')
 
 
-def no_leitor_do_gpt(e, provar):
+def no_leitor_do_gpt(e, provar, pasta=PASTA):
     """(veredito, motivo, detalhe) do leitor de registros do GPT num exemplo; as provas que ele deixa pendentes vão para
     o Carcara. Um registro dado como texto é lido pelo próprio leitor dele (decodificar_registro_texto)."""
     import registros_independente as ri
     from pathlib import Path
-    ri.EX_DIR = Path(PASTA)
+    ri.EX_DIR = Path(pasta)
     try:
         registro = e['registro'] if 'registro' in e else ri.decodificar_registro_texto(e['registroTexto'])
         res = ri.check_one(registro)
@@ -340,7 +346,7 @@ def no_leitor_do_gpt(e, provar):
         return 'erro', None, repr(erro)[:200]
     if res['veredito'] != 'pendente-prova':
         return res['veredito'], res.get('motivo'), res.get('escopo', '')
-    vs = [provar(os.path.join(PASTA, *p['aleth'].split('/')), os.path.join(PASTA, *p['smt'].split('/')))
+    vs = [provar(os.path.join(pasta, *p['aleth'].split('/')), os.path.join(pasta, *p['smt'].split('/')))
           for p in res['pendencias']]
     if any(v is False for v in vs):
         return 'recusado', 'R10', 'o Carcara recusa a prova'
@@ -411,4 +417,57 @@ def conferir(provar):
                 gpt = f'**{gpt}**'
         r['linhas'].append(f"| {e['id']} | {e['descricao']} | {esperado['veredito']}"
                            f"{', ' + esperado['motivo'] if esperado.get('motivo') else ''} | {resultado} | {gpt} |")
+    return r
+
+
+def conferir_lote(provar, pasta, com_carcara):
+    """Confere um lote cego já revelado: cada registro de `pasta`/entradas.json tem de dar a resposta que o Caderno
+    registrou antes das respostas do GPT (`pasta`/caderno.json, o compromisso). Uma resposta pendente (só faltava a
+    prova) tem de dar, com o Carcara, o que o compromisso previu (previstoComCarcara); sem ele, continua pendente. O
+    leitor de registros do GPT passa pelo mesmo teste, e o que ele dá diferente é contado como divergência."""
+    with open(os.path.join(pasta, 'entradas.json'), encoding='utf-8') as f:
+        entradas = json.load(f)['registros']
+    with open(os.path.join(pasta, 'caderno.json'), encoding='utf-8') as f:
+        respostas = {x['id']: x for x in json.load(f)['resultados']}
+    r = {'registros': len(entradas), 'iguais': 0, 'falhas': [], 'linhas': [], 'carcara': {},
+         'gpt': {'iguais': 0, 'divergencias': [], 'sem_sympy': ''}}
+    try:
+        _independente()
+        import registros_independente  # noqa: F401
+    except ImportError as erro:
+        r['gpt']['sem_sympy'] = str(erro)
+
+    def escrito(veredito, motivo):
+        return f'{veredito}, {motivo}' if motivo else veredito
+    for e in entradas:
+        compromisso = respostas[e['id']]
+        esperado = mostrado = escrito(compromisso['veredito'], compromisso.get('motivo'))
+        if compromisso['veredito'] == 'pendente' and com_carcara:
+            previsto = compromisso['previstoComCarcara']
+            esperado = previsto if previsto == 'aceito' else escrito('recusado', previsto)
+            mostrado = f'pendente → {esperado}'
+        try:
+            motivo, detalhe, pendencias = conferir_registro(ler_registro(e['registroTexto']), provar, pasta)
+        except Recusa as recusa:
+            motivo, detalhe, pendencias = recusa.motivo, str(recusa), []
+        dado = escrito('recusado', motivo) if motivo else ('pendente' if pendencias else 'aceito')
+        if compromisso['veredito'] == 'pendente' and com_carcara:
+            r['carcara'][dado] = r['carcara'].get(dado, 0) + 1
+        if dado == esperado:
+            r['iguais'] += 1
+        else:
+            r['falhas'].append(f"lote cego 1, {e['id']}: a resposta registrada é {esperado}, e o verificador deu {dado}"
+                               f"{': ' + detalhe[:160] if detalhe else ''}")
+        if r['gpt']['sem_sympy']:
+            gpt = 'sem rodar (sem o SymPy)'
+        else:
+            v, m, d = no_leitor_do_gpt({'registroTexto': e['registroTexto']}, provar, pasta)
+            gpt = escrito(v, m)
+            if gpt == esperado:
+                r['gpt']['iguais'] += 1
+            else:
+                r['gpt']['divergencias'].append(f"{e['id']} ({gpt}{': ' + d[:120] if d else ''})")
+                gpt = f'**{gpt}**'
+        marca = '' if dado == esperado else '**'
+        r['linhas'].append(f"| {e['id']} | {compromisso['descricao']} | {mostrado} | {marca}{dado}{marca} | {gpt} |")
     return r

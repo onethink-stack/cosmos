@@ -1,0 +1,48 @@
+Previsão do lote cego 1 de registros (registro-v1), registrada pelo Caderno antes das respostas do GPT, em 21/10/2026.
+
+As respostas do Caderno (caderno.json) seguem a especificação no commit dac2368. Elas foram conferidas pelas duas
+conferências do Caderno: a do app (src/motor/registro.ts) e o verificador público (especificacao/provas-t1/registros.py,
+com o leitor m2, a tradução t1 e as conferências de modelos do GPT). Cada resposta bate com pelo menos uma delas, menos
+a de L40, explicada nos itens 1 e 2; as outras diferenças estão explicadas abaixo.
+
+1. Defeito no avaliador numérico v1 do GPT (avaliador_kripke_numerico_v1.py, SHA-256 2f8d728b…, linha 483:
+   exigir(res is True, ...)). Sem α, CorpoReal.sinal devolve S.sign(...), um inteiro do SymPy, e uma comparação de ordem
+   verdadeira com diferença não nula (n = 3 em n > 2) dá o BooleanTrue do SymPy, que é verdadeiro mas não é o True do
+   Python: o modelo certo é recusado como "fórmula falsa". O erro só recusa demais: um valor falso nunca vira True (¬,
+   ⟹, ⟺ e os quantificadores tratam o BooleanFalse como falso). Com α, sinal devolve int(...), e com diferença zero
+   devolve 0; por isso os exemplos publicados (R07, R27 e os cinco exatos dos 42) não mostram o erro. O leitor de
+   registros do GPT (registros_independente.py, a4b52a0f…) chama esse avaliador (verificar_caso_v1). Se o código for o
+   da rodada 33, prevemos R11 em L53, L10, L40 e L52, em que o Caderno responde pendente, pendente, pendente e
+   aceito. O nosso verificador público dá o mesmo R11 nesses quatro, pelo mesmo motivo. A resposta do Caderno é a da
+   especificação: n = 3 e m = 4 satisfazem n > 2 e m = n + 1; n = 4 com k = 2 satisfaz n > 3 e ∃k∈ℤ (k · k = n).
+
+2. A conferência do app compara o problema exatamente com a tradução do Caderno, e por isso dá R9 em L17 (as
+   asserções em outra ordem) e L40 (os nomes c:n e c:m, como na tradução do GPT). A seção 5.1 aceita os dois: as
+   asserções são um multiconjunto, e os nomes valem pelo nome-base e pela assinatura. O verificador público dá pendente em
+   L17; em L40, o vínculo passa (o R9 viria antes, e não sai), e a recusa é a do item 1. A diferença do app é uma
+   limitação dele, a corrigir.
+
+3. Defeito no nosso verificador público, achado ao montar o lote: o leitor de SMT do vinculo.py quebrava com IndexError
+   num problema com um ")" a mais, que fecha a raiz no meio (L46), e a conferência inteira caía. Está
+   consertado aqui (o ")" sem par dá ValueError, e um problema que não se lê, de qualquer jeito, vira diferença, R9),
+   ainda sem publicar. A resposta R9 é a da especificação. Um leitor sem esse cuidado dá erro em L46, não R9.
+
+4. Casos em que leitores podem divergir, e o que a especificação decide:
+   - L25: Zero(n), com Zero sem ficha. O argumento de um predicado sem ficha pede objeto
+     (gramatica-m2.md, 4.3), e n é número pela ficha: E15, R4.
+   - L23: teoria.nome repetido com o mesmo valor: R1 mesmo assim (seção 2: sem chave repetida em
+     objeto nenhum).
+   - L06 e L43: defeitos de ficha que não mudam os hashes (a linha de ficha escreve
+     "1" e "-" do mesmo jeito): R1.
+   - L10 e L49: a premissa repetida não muda o hash da teoria (L10 tem o mesmo hash de L53), mas o
+     conjunto do certificado é a lista, com a repetição; o problema sem a asserção repetida é R9.
+   - L36: segue sem premissas, com o modelo das premissas (o do conjunto vazio): a combinação vale (seção 5).
+   - L50: ∀x Ave(x) ⟹ Voa(piu) tem o aviso E16, que não é erro; a forma canônica é a do escopo guloso.
+   - L57: as duas ligadas com #1; a numeração é por quantificador.
+   - L34: 2x³ − 4 tem a mesma raiz de x³ − 2, mas não é primitivo: R11.
+   - L55: k = 5/2 satisfaz k · k = n com n = 25/4, mas num ∃k∈ℤ a testemunha é inteira: R11.
+   - L44: α de grau 3 (∛2).
+   - Os cinco com dois defeitos (L14, L12, L27, L01, L33): vale o do primeiro passo da seção 7.
+
+5. Com o Carcara (no verificador público, depois da revelação), prevemos aceito em todas as pendentes válidas e R10 em
+   L13 (a primeira suposição da prova, negada, não é asserção do problema).

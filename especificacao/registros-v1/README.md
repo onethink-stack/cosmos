@@ -8,6 +8,7 @@ São eles que uma conferência independente tem de ler e conferir.
 | --- | --- |
 | `exemplos.json` | Os 28 exemplos: 10 válidos (R01 a R09 e R27) e 18 inválidos (R10 a R26 e R28), cada um com o veredito esperado e, nos inválidos, o motivo |
 | `arquivos/` | Os problemas SMT-LIB (a tradução t1 do conjunto que o certificado confere) e as provas Alethe do cvc5 1.4.2, das refutações e da marca `vazio` |
+| `lote-cego-1/` | O lote cego 1: 62 registros novos, com as respostas que o Caderno registrou antes das do GPT, a previsão e as respostas do GPT (veja o README da pasta) |
 
 ## Os válidos
 
@@ -33,7 +34,8 @@ com uma chave repetida (R28, dado em `registroTexto`).
 ## Como são conferidos
 
 - `testes/registros.test.ts`: a conferência do Caderno (`src/motor/registro.ts`),
-  que faz tudo menos a prova Alethe.
+  que faz tudo menos a prova Alethe. O vínculo dela é o da seção 5.1
+  (`src/motor/vinculo.ts`), a mesma comparação do verificador público.
 - `provas-t1/registros.py`, no fluxo conferir-provas do GitHub, com dois
   leitores. O do verificador usa a leitura e a tradução da implementação
   independente (`provas-t1/independente/`), as conferências independentes de

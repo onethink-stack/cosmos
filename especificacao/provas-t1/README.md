@@ -16,7 +16,7 @@ sem confiar em nenhum solucionador e sem fazer busca.
 | `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
 | `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
 | `modelos.py` | A parte do verificador que confere os modelos dos sat, finitos e exatos, com a conferência independente |
-| `registros.py` | A parte do verificador que confere os registros de exemplo do formato aberto (`../registros-v1/`), com a leitura e a tradução independentes e o Carcara, e que roda também o leitor de registros do GPT |
+| `registros.py` | A parte do verificador que confere os registros de exemplo do formato aberto (`../registros-v1/`) e o lote cego 1 (`../registros-v1/lote-cego-1/`), com a leitura e a tradução independentes e o Carcara, e que roda também o leitor de registros do GPT |
 | `requisitos.txt` | O SymPy e o mpmath, com versão e hash fixos, para a conferência independente dos modelos exatos |
 | `independente/` | A implementação independente, escrita pelo GPT só pela especificação, sem mudança nenhuma: o leitor da m2, a tradução t1, as conferências de modelo (finito e exato) e o leitor de registros |
 | `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
@@ -185,7 +185,14 @@ exige que sejam recusados. O `conferir.py` também se recusa a rodar com
 `python -O`, que tira os `assert` com que a conferência independente recusa. No
 uso real não havia brecha (a tradução refeita nunca declara esses nomes, e o
 Carcara confere a prova contra todas as asserções do problema), mas a comparação
-tem de valer por si.
+tem de valer por si. Ao montar o lote cego 1 de registros, apareceu mais um: um
+problema com um `)` a mais, que fecha a raiz no meio, quebrava o leitor do
+vínculo (`IndexError`) e derrubava a conferência inteira. Agora o leitor recusa o
+parêntese sem par, um problema que não se lê, de qualquer jeito, sai como
+diferente (a comparação falha fechada), e o controle
+`adversarios/comparador/parentese-a-mais-recusar.smt2` fica para isso não
+voltar. A conferência do Caderno (`src/motor/vinculo.ts`) usa a mesma
+comparação.
 
 A comparação é estrutural e ignora só o que não muda o sentido: comentários,
 `(set-logic)` e `(check-sat)`, as barras em volta dos símbolos, os nomes das
@@ -204,7 +211,7 @@ O vínculo também é atacado:
 | A fórmula com um operador trocado pelo dual (□ e ◇, ∀ e ∃, ∧ e ∨), ou negada, se não houver nenhum deles | Recusada, nos 42 certificados |
 | As fórmulas de outro exemplo, com o problema e a prova deste | Recusadas, nos 42 × 41 pares |
 | `adversarios/vinculo-trocado.json`: as fórmulas P(a) e ¬□P(a), que têm modelo, com o problema e a prova verdadeira de Z09, que são de P(a) e ¬◇P(a) | A prova passa no Carcara, e o vínculo recusa |
-| `adversarios/comparador/`: os três pares do GPT, com funções declaradas chamadas `and` e `-`, e com um `(check-sat)` no meio; e um problema mal tipado | O comparador recusa os quatro |
+| `adversarios/comparador/`: os três pares do GPT, com funções declaradas chamadas `and` e `-`, e com um `(check-sat)` no meio; um problema mal tipado; e um com um `)` a mais | O comparador recusa os cinco |
 
 Um achado da comparação: a especificação diz que o sufixo `[:sig]` aparece
 quando os argumentos misturam números e objetos, e é assim que a implementação
@@ -246,7 +253,21 @@ três defeitos (a testemunha usada debaixo de ¬, ∅ fora dos objetos, e `asser
 que `python -O` tira). Consertado (`independente/avaliador_kripke_numerico_v1.py`,
 do pacote da Fase 2), ele está em `modelos.py`: aceita os cinco e recusa os
 estragos deles (a primeira fórmula negada, α num intervalo sem raiz, a testemunha
-trocada e D0 trocado). No fluxo, ele roda com o SymPy de `requisitos.txt`.
+trocada e D0 trocado). No fluxo, ele roda com o SymPy de `requisitos.txt`. O
+lote cego 1 de registros achou nele mais um defeito: sem α, uma comparação de
+ordem verdadeira dava o `BooleanTrue` do SymPy, que não passava no `res is True`
+do fim, e modelos certos eram recusados (com n = 3, n > 2 saía falsa). O defeito
+só recusava demais. O GPT o consertou na rodada 35, com duas linhas, e é essa a
+versão que está aqui.
+
+### O lote cego 1 de registros
+
+O passo 8 do `conferir.py` confere os 62 registros de
+`../registros-v1/lote-cego-1/`, já revelados. Cada um tem de dar, no leitor do
+verificador e no leitor do GPT, a resposta que o Caderno registrou antes das
+respostas do GPT (`caderno.json`, o compromisso). Nas pendentes, que só tinham a
+prova por conferir, o Carcara tem de dar o que o compromisso previu. O README da
+pasta conta o protocolo e o resultado.
 
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).

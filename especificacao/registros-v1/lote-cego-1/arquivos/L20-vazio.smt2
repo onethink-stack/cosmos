@@ -1,0 +1,11 @@
+; tradução t1 do Caderno
+(set-logic ALL)
+(declare-sort Obj 0)
+(declare-sort Mundo 0)
+(declare-fun |p:Barbeia/2| (Mundo Obj Obj) Bool)
+(declare-fun w0 () Mundo)
+(assert (exists ((y!1 Obj))
+  (forall ((x!2 Obj))
+    (and (=> (|p:Barbeia/2| w0 y!1 x!2) (not (|p:Barbeia/2| w0 x!2 x!2)))
+         (=> (not (|p:Barbeia/2| w0 x!2 x!2)) (|p:Barbeia/2| w0 y!1 x!2))))))
+(check-sat)

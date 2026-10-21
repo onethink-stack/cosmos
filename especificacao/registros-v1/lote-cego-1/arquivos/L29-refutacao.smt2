@@ -1,0 +1,12 @@
+; tradução t1 do Caderno
+(set-logic ALL)
+(declare-sort Obj 0)
+(declare-sort Mundo 0)
+(declare-fun |p:Mortal/1| (Mundo Obj) Bool)
+(declare-fun |p:Humano/1| (Mundo Obj) Bool)
+(declare-fun |c:socrates| () Obj)
+(assert (forall ((w!1 Mundo))
+  (forall ((x!2 Obj)) (=> (|p:Humano/1| w!1 x!2) (|p:Mortal/1| w!1 x!2)))))
+(assert (forall ((w!3 Mundo)) (|p:Humano/1| w!3 |c:socrates|)))
+(assert (exists ((w!4 Mundo)) (not (|p:Mortal/1| w!4 |c:socrates|))))
+(check-sat)

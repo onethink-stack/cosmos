@@ -32,7 +32,7 @@ também sem mudança nenhuma:
 | Arquivo | O que faz | SHA-256 |
 | --- | --- | --- |
 | `verificar_finito_reforcado.py` | O `verificar_certificados_sem_z3.py` com cada `assert` trocado por um `ValueError` e sem os limites da busca do lote cego (5 objetos, 3 mundos). É uma transformação mecânica da árvore do Python, e o `conferir.py` a refaz e confere que dá este arquivo | `21c56ea78a4e6e9c4e26c477bd81f68518349ee38ca3ca1feb89a171f113627e` |
-| `avaliador_kripke_numerico_v1.py` | Confere um modelo exato (`../../modelos-exatos-t1.md`), com números em Q(α), sem o Z3; usa o SymPy | `2f8d728b5b2ae6847edb74aaae40577294d162b8ba1b3ed5c536ed2b16378310` |
+| `avaliador_kripke_numerico_v1.py` | Confere um modelo exato (`../../modelos-exatos-t1.md`), com números em Q(α), sem o Z3; usa o SymPy | `acdcf7177c8718e85e085c443f4fada925f75dba3e9596fcf678341b794d8c8e` |
 | `registros_independente.py` | O leitor de registros (`../../registros-v1.md`), escrito só pela especificação, com comparador SMT próprio (não usa o `../vinculo.py`) | `a4b52a0f098f391ea3932f7bd7119627a8619a430c151ab3c181810ce86c7001` |
 
 O avaliador numérico é o da rodada 30 com os três defeitos de correção
@@ -43,7 +43,17 @@ bytes, SHA-256 `59faca18f5d67ccbde90ef5a64e05e220ef7063211b58ee0e98f243226d69a01
 o leitor passou a comparar os símbolos pelo nome-base e pela assinatura e a
 recusar a chave JSON repetida, e o avaliador passou a ler os números só pela
 gramática do formato. O leitor de registros é conferido nos exemplos de
-`../../registros-v1/`.
+`../../registros-v1/` e no lote cego 1 (`../../registros-v1/lote-cego-1/`).
+
+O avaliador numérico é o da rodada 35 (pacote
+`auditoria_independente_registros_cego1_rodada35_corrigida.zip`, 512.190
+bytes, SHA-256
+`a571892c3f27d5e3393cc92b8900a57d7515575d59348477ae060c0c67aae266`). O lote
+cego 1 achou nele um defeito: sem α, uma comparação de ordem verdadeira dava o
+`BooleanTrue` do SymPy, que não passava no `res is True` do fim, e modelos
+certos eram recusados. O conserto do GPT são duas linhas: `sinal` devolve um
+`int` também sem α, e a comparação devolve um `bool`. A versão anterior tinha o
+SHA-256 `2f8d728b5b2ae6847edb74aaae40577294d162b8ba1b3ed5c536ed2b16378310`.
 
 O que já foi conferido com eles:
 

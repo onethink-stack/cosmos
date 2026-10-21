@@ -67,7 +67,7 @@ class CorpoReal:
     def sinal(self,a):
         a=self.el(a)
         if a.is_zero:return 0
-        if self.p is None:return S.sign(a.eval(0))
+        if self.p is None:return int(S.sign(a.eval(0)))
         # Como p é irredutível e a!=0, não há raiz comum com a.
         lo,hi=self.intervalo;f_lo=self.p.eval(lo)
         for it in range(2048):
@@ -229,7 +229,7 @@ def truth(n,w,env,M):
             return M.K.equal(a,b) if isinstance(a,S.Poly) else a==b
         exigir(isinstance(a,S.Poly) and isinstance(b,S.Poly),'ordem numérica sobre objetos')
         k=M.K.cmp(a,b)
-        return {'<':k<0,'≤':k<=0,'>':k>0,'≥':k>=0}[op]
+        return bool({'<':k<0,'≤':k<=0,'>':k>0,'≥':k>=0}[op])
     if op=='∈':
         x=term(n.args[0],w,env,M);y=term(n.args[1],w,env,M)
         if y==M.obj.get('∅') and '∅' in M.obj:return False

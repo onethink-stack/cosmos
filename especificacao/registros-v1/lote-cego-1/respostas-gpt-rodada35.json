@@ -1,0 +1,296 @@
+{
+  "lote": "registros-cego-1",
+  "resultados": [
+    {
+      "id": "L01",
+      "veredito": "recusado",
+      "motivo": "R9"
+    },
+    {
+      "id": "L02",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L03",
+      "veredito": "recusado",
+      "motivo": "R9"
+    },
+    {
+      "id": "L04",
+      "veredito": "recusado",
+      "motivo": "R6"
+    },
+    {
+      "id": "L05",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L06",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L07",
+      "veredito": "recusado",
+      "motivo": "R8"
+    },
+    {
+      "id": "L08",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L09",
+      "veredito": "recusado",
+      "motivo": "R11"
+    },
+    {
+      "id": "L10",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L11",
+      "veredito": "recusado",
+      "motivo": "R8"
+    },
+    {
+      "id": "L12",
+      "veredito": "recusado",
+      "motivo": "R6"
+    },
+    {
+      "id": "L13",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L14",
+      "veredito": "recusado",
+      "motivo": "R4"
+    },
+    {
+      "id": "L15",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L16",
+      "veredito": "recusado",
+      "motivo": "R8"
+    },
+    {
+      "id": "L17",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L18",
+      "veredito": "recusado",
+      "motivo": "R7"
+    },
+    {
+      "id": "L19",
+      "veredito": "recusado",
+      "motivo": "R8"
+    },
+    {
+      "id": "L20",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L21",
+      "veredito": "recusado",
+      "motivo": "R6"
+    },
+    {
+      "id": "L22",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L23",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L24",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L25",
+      "veredito": "recusado",
+      "motivo": "R4"
+    },
+    {
+      "id": "L26",
+      "veredito": "recusado",
+      "motivo": "R7"
+    },
+    {
+      "id": "L27",
+      "veredito": "recusado",
+      "motivo": "R12"
+    },
+    {
+      "id": "L28",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L29",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L30",
+      "veredito": "recusado",
+      "motivo": "R11"
+    },
+    {
+      "id": "L31",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L32",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L33",
+      "veredito": "recusado",
+      "motivo": "R3"
+    },
+    {
+      "id": "L34",
+      "veredito": "recusado",
+      "motivo": "R11"
+    },
+    {
+      "id": "L35",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L36",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L37",
+      "veredito": "recusado",
+      "motivo": "R5"
+    },
+    {
+      "id": "L38",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L39",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L40",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L41",
+      "veredito": "recusado",
+      "motivo": "R4"
+    },
+    {
+      "id": "L42",
+      "veredito": "recusado",
+      "motivo": "R3"
+    },
+    {
+      "id": "L43",
+      "veredito": "recusado",
+      "motivo": "R1"
+    },
+    {
+      "id": "L44",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L45",
+      "veredito": "recusado",
+      "motivo": "R12"
+    },
+    {
+      "id": "L46",
+      "veredito": "recusado",
+      "motivo": "R9"
+    },
+    {
+      "id": "L47",
+      "veredito": "recusado",
+      "motivo": "R12"
+    },
+    {
+      "id": "L48",
+      "veredito": "recusado",
+      "motivo": "R2"
+    },
+    {
+      "id": "L49",
+      "veredito": "recusado",
+      "motivo": "R9"
+    },
+    {
+      "id": "L50",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L51",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L52",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L53",
+      "veredito": "pendente"
+    },
+    {
+      "id": "L54",
+      "veredito": "recusado",
+      "motivo": "R2"
+    },
+    {
+      "id": "L55",
+      "veredito": "recusado",
+      "motivo": "R11"
+    },
+    {
+      "id": "L56",
+      "veredito": "recusado",
+      "motivo": "R9"
+    },
+    {
+      "id": "L57",
+      "veredito": "recusado",
+      "motivo": "R5"
+    },
+    {
+      "id": "L58",
+      "veredito": "recusado",
+      "motivo": "R3"
+    },
+    {
+      "id": "L59",
+      "veredito": "aceito"
+    },
+    {
+      "id": "L60",
+      "veredito": "recusado",
+      "motivo": "R11"
+    },
+    {
+      "id": "L61",
+      "veredito": "recusado",
+      "motivo": "R4"
+    },
+    {
+      "id": "L62",
+      "veredito": "recusado",
+      "motivo": "R1"
+    }
+  ]
+}

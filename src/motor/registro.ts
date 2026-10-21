@@ -10,6 +10,7 @@ import { renomearLigadas } from '../logica/canonica'
 import { temAritmetica } from '../logica/termos'
 import { falhasDoCertificado } from './certificadoModelo'
 import { falhasDoModeloExato, FORMATO_EXATO } from './modeloExato'
+import { diferencaDeProblemas } from './vinculo'
 
 export const FORMATO_REGISTRO = 'registro-v1'
 export const AFIRMACOES = ['segue', 'contradiz', 'nao-segue', 'consistente'] as const
@@ -329,12 +330,10 @@ async function conferir(r: unknown, amb: AmbienteDaConferencia, conta: { provas:
     if (!ehObjeto(x) || !soEstes(x, ['problema', 'prova'])) return falhar('R1', `${onde}: {problema, prova}`)
     const problema = await lerArquivo(x.problema, `${onde}.problema`)
     await lerArquivo(x.prova, `${onde}.prova`)
-    // o vínculo do Caderno: o corpo do problema é exatamente o que a tradução t1 do Caderno manda ao Z3 (o
-    // verificador público compara com a tradução independente)
-    const linhas = problema.split('\n')
-    const [inicio, fim] = [linhas.indexOf('(set-logic ALL)'), linhas.indexOf('(check-sat)')]
-    if (inicio < 0 || fim < inicio || linhas.slice(inicio + 1, fim).join('\n') !== amb.traduzir(fs, numericos))
-      falhar('R9', `${onde}: o problema não é a tradução t1 do conjunto`)
+    // o vínculo da seção 5.1: o problema é a tradução t1 do conjunto a menos da forma (a comparação do verificador
+    // público, com a tradução do Caderno de um lado)
+    const diferenca = diferencaDeProblemas(['(set-logic ALL)', amb.traduzir(fs, numericos), '(check-sat)', ''].join('\n'), problema)
+    if (diferenca) falhar('R9', `${onde}: o problema não é a tradução t1 do conjunto (${diferenca})`)
     conta.provas++
   }
   const modelo = (m: unknown, fs: Formula[], onde: string) => {

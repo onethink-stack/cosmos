@@ -1,0 +1,373 @@
+{
+ "formato": "respostas-registros-v1",
+ "lote": "registros-cego-1",
+ "especificacao": "especificacao/registros-v1.md e as que ela cita, no commit dac2368",
+ "nota": "As respostas do Caderno, sem o Carcara: aceito; recusado, com o motivo; ou pendente, quando só falta a prova. previstoComCarcara é o que o Carcara deve dar nas pendentes. O sal está aqui para o SHA-256 deste arquivo não poder ser testado por tentativa.",
+ "sal": "8520b944575ebfab43b37de3d6c03def68935e8866528d2025f223c6f50d489e",
+ "resultados": [
+  {
+   "id": "L01",
+   "veredito": "recusado",
+   "motivo": "R9",
+   "descricao": "o L53 com o problema do L10 e um modelo das premissas falso (n = 1)"
+  },
+  {
+   "id": "L02",
+   "veredito": "aceito",
+   "descricao": "o L44 fechado"
+  },
+  {
+   "id": "L03",
+   "veredito": "recusado",
+   "motivo": "R9",
+   "descricao": "o L29 como segue (tipo teorema), com o problema de T ∪ {φ}, que é o de contradiz"
+  },
+  {
+   "id": "L04",
+   "veredito": "recusado",
+   "motivo": "R6",
+   "descricao": "o L44 com o hash da teoria feito com os textos das premissas, não com as formas canônicas"
+  },
+  {
+   "id": "L05",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L59 com o autor em hexadecimal maiúsculo"
+  },
+  {
+   "id": "L06",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L15 com a aridade de mae escrita como texto (\"1\"), o que não muda os hashes"
+  },
+  {
+   "id": "L07",
+   "veredito": "recusado",
+   "motivo": "R8",
+   "descricao": "o L24 com a prova da marca vazio num arquivo que não existe"
+  },
+  {
+   "id": "L08",
+   "veredito": "aceito",
+   "descricao": "não segue, com crença: Ana crer que chove e que a chuva molha não faz estar molhado"
+  },
+  {
+   "id": "L09",
+   "veredito": "recusado",
+   "motivo": "R11",
+   "descricao": "o L15 com uma linha a menos na tabela de mae no modelo das premissas"
+  },
+  {
+   "id": "L10",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "o L53 com as premissas em outra ordem e uma repetida: o mesmo hash da teoria, e o problema com a asserção repetida"
+  },
+  {
+   "id": "L11",
+   "veredito": "recusado",
+   "motivo": "R8",
+   "descricao": "o L38 com o caminho da prova começando por /"
+  },
+  {
+   "id": "L12",
+   "veredito": "recusado",
+   "motivo": "R6",
+   "descricao": "o L15 com o hash da teoria do L29 e o SHA-256 do problema errado"
+  },
+  {
+   "id": "L13",
+   "veredito": "pendente",
+   "previstoComCarcara": "R10",
+   "descricao": "o L15 com a primeira suposição da prova negada (só o Carcara vê)"
+  },
+  {
+   "id": "L14",
+   "veredito": "recusado",
+   "motivo": "R4",
+   "descricao": "o L52 com a fórmula sem fechar o parêntese e outro compromisso"
+  },
+  {
+   "id": "L15",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "segue, com função: mesma mãe dá irmãs"
+  },
+  {
+   "id": "L16",
+   "veredito": "recusado",
+   "motivo": "R8",
+   "descricao": "o L15 com o caminho do problema arquivos/./…"
+  },
+  {
+   "id": "L17",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "o L29 com as asserções do problema em outra ordem (a comparação é por multiconjunto)"
+  },
+  {
+   "id": "L18",
+   "veredito": "recusado",
+   "motivo": "R7",
+   "descricao": "o L29 com o compromisso feito com o sal como texto (64 caracteres), não como 32 bytes"
+  },
+  {
+   "id": "L19",
+   "veredito": "recusado",
+   "motivo": "R8",
+   "descricao": "o L53 com os SHA-256 do problema e da prova trocados"
+  },
+  {
+   "id": "L20",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L24 com a marca vazio e uma refutação"
+  },
+  {
+   "id": "L21",
+   "veredito": "recusado",
+   "motivo": "R6",
+   "descricao": "o L15 com o hash da teoria feito com as premissas na ordem do registro"
+  },
+  {
+   "id": "L22",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "o L38 com o problema sem comentário nenhum"
+  },
+  {
+   "id": "L23",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L53 escrito com teoria.nome repetido, com o mesmo valor"
+  },
+  {
+   "id": "L24",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "contradiz com a marca vazio: o barbeiro de Russell não existe"
+  },
+  {
+   "id": "L25",
+   "veredito": "recusado",
+   "motivo": "R4",
+   "descricao": "o L59 com a fórmula Zero(n): o argumento de um predicado sem ficha pede objeto, e n é número (E15)"
+  },
+  {
+   "id": "L26",
+   "veredito": "recusado",
+   "motivo": "R7",
+   "descricao": "o L52 com o compromisso feito sobre o campo formula, não sobre o texto da fórmula"
+  },
+  {
+   "id": "L27",
+   "veredito": "recusado",
+   "motivo": "R12",
+   "descricao": "o L29 sem o modelo das premissas e com a prova num arquivo que não existe"
+  },
+  {
+   "id": "L28",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L08 (não segue) com modelo e modelo das premissas"
+  },
+  {
+   "id": "L29",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "contradiz, com □ e ◇: se é necessário que todo humano é mortal e que Sócrates é humano, não é possível que ele não seja mortal"
+  },
+  {
+   "id": "L30",
+   "veredito": "recusado",
+   "motivo": "R11",
+   "descricao": "o L53 com um modelo finito no lugar do exato"
+  },
+  {
+   "id": "L31",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L08 com a afirmação \"não-segue\" (com acento)"
+  },
+  {
+   "id": "L32",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L35 com o estado \"sem avaliacao\" (sem acento)"
+  },
+  {
+   "id": "L33",
+   "veredito": "recusado",
+   "motivo": "R3",
+   "descricao": "o L15 com o tipo hipótese e outra forma canônica"
+  },
+  {
+   "id": "L34",
+   "veredito": "recusado",
+   "motivo": "R11",
+   "descricao": "o L44 com o polinômio 2x³ − 4, que tem a mesma raiz e não é primitivo"
+  },
+  {
+   "id": "L35",
+   "veredito": "aceito",
+   "descricao": "consistente, com ⊆ e ∉"
+  },
+  {
+   "id": "L36",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "segue sem premissas, com o modelo das premissas (o do conjunto vazio, que a especificação aceita)"
+  },
+  {
+   "id": "L37",
+   "veredito": "recusado",
+   "motivo": "R5",
+   "descricao": "o L35 com a forma canônica da árvore sem expandir (∉ em vez de ¬∈)"
+  },
+  {
+   "id": "L38",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "segue sem premissas, com crença: a crença é fechada por modus ponens (K)"
+  },
+  {
+   "id": "L39",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L15 fechado mostrando o sal"
+  },
+  {
+   "id": "L40",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "o L53 com os nomes do problema e da prova como os da tradução do GPT (c:n no lugar de n:n)"
+  },
+  {
+   "id": "L41",
+   "veredito": "recusado",
+   "motivo": "R4",
+   "descricao": "o L15 com mae aplicada a dois argumentos numa premissa (E10)"
+  },
+  {
+   "id": "L42",
+   "veredito": "recusado",
+   "motivo": "R3",
+   "descricao": "o L53 com o tipo axioma matemático"
+  },
+  {
+   "id": "L43",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L29 com \"numerico\": false na ficha de um predicado, o que não muda os hashes"
+  },
+  {
+   "id": "L44",
+   "veredito": "aceito",
+   "descricao": "não segue, com números: de n³ = 2 não sai n < 1 (o modelo exato tem n = ∛2, grau 3)"
+  },
+  {
+   "id": "L45",
+   "veredito": "recusado",
+   "motivo": "R12",
+   "descricao": "o L29 sem o modelo das premissas"
+  },
+  {
+   "id": "L46",
+   "veredito": "recusado",
+   "motivo": "R9",
+   "descricao": "o L29 com o problema mal formado: as linhas das asserções em ordem inversa, e a primeira asserção tem duas linhas (um parêntese fecha a raiz no meio)"
+  },
+  {
+   "id": "L47",
+   "veredito": "recusado",
+   "motivo": "R12",
+   "descricao": "o L15 sem o modelo das premissas"
+  },
+  {
+   "id": "L48",
+   "veredito": "recusado",
+   "motivo": "R2",
+   "descricao": "o L35 fechado com o formato registro-v2"
+  },
+  {
+   "id": "L49",
+   "veredito": "recusado",
+   "motivo": "R9",
+   "descricao": "o L10 com o problema do L53, que não tem a asserção repetida (a repetição conta)"
+  },
+  {
+   "id": "L50",
+   "veredito": "aceito",
+   "descricao": "consistente, com uma fórmula que tem o aviso de escopo (E16), que não é erro: ∀x Ave(x) ⟹ Voa(piu) é ∀x (Ave(x) ⟹ Voa(piu))"
+  },
+  {
+   "id": "L51",
+   "veredito": "aceito",
+   "descricao": "o L15 fechado"
+  },
+  {
+   "id": "L52",
+   "veredito": "aceito",
+   "descricao": "consistente, com ∃ sobre ℤ: n > 3 e n é um quadrado (testemunha inteira)"
+  },
+  {
+   "id": "L53",
+   "veredito": "pendente",
+   "previstoComCarcara": "aceito",
+   "descricao": "segue, com números: n > 2 e m = n + 1 dão m > 3"
+  },
+  {
+   "id": "L54",
+   "veredito": "recusado",
+   "motivo": "R2",
+   "descricao": "o L36 com a tradução t2"
+  },
+  {
+   "id": "L55",
+   "veredito": "recusado",
+   "motivo": "R11",
+   "descricao": "o L52 com n = 25/4 e a testemunha k = 5/2: k · k = n vale, mas k não é inteiro"
+  },
+  {
+   "id": "L56",
+   "veredito": "recusado",
+   "motivo": "R9",
+   "descricao": "o L24 com a marca vazio para T ∪ {φ}, não para T"
+  },
+  {
+   "id": "L57",
+   "veredito": "recusado",
+   "motivo": "R5",
+   "descricao": "o L36 com as duas ligadas numeradas #1 (a numeração é por quantificador)"
+  },
+  {
+   "id": "L58",
+   "veredito": "recusado",
+   "motivo": "R3",
+   "descricao": "o L29 fechado com o tipo teorema"
+  },
+  {
+   "id": "L59",
+   "veredito": "aceito",
+   "descricao": "consistente, com divisão por zero: q = 1 / n e n = 0 (D0)"
+  },
+  {
+   "id": "L60",
+   "veredito": "recusado",
+   "motivo": "R11",
+   "descricao": "o L08 com o mundo real sem acesso nenhum para Ana (o quadro não é serial)"
+  },
+  {
+   "id": "L61",
+   "veredito": "recusado",
+   "motivo": "R4",
+   "descricao": "o L35 com a fórmula ∃x∈x (x ∈ Animais) (E18)"
+  },
+  {
+   "id": "L62",
+   "veredito": "recusado",
+   "motivo": "R1",
+   "descricao": "o L52 escrito com uma vírgula depois do último campo (JSON inválido)"
+  }
+ ]
+}

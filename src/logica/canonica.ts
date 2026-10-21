@@ -1,12 +1,18 @@
 // Forma canônica de uma fórmula: o texto com as variáveis ligadas renomeadas
 // em ordem (∀x P(x) e ∀y P(y) dão o mesmo). Serve para comparar fórmulas e
-// como chave do banco de provas.
+// como chave do banco de provas. A troca dos nomes (#1, #2… na ordem dos
+// quantificadores) também é a da forma canônica dos registros (registros-v1).
 
 import type { Formula, Termo } from './ast'
 import { imprimir } from './impressao'
 
 /** Texto da fórmula com as variáveis ligadas renomeadas em ordem (∀x P(x) e ∀y P(y) dão o mesmo). */
 export function canonica(f: Formula): string {
+  return imprimir(renomearLigadas(f))
+}
+
+/** A fórmula com cada variável ligada trocada por #1, #2…, na ordem em que o seu quantificador aparece. */
+export function renomearLigadas(f: Formula): Formula {
   let k = 0
   const termo = (t: Termo, env: Map<string, string>): Termo => {
     switch (t.k) {
@@ -52,5 +58,5 @@ export function canonica(f: Formula): string {
       }
     }
   }
-  return imprimir(ir(f, new Map()))
+  return ir(f, new Map())
 }

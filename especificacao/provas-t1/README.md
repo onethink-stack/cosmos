@@ -16,6 +16,7 @@ sem confiar em nenhum solucionador e sem fazer busca.
 | `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
 | `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
 | `modelos.py` | A parte do verificador que confere os modelos finitos dos sat com a conferência independente (e conta os exatos) |
+| `registros.py` | A parte do verificador que confere os registros de exemplo do formato aberto (`../registros-v1/`), com a leitura e a tradução independentes e o Carcara |
 | `independente/` | A implementação independente da t1 (leitor da m2 e tradução), escrita pelo GPT só pela especificação, sem mudança nenhuma |
 | `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
 

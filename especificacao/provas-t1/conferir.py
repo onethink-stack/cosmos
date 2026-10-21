@@ -40,10 +40,14 @@ O que é do verificador e o que é do certificado:
    de ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
    sem os acessos do mundo real. Os modelos exatos, dos sat com números, só são contados: a conferência independente
    deles entra quando o avaliador numérico do GPT for consertado (rodada 31).
+7. Confere os registros de exemplo do formato aberto (registros.py, especificacao/registros-v1.md): cada exemplo de
+   registros-v1/exemplos.json tem de dar o veredito esperado, com a leitura e a tradução independentes, a conferência
+   independente do modelo finito e o Carcara nas provas.
 
 Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
-bater, se um modelo for recusado ou um modelo estragado aceito, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem
-rodar o Carcara. Só usa a biblioteca padrão e o código da pasta independente/.
+bater, se um modelo for recusado ou um modelo estragado aceito, se um registro de exemplo não der o veredito esperado,
+ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem rodar o
+Carcara. Só usa a biblioteca padrão e o código da pasta independente/.
 """
 import argparse
 import collections
@@ -60,6 +64,7 @@ import tempfile
 PASTA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PASTA)
 import modelos  # noqa: E402
+import registros  # noqa: E402
 import vinculo  # noqa: E402
 
 OPCOES = ['--allow-int-real-subtyping', '--expand-let-bindings']
@@ -583,6 +588,19 @@ def main():
               f"{mod['estragos_recusados']} de {mod['estragos']} recusados |",
               f"| Modelos exatos dos sat com números (modelo-exato-t1-v1) | {mod['exatos']} no registro, conferidos pelo "
               f"Caderno (testes/modelos-exatos.test.ts); a conferência independente deles ainda não está aqui |"]
+    # os registros do formato aberto (registro-v1): o veredito esperado em cada exemplo de registros-v1/exemplos.json
+
+    def provar(prova, problema):
+        if args.sem_carcara:
+            return None
+        return conferir(args.carcara, prova, problema, REGRAS_CONFIADAS)[0] == 'valid'
+    reg = registros.conferir(provar)
+    falhas += reg['falhas']
+    if not args.sem_carcara and reg['sem_conferir']:
+        falhas.append(f"registros: {', '.join(reg['sem_conferir'])} ficaram sem conferir o defeito, mesmo com o Carcara")
+    sem_conferir = (f" ({len(reg['sem_conferir'])} sem conferir o defeito: {', '.join(reg['sem_conferir'])})"
+                    if reg['sem_conferir'] else '')
+    reg_md = ['| Exemplo | O que é | Esperado | Resultado |', '| --- | --- | --- | --- |', *reg['linhas']]
     invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
     pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
     resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
@@ -608,7 +626,9 @@ def main():
     alteradas_recusadas = vin['trocados_recusados'] + vin['pares_recusados']
     linha_vinculo = (f"O vínculo bateu em {vin['iguais']} de {vin['total']} certificados e recusou {alteradas_recusadas} "
                      f"de {alteradas} fórmulas alteradas. {mod['aceitos']} de {mod['modelos']} modelos aceitos e "
-                     f"{mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados.")
+                     f"{mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados. Registros: "
+                     f"{reg['validos_aceitos']} de {reg['validos']} válidos aceitos e {reg['invalidos_recusados']} de "
+                     f"{reg['invalidos']} inválidos recusados com o motivo esperado{sem_conferir}.")
     if args.sem_carcara:
         linha = (f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários. '
                  + linha_vinculo)
@@ -628,6 +648,10 @@ def main():
         '### Modelos dos sat', '',
         'Os finitos, pela conferência independente (independente/verificar_certificados_sem_z3.py), sem busca.', '',
         *mod_md, '',
+        '### Registros do formato aberto', '',
+        'Os exemplos de registros-v1/exemplos.json (especificacao/registros-v1.md): a leitura e a tradução são as da '
+        'implementação independente, o modelo finito passa pela conferência independente, e a prova, pelo Carcara.', '',
+        *reg_md, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
@@ -649,6 +673,9 @@ def main():
                  f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados. "
                  f"{mod['exatos']} modelos exatos (com números) ficam com a conferência do Caderno, até a independente "
                  f"ser consertada.")
+        anotacao('notice', 'Registros', f"{reg['validos_aceitos']} de {reg['validos']} registros válidos aceitos; "
+                 f"{reg['invalidos_recusados']} de {reg['invalidos']} inválidos recusados com o motivo esperado"
+                 f"{sem_conferir}.")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

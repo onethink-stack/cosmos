@@ -1,0 +1,1839 @@
+{
+ "formato": "registro-v1",
+ "descricao": "Os registros de exemplo do formato aberto (especificacao/registros-v1.md). Cada um tem o veredito esperado; os inválidos têm um defeito só, e o motivo é o código desse defeito. Os arquivos dos certificados estão em arquivos/, e o caminho de cada um é relativo a esta pasta.",
+ "exemplos": [
+  {
+   "id": "R01",
+   "descricao": "segue: todo P é Q, e a é P; logo a é Q",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e",
+     "sal": "a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R02",
+   "descricao": "não segue: de \"todo P é Q\" não sai que a é Q",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R03",
+   "descricao": "consistente: \"a é P\" cabe junto com \"todo P é Q\"",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "consistente",
+    "formula": "P(a)",
+    "formaCanonica": "(P a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "axioma matemático",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "corroborada",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d",
+     "sal": "416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R04",
+   "descricao": "contradiz: se todo P é Q e a não é Q, a não é P",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "contradiz",
+    "formula": "P(a)",
+    "formaCanonica": "(P a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a não é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "¬Q(a)"
+     ],
+     "hash": "3f80f3e2d1fd5bbadf5eca7b8af126062fd58c7461662b719f8397f5b5367bea"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "contestada",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "4318f0eb2a60a505dde7330ebf36962fc4390c71317d8aaf832764ec8efcbc41",
+     "sal": "f78a7da67ada75c5a07760ffd0ab2782484fd0eb9e6aaf247acc109bad3ca346"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R04-refutacao.smt2",
+       "sha256": "70d97891fe0d6b96363b4d10e7f019dc8c2ea0d6969c730f8ee19017c9e2d728"
+      },
+      "prova": {
+       "arquivo": "arquivos/R04-refutacao.alethe",
+       "sha256": "f56c6ec31cbb68bbc550d8bab61665a81668c6b8fdbff75ad4893c2cfba7cfa7"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R05",
+   "descricao": "segue com a marca vazio: A e ¬A não têm modelo, e o registro só diz isso",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "B",
+    "formaCanonica": "B",
+    "teoria": {
+     "nome": "A e não A",
+     "fichas": [
+      {
+       "simbolo": "A",
+       "tipo": "predicado",
+       "aridade": 0
+      },
+      {
+       "simbolo": "B",
+       "tipo": "predicado",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "A",
+      "¬A"
+     ],
+     "hash": "f0e7b14737b4846f645ab8e7357a60883d587c98badfa7a70f1ad321234f93d5"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "refutada",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "c976bfe70ca3be0d1dac2c1ff449e3efedb0e0343b7fb12432ce1a0192ffacd8",
+     "sal": "7f5db2feced85d7fabda90b643f1fa599b7bd21017e059307c763e9075de2d14"
+    },
+    "certificado": {
+     "vazio": {
+      "problema": {
+       "arquivo": "arquivos/R05-vazio.smt2",
+       "sha256": "0845432543b8fa4c9b7008129b90be425d9d61ffecc3a7bbc170ea55e0765a5d"
+      },
+      "prova": {
+       "arquivo": "arquivos/R05-vazio.alethe",
+       "sha256": "b9f64b273e2d01fdd4fae53e39f140f60e6cc3a345a2afd84730403de7abd034"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R06",
+   "descricao": "segue sem premissas: uma lei da lógica, sem modelo das premissas",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "(∀x P(x)) ⟹ P(a)",
+    "formaCanonica": "(⟹ (∀ #1 (P #1)) (P a))",
+    "teoria": {
+     "nome": "sem premissas",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [],
+     "hash": "0f86047b99ba9c01d9150c8787c6136bf67116d0214595511316b85c4d387984"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "1b3fcee19eb246f9f6d1ba19afba3c68d4bc25644c1382276528f7ae0e89e28f",
+     "sal": "e20fe509fa133e6950d9682c51ad58d3f7552b69abe4a6613998168afb04c6f6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R06-refutacao.smt2",
+       "sha256": "8003122f53d9a14273af31493f761985c832783559c540f8fcb2a992cf02a0b5"
+      },
+      "prova": {
+       "arquivo": "arquivos/R06-refutacao.alethe",
+       "sha256": "d142e42f6e2675fa3fd3eae0fd7e0a6285d9dba3b80c77f5eac37fb2db1a1be3"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R07",
+   "descricao": "não segue, com números: de n · n = 2 não sai n > 0 (o modelo exato tem n = −√2)",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "n > 0",
+    "formaCanonica": "(> n 0)",
+    "teoria": {
+     "nome": "n ao quadrado é 2",
+     "fichas": [
+      {
+       "simbolo": "n",
+       "tipo": "constante",
+       "aridade": 0,
+       "numerico": true
+      }
+     ],
+     "premissas": [
+      "n · n = 2"
+     ],
+     "hash": "e309d65d674747f2ab4862f66c456edae739d3e47dff52ee42ae87c6364a06df"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "47bd8680f778dcc2923e44564990ef80d93a1d127b5aedf66f058edf61993baf",
+     "sal": "1154132d49598d8c5eaadb00f34fee23f2cf74013f47e3384c7acb9d749ced06"
+    },
+    "certificado": {
+     "modelo": {
+      "formato": "modelo-exato-t1-v1",
+      "objetos": [
+       "o0"
+      ],
+      "mundos": [
+       "w0"
+      ],
+      "mundoReal": "w0",
+      "algebrico": {
+       "polinomio": [
+        -2,
+        0,
+        1
+       ],
+       "intervaloAberto": [
+        "-3/2",
+        "-1"
+       ],
+       "indiceDaRaiz": 1
+      },
+      "constantesObjeto": {},
+      "constantesReais": {
+       "n": "alpha"
+      },
+      "funcoesObjeto": {},
+      "funcoesReais": {},
+      "predicados": {},
+      "pertence": [],
+      "acessos": {},
+      "testemunhas": []
+     }
+    }
+   }
+  },
+  {
+   "id": "R08",
+   "descricao": "consistente, com crença: Ana crer que a é P cabe junto com a não ser P",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "consistente",
+    "formula": "¬P(a)",
+    "formaCanonica": "(¬ (P a))",
+    "teoria": {
+     "nome": "Ana crê que a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "B[Ana] P(a)"
+     ],
+     "hash": "fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981"
+    },
+    "tipo": "observação",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "sem avaliação",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c",
+     "sal": "dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 2,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         1,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {
+       "Ana": [
+        [
+         0,
+         1
+        ],
+        [
+         1,
+         1
+        ]
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R09",
+   "descricao": "o R02 fechado: só o compromisso, sem a fórmula, as premissas e o certificado",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "fechado",
+    "afirmacao": "nao-segue",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d"
+    }
+   }
+  },
+  {
+   "id": "R10",
+   "descricao": "um campo a mais",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R1"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    },
+    "observacao": "um campo que o formato não tem"
+   }
+  },
+  {
+   "id": "R11",
+   "descricao": "um estado fora da lista",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R1"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "aprovada",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R12",
+   "descricao": "uma gramática que esta versão não conhece",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R2"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m3",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R13",
+   "descricao": "teorema num não segue",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R3"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R14",
+   "descricao": "uma premissa que a m2 recusa (parêntese sem fechar)",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R4"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x)"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R15",
+   "descricao": "a forma canônica de outra fórmula",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R5"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q b)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": []
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R16",
+   "descricao": "o hash de outra teoria",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R6"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e",
+     "sal": "a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R17",
+   "descricao": "o compromisso com outro sal",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R7"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e",
+     "sal": "269405a7fe612a8591f48e55315aefd386f2d2851b63d95666431b69a73576ec"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R18",
+   "descricao": "a prova com outro SHA-256",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R8"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e",
+     "sal": "a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2c0"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R19",
+   "descricao": "a fórmula trocada (P(a) também segue), com a refutação de Q(a)",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R9"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "P(a)",
+    "formaCanonica": "(P a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "f63b08ad21b8882cac83c6b5aaea0bda4ba40dff6dbee1986cd895e033f30606",
+     "sal": "a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R20",
+   "descricao": "a prova com o último passo trocado pela regra false",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R10"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q, e a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))",
+      "P(a)"
+     ],
+     "hash": "99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e",
+     "sal": "a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R20-refutacao.alethe",
+       "sha256": "f765460cb78c1c5f34d8605e1bf25513b965bf18141611ce4892b2671d6fb96d"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R21",
+   "descricao": "o modelo com a sendo Q, em que ¬Q(a) é falsa",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R11"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "modelo": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {
+       "a": 0
+      },
+      "funcoes": {},
+      "predicados": {
+       "P/1": [],
+       "Q/1": [
+        [
+         0,
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R22",
+   "descricao": "teoria inconsistente sem a marca vazio: A e ¬A, com a refutação de B e sem modelo das premissas",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R12"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "B",
+    "formaCanonica": "B",
+    "teoria": {
+     "nome": "A e não A",
+     "fichas": [
+      {
+       "simbolo": "A",
+       "tipo": "predicado",
+       "aridade": 0
+      },
+      {
+       "simbolo": "B",
+       "tipo": "predicado",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "A",
+      "¬A"
+     ],
+     "hash": "f0e7b14737b4846f645ab8e7357a60883d587c98badfa7a70f1ad321234f93d5"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "f371368155770d09597084c00fc3a998b7ef28a22c6d1661e00d86458ee0a29e",
+     "sal": "3231d0b0948565847b74e16ba4d356dad2a045b7a8af169628e13bbbc644f54a"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R22-refutacao.smt2",
+       "sha256": "b79c94995b6f1900589bd6011782d17ca22215622eb75a95d358e860d3a0849c"
+      },
+      "prova": {
+       "arquivo": "arquivos/R22-refutacao.alethe",
+       "sha256": "774a373117984b55c641515e17b37b2f9fac7eedacc0679fa9bdfd17648c55de"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R23",
+   "descricao": "teoria inconsistente com um modelo das premissas falso (A verdadeira, então ¬A é falsa)",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R11"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "B",
+    "formaCanonica": "B",
+    "teoria": {
+     "nome": "A e não A",
+     "fichas": [
+      {
+       "simbolo": "A",
+       "tipo": "predicado",
+       "aridade": 0
+      },
+      {
+       "simbolo": "B",
+       "tipo": "predicado",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "A",
+      "¬A"
+     ],
+     "hash": "f0e7b14737b4846f645ab8e7357a60883d587c98badfa7a70f1ad321234f93d5"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "f371368155770d09597084c00fc3a998b7ef28a22c6d1661e00d86458ee0a29e",
+     "sal": "3231d0b0948565847b74e16ba4d356dad2a045b7a8af169628e13bbbc644f54a"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R22-refutacao.smt2",
+       "sha256": "b79c94995b6f1900589bd6011782d17ca22215622eb75a95d358e860d3a0849c"
+      },
+      "prova": {
+       "arquivo": "arquivos/R22-refutacao.alethe",
+       "sha256": "774a373117984b55c641515e17b37b2f9fac7eedacc0679fa9bdfd17648c55de"
+      }
+     },
+     "modeloDasPremissas": {
+      "objetos": 1,
+      "mundos": 1,
+      "constantes": {},
+      "funcoes": {},
+      "predicados": {
+       "A/0": [
+        [
+         0,
+         []
+        ]
+       ]
+      },
+      "pertence": [],
+      "acessos": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "R24",
+   "descricao": "a marca vazio com a prova de outra teoria (a de A e ¬A), numa teoria que tem modelo",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R9"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "B",
+    "formaCanonica": "B",
+    "teoria": {
+     "nome": "a é P",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      },
+      {
+       "simbolo": "B",
+       "tipo": "predicado",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "P(a)"
+     ],
+     "hash": "ec9526ece4cf7263d56854311533d24114fbf5e6fc678e04d958dfa417e695e0"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "refutada",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "0734b196560d3f2a9e19af621977323473ad7b1bc715e2054847c4c0425ba31c",
+     "sal": "f02c0f718eb6208f01c842d907fc421ce15d53fb5ec564b94dea7d46d78f28d0"
+    },
+    "certificado": {
+     "vazio": {
+      "problema": {
+       "arquivo": "arquivos/R05-vazio.smt2",
+       "sha256": "0845432543b8fa4c9b7008129b90be425d9d61ffecc3a7bbc170ea55e0765a5d"
+      },
+      "prova": {
+       "arquivo": "arquivos/R05-vazio.alethe",
+       "sha256": "b9f64b273e2d01fdd4fae53e39f140f60e6cc3a345a2afd84730403de7abd034"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R25",
+   "descricao": "não segue com uma refutação no lugar do modelo",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R1"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "nao-segue",
+    "formula": "Q(a)",
+    "formaCanonica": "(Q a)",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "fichas": [
+      {
+       "simbolo": "P",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1
+      },
+      {
+       "simbolo": "a",
+       "tipo": "constante",
+       "aridade": 0
+      }
+     ],
+     "premissas": [
+      "∀x (P(x) ⟹ Q(x))"
+     ],
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d",
+     "sal": "0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R01-refutacao.smt2",
+       "sha256": "cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529"
+      },
+      "prova": {
+       "arquivo": "arquivos/R01-refutacao.alethe",
+       "sha256": "bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "R26",
+   "descricao": "o registro fechado mostrando a fórmula",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R1"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "fechado",
+    "afirmacao": "nao-segue",
+    "teoria": {
+     "nome": "Todo P é Q",
+     "hash": "a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c"
+    },
+    "tipo": "hipótese",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d"
+    },
+    "formula": "Q(a)"
+   }
+  }
+ ]
+}

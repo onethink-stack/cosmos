@@ -1,0 +1,69 @@
+// Os registros do formato aberto (registro-v1, especificacao/registros-v1.md): a forma canônica e os textos que dão os
+// hashes, e a conferência do Caderno em cada exemplo de especificacao/registros-v1/exemplos.json, que tem de dar o
+// veredito esperado. A prova Alethe não se confere aqui: é do Carcara, no fluxo conferir-provas do GitHub, que também
+// confere os exemplos com a leitura e a tradução independentes.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { init, killThreads } from 'z3-solver'
+import type { Formula } from '../src/logica/ast'
+import { analisar } from '../src/motor/motor'
+import { comoDicionario, compararPontos, conferirRegistro, formaCanonica, sha256, textoDaTeoria, type Ficha } from '../src/motor/registro'
+import { problemaSmt } from '../src/motor/z3'
+import textoExemplos from '../especificacao/registros-v1/exemplos.json?raw'
+
+const arquivos = import.meta.glob<string>('../especificacao/registros-v1/arquivos/*', { eager: true, query: '?raw', import: 'default' })
+const ler = (texto: string, fichas: Ficha[]): Formula | null => analisar([texto], comoDicionario(fichas), true)[0]?.expandida ?? null
+const PQ: Ficha[] = [
+  { simbolo: 'P', tipo: 'predicado', aridade: 1 },
+  { simbolo: 'Q', tipo: 'predicado', aridade: 1 },
+]
+
+describe('a forma canônica e o hash da teoria', () => {
+  it('troca as variáveis ligadas por #1, #2… na ordem dos quantificadores, na árvore expandida da m2', () => {
+    expect(formaCanonica(ler('∀y (P(y) ⟹ Q(y))', PQ)!)).toBe('(∀ #1 (⟹ (P #1) (Q #1)))')
+    expect(formaCanonica(ler('∀x (P(x) ⟹ Q(x))', PQ)!)).toBe('(∀ #1 (⟹ (P #1) (Q #1)))')
+    expect(formaCanonica(ler('(∀x P(x)) ∧ (∃x Q(x))', PQ)!)).toBe('(∧ (∀ #1 (P #1)) (∃ #2 (Q #2)))')
+  })
+
+  it('o hash da teoria não depende da ordem nem da repetição das premissas', async () => {
+    const a = textoDaTeoria(['(P a)', '(Q a)'], PQ)
+    expect(a).toBe('teoria-v1\nficha P predicado 1 - -\nficha Q predicado 1 - -\npremissa (P a)\npremissa (Q a)\n')
+    expect(await sha256(textoDaTeoria(['(Q a)', '(P a)', '(Q a)'], [...PQ].reverse()))).toBe(await sha256(a))
+  })
+
+  it('ordena pelos pontos de código, não pelas unidades de UTF-16', () => {
+    // 𝑥 (U+1D465) vem depois de ｚ (U+FF5A) em pontos de código, e antes em UTF-16
+    expect(compararPontos('𝑥', 'ｚ')).toBeGreaterThan(0)
+    expect('𝑥' < 'ｚ').toBe(true)
+  })
+})
+
+describe('os exemplos de registros-v1', { timeout: 120_000 }, () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let api: any
+  beforeAll(async () => {
+    api = await init()
+  }, 60_000)
+  afterAll(async () => {
+    await killThreads(api.em)
+  })
+
+  it('cada exemplo dá o veredito esperado na conferência do Caderno (menos a prova, que é do Carcara)', async () => {
+    const { exemplos } = JSON.parse(textoExemplos)
+    expect(exemplos.length).toBeGreaterThan(20)
+    const amb = {
+      ler,
+      arquivo: (c: string) => {
+        const texto = arquivos[`../especificacao/registros-v1/${c}`]
+        return texto === undefined ? null : new TextEncoder().encode(texto)
+      },
+      traduzir: (fs: Formula[], numericos: Set<string>) => problemaSmt(api, fs, numericos),
+    }
+    for (const e of exemplos) {
+      const c = await conferirRegistro(e.registro, amb)
+      // o defeito R10 está na prova, que só o Carcara confere
+      const esperado = e.esperado.veredito === 'aceito' || e.esperado.motivo === 'R10' ? null : e.esperado.motivo
+      expect(c.motivo, `${e.id}: ${c.detalhe}`).toBe(esperado)
+      if (e.esperado.motivo === 'R10') expect(c.provasSemConferir, e.id).toBeGreaterThan(0)
+    }
+  })
+})

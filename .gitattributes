@@ -4,3 +4,5 @@ especificacao/provas-t1/** text eol=lf
 # a implementação independente (do GPT) fica byte a byte como ele a entregou, com as linhas em CRLF: assim o SHA-256
 # de cada arquivo é o mesmo que ele publicou
 especificacao/provas-t1/independente/** -text
+# os registros de exemplo do formato aberto: os arquivos dos certificados têm o SHA-256 no registro
+especificacao/registros-v1/** text eol=lf

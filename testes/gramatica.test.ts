@@ -5,8 +5,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { init, killThreads } from 'z3-solver'
 import type { EntradaDicionario } from '../src/dados/tipos'
-import type { Formula, Termo } from '../src/logica/ast'
 import { expandir } from '../src/logica/acucar'
+import { escreverArvore } from '../src/logica/arvore'
 import { canonica } from '../src/logica/canonica'
 import { imprimir } from '../src/logica/impressao'
 import { ESPACOS, lex } from '../src/logica/lexer'
@@ -18,58 +18,8 @@ import textoDiagnosticos from '../especificacao/diagnosticos-m2.json?raw'
 import textoExemplos from '../especificacao/exemplos-m2.json?raw'
 import textoLexico from '../especificacao/lexico-m2.json?raw'
 
-/** A árvore entre parênteses: (conectivo filhos…); termos e fórmulas no mesmo formato. */
-const t = (x: Termo): string => {
-  switch (x.k) {
-    case 'nome':
-      return x.nome
-    case 'num':
-      return x.valor
-    case 'vazio':
-      return '∅'
-    case 'reais':
-      return 'ℝ'
-    case 'inteiros':
-      return 'ℤ'
-    case 'app':
-      return x.subscrito ? `(_ ${x.fn} ${x.args.map(t).join(' ')})` : `(${x.fn} ${x.args.map(t).join(' ')})`
-    case 'inter':
-      return `(⋂ ${t(x.l)} ${t(x.r)})`
-    case 'uniao':
-      return `(⋃ ${t(x.l)} ${t(x.r)})`
-    case 'arit':
-      return `(${x.op} ${t(x.l)} ${t(x.r)})`
-    case 'neg':
-      return `(− ${t(x.t)})`
-  }
-}
-const OP = { and: '∧', or: '∨', imp: '⟹', iff: '⟺' } as const
-const f = (x: Formula): string => {
-  switch (x.k) {
-    case 'pred':
-      return x.args.length ? `(${x.nome} ${x.args.map(t).join(' ')})` : x.nome
-    case 'rel':
-      return `(${x.op} ${t(x.l)} ${t(x.r)})`
-    case 'not':
-      return `(¬ ${f(x.f)})`
-    case 'nec':
-      return `(□ ${f(x.f)})`
-    case 'pos':
-      return `(◇ ${f(x.f)})`
-    case 'crenca':
-      return `(B "${x.agente}" ${f(x.f)})`
-    case 'and':
-    case 'or':
-    case 'imp':
-    case 'iff':
-      return `(${OP[x.k]} ${f(x.l)} ${f(x.r)})`
-    case 'forall':
-    case 'exists':
-      return `(${x.k === 'forall' ? '∀' : '∃'} ${x.v}${x.dom ? ` ∈ ${t(x.dom)}` : ''} ${f(x.corpo)})`
-    case 'const':
-      return x.valor ? '⊤' : '⊥'
-  }
-}
+/** A árvore entre parênteses: (conectivo filhos…); termos e fórmulas no mesmo formato (seção 6 da m2). */
+const f = escreverArvore
 
 const codigos = (texto: string) =>
   validar(texto, [])

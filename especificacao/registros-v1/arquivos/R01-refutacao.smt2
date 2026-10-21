@@ -1,0 +1,16 @@
+; R01: as premissas e a negação da fórmula
+; ∀x (P(x) ⟹ Q(x))
+; P(a)
+; ¬(Q(a))
+; tradução t1 do Caderno
+(set-logic ALL)
+(declare-sort Obj 0)
+(declare-sort Mundo 0)
+(declare-fun |p:Q/1| (Mundo Obj) Bool)
+(declare-fun w0 () Mundo)
+(declare-fun |p:P/1| (Mundo Obj) Bool)
+(declare-fun |c:a| () Obj)
+(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))
+(assert (|p:P/1| w0 |c:a|))
+(assert (not (|p:Q/1| w0 |c:a|)))
+(check-sat)

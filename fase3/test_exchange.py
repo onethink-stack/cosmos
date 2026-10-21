@@ -127,7 +127,9 @@ class Exchange(unittest.TestCase):
             self.assertTrue(c.verify_record(record, assets, record['autor']))
             problem = record['certificado']['refutacao']['problema']
             raw = base64.b64decode(assets[problem['arquivo']])
-            raw += b'\n(assert false)\n'
+            raw = raw.replace(b'(check-sat)', b'(assert false)\n(check-sat)')
+            # Perfil e sintaxe continuam validos: a recusa e da comparacao.
+            c.registros.vinculo.forma(raw.decode('utf-8'))
             assets[problem['arquivo']] = base64.b64encode(raw).decode('ascii')
             problem['sha256'] = c.digest(raw)
             entry = c.sign(key, {'index': 0, 'previous': '0' * 64, 'record': record, 'assets': assets})

@@ -28,18 +28,43 @@ import sys
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
 INDEPENDENTE = os.path.join(PASTA, 'independente')
-# a implementação independente em que o verificador confia, byte a byte como o GPT a entregou (rodada 21)
+# a implementação independente em que o verificador confia, byte a byte como o GPT a entregou (rodada 21; os três
+# últimos, no pacote da Fase 2)
 INDEPENDENTE_SHA256 = {
     'parser_independente_m2.py': 'f416e2b8137b02d0f64c55efa7ef9955fdda95d028a58231d99576f14f73d2f7',
     'validador_independente_m2.py': '8482f9d89ce4971e031b3f2eeb9f50a26faa721c18e3d9015a53eea6c3ac54de',
     'tradutor_t1_independente.py': '59c711b1f36d43d4c524c4536c1c2b0242da5d1c174ddc881b3aee0f0c45ef58',
     'avaliador_kripke_puro.py': '86400fe1c7b7349579c3c7193d40c27763a1888d29f2b9fa71c567bdd4fca272',
     'verificar_certificados_sem_z3.py': '36329ac9c336f4e011d33912be7cad07adf049d0392fb1a35dfc2c90d5493b15',
+    'verificar_finito_reforcado.py': '21c56ea78a4e6e9c4e26c477bd81f68518349ee38ca3ca1feb89a171f113627e',
+    'avaliador_kripke_numerico_v1.py': '0c8d988e6823e99dea3b6c6ac6acc44f04705587c07525fd1e13fb1827e01a2d',
+    'registros_independente.py': 'e4459498da4df97507f191a92f1bf504c5afb1189a4370b0b4a7757102e8634e',
 }
 
 
+def reforcado(fonte):
+    """O verificador finito reforçado que a transformação do GPT (fortalecer_modelo.py, no pacote da Fase 2) tira da
+    fonte do congelado: cada assert vira um if que levanta ValueError, e os limites da busca do lote cego saem."""
+    import ast
+
+    class SemAssert(ast.NodeTransformer):
+        def visit_Assert(self, n):
+            self.generic_visit(n)
+            msg = n.msg if n.msg is not None else ast.Constant(value='pré-condição do modelo finito falhou')
+            levanta = ast.Raise(exc=ast.Call(func=ast.Name(id='ValueError', ctx=ast.Load()), args=[msg], keywords=[]),
+                                cause=None)
+            return ast.copy_location(ast.If(test=ast.UnaryOp(op=ast.Not(), operand=n.test), body=[levanta], orelse=[]),
+                                     n)
+    arvore = SemAssert().visit(ast.parse(fonte))
+    ast.fix_missing_locations(arvore)
+    texto = ast.unparse(arvore).replace('(1 <= n <= 5)', '(n >= 1)').replace('(1 <= k <= 3)', '(k >= 1)')
+    return '# Gerado do verificador finito independente congelado; assert convertidas para ValueError; sem teto de ' \
+           'busca.\n' + texto + '\n'
+
+
 def conferir_independente():
-    """As falhas da pasta independente/: um arquivo diferente do entregue, ou um léxico diferente do publicado."""
+    """As falhas da pasta independente/: um arquivo diferente do entregue, um léxico diferente do publicado, ou um
+    verificador finito reforçado que não é a transformação mecânica do congelado."""
     falhas = []
     for nome, esperado in INDEPENDENTE_SHA256.items():
         with open(os.path.join(INDEPENDENTE, nome), 'rb') as f:
@@ -49,6 +74,11 @@ def conferir_independente():
             open(os.path.join(PASTA, '..', 'lexico-m2.json'), encoding='utf-8') as b:
         if json.load(a) != json.load(b):
             falhas.append('independente/lexico-m2.json não tem o mesmo conteúdo do léxico publicado')
+    with open(os.path.join(INDEPENDENTE, 'verificar_certificados_sem_z3.py'), encoding='utf-8') as a, \
+            open(os.path.join(INDEPENDENTE, 'verificar_finito_reforcado.py'), encoding='utf-8') as b:
+        if reforcado(a.read().replace('\r\n', '\n')) != b.read().replace('\r\n', '\n'):
+            falhas.append('independente/verificar_finito_reforcado.py não é a transformação mecânica do congelado '
+                          '(nesta versão do Python)')
     return falhas
 
 
@@ -180,11 +210,14 @@ def conferir_perfil(comandos):
             if len(args) < 2 or len(set(args)) != 1:
                 raise ValueError(f'= com argumentos {args}')
             return 'Bool'
-        if cabeca in ('+', '*', '/'):
+        if cabeca in ('+', '*'):
             todos('Real', 2)
             return 'Real'
-        if cabeca == '-':
-            todos('Real', 1)
+        if cabeca in ('-', '/'):
+            # - com um argumento (o sinal) ou dois, / com dois: as formas que a tradução emite
+            todos('Real', 1 if cabeca == '-' else 2)
+            if len(args) > 2:
+                raise ValueError(f'{cabeca} com mais de dois argumentos')
             return 'Real'
         if cabeca == '^':
             todos('Real', 2)

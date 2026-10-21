@@ -1834,6 +1834,100 @@
     },
     "formula": "Q(a)"
    }
+  },
+  {
+   "id": "R27",
+   "descricao": "segue, com números: de Q(n) sai que algum número é Q (os nomes da tradução dependem dos números)",
+   "esperado": {
+    "veredito": "aceito"
+   },
+   "registro": {
+    "formato": "registro-v1",
+    "situacao": "aberto",
+    "afirmacao": "segue",
+    "formula": "∃x∈ℝ Q(x)",
+    "formaCanonica": "(∃ #1 ∈ ℝ (Q #1))",
+    "teoria": {
+     "nome": "n é Q",
+     "fichas": [
+      {
+       "simbolo": "Q",
+       "tipo": "predicado",
+       "aridade": 1,
+       "argumentos": [
+        "num"
+       ]
+      },
+      {
+       "simbolo": "n",
+       "tipo": "constante",
+       "aridade": 0,
+       "numerico": true
+      }
+     ],
+     "premissas": [
+      "Q(n)"
+     ],
+     "hash": "9a6a36e6e665b15a199523518076234448789d1a82cb296e77dc710b5178b0fd"
+    },
+    "tipo": "teorema",
+    "dominio": "exemplo da especificação registro-v1",
+    "estado": "proposta",
+    "semantica": {
+     "gramatica": "m2",
+     "traducao": "t1"
+    },
+    "autor": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "compromisso": {
+     "hash": "5af42afb26b8ba5e4d3f863fc02c5ea3ff237687f82c9e3d27f97bcebeee5990",
+     "sal": "8eeed671fca034e5ceeafe24eaf60bec86b3f744c99e8daf0fd5d06f24d1b439"
+    },
+    "certificado": {
+     "refutacao": {
+      "problema": {
+       "arquivo": "arquivos/R27-refutacao.smt2",
+       "sha256": "50eeaabd2b7d34709b6e2494356425f82142fcd54db019b626baa1e6dd94cee2"
+      },
+      "prova": {
+       "arquivo": "arquivos/R27-refutacao.alethe",
+       "sha256": "c112bfe37f2afeec3c35e6f32eecd230fe569711418f47829a498bd717d61b53"
+      }
+     },
+     "modeloDasPremissas": {
+      "formato": "modelo-exato-t1-v1",
+      "objetos": [
+       "o0"
+      ],
+      "mundos": [
+       "w0"
+      ],
+      "mundoReal": "w0",
+      "constantesObjeto": {},
+      "constantesReais": {
+       "n": "2"
+      },
+      "funcoesObjeto": {},
+      "funcoesReais": {},
+      "predicados": {
+       "Q/1": {
+        "padrao": true
+       }
+      },
+      "pertence": [],
+      "acessos": {},
+      "testemunhas": []
+     }
+    }
+   }
+  },
+  {
+   "id": "R28",
+   "descricao": "o R02 escrito com a chave estado repetida",
+   "esperado": {
+    "veredito": "recusado",
+    "motivo": "R1"
+   },
+   "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"estado\":\"refutada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}"
   }
  ]
 }

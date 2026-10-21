@@ -36,13 +36,13 @@ O que é do verificador e o que é do certificado:
    tem de passar no Carcara e ser recusado pelo vínculo. Os pares de adversarios/comparador/ (problemas de sentido
    diferente, com funções declaradas chamadas and e -, ou um check-sat no meio) têm de sair diferentes na comparação,
    e os problemas *-recusar.smt2 (um termo mal tipado) têm de ser recusados pelo perfil da t1.
-6. Confere os modelos finitos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem
-   de ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
-   sem os acessos do mundo real. Os modelos exatos, dos sat com números, só são contados: a conferência independente
-   deles entra quando o avaliador numérico do GPT for consertado (rodada 31).
+6. Confere os modelos dos sat (modelos.py) com a conferência independente, sem busca: os finitos e os exatos (com
+   números, pelo avaliador numérico do GPT, que usa o SymPy). E ataca: cada modelo tem de ser recusado com a primeira
+   fórmula negada; um finito, com uma tabela de função sem uma linha e com o quadro de um titular sem os acessos do
+   mundo real; um exato, com α num intervalo sem raiz, com a testemunha trocada e com D0 trocado.
 7. Confere os registros de exemplo do formato aberto (registros.py, especificacao/registros-v1.md): cada exemplo de
-   registros-v1/exemplos.json tem de dar o veredito esperado, com a leitura e a tradução independentes, a conferência
-   independente do modelo finito e o Carcara nas provas.
+   registros-v1/exemplos.json tem de dar o veredito esperado, com a leitura e a tradução independentes, as conferências
+   independentes de modelo e o Carcara nas provas. Roda também o leitor de registros do GPT e conta onde ele diverge.
 
 Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
 bater, se um modelo for recusado ou um modelo estragado aceito, se um registro de exemplo não der o veredito esperado,
@@ -418,6 +418,15 @@ def ambiente():
     return partes
 
 
+def versao_do_sympy():
+    """A versão do SymPy que o avaliador dos modelos exatos usa, se ele está instalado."""
+    try:
+        import sympy
+        return [f'SymPy {sympy.__version__}']
+    except ImportError:
+        return []
+
+
 def anotacao(nivel, titulo, texto):
     """Uma anotação do GitHub: aparece na página da execução para qualquer pessoa, sem login."""
     if os.environ.get('GITHUB_ACTIONS') == 'true':
@@ -430,18 +439,22 @@ def main():
     ap.add_argument('--carcara', default='carcara')
     ap.add_argument('--sem-carcara', action='store_true')
     ap.add_argument('--relatorio')
+    # uma pasta a mais no caminho do Python (por exemplo, a de um SymPy instalado à parte, para rodar fora do CI)
+    ap.add_argument('--caminho-extra', action='append', default=[])
     args = ap.parse_args()
     if sys.flags.optimize:
-        # a conferência independente (independente/) recusa com assert, e python -O tira os assert: tudo passaria
-        sys.exit('conferir.py não roda com python -O (nem PYTHONOPTIMIZE): sem os assert, a conferência independente '
-                 'aceitaria tudo')
+        # parte da conferência independente (independente/) ainda guarda passos com assert, e python -O tira os assert
+        sys.exit('conferir.py não roda com python -O (nem PYTHONOPTIMIZE): sem os assert, partes da conferência '
+                 'independente deixariam de recusar')
+    for pasta in reversed(args.caminho_extra):
+        sys.path.insert(0, pasta)
     falhas = []
 
     if not args.sem_carcara:
         try:
             r = subprocess.run([args.carcara, '--version'], capture_output=True, text=True, timeout=60)
             versao = ' '.join((r.stdout or r.stderr).split())[:200] or f'saiu com {r.returncode}'
-            anotacao('notice', 'Carcara', '; '.join([versao, *ambiente()]))
+            anotacao('notice', 'Carcara', '; '.join([versao, *ambiente(), *versao_do_sympy()]))
         except OSError as erro:
             anotacao('error', 'Carcara', f'não deu para rodar {args.carcara}: {erro}')
             raise
@@ -586,21 +599,40 @@ def main():
               f"| Modelos dos sat sem números | {mod['aceitos']} de {mod['modelos']} aceitos |",
               f"| Modelos estragados (fórmula negada, tabela sem uma linha, quadro sem os acessos do mundo real) | "
               f"{mod['estragos_recusados']} de {mod['estragos']} recusados |",
-              f"| Modelos exatos dos sat com números (modelo-exato-t1-v1) | {mod['exatos']} no registro, conferidos pelo "
-              f"Caderno (testes/modelos-exatos.test.ts); a conferência independente deles ainda não está aqui |"]
+              (f"| Modelos exatos dos sat com números (modelo-exato-t1-v1) | {mod['exatos_aceitos']} de {mod['exatos']} "
+               f"aceitos |" if not mod['sem_sympy'] else
+               f"| Modelos exatos dos sat com números (modelo-exato-t1-v1) | {mod['exatos']} sem conferir: o SymPy não "
+               f"está instalado |"),
+              f"| Modelos exatos estragados (fórmula negada, α num intervalo sem raiz, testemunha trocada, D0 trocado) | "
+              f"{mod['estragos_exatos_recusados']} de {mod['estragos_exatos']} recusados |"]
+    if mod['sem_sympy'] and not args.sem_carcara:
+        falhas.append(f"o SymPy não está instalado: os modelos exatos ficaram sem a conferência independente "
+                      f"({mod['sem_sympy']})")
     # os registros do formato aberto (registro-v1): o veredito esperado em cada exemplo de registros-v1/exemplos.json
 
     def provar(prova, problema):
+        """True ou False pelo Carcara; None sem ele, ou com o tempo esgotado (não conferido por recurso não é recusa)"""
         if args.sem_carcara:
             return None
-        return conferir(args.carcara, prova, problema, REGRAS_CONFIADAS)[0] == 'valid'
+        v = conferir(args.carcara, prova, problema, REGRAS_CONFIADAS)[0]
+        return None if v == 'tempo esgotado' else v == 'valid'
     reg = registros.conferir(provar)
     falhas += reg['falhas']
     if not args.sem_carcara and reg['sem_conferir']:
         falhas.append(f"registros: {', '.join(reg['sem_conferir'])} ficaram sem conferir o defeito, mesmo com o Carcara")
+    if not args.sem_carcara and reg['gpt']['sem_sympy']:
+        falhas.append(f"o SymPy não está instalado: o leitor de registros do GPT não rodou ({reg['gpt']['sem_sympy']})")
     sem_conferir = (f" ({len(reg['sem_conferir'])} sem conferir o defeito: {', '.join(reg['sem_conferir'])})"
                     if reg['sem_conferir'] else '')
-    reg_md = ['| Exemplo | O que é | Esperado | Resultado |', '| --- | --- | --- | --- |', *reg['linhas']]
+    gpt = reg['gpt']
+    if gpt['sem_sympy']:
+        linha_gpt = 'O leitor de registros do GPT não rodou (sem o SymPy).'
+    else:
+        linha_gpt = (f"O leitor de registros do GPT deu o esperado em {gpt['iguais']} de {reg['exemplos']}"
+                     + (f"; pendentes: {', '.join(gpt['pendentes'])}" if gpt['pendentes'] else '')
+                     + (f"; divergências: {'; '.join(gpt['divergencias'])}" if gpt['divergencias'] else '') + '.')
+    reg_md = ['| Exemplo | O que é | Esperado | Leitor do verificador | Leitor do GPT |', '| --- | --- | --- | --- | --- |',
+              *reg['linhas']]
     invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
     pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
     resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
@@ -625,10 +657,12 @@ def main():
     alteradas = vin['trocados'] + vin['pares']
     alteradas_recusadas = vin['trocados_recusados'] + vin['pares_recusados']
     linha_vinculo = (f"O vínculo bateu em {vin['iguais']} de {vin['total']} certificados e recusou {alteradas_recusadas} "
-                     f"de {alteradas} fórmulas alteradas. {mod['aceitos']} de {mod['modelos']} modelos aceitos e "
-                     f"{mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados. Registros: "
+                     f"de {alteradas} fórmulas alteradas. {mod['aceitos']} de {mod['modelos']} modelos finitos e "
+                     f"{mod['exatos_aceitos']} de {mod['exatos']} exatos aceitos; {mod['estragos_recusados']} de "
+                     f"{mod['estragos']} finitos e {mod['estragos_exatos_recusados']} de {mod['estragos_exatos']} exatos "
+                     f"estragados recusados. Registros: "
                      f"{reg['validos_aceitos']} de {reg['validos']} válidos aceitos e {reg['invalidos_recusados']} de "
-                     f"{reg['invalidos']} inválidos recusados com o motivo esperado{sem_conferir}.")
+                     f"{reg['invalidos']} inválidos recusados com o motivo esperado{sem_conferir}. {linha_gpt}")
     if args.sem_carcara:
         linha = (f'Sem o Carcara: hashes conferidos, {total} estragos montados e {len(casos)} casos adversários. '
                  + linha_vinculo)
@@ -646,12 +680,15 @@ def main():
         'Pela implementação independente da t1 (independente/, escrita pelo GPT só pela especificação).', '',
         *vin_md, '',
         '### Modelos dos sat', '',
-        'Os finitos, pela conferência independente (independente/verificar_certificados_sem_z3.py), sem busca.', '',
+        'Pela conferência independente, sem busca: os finitos por independente/verificar_finito_reforcado.py, e os '
+        'exatos por independente/avaliador_kripke_numerico_v1.py.', '',
         *mod_md, '',
         '### Registros do formato aberto', '',
-        'Os exemplos de registros-v1/exemplos.json (especificacao/registros-v1.md): a leitura e a tradução são as da '
-        'implementação independente, o modelo finito passa pela conferência independente, e a prova, pelo Carcara.', '',
-        *reg_md, '',
+        'Os exemplos de registros-v1/exemplos.json (especificacao/registros-v1.md). No leitor do verificador '
+        '(registros.py), a leitura e a tradução são as da implementação independente, os modelos passam pela '
+        'conferência independente, e a prova, pelo Carcara. O leitor do GPT (independente/registros_independente.py) é '
+        'inteiro dele, com o comparador SMT dele; as provas que ele deixa pendentes vão para o Carcara.', '',
+        *reg_md, '', linha_gpt, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
     texto = '\n'.join(resumo) + '\n'
@@ -669,13 +706,13 @@ def main():
                  f"de {vin['trocados']} recusadas{invalidos}.\nFórmulas de outro exemplo: {vin['pares_recusados']} de "
                  f"{vin['pares']} pares recusados{pares_iguais}.\nCaso □/◇: {resultado_troca}.\nControles do "
                  f"comparador: {controles_recusados} de {len(controles)} recusados.")
-        anotacao('notice', 'Modelos', f"{mod['aceitos']} de {mod['modelos']} modelos dos sat aceitos pela conferência "
-                 f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados. "
-                 f"{mod['exatos']} modelos exatos (com números) ficam com a conferência do Caderno, até a independente "
-                 f"ser consertada.")
+        anotacao('notice', 'Modelos', f"{mod['aceitos']} de {mod['modelos']} modelos finitos aceitos pela conferência "
+                 f"independente; {mod['estragos_recusados']} de {mod['estragos']} estragados recusados. "
+                 f"{mod['exatos_aceitos']} de {mod['exatos']} modelos exatos aceitos; {mod['estragos_exatos_recusados']} de "
+                 f"{mod['estragos_exatos']} estragados recusados.")
         anotacao('notice', 'Registros', f"{reg['validos_aceitos']} de {reg['validos']} registros válidos aceitos; "
                  f"{reg['invalidos_recusados']} de {reg['invalidos']} inválidos recusados com o motivo esperado"
-                 f"{sem_conferir}.")
+                 f"{sem_conferir}.\n{linha_gpt}")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

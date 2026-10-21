@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { init, killThreads } from 'z3-solver'
 import type { Formula } from '../src/logica/ast'
 import { analisar } from '../src/motor/motor'
-import { comoDicionario, compararPontos, conferirRegistro, formaCanonica, sha256, textoDaTeoria, type Ficha } from '../src/motor/registro'
+import { comoDicionario, compararPontos, conferirRegistro, conferirRegistroTexto, formaCanonica, lerJsonEstrito, sha256, textoDaTeoria, type Ficha } from '../src/motor/registro'
 import { problemaSmt } from '../src/motor/z3'
 import textoExemplos from '../especificacao/registros-v1/exemplos.json?raw'
 
@@ -28,6 +28,13 @@ describe('a forma canônica e o hash da teoria', () => {
     const a = textoDaTeoria(['(P a)', '(Q a)'], PQ)
     expect(a).toBe('teoria-v1\nficha P predicado 1 - -\nficha Q predicado 1 - -\npremissa (P a)\npremissa (Q a)\n')
     expect(await sha256(textoDaTeoria(['(Q a)', '(P a)', '(Q a)'], [...PQ].reverse()))).toBe(await sha256(a))
+  })
+
+  it('a leitura do JSON recusa chave repetida em qualquer nível, e lê o resto como o JSON.parse', () => {
+    expect(() => lerJsonEstrito('{"a": 1, "b": {"c": 2, "c": 3}}')).toThrow(/chave repetida: c/)
+    expect(() => lerJsonEstrito('{"a": 1} x')).toThrow(/sobra/)
+    const texto = '{"a": [1, -2.5e3, "é\\n\\"", true, null], "b": {}}'
+    expect(lerJsonEstrito(texto)).toEqual(JSON.parse(texto))
   })
 
   it('ordena pelos pontos de código, não pelas unidades de UTF-16', () => {
@@ -59,7 +66,8 @@ describe('os exemplos de registros-v1', { timeout: 120_000 }, () => {
       traduzir: (fs: Formula[], numericos: Set<string>) => problemaSmt(api, fs, numericos),
     }
     for (const e of exemplos) {
-      const c = await conferirRegistro(e.registro, amb)
+      // um registro dado como texto (R28) é lido sem aceitar chave repetida
+      const c = e.registroTexto !== undefined ? await conferirRegistroTexto(e.registroTexto, amb) : await conferirRegistro(e.registro, amb)
       // o defeito R10 está na prova, que só o Carcara confere
       const esperado = e.esperado.veredito === 'aceito' || e.esperado.motivo === 'R10' ? null : e.esperado.motivo
       expect(c.motivo, `${e.id}: ${c.detalhe}`).toBe(esperado)

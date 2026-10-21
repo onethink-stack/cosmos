@@ -15,9 +15,10 @@ sem confiar em nenhum solucionador e sem fazer busca.
 | `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256, e o modelo de cada sat |
 | `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
 | `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
-| `modelos.py` | A parte do verificador que confere os modelos finitos dos sat com a conferência independente (e conta os exatos) |
-| `registros.py` | A parte do verificador que confere os registros de exemplo do formato aberto (`../registros-v1/`), com a leitura e a tradução independentes e o Carcara |
-| `independente/` | A implementação independente da t1 (leitor da m2 e tradução), escrita pelo GPT só pela especificação, sem mudança nenhuma |
+| `modelos.py` | A parte do verificador que confere os modelos dos sat, finitos e exatos, com a conferência independente |
+| `registros.py` | A parte do verificador que confere os registros de exemplo do formato aberto (`../registros-v1/`), com a leitura e a tradução independentes e o Carcara, e que roda também o leitor de registros do GPT |
+| `requisitos.txt` | O SymPy e o mpmath, com versão e hash fixos, para a conferência independente dos modelos exatos |
+| `independente/` | A implementação independente, escrita pelo GPT só pela especificação, sem mudança nenhuma: o leitor da m2, a tradução t1, as conferências de modelo (finito e exato) e o leitor de registros |
 | `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
 
 ## O que é do verificador e o que é do certificado
@@ -240,10 +241,12 @@ uma função D0 do numerador; e uma testemunha para cada ∃ sobre ℝ ou ℤ de
 polaridade positiva. O Caderno o tira do modelo do Z3 (`src/motor/z3Modelo.ts`)
 e o confere em `testes/modelos-exatos.test.ts` e `testes/provas-t1.test.ts`. Na
 rodada 31, o avaliador numérico do GPT (rodada 30) aceitou os cinco do Caderno,
-e a conferência do Caderno aceitou os cinco dele; mas o avaliador do GPT tem dois
-defeitos de correção (a testemunha usada debaixo de ¬, e ∅ fora dos objetos), e
-só entra no verificador depois do conserto. Até lá, `modelos.py` só conta os
-modelos exatos.
+e a conferência do Caderno aceitou os cinco dele; mas o avaliador do GPT tinha
+três defeitos (a testemunha usada debaixo de ¬, ∅ fora dos objetos, e `assert`
+que `python -O` tira). Consertado (`independente/avaliador_kripke_numerico_v1.py`,
+do pacote da Fase 2), ele está em `modelos.py`: aceita os cinco e recusa os
+estragos deles (a primeira fórmula negada, α num intervalo sem raiz, a testemunha
+trocada e D0 trocado). No fluxo, ele roda com o SymPy de `requisitos.txt`.
 
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).
@@ -305,6 +308,7 @@ desenvolvimento.
   nenhuma foi provada correta: um erro que as duas cometam do mesmo jeito passa.
 - O Carcara também é um programa, e as regras RARE entram nele como axiomas.
 - Z36 e Z40 ficam sem certificado.
-- Os 5 modelos exatos, dos sat com números, ainda não têm conferência
-  independente no verificador público (só a do Caderno, nos testes). E falta
-  perceber quando as premissas, sozinhas, já são contraditórias.
+- Os modelos exatos dependem do SymPy, que entra na base de confiança junto com
+  o avaliador. A teoria inconsistente é conferida nos registros do formato aberto
+  (`../registros-v1.md`), que separam premissas e conclusão; nos 42 exemplos,
+  que são só conjuntos de fórmulas, ela não se aplica.

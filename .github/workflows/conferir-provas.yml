@@ -9,6 +9,8 @@ on:
     branches: [main, master]
     paths:
       - 'especificacao/provas-t1/**'
+      - 'especificacao/registros-v1/**'
+      - 'especificacao/lexico-m2.json'
       - '.github/workflows/conferir-provas.yml'
   workflow_dispatch:
 
@@ -45,5 +47,8 @@ jobs:
         with:
           path: ~/.cargo/bin/carcara
           key: carcara-${{ env.CARCARA_COMMIT }}-rust-${{ env.RUST_VERSAO }}-${{ env.SISTEMA }}
+      # o SymPy e o mpmath, com os hashes de requisitos.txt, para a conferência independente dos modelos exatos
+      - name: SymPy
+        run: python3 -m venv ~/venv && ~/venv/bin/pip install --require-hashes --only-binary :all: --no-deps -r especificacao/provas-t1/requisitos.txt
       - name: Conferir as provas e os estragos
-        run: python3 especificacao/provas-t1/conferir.py --carcara ~/.cargo/bin/carcara
+        run: ~/venv/bin/python especificacao/provas-t1/conferir.py --carcara ~/.cargo/bin/carcara

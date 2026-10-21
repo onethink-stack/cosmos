@@ -162,6 +162,85 @@ function conferirFicha(f: unknown): Ficha {
   return x as unknown as Ficha
 }
 
+/**
+ * O valor de um texto JSON, recusando (R1) uma chave repetida em qualquer objeto: os leitores de JSON discordam sobre
+ * qual valor fica (uns o primeiro, outros o último), e duas conferências leriam registros diferentes.
+ */
+export function lerJsonEstrito(texto: string): unknown {
+  let i = 0
+  const erro = (msg: string): never => falhar('R1', `JSON: ${msg} (posição ${i})`)
+  const espaco = () => {
+    while (i < texto.length && ' \t\n\r'.includes(texto[i])) i++
+  }
+  const literal = (s: string, v: unknown) => (texto.startsWith(s, i) ? ((i += s.length), v) : erro('valor inválido'))
+  const cadeia = (): string => {
+    let fim = i + 1
+    while (fim < texto.length && texto[fim] !== '"') fim += texto[fim] === '\\' ? 2 : 1
+    if (fim >= texto.length) erro('texto sem fim')
+    const v = JSON.parse(texto.slice(i, fim + 1)) as string
+    i = fim + 1
+    return v
+  }
+  const valor = (): unknown => {
+    espaco()
+    const c = texto[i]
+    if (c === '{') {
+      i++
+      const o: Record<string, unknown> = {}
+      espaco()
+      if (texto[i] === '}') return i++, o
+      for (;;) {
+        espaco()
+        if (texto[i] !== '"') erro('chave sem aspas')
+        const k = cadeia()
+        if (Object.prototype.hasOwnProperty.call(o, k)) erro(`chave repetida: ${k}`)
+        espaco()
+        if (texto[i++] !== ':') erro('falta o :')
+        o[k] = valor()
+        espaco()
+        if (texto[i] === ',') i++
+        else if (texto[i] === '}') return i++, o
+        else erro('falta , ou }')
+      }
+    }
+    if (c === '[') {
+      i++
+      const a: unknown[] = []
+      espaco()
+      if (texto[i] === ']') return i++, a
+      for (;;) {
+        a.push(valor())
+        espaco()
+        if (texto[i] === ',') i++
+        else if (texto[i] === ']') return i++, a
+        else erro('falta , ou ]')
+      }
+    }
+    if (c === '"') return cadeia()
+    if (c === 't') return literal('true', true)
+    if (c === 'f') return literal('false', false)
+    if (c === 'n') return literal('null', null)
+    const m = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/.exec(texto.slice(i))
+    if (!m) return erro('valor inválido')
+    i += m[0].length
+    return Number(m[0])
+  }
+  const v = valor()
+  espaco()
+  if (i !== texto.length) erro('sobra depois do valor')
+  return v
+}
+
+/** A conferência de um registro escrito como texto JSON (o que chega de fora): a leitura estrita, depois o resto. */
+export async function conferirRegistroTexto(texto: string, amb: AmbienteDaConferencia): Promise<Conferencia> {
+  try {
+    return await conferirRegistro(lerJsonEstrito(texto), amb)
+  } catch (erro) {
+    if (erro instanceof Falha) return { motivo: erro.motivo, detalhe: erro.message, provasSemConferir: 0 }
+    throw erro
+  }
+}
+
 /** A conferência de um registro, sem a prova Alethe (que o Carcara confere no verificador público). */
 export async function conferirRegistro(r: unknown, amb: AmbienteDaConferencia): Promise<Conferencia> {
   const conta = { provas: 0 }
@@ -240,7 +319,8 @@ async function conferir(r: unknown, amb: AmbienteDaConferencia, conta: { provas:
 
   const lerArquivo = async (a: unknown, onde: string): Promise<string> => {
     if (!ehObjeto(a) || !soEstes(a, ['arquivo', 'sha256']) || !ehTexto(a.arquivo) || !ehTexto(a.sha256)) return falhar('R1', `${onde}: {arquivo, sha256}`)
-    if (a.arquivo.startsWith('/') || a.arquivo.includes('\\') || a.arquivo.split('/').includes('..')) return falhar('R8', `${onde}: caminho inválido ${a.arquivo}`)
+    // relativo à raiz do conjunto, com /, sem segmento vazio, . ou ..
+    if (a.arquivo.includes('\\') || a.arquivo.split('/').some((s) => s === '' || s === '.' || s === '..')) return falhar('R8', `${onde}: caminho inválido ${a.arquivo}`)
     const bytes = amb.arquivo(a.arquivo) ?? falhar('R8', `${onde}: o arquivo ${a.arquivo} não existe`)
     if ((await sha256(bytes)) !== a.sha256) falhar('R8', `${onde}: o SHA-256 de ${a.arquivo} não bate`)
     return new TextDecoder().decode(bytes)

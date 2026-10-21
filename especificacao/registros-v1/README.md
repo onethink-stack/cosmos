@@ -6,7 +6,7 @@ São eles que uma conferência independente tem de ler e conferir.
 
 | Arquivo | O que é |
 | --- | --- |
-| `exemplos.json` | Os 26 exemplos: 9 válidos (R01 a R09) e 17 inválidos (R10 a R26), cada um com o veredito esperado e, nos inválidos, o motivo |
+| `exemplos.json` | Os 28 exemplos: 10 válidos (R01 a R09 e R27) e 18 inválidos (R10 a R26 e R28), cada um com o veredito esperado e, nos inválidos, o motivo |
 | `arquivos/` | Os problemas SMT-LIB (a tradução t1 do conjunto que o certificado confere) e as provas Alethe do cvc5 1.4.2, das refutações e da marca `vazio` |
 
 ## Os válidos
@@ -22,21 +22,24 @@ São eles que uma conferência independente tem de ler e conferir.
 | R07 | nao-segue | Com números: de n · n = 2 não sai n > 0. Modelo exato, com n = −√2 |
 | R08 | consistente | Com crença: Ana crer que a é P cabe junto com a não ser P |
 | R09 | nao-segue | O R02 fechado: só o compromisso |
+| R27 | segue | Com números: de Q(n) sai que algum número é Q. A tradução do Caderno declara `n:n` e `p:Q/1:R`, e outra pode declarar `c:n` e `p:Q/1`: a comparação vai pelo nome-base e pela assinatura |
 
 Os inválidos têm um defeito cada, montado a partir de um válido com os outros
 hashes refeitos, e cobrem os doze motivos de recusa da seção 7 da
-especificação, entre eles a teoria inconsistente sem a marca `vazio` (R22) e a
-marca `vazio` com a prova de outra teoria (R24).
+especificação. Entre eles estão a teoria inconsistente sem a marca `vazio`
+(R22), a marca `vazio` com a prova de outra teoria (R24) e o registro escrito
+com uma chave repetida (R28, dado em `registroTexto`).
 
 ## Como são conferidos
 
 - `testes/registros.test.ts`: a conferência do Caderno (`src/motor/registro.ts`),
   que faz tudo menos a prova Alethe.
-- `provas-t1/registros.py`, no fluxo conferir-provas do GitHub: a leitura e a
-  tradução são as da implementação independente (`provas-t1/independente/`),
-  o modelo finito passa pela conferência independente, e a prova, pelo Carcara.
-  O modelo exato do R07 fica com a conferência do Caderno até a independente
-  entrar no verificador.
+- `provas-t1/registros.py`, no fluxo conferir-provas do GitHub, com dois
+  leitores. O do verificador usa a leitura e a tradução da implementação
+  independente (`provas-t1/independente/`), as conferências independentes de
+  modelo e o Carcara. O do GPT (`provas-t1/independente/registros_independente.py`)
+  é inteiro dele, escrito só pela especificação, com o comparador SMT dele; as
+  provas que ele deixa pendentes vão para o Carcara.
 
 Os exemplos saem de um gerador do Caderno, com o cvc5 1.4.2 e as mesmas opções
 das provas de `provas-t1/`; o gerador recusa uma prova que use regra RARE fora

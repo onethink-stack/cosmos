@@ -3,9 +3,13 @@ especificacao/registros-v1/exemplos.json tem de dar o veredito esperado.
 
 As peças que conferem o sentido não são do Caderno: a leitura da m2 e a tradução t1 são as da pasta independente/
 (do GPT, só pela especificação), e é delas que saem a árvore expandida, a forma canônica, os hashes e o vínculo de cada
-refutação; o modelo finito passa pela conferência independente (modelos.py); e a prova Alethe, pelo Carcara, quando ele
-é dado. O que fica sem conferir (a prova sem o Carcara, o modelo exato até a conferência independente dele entrar) é
-contado à parte, e não vira aceite de um exemplo que tinha de ser recusado por isso.
+refutação; os modelos, finitos e exatos, passam pela conferência independente (modelos.py); e a prova Alethe, pelo
+Carcara, quando ele é dado. O que fica sem conferir (a prova sem o Carcara, ou com o tempo esgotado; o modelo exato sem
+o SymPy) é contado à parte, e não vira aceite de um exemplo que tinha de ser recusado por isso.
+
+Os exemplos também passam pelo leitor de registros do GPT (independente/registros_independente.py), inteiro dele, com
+o comparador SMT dele; as provas que ele deixa pendentes vão para o Carcara. O que ele faz diferente do esperado é
+contado como divergência: a Fase 2 fecha quando não houver nenhuma.
 """
 import hashlib
 import json
@@ -144,6 +148,23 @@ def _texto(x):
     return isinstance(x, str) and x != ''
 
 
+def _sem_repetir(pares):
+    """O object_pairs_hook do json que recusa uma chave repetida (os leitores discordam sobre qual valor fica)."""
+    chaves = [k for k, _ in pares]
+    repetidas = sorted({k for k in chaves if chaves.count(k) > 1})
+    if repetidas:
+        recusar('R1', f'JSON: chave repetida: {repetidas[0]}')
+    return dict(pares)
+
+
+def ler_registro(texto):
+    """Um registro escrito como texto JSON, lido sem aceitar chave repetida."""
+    try:
+        return json.loads(texto, object_pairs_hook=_sem_repetir)
+    except json.JSONDecodeError as erro:
+        recusar('R1', f'JSON: {erro}')
+
+
 def _conferir(r, provar, pendencias):
     # R1, R2, R3: a forma
     if not isinstance(r, dict):
@@ -253,9 +274,13 @@ def _conferir(r, provar, pendencias):
         if not isinstance(a, dict) or set(a) != {'arquivo', 'sha256'} or not _texto(a['arquivo']) or not _texto(a['sha256']):
             recusar('R1', f'{onde}: {{arquivo, sha256}}')
         caminho = a['arquivo']
-        if caminho.startswith('/') or '\\' in caminho or '..' in caminho.split('/'):
+        # relativo à raiz do conjunto, com /, sem segmento vazio, . ou .., e sem sair da raiz, nem por link
+        if '\\' in caminho or any(x in ('', '.', '..') for x in caminho.split('/')):
             recusar('R8', f'{onde}: caminho inválido {caminho}')
         cheio = os.path.join(PASTA, *caminho.split('/'))
+        raiz = os.path.realpath(PASTA)
+        if os.path.commonpath([raiz, os.path.realpath(cheio)]) != raiz:
+            recusar('R8', f'{onde}: o caminho {caminho} sai da raiz do conjunto')
         if not os.path.isfile(cheio):
             recusar('R8', f'{onde}: o arquivo {caminho} não existe')
         with open(cheio, 'rb') as f:
@@ -274,17 +299,19 @@ def _conferir(r, provar, pendencias):
             recusar('R9', f'{onde}: o problema não é a tradução t1 do conjunto ({diferenca[:160]})')
         v = provar(prova, problema)
         if v is None:
-            pendencias.append(f'{onde}: a prova (sem o Carcara)')
+            pendencias.append(f'{onde}: a prova (sem o Carcara, ou com o tempo esgotado)')
         elif not v:
             recusar('R10', f'{onde}: o Carcara recusa a prova')
 
     def modelo(m, formulas, raizes, onde):
-        if isinstance(m, dict) and m.get('formato') == 'modelo-exato-t1-v1':
-            pendencias.append(f'{onde}: o modelo exato (a conferência independente dele ainda não está aqui)')
-            return
-        if any(tem_numeros(x, numericos) for x in raizes):
+        exato = isinstance(m, dict) and m.get('formato') == modelos.FORMATO_EXATO
+        if not exato and any(tem_numeros(x, numericos) for x in raizes):
             recusar('R11', f'{onde}: modelo finito para um conjunto com números')
-        motivo = modelos.motivo_da_recusa(formulas, fichas, m)
+        try:
+            motivo = modelos.motivo_da_recusa(formulas, fichas, m)
+        except modelos.SemSymPy:
+            pendencias.append(f'{onde}: o modelo exato (sem o SymPy)')
+            return
         if motivo:
             recusar('R11', f'{onde}: {motivo}')
 
@@ -298,14 +325,54 @@ def _conferir(r, provar, pendencias):
         modelo(cert['modelo'], conjunto, raizes_conjunto, 'modelo')
 
 
+def no_leitor_do_gpt(e, provar):
+    """(veredito, motivo, detalhe) do leitor de registros do GPT num exemplo; as provas que ele deixa pendentes vão para
+    o Carcara. Um registro dado como texto é lido com o json do Python, como o leitor dele leria."""
+    import registros_independente as ri
+    from pathlib import Path
+    ri.EX_DIR = Path(PASTA)
+    try:
+        res = ri.check_one(e['registro'] if 'registro' in e else json.loads(e['registroTexto']))
+    except ri.Recusa as recusa:
+        return 'recusado', recusa.code, recusa.reason
+    except Exception as erro:
+        return 'erro', None, repr(erro)[:200]
+    if res['veredito'] != 'pendente-prova':
+        return res['veredito'], res.get('motivo'), res.get('escopo', '')
+    vs = [provar(os.path.join(PASTA, *p['aleth'].split('/')), os.path.join(PASTA, *p['smt'].split('/')))
+          for p in res['pendencias']]
+    if any(v is False for v in vs):
+        return 'recusado', 'R10', 'o Carcara recusa a prova'
+    if any(v is None for v in vs):
+        return 'pendente', None, 'a prova (sem o Carcara)'
+    return 'aceito', None, 'a prova, pelo Carcara'
+
+
 def conferir(provar):
-    """Confere os exemplos. Devolve um dicionário com as contagens, as linhas da tabela e as falhas."""
+    """Confere os exemplos. Devolve um dicionário com as contagens, as linhas da tabela e as falhas, e o que o leitor do
+    GPT deu em cada um (em gpt)."""
     with open(os.path.join(PASTA, 'exemplos.json'), encoding='utf-8') as f:
         exemplos = json.load(f)['exemplos']
     r = {'exemplos': len(exemplos), 'validos': 0, 'validos_aceitos': 0, 'invalidos': 0, 'invalidos_recusados': 0,
-         'sem_conferir': [], 'falhas': [], 'linhas': []}
+         'sem_conferir': [], 'falhas': [], 'linhas': [],
+         'gpt': {'iguais': 0, 'pendentes': [], 'divergencias': [], 'sem_sympy': ''}}
+    try:
+        _independente()
+        import registros_independente  # noqa: F401
+    except ImportError as erro:
+        r['gpt']['sem_sympy'] = str(erro)
     for e in exemplos:
-        motivo, detalhe, pendencias = conferir_registro(e['registro'], provar)
+        if 'registroTexto' in e:
+            try:
+                registro = ler_registro(e['registroTexto'])
+            except Recusa as recusa:
+                registro = recusa
+        else:
+            registro = e['registro']
+        if isinstance(registro, Recusa):
+            motivo, detalhe, pendencias = registro.motivo, str(registro), []
+        else:
+            motivo, detalhe, pendencias = conferir_registro(registro, provar)
         esperado = e['esperado']
         if esperado['veredito'] == 'aceito':
             r['validos'] += 1
@@ -327,6 +394,20 @@ def conferir(provar):
             else:
                 resultado = f"{motivo or 'ACEITO'}{f': {detalhe}' if detalhe else ''}"
                 r['falhas'].append(f"{e['id']}: tinha de ser recusado com {esperado['motivo']}, e deu {resultado[:200]}")
+        # o leitor do GPT
+        if r['gpt']['sem_sympy']:
+            gpt = 'sem rodar (sem o SymPy)'
+        else:
+            v, m, d = no_leitor_do_gpt(e, provar)
+            certo = (v == 'aceito') if esperado['veredito'] == 'aceito' else (v == 'recusado' and m == esperado.get('motivo'))
+            gpt = f"{v}{', ' + m if m else ''}"
+            if certo:
+                r['gpt']['iguais'] += 1
+            elif v == 'pendente':
+                r['gpt']['pendentes'].append(e['id'])
+            else:
+                r['gpt']['divergencias'].append(f"{e['id']} ({gpt}{': ' + d[:120] if d else ''})")
+                gpt = f'**{gpt}**'
         r['linhas'].append(f"| {e['id']} | {e['descricao']} | {esperado['veredito']}"
-                           f"{', ' + esperado['motivo'] if esperado.get('motivo') else ''} | {resultado} |")
+                           f"{', ' + esperado['motivo'] if esperado.get('motivo') else ''} | {resultado} | {gpt} |")
     return r

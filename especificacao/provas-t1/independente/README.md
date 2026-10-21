@@ -24,6 +24,23 @@ linhas em CRLF. O `../conferir.py` confere o SHA-256 de cada um antes de usar.
 O `lexico-m2.json` daqui tem o mesmo conteúdo de `../../lexico-m2.json`, e o
 `conferir.py` confere isso.
 
+Três arquivos vieram depois, no pacote
+`auditoria_independente_registros_v1_fase2.zip` (Fase 2, 100.663 bytes,
+SHA-256 `c6f65fe2d3baccc3425712267dcf868d03a698ffba5dd0cbeab2ef2159fb99be`),
+também sem mudança nenhuma:
+
+| Arquivo | O que faz | SHA-256 |
+| --- | --- | --- |
+| `verificar_finito_reforcado.py` | O `verificar_certificados_sem_z3.py` com cada `assert` trocado por um `ValueError` e sem os limites da busca do lote cego (5 objetos, 3 mundos). É uma transformação mecânica da árvore do Python, e o `conferir.py` a refaz e confere que dá este arquivo | `21c56ea78a4e6e9c4e26c477bd81f68518349ee38ca3ca1feb89a171f113627e` |
+| `avaliador_kripke_numerico_v1.py` | Confere um modelo exato (`../../modelos-exatos-t1.md`), com números em Q(α), sem o Z3; usa o SymPy | `0c8d988e6823e99dea3b6c6ac6acc44f04705587c07525fd1e13fb1827e01a2d` |
+| `registros_independente.py` | O leitor de registros (`../../registros-v1.md`), escrito só pela especificação, com comparador SMT próprio (não usa o `../vinculo.py`) | `e4459498da4df97507f191a92f1bf504c5afb1189a4370b0b4a7757102e8634e` |
+
+O avaliador numérico é o da rodada 30 com os três defeitos de correção
+consertados: a testemunha só em polaridade positiva, os `assert` trocados por
+exigências explícitas, e ∅ como objeto. O leitor de registros foi conferido aqui
+nos exemplos de `../../registros-v1/`, e o que ele ainda faz diferente da
+especificação está em `../README.md`.
+
 O que já foi conferido com eles:
 
 - o leitor deu as mesmas respostas do Caderno nos 185 exemplos normativos da m2

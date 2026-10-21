@@ -28,7 +28,10 @@ T não é pedido: o conjunto vazio tem modelo.
 
 ## 2. Os campos
 
-O registro é um objeto JSON com estes campos, e só estes. A situação `aberto`
+O registro é um objeto JSON com estes campos, e só estes, sem chave repetida em
+objeto nenhum: os leitores de JSON discordam sobre qual valor de uma chave
+repetida fica, e duas conferências leriam registros diferentes (R1). A situação
+`aberto`
 mostra tudo; a `fechado` esconde a fórmula, as premissas e o certificado, e
 guarda só o compromisso (seção 4) até a pessoa revelar.
 
@@ -95,8 +98,9 @@ na mesma ordem; e a linha `formula <forma canônica>`, cada uma terminando em
 ## 4. O compromisso
 
 O sal tem 32 bytes aleatórios, escritos em 64 dígitos hexadecimais minúsculos.
-O compromisso é o SHA-256 dos 32 bytes do sal seguidos do texto da fórmula em
-UTF-8, em hexadecimal minúsculo. No registro aberto, o sal vem junto, e a
+O compromisso é o SHA-256 dos 32 bytes do sal seguidos do texto da fórmula da
+seção 3 em UTF-8 (as linhas `formula-v1`, as de ficha e a `formula`, e não o
+campo `formula`), em hexadecimal minúsculo. No registro aberto, o sal vem junto, e a
 conferência refaz a conta (R7). No fechado, só o hash vem: a fórmula fica
 escondida, e o hash prova depois que ela já existia. Um hash sem sal não
 esconde uma frase curta, que se acha testando frases.
@@ -104,8 +108,9 @@ esconde uma frase curta, que se acha testando frases.
 ## 5. O certificado
 
 Um **arquivo** é `{"arquivo": caminho, "sha256": hash}`. O caminho é relativo à
-pasta do conjunto de registros, com `/`, sem `..`; o que vale é o SHA-256 dos
-bytes do arquivo (R8).
+raiz do conjunto de registros (nos exemplos, a pasta de `exemplos.json`), com
+`/`, sem segmento vazio, `.` ou `..`, e não sai da raiz, nem por link
+simbólico. O que vale é o SHA-256 dos bytes do arquivo (R8).
 
 O **conjunto** que o certificado confere é a lista das premissas, na ordem do
 registro, e depois ¬(φ) em `segue` e `nao-segue`, ou φ em `contradiz` e
@@ -130,12 +135,60 @@ Um **modelo** é o finito do lote cego Z3 2 (seção 6), ou o exato
 
 Para uma refutação, ou para a marca `vazio`, a conferência:
 
-1. refaz o problema a partir das fórmulas e do dicionário, e o compara com o do
-   arquivo pelo vínculo de `provas-t1/README.md`: o perfil da t1 e a comparação
-   estrutural, que ignora só o que não muda o sentido (R9);
+1. refaz o problema a partir das fórmulas e do dicionário, pela tradução t1, e
+   o compara com o do arquivo pelo vínculo abaixo (R9);
 2. confere a prova com o Carcara, com as regras RARE de `provas-t1/regras.rare`
-   (R10). Uma conferência sem o Carcara diz que a prova ficou sem conferência;
-   isso não é um aceite.
+   (R10). Sem o Carcara, ou com o tempo dele esgotado, a prova fica pendente
+   (seção 7), o que não é aceite nem recusa.
+
+### 5.1 O vínculo
+
+O problema do arquivo é a tradução t1 do conjunto quando os dois estão no perfil
+da t1 e são iguais a menos da forma.
+
+**O perfil da t1** é o que a tradução emite, e nada mais:
+
+- os comandos `(set-logic ALL)`, `declare-sort`, `declare-fun`,
+  `declare-const`, `assert` e `check-sat`, nesta ordem: um `(set-logic ALL)`
+  primeiro; as sortes `Obj` e `Mundo`, de aridade 0, uma vez cada; as
+  declarações; as asserções; e no máximo um `(check-sat)`, no fim;
+- as sortes `Obj`, `Mundo`, `Bool` e `Real`, e `Obj` e `Mundo` só depois de
+  declaradas;
+- os nomes declarados `w0`, `pertence` e os da seção 3 de `traducao-z3-t1.md`
+  (`c:`, `n:`, `f:…/k`, `fn:…/k` e `p:…/k`, com o sufixo `[:sig]` ou sem ele, e
+  `R:`), cada um uma vez;
+- os operadores `true`, `false`, `not`, `and`, `or`, `=>`, `=`, `+`, `-`, `*`,
+  `/`, `^`, `<`, `<=`, `>`, `>=` e `is_int`, e os ligadores `forall`, `exists`
+  e `let`; uma variável ligada não tem o nome de um operador nem de um símbolo
+  declarado;
+- os tipos: cada aplicação de um símbolo declarado com a aridade e as sortes da
+  declaração; `not` com um `Bool`; `and`, `or` e `=>` com dois ou mais `Bool`;
+  `=` com dois ou mais termos da mesma sorte; `+` e `*` com dois ou mais `Real`;
+  `-` com um ou dois `Real`; `/` e `^` com dois `Real`; `<`, `<=`, `>` e `>=`
+  com dois ou mais `Real`; `is_int` com um `Real`; o corpo de `forall` e de
+  `exists` é `Bool`; e toda asserção é `Bool`.
+
+**A comparação** ignora só o que não muda o sentido:
+
+- os comentários, o `(set-logic)` e o `(check-sat)`, depois do perfil;
+- as barras em volta dos símbolos;
+- os nomes das variáveis ligadas, numeradas na ordem dos ligadores;
+- os `let`, trocados pelos seus termos (um `let` que capturaria uma variável é
+  recusado);
+- a escrita dos números: `2`, `2.0` e `(/ 4 2)` são o mesmo número, e `(- 2)` é
+  −2;
+- `and` e `or` aninhados, que se achatam mantendo a ordem dos argumentos;
+- a ordem das declarações e a das asserções (as asserções são um multiconjunto:
+  a ordem não conta, e a repetição conta);
+- as declarações que nenhuma asserção usa;
+- e, em cada símbolo declarado, o nome além do **nome-base** e da
+  **assinatura**. O nome-base é o nome sem o prefixo (`c:`, `n:`, `f:`, `fn:`,
+  `p:`, `R:`) e sem o `/k[:sig]`; a assinatura são as sortes dos argumentos e a
+  do resultado. Os nomes da t1 são informativos (seção 3 de
+  `traducao-z3-t1.md`), e duas traduções podem nomear diferente: `c:n` e `n:n`
+  (`Real`) são o mesmo símbolo, e `p:Q/1` e `p:Q/1:R` (`Mundo × Real → Bool`)
+  também, enquanto `P(a)` continua diferente de `P(b)`. Dois símbolos declarados
+  no mesmo problema com o mesmo nome-base e a mesma assinatura são recusados.
 
 ## 6. O modelo finito
 
@@ -157,9 +210,17 @@ o mundo 0 é o real.
 
 Quem confere checa a forma, o quadro de cada titular e se cada fórmula do
 conjunto, na árvore expandida, vale no mundo 0. O modelo finito não tem números:
-um conjunto com números pede o modelo exato.
+um conjunto com números pede o modelo exato. O formato não limita o tamanho do
+modelo: os limites da busca do motor do Caderno (5 objetos e 3 mundos, nos lotes
+cegos) não são do formato.
 
 ## 7. A conferência e os motivos de recusa
+
+A conferência dá um de três resultados: **aceito**; **recusado**, com o código
+do motivo; ou **pendente**, com o passo que ficou sem conferir (a prova sem o
+Carcara, ou um limite de tempo ou de memória). Pendente não é aceite nem recusa.
+No registro fechado, o aceite é só da forma: a afirmação fica sem conferir até o
+registro ser aberto.
 
 A conferência para no primeiro passo que falha, nesta ordem:
 1. a forma (R1, R2, R3);
@@ -190,7 +251,9 @@ No registro fechado, ela faz só a forma (R1, R2 e R3).
 
 `registros-v1/exemplos.json` tem, para cada exemplo, `id`, `descricao`,
 `esperado` (`{"veredito": "aceito"}` ou `{"veredito": "recusado", "motivo":
-código}`) e `registro`. Os arquivos dos certificados estão em
+código}`) e `registro`. Quando o defeito está na escrita do JSON (uma chave
+repetida), o exemplo traz `registroTexto`, o registro como texto, no lugar de
+`registro`. Os arquivos dos certificados estão em
 `registros-v1/arquivos/`. Cada exemplo inválido tem um defeito só, montado a
 partir de um válido e com os outros hashes refeitos, e o motivo esperado é o
 desse defeito. Uma conferência independente está conforme quando dá o mesmo
@@ -208,3 +271,6 @@ teste 1 da RFC 8032 (Ed25519), que não é de ninguém.
 4. Os arquivos vão por caminho e SHA-256; na rede, iriam pelo hash.
 5. A forma canônica não reconhece paráfrases além dos nomes das variáveis
    ligadas: `P(a) ∧ Q(a)` e `Q(a) ∧ P(a)` têm formas diferentes.
+6. O certificado mostra que há um modelo; não diz que ele é o menor.
+7. Não há limite de tempo nem de memória no formato: uma conferência que
+   esgota o seu dá pendente.

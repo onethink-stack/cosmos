@@ -43,4 +43,7 @@ O build e os testes usam Vite, TypeScript, Vitest e outras dependências de
 desenvolvimento, cada uma com a sua licença, que o `npm install` traz para
 `node_modules/`. Delas, só o trecho do Vite da tabela vai para o app. O cvc5 e
 o Carcara, que geram e conferem as provas, não estão no repositório, além das
-17 regras acima.
+17 regras acima. O SymPy e o mpmath (licença BSD de 3 cláusulas, cada um) são
+instalados pelo fluxo conferir-provas, nas versões e com os hashes de
+`especificacao/provas-t1/requisitos.txt`, para a conferência independente dos
+modelos exatos; também não estão no repositório.

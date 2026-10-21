@@ -157,5 +157,7 @@ GPT (o avaliador numérico da rodada 30, escrito só por esta especificação no
 formato experimental que a antecedeu): ela aceitou os cinco do Caderno, e a
 conferência do Caderno aceitou os cinco dela. Nela foram achados dois defeitos
 de correção (a testemunha usada em qualquer polaridade, e ∅ fora do domínio de
-objetos), que este formato recusa. Ela entra no verificador público depois do
-conserto.
+objetos), que este formato recusa, e uma fragilidade (`assert` que `python -O`
+tira). Consertada, no pacote da Fase 2, ela está no verificador público
+(`provas-t1/independente/avaliador_kripke_numerico_v1.py`): aceita os cinco e
+recusa os estragos deles.

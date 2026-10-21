@@ -1,6 +1,6 @@
 {
- "versao": "c2",
- "descricao": "Certificados dos exemplos normativos da tradução t1: para cada unsat, o problema exato que a tradução manda ao Z3 e uma prova Alethe do cvc5 para esse problema; para cada sat sem números, um modelo finito que se confere sem busca.",
+ "versao": "c3",
+ "descricao": "Certificados dos exemplos normativos da tradução t1: para cada unsat, o problema exato que a tradução manda ao Z3 e uma prova Alethe do cvc5 para esse problema; para cada sat, um modelo que se confere sem busca (sem números, finito, no formato do lote cego Z3 2; com números, exato, no formato modelo-exato-t1-v1).",
  "traducao": "t1",
  "exemplos": "traducao-z3-t1-exemplos.json",
  "regrasRare": {
@@ -406,7 +406,47 @@
     "sha256": "1b77c6452b71456ba06c538f30f8af571187e8da1db0e5a442dc5631fa8adc8d"
    },
    "prova": null,
-   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
+   "nota": "sat com números: o certificado é um modelo exato (modelo-exato-t1-v1), que se confere sem busca",
+   "modelo": {
+    "formato": "modelo-exato-t1-v1",
+    "objetos": [
+     "o0",
+     "o1",
+     "o2"
+    ],
+    "mundos": [
+     "w0",
+     "w1"
+    ],
+    "mundoReal": "w0",
+    "constantesObjeto": {
+     "a": "o0",
+     "b": "o2"
+    },
+    "constantesReais": {
+     "n": "2"
+    },
+    "funcoesObjeto": {
+     "g/2": {
+      "padrao": "o1",
+      "excecoes": [
+       {
+        "mundo": "w0",
+        "argumentos": [
+         "2",
+         "o0"
+        ],
+        "valor": "o2"
+       }
+      ]
+     }
+    },
+    "funcoesReais": {},
+    "predicados": {},
+    "pertence": [],
+    "acessos": {},
+    "testemunhas": []
+   }
   },
   {
    "id": "Z08",
@@ -466,7 +506,39 @@
     "sha256": "c07f1e432b25b38f21848c8d4485ab798694861850a48333ce161d903d136b6b"
    },
    "prova": null,
-   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
+   "nota": "sat com números: o certificado é um modelo exato (modelo-exato-t1-v1), que se confere sem busca",
+   "modelo": {
+    "formato": "modelo-exato-t1-v1",
+    "objetos": [
+     "o0"
+    ],
+    "mundos": [
+     "w0",
+     "w1"
+    ],
+    "mundoReal": "w0",
+    "constantesObjeto": {},
+    "constantesReais": {},
+    "funcoesObjeto": {},
+    "funcoesReais": {},
+    "predicados": {
+     "Q/1": {
+      "padrao": true,
+      "excecoes": [
+       {
+        "mundo": "w1",
+        "argumentos": [
+         "1"
+        ],
+        "valor": false
+       }
+      ]
+     }
+    },
+    "pertence": [],
+    "acessos": {},
+    "testemunhas": []
+   }
   },
   {
    "id": "Z09",
@@ -1343,7 +1415,39 @@
     "sha256": "15f1e8980f17cc6351b68154c444f7cf08191a0d8a36803579b21b407a1dfa25"
    },
    "prova": null,
-   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
+   "nota": "sat com números: o certificado é um modelo exato (modelo-exato-t1-v1), que se confere sem busca",
+   "modelo": {
+    "formato": "modelo-exato-t1-v1",
+    "objetos": [
+     "o0"
+    ],
+    "mundos": [
+     "w0"
+    ],
+    "mundoReal": "w0",
+    "algebrico": {
+     "polinomio": [
+      -2,
+      0,
+      1
+     ],
+     "intervaloAberto": [
+      "-3/2",
+      "-1"
+     ],
+     "indiceDaRaiz": 1
+    },
+    "constantesObjeto": {},
+    "constantesReais": {
+     "n": "alpha"
+    },
+    "funcoesObjeto": {},
+    "funcoesReais": {},
+    "predicados": {},
+    "pertence": [],
+    "acessos": {},
+    "testemunhas": []
+   }
   },
   {
    "id": "Z34",
@@ -1395,7 +1499,43 @@
     "sha256": "287fada826400e9c366b541e0eeb660227dd98a48f979b72fa66ae931444effa"
    },
    "prova": null,
-   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
+   "nota": "sat com números: o certificado é um modelo exato (modelo-exato-t1-v1), que se confere sem busca",
+   "modelo": {
+    "formato": "modelo-exato-t1-v1",
+    "objetos": [
+     "o0"
+    ],
+    "mundos": [
+     "w0"
+    ],
+    "mundoReal": "w0",
+    "algebrico": {
+     "polinomio": [
+      -2,
+      0,
+      1
+     ],
+     "intervaloAberto": [
+      "-3/2",
+      "-1"
+     ],
+     "indiceDaRaiz": 1
+    },
+    "constantesObjeto": {},
+    "constantesReais": {},
+    "funcoesObjeto": {},
+    "funcoesReais": {},
+    "predicados": {},
+    "pertence": [],
+    "acessos": {},
+    "testemunhas": [
+     {
+      "formula": 0,
+      "variavel": "x",
+      "valor": "alpha"
+     }
+    ]
+   }
   },
   {
    "id": "Z36",
@@ -1537,7 +1677,30 @@
     "sha256": "0b84a5ecc72d6aa1d5176817f17751fc59bd88265a10bea7215091f5e07e50d5"
    },
    "prova": null,
-   "nota": "sat com números: o modelo não é finito, e ainda não há formato de certificado para ele"
+   "nota": "sat com números: o certificado é um modelo exato (modelo-exato-t1-v1), que se confere sem busca",
+   "modelo": {
+    "formato": "modelo-exato-t1-v1",
+    "objetos": [
+     "o0"
+    ],
+    "mundos": [
+     "w0"
+    ],
+    "mundoReal": "w0",
+    "constantesObjeto": {},
+    "constantesReais": {
+     "n": "7719"
+    },
+    "funcoesObjeto": {},
+    "funcoesReais": {},
+    "predicados": {},
+    "pertence": [],
+    "acessos": {},
+    "divZero": {
+     "padrao": "5"
+    },
+    "testemunhas": []
+   }
   },
   {
    "id": "Z40",

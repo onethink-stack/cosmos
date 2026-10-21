@@ -136,6 +136,22 @@ export async function checarUmaVez(
 }
 
 /**
+ * Uma checagem no Z3 que devolve também o modelo, quando há (o objeto do Z3, do mesmo contexto do solver): é de onde
+ * sai o modelo exato de um sat com números (z3Modelo.ts).
+ */
+export async function checarComModelo(api: any, formulas: Formula[], tempoMs: number, numericos: Set<string>): Promise<{ resultado: ResultadoZ3; modelo: any }> {
+  const espera = liberacoes(api)
+  const solver = montarSolver(api, formulas, tempoMs, numericos)
+  espera.checando++
+  try {
+    const resultado = (await solver.check()) as ResultadoZ3
+    return { resultado, modelo: resultado === 'sat' ? solver.model() : null }
+  } finally {
+    if (--espera.checando === 0) for (const liberar of espera.adiadas.splice(0)) liberar()
+  }
+}
+
+/**
  * O problema exato que a tradução t1 manda ao Z3, em SMT-LIB 2: as declarações e as asserções,
  * sem o check-sat. É o que um certificado de unsat prova, e outro solucionador lê este texto.
  */

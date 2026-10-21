@@ -36,9 +36,10 @@ O que é do verificador e o que é do certificado:
    tem de passar no Carcara e ser recusado pelo vínculo. Os pares de adversarios/comparador/ (problemas de sentido
    diferente, com funções declaradas chamadas and e -, ou um check-sat no meio) têm de sair diferentes na comparação,
    e os problemas *-recusar.smt2 (um termo mal tipado) têm de ser recusados pelo perfil da t1.
-6. Confere os modelos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem de
-   ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
-   sem os acessos do mundo real.
+6. Confere os modelos finitos dos sat (modelos.py) com a conferência independente, sem busca, e ataca: cada modelo tem
+   de ser recusado com a primeira fórmula negada, com uma tabela de função sem uma linha e com o quadro de um titular
+   sem os acessos do mundo real. Os modelos exatos, dos sat com números, só são contados: a conferência independente
+   deles entra quando o avaliador numérico do GPT for consertado (rodada 31).
 
 Sai com código 1 se alguma prova não der "valid", se algum estrago ou caso adversário for aceito, se o vínculo não
 bater, se um modelo for recusado ou um modelo estragado aceito, ou se algum SHA-256 não bater. Com --sem-carcara, confere os hashes, monta os estragos e confere o vínculo, sem
@@ -579,7 +580,9 @@ def main():
     mod_md = ['| O quê | Resultado |', '| --- | --- |',
               f"| Modelos dos sat sem números | {mod['aceitos']} de {mod['modelos']} aceitos |",
               f"| Modelos estragados (fórmula negada, tabela sem uma linha, quadro sem os acessos do mundo real) | "
-              f"{mod['estragos_recusados']} de {mod['estragos']} recusados |"]
+              f"{mod['estragos_recusados']} de {mod['estragos']} recusados |",
+              f"| Modelos exatos dos sat com números (modelo-exato-t1-v1) | {mod['exatos']} no registro, conferidos pelo "
+              f"Caderno (testes/modelos-exatos.test.ts); a conferência independente deles ainda não está aqui |"]
     invalidos = f" ({vin['trocados_invalidos']} inválidas na gramática)" if vin['trocados_invalidos'] else ''
     pares_iguais = f" ({vin['pares_iguais']} pares com o mesmo problema ficaram de fora)" if vin['pares_iguais'] else ''
     resultado_troca = f"prova no Carcara: {prova_troca}; vínculo: {'recusado' if diferenca_troca else 'ACEITO'}"
@@ -623,7 +626,7 @@ def main():
         'Pela implementação independente da t1 (independente/, escrita pelo GPT só pela especificação).', '',
         *vin_md, '',
         '### Modelos dos sat', '',
-        'Pela conferência independente (independente/verificar_certificados_sem_z3.py), sem busca.', '',
+        'Os finitos, pela conferência independente (independente/verificar_certificados_sem_z3.py), sem busca.', '',
         *mod_md, '',
         f'**Falhas:** ' + '; '.join(falhas) if falhas else 'Nenhuma falha.',
     ]
@@ -643,7 +646,9 @@ def main():
                  f"{vin['pares']} pares recusados{pares_iguais}.\nCaso □/◇: {resultado_troca}.\nControles do "
                  f"comparador: {controles_recusados} de {len(controles)} recusados.")
         anotacao('notice', 'Modelos', f"{mod['aceitos']} de {mod['modelos']} modelos dos sat aceitos pela conferência "
-                 f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados.")
+                 f"independente; {mod['estragos_recusados']} de {mod['estragos']} modelos estragados recusados. "
+                 f"{mod['exatos']} modelos exatos (com números) ficam com a conferência do Caderno, até a independente "
+                 f"ser consertada.")
         anotacao('notice', 'Resultado', linha + ' ' + ('Nenhuma falha.' if not falhas else
                                                          f'{len(falhas)} falhas: ' + '; '.join(falhas)[:3000]))
     for destino in [args.relatorio, os.environ.get('GITHUB_STEP_SUMMARY')]:

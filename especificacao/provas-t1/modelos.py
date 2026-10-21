@@ -1,6 +1,10 @@
-"""Os modelos dos exemplos sat: cada modelo do registro passa pela conferência independente
+"""Os modelos dos exemplos sat: cada modelo finito do registro passa pela conferência independente
 (independente/verificar_certificados_sem_z3.py, escrita pelo GPT só pela especificação), que checa a forma, as tabelas
 completas, o quadro KD45 de cada titular e a verdade de cada fórmula no mundo real, sem busca nenhuma.
+
+Os modelos exatos, dos sat com números (formato modelo-exato-t1-v1, especificacao/modelos-exatos-t1.md), ainda não têm
+conferência independente aqui: o avaliador numérico do GPT tem dois defeitos de correção a consertar (rodada 31). Por
+enquanto quem os confere é o Caderno, em testes/modelos-exatos.test.ts; aqui eles só são contados.
 
 E a conferência é atacada: o modelo tem de ser recusado com a primeira fórmula negada (o modelo de F não satisfaz ¬F),
 com uma tabela de função sem uma linha e com o quadro de um titular sem os acessos do mundo real. O modelo de um
@@ -10,6 +14,8 @@ import copy
 import sys
 
 from vinculo import INDEPENDENTE
+
+FORMATO_EXATO = 'modelo-exato-t1-v1'
 
 
 def motivo_da_recusa(formulas, fichas, modelo):
@@ -47,9 +53,12 @@ def estragos(c):
 
 def conferir(certificados):
     """Confere os modelos do registro e os estragos deles. Devolve um dicionário com as contagens e as falhas."""
-    r = {'modelos': 0, 'aceitos': 0, 'estragos': 0, 'estragos_recusados': 0, 'falhas': []}
+    r = {'modelos': 0, 'aceitos': 0, 'estragos': 0, 'estragos_recusados': 0, 'exatos': 0, 'falhas': []}
     for c in certificados:
         if not c.get('modelo'):
+            continue
+        if c['modelo'].get('formato') == FORMATO_EXATO:
+            r['exatos'] += 1
             continue
         r['modelos'] += 1
         motivo = motivo_da_recusa(c['formulas'], c['fichas'], c['modelo'])

@@ -11,7 +11,8 @@ olhar o código do Caderno, e comparar os dois.
 | `exemplos-m2.json` | Os exemplos normativos: texto, fichas do dicionário, se as fichas são exigidas, se é aceito, árvore, árvore expandida e diagnósticos |
 | `traducao-z3-t1.md` | A tradução da árvore expandida para o Z3 (versão t1): semântica, tipos, símbolos, tabela de tradução, axiomas e limitações conhecidas |
 | `traducao-z3-t1-exemplos.json` | Os exemplos normativos da tradução: fórmulas, fichas, o veredito do Z3 no Caderno e o resultado do motor finito |
-| `provas-t1/` | Os certificados dos exemplos da tradução (versão c1): o problema SMT exato de cada um, as provas Alethe dos unsat e o registro, conferidos pelo Carcara num fluxo do GitHub |
+| `modelos-exatos-t1.md` | O certificado de um sat com números (modelo-exato-t1-v1): números exatos em Q(α), funções por casos, D0, testemunhas e a regra de polaridade |
+| `provas-t1/` | Os certificados dos exemplos da tradução (versão c3): o problema SMT exato de cada um, as provas Alethe dos unsat, os modelos dos sat e o registro, conferidos num fluxo do GitHub |
 
 Os arquivos são conferidos pelo Caderno a cada mudança: `testes/traducao-z3.test.ts` refaz os vereditos da tradução, e `testes/gramatica.test.ts`
 lê `exemplos-m2.json`, `lexico-m2.json` e `diagnosticos-m2.json` e falha se o

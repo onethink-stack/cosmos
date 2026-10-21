@@ -1,20 +1,21 @@
-# Certificados dos exemplos da t1 — versão c2
+# Certificados dos exemplos da t1 — versão c3
 
 Esta pasta guarda, para os 42 exemplos normativos da tradução t1
 (`../traducao-z3-t1-exemplos.json`), o problema exato que o Caderno manda ao Z3;
-para os unsat, uma prova passo a passo no formato Alethe; e para os sat sem
-números, um modelo finito. Outros programas conferem as provas e os modelos sem
-confiar em nenhum solucionador e sem fazer busca.
+para os unsat, uma prova passo a passo no formato Alethe; para os sat sem
+números, um modelo finito; e para os sat com números, um modelo exato
+(`../modelos-exatos-t1.md`). Outros programas conferem as provas e os modelos
+sem confiar em nenhum solucionador e sem fazer busca.
 
 | Arquivo | O que é |
 | --- | --- |
 | `problemas/Zxx.smt2` | O problema em SMT-LIB 2: as declarações e as asserções que a tradução t1 produz (a função `problemaSmt` de `src/motor/z3.ts`), com as fórmulas do exemplo num comentário no topo |
 | `provas/Zxx.alethe` | A prova Alethe do cvc5 para esse problema, só os comandos (a linha `unsat` e os parênteses de fora foram tirados) |
 | `regras.rare` | As 17 regras de reescrita (RARE) que as provas usam, copiadas do Carcara (com uma única mudança de escrita, anotada no topo do arquivo) |
-| `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256, e o modelo dos sat sem números |
+| `certificados.json` | O registro: para cada exemplo, fórmulas, fichas, árvores expandidas, versão da tradução, veredito do Z3, problema e prova, com SHA-256, e o modelo de cada sat |
 | `conferir.py` | O verificador: confere as provas com o Carcara, estraga cada prova de sete jeitos, roda os casos adversários e confere o vínculo da fórmula com o problema |
 | `vinculo.py` | A parte do verificador que refaz o problema a partir das fórmulas e o compara com o do certificado |
-| `modelos.py` | A parte do verificador que confere os modelos dos sat com a conferência independente |
+| `modelos.py` | A parte do verificador que confere os modelos finitos dos sat com a conferência independente (e conta os exatos) |
 | `independente/` | A implementação independente da t1 (leitor da m2 e tradução), escrita pelo GPT só pela especificação, sem mudança nenhuma |
 | `adversarios/` | Problemas satisfazíveis com "provas" falsas escritas à mão, e um certificado com as fórmulas trocadas, que o verificador tem de recusar |
 
@@ -71,7 +72,7 @@ independente.
 | unsat | Z36 (potência à direita) | **Nenhum.** A tradução usa a potência real do Z3 (`^`), que o Alethe não tem |
 | unsat | Z40 (divisão por zero) | **Nenhum.** O cvc5 resolve com um símbolo interno (`div_by_zero`) que o Alethe não escreve |
 | sat | Z02, Z03, Z04, Z14, Z15 (sem números) | Modelo finito, do motor do Caderno, no formato do lote cego Z3 2 |
-| sat | Z07, Z08, Z33, Z35, Z39 (com números) | **Nenhum ainda.** O modelo não é finito (em Z33, n · n = 2 pede n = √2), e falta um formato de testemunha numérica |
+| sat | Z07, Z08, Z33, Z35, Z39 (com números) | Modelo exato, tirado do modelo do Z3, no formato modelo-exato-t1-v1 (em Z33, n = −√2, a raiz de x² − 2 em (−3/2, −1)) |
 | unknown | Z19, Z22 | Nenhum. O cvc5 com `--finite-model-find` dá sat nos dois |
 
 Z36 e Z40 são unsat pela palavra dos solucionadores (o Z3 e o cvc5 concordam),
@@ -229,6 +230,20 @@ quadro de crença sem os acessos do mundo real. O modelo de um exemplo com as
 fórmulas de outro não serve de ataque, porque um modelo pode valer para os
 dois: o de Z04 vale para Z14.
 
+Nos sat com números o modelo não é finito: uma função de argumento real tem
+infinitos argumentos, e √2 não se escreve com decimais. O certificado é então um
+modelo exato (`../modelos-exatos-t1.md`): as funções por casos, com um valor
+padrão; os números como racionais ou em Q(α), com α dado por um polinômio
+irredutível e um intervalo com uma raiz só (por Sturm); a divisão por zero como
+uma função D0 do numerador; e uma testemunha para cada ∃ sobre ℝ ou ℤ de
+polaridade positiva. O Caderno o tira do modelo do Z3 (`src/motor/z3Modelo.ts`)
+e o confere em `testes/modelos-exatos.test.ts` e `testes/provas-t1.test.ts`. Na
+rodada 31, o avaliador numérico do GPT (rodada 30) aceitou os cinco do Caderno,
+e a conferência do Caderno aceitou os cinco dele; mas o avaliador do GPT tem dois
+defeitos de correção (a testemunha usada debaixo de ¬, e ∅ fora dos objetos), e
+só entra no verificador depois do conserto. Até lá, `modelos.py` só conta os
+modelos exatos.
+
 O resultado sai em anotações na página de cada execução, na aba Actions, que
 qualquer pessoa vê sem login (o registro completo só abre para administradores).
 
@@ -289,5 +304,6 @@ desenvolvimento.
   nenhuma foi provada correta: um erro que as duas cometam do mesmo jeito passa.
 - O Carcara também é um programa, e as regras RARE entram nele como axiomas.
 - Z36 e Z40 ficam sem certificado.
-- Os 5 exemplos sat com números ainda não têm certificado, e falta perceber
-  quando as premissas, sozinhas, já são contraditórias.
+- Os 5 modelos exatos, dos sat com números, ainda não têm conferência
+  independente no verificador público (só a do Caderno, nos testes). E falta
+  perceber quando as premissas, sozinhas, já são contraditórias.

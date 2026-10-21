@@ -1,0 +1,33 @@
+name: Fase 3 - troca de cadeias por arquivo
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tres-notebooks:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificador publico permanece congelado
+        run: git diff --exit-code 17a016817c539658d4a92c01d8cb5284333ff115 -- especificacao/provas-t1 especificacao/registros-v1
+      - run: python -m pip install -r fase3/requirements.txt
+      - name: Troca 3 de 3 e deteccao 3 de 3
+        shell: bash
+        run: |
+          set -o pipefail
+          python -X utf8 -m unittest discover -s fase3 -p 'test_*.py' -v 2>&1 | tee fase3-resultados.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fase3-resultados-${{ matrix.os }}
+          path: fase3-resultados.txt

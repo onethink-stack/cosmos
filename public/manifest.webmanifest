@@ -1,13 +1,12 @@
 {
   "name": "Cosmos",
   "short_name": "Cosmos",
-  "description": "Cosmos - Cadeia F0-F8",
-  "id": "/cosmos/",
-  "start_url": "/cosmos/#/cadeia",
-  "scope": "/cosmos/",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
   "display": "standalone",
-  "theme_color": "#7c3aed",
-  "background_color": "#0a0a0f",
+  "start_url": "/cosmos/",
+  "scope": "/cosmos/",
+  "id": "/cosmos/",
   "icons": [
     {
       "src": "pwa-192x192.png",

@@ -8,6 +8,20 @@ import pacoteZ3 from 'z3-solver/package.json' with { type: 'json' }
 import { PACOTE_COSMOS } from './src/dados/pacoteCosmos.ts'
 
 const VERSAO_Z3 = pacoteZ3.version
+// Não há VitePWA: o manifest canônico é o arquivo público, compartilhado pelos dois nomes.
+const MANIFEST_COSMOS = JSON.parse(readFileSync(new URL('./public/manifest.webmanifest', import.meta.url), 'utf8'))
+
+function conferirManifestCosmos(): Plugin {
+  return {
+    name: 'cosmos-manifest-unico',
+    apply: 'build',
+    buildStart() {
+      const alternativo = JSON.parse(readFileSync(new URL('./public/manifest.json', import.meta.url), 'utf8'))
+      if (JSON.stringify(alternativo) !== JSON.stringify(MANIFEST_COSMOS)) throw new Error('manifest.json diverge do manifest.webmanifest canônico.')
+      if (MANIFEST_COSMOS.name !== 'Cosmos 502426c' || MANIFEST_COSMOS.short_name !== 'Cosmos 502426c' || MANIFEST_COSMOS.id !== '/cosmos/' || MANIFEST_COSMOS.scope !== '/cosmos/' || MANIFEST_COSMOS.start_url !== '/cosmos/#/cadeia') throw new Error('Manifest Cosmos com nome ou caminhos incorretos.')
+    },
+  }
+}
 
 function exportarCosmos(): Plugin {
   return {
@@ -220,7 +234,7 @@ export default defineConfig(({ mode }) => {
   const arquivo = mode === 'arquivo'
   return {
     base: arquivo ? './' : '/cosmos/',
-    plugins: [preact(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [exportarCosmos(), serviceWorker()])],
+    plugins: [preact(), conferirManifestCosmos(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [exportarCosmos(), serviceWorker()])],
     publicDir: arquivo ? false : 'public',
     server: { headers: ISOLAMENTO },
     preview: { headers: ISOLAMENTO },

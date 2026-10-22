@@ -1,16 +1,15 @@
 {
-  "id": "./",
   "name": "Cosmos 502426c",
   "short_name": "Cosmos 502426c",
   "description": "Cadeia pessoal F0-F8 - selo 502426c - Q(√2)",
-  "lang": "pt-BR",
-  "start_url": "./#/cadeia",
-  "scope": "./",
+  "id": "/cosmos/",
+  "start_url": "/cosmos/#/cadeia",
+  "scope": "/cosmos/",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#7c3aed",
   "icons": [
-    { "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/cosmos/pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/cosmos/pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

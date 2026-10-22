@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'preact/hooks'
 import { conferirFaseCosmos, verificarHashTeoria } from '../motor/cadeiaCosmos'
 import { add, mul, qsqrt2, toString } from '../motor/qsqrt2'
+import { conferirElosCosmos, type ConferenciaElosCosmos } from '../motor/elosCosmos'
+import elos from '../dados/elos-assinados.json'
+import cadeia from '../dados/cadeia-F0-F4.json'
+
+const conferenciaAssinaturas = conferirElosCosmos(elos, cadeia.fases)
 
 export function textoCosmos(valor: unknown): string {
   if (valor === null || valor === undefined) return 'Não informado'
@@ -14,9 +19,23 @@ export function textoCosmos(valor: unknown): string {
 export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
   const conferencia = conferirFaseCosmos(fase)
   const [hash, setHash] = useState('Verificando hash…')
+  const [assinatura, setAssinatura] = useState<ConferenciaElosCosmos | null>(null)
   useEffect(() => {
     let ativo = true
-    void verificarHashTeoria(fase).then((valido) => { if (ativo) setHash(valido ? '✓ hash_teoria confere' : '✕ hash_teoria divergente') }).catch(() => { if (ativo) setHash('Hash não verificado: SHA-256 indisponível') })
+    setAssinatura(null)
+    const publicada = cadeia.fases.find((f) => f.id === fase.id)
+    void verificarHashTeoria(fase).then(async (valido) => {
+      if (ativo) setHash(valido ? '✓ hash_teoria confere' : '✕ hash_teoria divergente')
+      if (publicada) {
+        const resultado = await conferenciaAssinaturas
+        if (ativo) setAssinatura(valido && conferirFaseCosmos(fase).valida && publicada.hash_teoria === fase.hash_teoria ? resultado : { verificado: false, detalhe: 'Fase atual divergente do conteúdo assinado.', cabeca: null })
+      }
+    }).catch(() => {
+      if (ativo) {
+        setHash('Hash não verificado: SHA-256 indisponível')
+        setAssinatura({ verificado: false, detalhe: 'C1–C8 não verificado: falha na conferência criptográfica.', cabeca: null })
+      }
+    })
     return () => { ativo = false }
   }, [fase])
   const raiz = qsqrt2(0, 1)
@@ -29,8 +48,11 @@ export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
     <p role="status">{hash}</p>
     <p>Afirmação declarada: <strong>{String(fase.afirmacao)}</strong></p>
     {conta && <p>Conta exata em ℚ(√2): <code>{conta}</code></p>}
-    <p class="cosmos-assinatura-pendente"><strong>C1–C8 cadeia-v1:</strong> não verificado: faltam elos assinados</p>
-    <p class="suave">Hash e vocabulário não comprovam consistência lógica nem assinatura.</p>
+    <p class={assinatura?.verificado ? 'cosmos-assinatura-verificada' : 'cosmos-assinatura-pendente'} role="status">
+      {assinatura ? assinatura.detalhe : cadeia.fases.some((f) => f.id === fase.id) ? 'Verificando C1–C8 e assinaturas Ed25519…' : 'não verificado: faltam elos assinados'}
+    </p>
+    {assinatura?.cabeca && <details><summary>Resumo da cadeia assinada</summary><code>{assinatura.cabeca}</code></details>}
+    <p class="suave">Assinaturas conferem autoria da chave e integridade dos elos; não provam consistência lógica.</p>
     {!conferencia.valida && <ul role="alert">{conferencia.erros.map((erro) => <li key={erro}>{erro}</li>)}</ul>}
   </section>
 }

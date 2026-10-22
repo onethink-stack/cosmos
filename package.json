@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "preact": "^11.0.1",
+    "tweetnacl": "1.0.3",
     "z3-solver": "^5.2.0"
   },
   "devDependencies": {

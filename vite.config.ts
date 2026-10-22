@@ -179,7 +179,7 @@ function avisosDeLicenca(arquivo: boolean): Plugin {
         ? [
             AVISO_DO_CADERNO,
             'Este arquivo inclui o Preact, o Z3 e um trecho do Vite, com os avisos abaixo, e dados do Unicode.',
-            ...['MIT-preact.txt', 'MIT-z3-solver.txt', 'MIT-vite.txt', 'Unicode-3.0.txt'].map((n) => readFileSync(`LICENSES/${n}`, 'utf8').trim()),
+            ...['MIT-preact.txt', 'MIT-z3-solver.txt', 'MIT-vite.txt', 'Unicode-3.0.txt', 'Unlicense-tweetnacl.txt'].map((n) => readFileSync(`LICENSES/${n}`, 'utf8').trim()),
             readFileSync('LICENSE', 'utf8').trim(),
           ].join('\n\n')
         : AVISO_DO_CADERNO

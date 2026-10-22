@@ -9,6 +9,7 @@ terceiros, cada um com a sua licença. Os textos completos estão em
 | 17 regras de reescrita do Carcara | `especificacao/provas-t1/regras.rare` | Apache-2.0, dos autores do Carcara | [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt) |
 | Faixas das classes L e N do Unicode 16.0 | `src/logica/unicode16.ts` | Unicode License V3, © 1991-2026 Unicode, Inc. | [LICENSES/Unicode-3.0.txt](LICENSES/Unicode-3.0.txt) |
 | Preact | Empacotado no app | MIT, © 2015-present Jason Miller | [LICENSES/MIT-preact.txt](LICENSES/MIT-preact.txt) |
+| TweetNaCl.js 1.0.3 | Assinaturas Ed25519 do selo Cosmos | Unlicense, domínio público | [LICENSES/Unlicense-tweetnacl.txt](LICENSES/Unlicense-tweetnacl.txt) |
 | Z3 (pacote z3-solver) | Copiado para o app, em `z3/` | MIT, © Microsoft Corporation | [LICENSES/MIT-z3-solver.txt](LICENSES/MIT-z3-solver.txt) |
 | Trecho de apoio do Vite (o polyfill de `modulepreload`) | Empacotado no app | MIT, © 2019-present, VoidZero Inc. and Vite contributors | [LICENSES/MIT-vite.txt](LICENSES/MIT-vite.txt) |
 

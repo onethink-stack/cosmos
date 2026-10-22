@@ -26,10 +26,7 @@
     },
     {
       "id": "F6",
-      "pessoa": [
-        "pessoa(psi)",
-        "pessoa(omega)"
-      ],
+      "pessoa": null,
       "testemunha": [
         "Z35",
         "Z39"
@@ -43,7 +40,7 @@
       "estado": "proposta",
       "gramatica": "m2",
       "traducao": "t1",
-      "hash_teoria": "f13ed734fd8159c74c3efae49866ae0e0b76f59c414aae605522208fdcf2dfd8"
+      "hash_teoria": "af186db8bfd85ec077f05d8def83e8eecbdb3212b174a8c381bb3af6f3980cba"
     },
     {
       "id": "F7",

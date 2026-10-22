@@ -16,7 +16,7 @@ const fases = [
 ]
 const outras = [
   fase('F5', null, testemunhas, { a: 3, b: 1 }, 'fechado', 'entrega', 'entrega', 'entrega', 'entregue'),
-  fase('F6', ['pessoa(psi)', 'pessoa(omega)'], testemunhas, null, 'aberto', 'multi-pessoa', 'multi-pessoa', 'pessoas', 'proposta'),
+  fase('F6', null, testemunhas, null, 'aberto', 'multi-pessoa', 'multi-pessoa', 'pessoas', 'proposta'),
   fase('F7', null, [], null, 'aberto', 'verificar selo puro', 'verificacao', 'selo', 'proposta'),
   fase('F8', null, [], null, 'aberto', 'publicar IPFS', 'publicacao', 'IPFS', 'proposta'),
 ]

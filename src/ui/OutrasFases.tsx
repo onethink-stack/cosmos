@@ -6,7 +6,7 @@ export function OutrasFases() {
     <p class="cadeia-rubrica">COSMOS / PRÓXIMAS ETAPAS</p>
     <h1 id="outras-titulo">Outras fases</h1>
     <p>F5–F8 · etapas adicionais à cadeia F0–F4.</p>
-    <p>F6 inicia multi-pessoa; F7 propõe conferir o selo; F8 propõe publicar no IPFS. Nenhum conteúdo foi publicado no IPFS.</p>
+    <p>F5–F8 são fases puras, com pessoa null. F6 propõe multi-pessoa; F7 propõe conferir o selo; F8 propõe publicar no IPFS. Publicação no IPFS pendente.</p>
     <ol class="cadeia-etapas">{outras.fases.map((fase) => <li key={fase.id} class="cadeia-etapa">
       <div class="cadeia-indice"><span>{fase.id}</span><small>{fase.situacao}</small></div>
       <article><div class="cadeia-etapa-topo"><span>{fase.tipo}</span><span>{fase.estado}</span></div>

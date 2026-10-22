@@ -1,0 +1,71 @@
+{
+  "selo": "502426c",
+  "elos_assinados": [
+    {
+      "fase": "F0",
+      "hash_teoria": "035f418fd55ac6fe60d6dcbc0fb5a544e41dc77b6e5e07c2a950e24a3bcae069",
+      "assinatura": "0c38ec09506ad4841f5d27eda58fb6f5de1e420d5b32fe4407057c6ee74a3b85968cdfcd16531afd7ab07f427caaebe79321e9d211c629a4e473b8361648d809",
+      "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382"
+    },
+    {
+      "fase": "F1",
+      "hash_teoria": "d28cecfce04161e4ab87e3197041dfdd9690a0238551eb5a1d3b572a8754d01a",
+      "assinatura": "f8aff1b5ba286c80109bca009f3cb262b4222afbebfda9ccd112b8c2ef99b25bc2c12c4be0b7f29456a96bc7d7ba944c3e4276570b3e141a4437c40a6764770d",
+      "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382"
+    },
+    {
+      "fase": "F2",
+      "hash_teoria": "e58e091fb018095cbddd1b42721e0150837295d70245afb60625603411e01fdb",
+      "assinatura": "972fe3ec79c9287e38b73a3d9137a40b8d049c1cb39b3d9f42eb8f09ac75b2f9218612cd705619fea2bce4732ed8c936bbfaf2a72048c7e476f4b2059950fa0d",
+      "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382"
+    },
+    {
+      "fase": "F3",
+      "hash_teoria": "d9258bfcbefa504156de5007637219b82ea8088f52b1bd63abcbd3122aaf6a20",
+      "assinatura": "4e7b87059061b3a42572ef09b981d93d6ebdc1ada4c862597c4509acb88eff6b973633ea466b782c1544016fbb4a269c618dada9cae4014657689b0401d3ef02",
+      "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382"
+    },
+    {
+      "fase": "F4",
+      "hash_teoria": "0e6a209906e26ebaf0b9729f3566412b5bbb3b4b9c7c0ea25458fd061ddad58d",
+      "assinatura": "f946aacf2c2a72af304277b26d27fcfa56da67767de7301fbe4428c5bbba50ada3e652ef073d9a71ade18c46fab097ae4ac893119239bcb7ff12d866f831f801",
+      "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382"
+    }
+  ],
+  "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382",
+    "elos": [
+      {
+        "indice": 0,
+        "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+        "registroTexto": "{\"autor\":\"ce2707261aa8f6e1208cb9efe4c80902698d991287dc980d0e78a42513576779\",\"fase\":\"F0\",\"hash_teoria\":\"035f418fd55ac6fe60d6dcbc0fb5a544e41dc77b6e5e07c2a950e24a3bcae069\",\"selo\":\"502426c\"}",
+        "assinatura": "69d5ec00d71717a4145609c3271140c9d9ca762af45451e39ecc6734bfad5bd1fe7e2f162ae6ac352734031aac0bc320a82899844a483def1a836fb66c521a06"
+      },
+      {
+        "indice": 1,
+        "anterior": "1a0d82f761c3825aa77c2a213f9aecd48b0f2995621c64cb3e110feeb5440473",
+        "registroTexto": "{\"autor\":\"ce2707261aa8f6e1208cb9efe4c80902698d991287dc980d0e78a42513576779\",\"fase\":\"F1\",\"hash_teoria\":\"d28cecfce04161e4ab87e3197041dfdd9690a0238551eb5a1d3b572a8754d01a\",\"selo\":\"502426c\"}",
+        "assinatura": "cfdf42a9d37ad31835ba34177365af80983e8044f10b69b405adf31dad02c9ef0d8d0adcfd562e9d9a8ee6791871a87db1ddc4d78af5d75020df315458b0130e"
+      },
+      {
+        "indice": 2,
+        "anterior": "2c9dce3a299b8ba869917659fa10e1bddeed8b818e926065f5833e1349d2ea34",
+        "registroTexto": "{\"autor\":\"ce2707261aa8f6e1208cb9efe4c80902698d991287dc980d0e78a42513576779\",\"fase\":\"F2\",\"hash_teoria\":\"e58e091fb018095cbddd1b42721e0150837295d70245afb60625603411e01fdb\",\"selo\":\"502426c\"}",
+        "assinatura": "ba5a9481c6b76ef459a5caa278bba4fc1f34ca5463329df3affb3df121b8f3fdb449d4bc4390d8b108feac9f8ce55e4b374e5a2678857963eeb5c6a6d18b160f"
+      },
+      {
+        "indice": 3,
+        "anterior": "1cde1611437ea6ba5a2276851efeda347da3b60a96aaa4e5ebd89a8db5623979",
+        "registroTexto": "{\"autor\":\"ce2707261aa8f6e1208cb9efe4c80902698d991287dc980d0e78a42513576779\",\"fase\":\"F3\",\"hash_teoria\":\"d9258bfcbefa504156de5007637219b82ea8088f52b1bd63abcbd3122aaf6a20\",\"selo\":\"502426c\"}",
+        "assinatura": "c13f2c98aa7313b74ec8d06e671c833ee5987a4b249a8348fbe53fdd6f8bc2fde4b81b4ace4f440e81eec9fa51dc476e41a6f847f4ad61ed36c3123427c3b20b"
+      },
+      {
+        "indice": 4,
+        "anterior": "2f452fdff813fab745118eb5edbeb62b00cfd8bbf2a0420507dda64fadc5628c",
+        "registroTexto": "{\"autor\":\"ce2707261aa8f6e1208cb9efe4c80902698d991287dc980d0e78a42513576779\",\"fase\":\"F4\",\"hash_teoria\":\"0e6a209906e26ebaf0b9729f3566412b5bbb3b4b9c7c0ea25458fd061ddad58d\",\"selo\":\"502426c\"}",
+        "assinatura": "fbf6ac32b49b9913a2eecf7be390fc7244e9dbd901e44aebd4b3448342e07897fd767ce4f467a568441e91004c2cab810dbc211e98979c98362ee957028c2607"
+      }
+    ]
+  }
+}

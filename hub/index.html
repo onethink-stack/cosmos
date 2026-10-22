@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="COSMOS — um espaço para organizar suas ideias.">
+  <title>COSMOS · Registros</title>
+  <link rel="icon" href="assets/cosmos.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="masthead"><a class="brand" href="./" aria-label="COSMOS, início"><img src="assets/cosmos.png" alt="" width="64" height="64"><span>COSMOS</span></a><span class="edition">CADERNO LÓGICO <span class="dot"></span> ESPAÇO PESSOAL</span></header>
+  <main>
+    <section class="heading"><div><p class="eyebrow">UM LUGAR PARA PENSAR</p><h1>Registros<span>.</span></h1><p class="intro">Dê forma às suas ideias. Encontre novas conexões.</p></div><button class="primary" id="new-note"><span aria-hidden="true">＋</span> Nova nota</button></section>
+    <div class="workspace">
+      <section class="notes-panel" aria-label="Suas notas">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar nas suas notas" aria-label="Buscar nas suas notas"><kbd>/</kbd></label>
+        <div class="filter-row"><div id="filters" class="filters" aria-label="Filtrar notas"><button aria-pressed="true" data-filter="Todas">Todas</button><button aria-pressed="false" data-filter="Lei">Lei</button><button aria-pressed="false" data-filter="Fato">Fato</button><button aria-pressed="false" data-filter="Visão de mundo">Visão de mundo</button><button aria-pressed="false" data-filter="Teorema">Teorema</button></div><span id="count" class="count">0 notas</span></div>
+        <div id="empty" class="empty"><div class="orbital" aria-hidden="true"><img src="assets/cosmos.png" alt=""><i></i></div><p class="eyebrow">TODA IDEIA TEM UM COMEÇO</p><h2>Nenhuma nota ainda</h2><p>Uma pergunta, uma observação, uma visão de mundo.<br>Seu próximo registro começa com você.</p><button class="text-button" id="first-note">Criar minha primeira nota <span aria-hidden="true">↗</span></button></div>
+        <div id="notes" class="notes" aria-live="polite"></div>
+        <p class="local-caption">Notas pessoais salvas neste navegador. Rascunhos sem verificação matemática.</p>
+      </section>
+      <aside>
+        <section class="system-card"><span class="card-icon" aria-hidden="true">⊞</span><p class="eyebrow">EXPLORE AS BASES</p><h2>Sistemas prontos</h2><p>Conheça a estrutura que organiza o seu caderno.</p><button class="text-button" id="systems">Explorar <span aria-hidden="true">↗</span></button></section>
+        <section class="principia-card"><div class="card-top"><span aria-hidden="true">⌑</span><span class="pill">PROTEGIDO POR SENHA</span></div><h2>Principia</h2><p>Um espaço reservado<br>para o seu pensamento.</p><button class="secondary" id="principia">Abrir o Principia <span aria-hidden="true">↗</span></button><small>Nesta etapa, apenas guarda a chave localmente.</small></section>
+        <button class="format-link" id="format">Formato aberto <span id="schema-status">Carregando…</span><span aria-hidden="true">↗</span></button>
+      </aside>
+    </div>
+    <footer><span>COSMOS <span class="footer-divider">/</span> O pensamento encontra forma.</span><span>Corpus real PT (100 perguntas humanas) PENDENTE - não gerar sintético</span></footer>
+  </main>
+  <p id="notice" role="status" class="notice" hidden></p>
+  <dialog id="note-dialog"><form id="note-form"><div class="dialog-heading"><p class="eyebrow">SEU CADERNO</p><button type="button" data-close aria-label="Fechar">×</button></div><h2 id="note-heading">Nova nota</h2><p class="dialog-copy">Um rascunho pessoal. A categoria não certifica o conteúdo.</p><label>Título<input name="title" required maxlength="160" autocomplete="off"></label><label>Categoria<select name="category"><option>Lei</option><option>Fato</option><option>Visão de mundo</option><option>Teorema</option></select></label><label>Sua nota<textarea name="body" required rows="6" maxlength="20000"></textarea></label><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancelar</button><button class="primary" type="submit">Salvar nota</button></div></form></dialog>
+  <dialog id="key-dialog"><form id="key-form"><div class="dialog-heading"><p class="eyebrow">PRINCIPIA</p><button type="button" data-close aria-label="Fechar">×</button></div><h2>Guarde sua chave.</h2><p class="dialog-copy">A chave fica somente nesta sessão do navegador. Nenhum conteúdo será descriptografado ou desbloqueado nesta etapa.</p><label>Chave local<input name="key" type="password" required autocomplete="off" maxlength="1024"></label><p id="key-state" class="dialog-copy"></p><div class="dialog-actions"><button type="button" class="secondary" id="forget-key">Esquecer chave</button><button class="primary" type="submit">Guardar nesta sessão</button></div></form></dialog>
+  <dialog id="info-dialog"><div class="dialog-heading"><p class="eyebrow">FORMATO ABERTO</p><button type="button" data-close aria-label="Fechar">×</button></div><h2 id="info-title">A estrutura do caderno.</h2><p id="info-copy" class="dialog-copy"></p><div id="schema-fields" class="schema-fields"></div><a class="text-button" href="../FORMATO_v1.md" target="_blank" rel="noopener">Ler FORMATO_v1.md ↗</a></dialog>
+  <noscript>Ative JavaScript para usar as notas locais. <a href="../FORMATO_v1.md">Ler o formato aberto</a>.</noscript>
+</body>
+</html>

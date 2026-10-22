@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import type { Compartimento } from '../dados/tipos'
 
 export type Rota =
+  | { tela: 'inicio' }
   | { tela: 'notas' }
   | { tela: 'nota'; id: string }
   /** `visita`: muda a cada navegação, para cada "nova nota" abrir um editor novo */
@@ -24,6 +25,8 @@ let visitas = 0
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/')
   switch (partes[0]) {
+    case 'notas':
+      return { tela: 'notas' }
     case 'nota':
       return partes[1] ? { tela: 'nota', id: decodeURIComponent(partes[1]) } : { tela: 'notas' }
     case 'nova': {
@@ -53,7 +56,7 @@ export function lerRota(hash: string): Rota {
     case 'cacar':
       return partes[1] ? { tela: 'cacar', id: decodeURIComponent(partes[1]) } : { tela: 'cacar' }
     default:
-      return { tela: 'notas' }
+      return { tela: 'inicio' }
   }
 }
 

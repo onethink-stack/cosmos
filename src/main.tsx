@@ -5,6 +5,7 @@ import { registrarServiceWorker } from './dados/versao'
 import { App } from './ui/App'
 import './ui/estilo.css'
 import './ui/telas.css'
+import './ui/cosmos.css'
 
 prepararInstalacao()
 iniciarSegundoPlano()

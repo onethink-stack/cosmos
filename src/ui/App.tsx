@@ -25,6 +25,7 @@ import { useRota } from './rotas'
 import { AvisosNaTela, MotorOcupado } from './SegundoPlano'
 import { Sistemas } from './Sistemas'
 import { Verdades } from './Verdades'
+import { Inicio, CadeiaFases } from './Inicio'
 
 export function App() {
   const est = useEstado()
@@ -59,16 +60,15 @@ export function App() {
     <>
       <header class="topo">
         <div class="topo-dentro">
-          <a href="#/notas" class="marca">
-            Caderno Lógico
+          <a href="#/inicio" class="marca" aria-label="COSMOS — início">
+            <span class="marca-nome">COSMOS</span>
           </a>
           <MotorOcupado />
-          <a href="#/backup" class={`link-backup${aba === 'backup' ? ' ativo' : ''}`}>
-            Offline · Backup
-          </a>
-          <nav>
+          <details class="indice-cosmos" key={rota.tela}>
+          <summary>Índice <span aria-hidden="true">＋</span></summary>
+          <nav aria-label="Navegação principal">
             <a href="#/notas" class={aba === 'notas' ? 'ativo' : ''}>
-              Notas
+              Premissas · Notas
             </a>
             <a href="#/perguntar" class={aba === 'perguntar' ? 'ativo' : ''}>
               Perguntar
@@ -94,11 +94,14 @@ export function App() {
             <a href="#/historico" class={aba === 'historico' ? 'ativo' : ''}>
               Histórico
             </a>
+            <a href="#/backup">Offline · Backup</a>
+            <a href="#/sistemas">Sistemas prontos</a>
           </nav>
+          </details>
         </div>
       </header>
       <AvisosNaTela />
-      <main>
+      <main class={rota.tela === 'inicio' ? 'pagina-inicio' : rota.tela === 'notas' ? 'pagina-registros' : ''}>
         {est.erroBanco && <div class="faixa-erro">{est.erroBanco}</div>}
         {ver.nova && (
           <div class="faixa-versao">
@@ -108,6 +111,8 @@ export function App() {
         {rota.tela !== 'backup' && <LembreteBackup />}
         {!est.carregado ? (
           <p class="suave">Carregando…</p>
+        ) : rota.tela === 'inicio' ? (
+          <Inicio />
         ) : rota.tela === 'notas' ? (
           <ListaNotas />
         ) : rota.tela === 'nota' ? (
@@ -121,7 +126,13 @@ export function App() {
         ) : rota.tela === 'sistemas' ? (
           <Sistemas />
         ) : rota.tela === 'cadeia' ? (
-          <Cadeia />
+          <>
+            <CadeiaFases />
+            <details class="cadeia-ferramentas">
+              <summary>Ferramentas de inferência do Caderno Lógico</summary>
+              <Cadeia />
+            </details>
+          </>
         ) : rota.tela === 'modelo' ? (
           <Modelo />
         ) : rota.tela === 'mundo' ? (

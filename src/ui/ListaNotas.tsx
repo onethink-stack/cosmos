@@ -6,6 +6,8 @@ import { validar } from '../logica/validador'
 import { sistemaCifrado } from '../dados/sistemas'
 import { FormulaExibida } from './FormulaExibida'
 import { DesbloquearSistema } from './Sistemas'
+import { MarcaCosmos } from './MarcaCosmos'
+
 
 const GRAUS: Grau[] = ['F', 'M', 'D']
 
@@ -25,20 +27,19 @@ export function ListaNotas() {
   const temFiltro = f.busca || f.compartimento || f.grau || f.tag
 
   return (
-    <section>
+    <section class="registros">
+      <div class="hub-biblioteca"><h2>Registros</h2><span>LEIS · FATOS · VISÕES · TEOREMAS</span></div>
       <div class="barra-acoes">
         <a class="botao primario" href={`#/nova/${f.compartimento ?? 'lei'}`}>
           + Nova nota
-        </a>
-        <a class="botao" href="#/sistemas">
-          Sistemas prontos
         </a>
       </div>
 
       <input
         type="search"
         class="busca"
-        placeholder="Buscar em títulos, textos, fórmulas e termos do dicionário"
+        placeholder="Investigar em leis, fatos e teoremas..."
+        aria-label="Investigar nos registros"
         value={f.busca}
         onInput={(e) => mudar({ busca: (e.target as HTMLInputElement).value })}
       />
@@ -81,17 +82,14 @@ export function ListaNotas() {
       )}
 
       {!est.notas.length && est.carregado && (
-        <div class="vazio">
+        <div class="registros-vazio">
+          <MarcaCosmos className="registros-curva" />
           <p>Nenhuma nota ainda.</p>
-          {padrao ? (
-            <>
-              <p class="suave">Abrir o {padrao.nome} (protegido por senha):</p>
-              <DesbloquearSistema s={padrao} rotulo="Abrir e carregar" />
-            </>
-          ) : (
-            <a class="botao" href="#/sistemas">
-              Sistemas prontos
-            </a>
+          {padrao && (
+            <details class="registros-acesso">
+              <summary>Abrir o {padrao.nome}</summary>
+              <DesbloquearSistema s={padrao} rotulo="Abrir" />
+            </details>
           )}
         </div>
       )}
@@ -145,3 +143,4 @@ function CartaoNota({ nota: n }: { nota: Nota }) {
     </li>
   )
 }
+

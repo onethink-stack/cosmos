@@ -1,5 +1,5 @@
 {
-  "name": "caderno-logico",
+  "name": "cosmos-502426c",
   "private": true,
   "version": "0.1.0",
   "license": "AGPL-3.0-or-later",
@@ -14,7 +14,7 @@
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",
     "build:tudo": "npm run build",
     "preview": "node scripts/copiar-z3.mjs && vite preview --host",
-    "icones": "node scripts/gerar-icones.mjs",
+    "icones": "node scripts/gerar-branding-cosmos.mjs",
     "cifrar": "node --experimental-strip-types --no-warnings scripts/cifrar-sistema.ts",
     "motor:montar": "vite build --config servidor/vite.config.ts --logLevel warn",
     "motor": "npm run motor:montar && node --no-warnings servidor/dist/motor-de-fundo.js",
@@ -30,6 +30,7 @@
     "@preact/preset-vite": "^2.10.6",
     "@types/node": "^22.20.5",
     "fake-indexeddb": "^6.2.5",
+    "sharp": "0.35.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vite-plugin-singlefile": "^2.3.3",

@@ -292,3 +292,7 @@ main.pagina-registros { padding-top:120px; padding-bottom:120px; }
 .cosmos-assinatura-pendente { color:#725100; background:#fff3bf; border-left:3px solid #d3a000; padding:12px; }
 .cosmos-motor code { white-space:normal; overflow-wrap:anywhere; }
 .cosmos-assinatura-verificada { color:#14532d; background:#edf9f0; border-left:3px solid #23833e; padding:12px; }
+.topo nav.cosmos-navegacao { width:auto; padding:0; display:flex; flex-direction:row; align-items:center; gap:8px; }
+.topo nav.cosmos-navegacao a { padding:8px 4px; white-space:nowrap; }
+.cosmos-curva { object-fit:contain; }
+@media(max-width:600px) { .topo nav.cosmos-navegacao { gap:3px; } .topo nav.cosmos-navegacao a { font-size:10px; } }

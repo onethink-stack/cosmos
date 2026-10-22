@@ -21,7 +21,7 @@ window.addEventListener('hashchange', (evento) => {
 
 if (modoCosmos) render(<CosmosApp />, document.getElementById('app')!)
 else void import('./cadernoLegado').then(({ iniciarCaderno }) => iniciarCaderno()).catch((erro) => {
-  document.getElementById('app')!.textContent = 'Não foi possível carregar o Caderno Lógico. Recarregue a página.'
+  document.getElementById('app')!.textContent = 'Não foi possível carregar as notas do Cosmos 502426c. Recarregue a página.'
   console.error(erro)
 })
 

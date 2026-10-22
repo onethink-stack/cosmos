@@ -14,7 +14,9 @@ function exportarCosmos(): Plugin {
     name: 'cosmos-exportacao-assinada',
     apply: 'build',
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'cosmos-502426c.json', source: JSON.stringify(PACOTE_COSMOS, null, 2) + '\n' })
+      const source = JSON.stringify(PACOTE_COSMOS, null, 2) + '\n'
+      this.emitFile({ type: 'asset', fileName: 'cosmos-502426c.json', source })
+      this.emitFile({ type: 'asset', fileName: 'dist/cosmos-502426c.json', source })
     },
   }
 }
@@ -163,8 +165,8 @@ self.addEventListener('fetch', (e) => {
 `
 }
 
-const AVISO_DO_CADERNO = `Caderno Lógico
-Copyright (C) 2026 Gustavo Phadua Silva da Costa e os autores do Caderno Lógico
+const AVISO_DO_CADERNO = `Cosmos 502426c
+Copyright (C) 2026 Gustavo Phadua Silva da Costa e os autores do projeto
 Software livre sob a GNU Affero General Public License, versão 3 ou posterior, SEM NENHUMA GARANTIA.
 Código-fonte e licenças: https://github.com/onethink-stack/cosmos (LICENCAS.md e THIRD_PARTY_NOTICES.md).`
 

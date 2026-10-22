@@ -21,8 +21,8 @@ const pubkey = hex(par.publicKey)
 if (existsSync(pin)) {
   if (JSON.parse(readFileSync(pin, 'utf8')).pubkey !== pubkey) throw new Error('A chave privada não corresponde ao selo fixado.')
 } else writeFileSync(pin, JSON.stringify({ selo: '502426c', algoritmo: 'Ed25519', pubkey }, null, 2) + '\n', { flag: 'wx' })
-const { fases } = JSON.parse(readFileSync(new URL('src/dados/cadeia-F0-F4.json', raiz), 'utf8'))
-if (fases.map((f) => f.id).join(',') !== 'F0,F1,F2,F3,F4') throw new Error('Fases inesperadas.')
+const fases = ['cadeia-F0-F4.json', 'cadeia-outras-F5-F8.json'].flatMap((nome) => JSON.parse(readFileSync(new URL(`src/dados/${nome}`, raiz), 'utf8')).fases)
+if (fases.map((f) => f.id).join(',') !== 'F0,F1,F2,F3,F4,F5,F6,F7,F8') throw new Error('Fases inesperadas.')
 const elos_assinados = []
 const elos = []
 const autor = hash(par.publicKey)
@@ -38,6 +38,12 @@ for (const [indice, fase] of fases.entries()) {
   anterior = hash(texto)
 }
 const resultado = { selo: '502426c', elos_assinados, cadeia: { formato: 'cadeia-v1', chave: pubkey, elos } }
+const arquivoElos = new URL('src/dados/elos-assinados.json', raiz)
+if (existsSync(arquivoElos)) {
+  const anteriorPublicado = JSON.parse(readFileSync(arquivoElos, 'utf8'))
+  const quantidade = anteriorPublicado.cadeia.elos.length
+  if (JSON.stringify(anteriorPublicado.cadeia.elos) !== JSON.stringify(elos.slice(0, quantidade)) || JSON.stringify(anteriorPublicado.elos_assinados) !== JSON.stringify(elos_assinados.slice(0, quantidade))) throw new Error('Os elos já publicados não podem ser reescritos por esta extensão.')
+}
 writeFileSync(new URL('src/dados/elos-assinados.json', raiz), JSON.stringify(resultado, null, 2) + '\n')
 par.secretKey.fill(0)
-console.log('F0–F4: hashes assinados e cadeia-v1 gerada; chave privada somente em privado/ (ignorada pelo Git).')
+console.log('F0–F8: nove hashes assinados e cadeia-v1 gerada com a chave pública fixada; chave privada somente em privado/.')

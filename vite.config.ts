@@ -5,8 +5,19 @@ import type { Plugin } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { defineConfig } from 'vitest/config'
 import pacoteZ3 from 'z3-solver/package.json' with { type: 'json' }
+import { PACOTE_COSMOS } from './src/dados/pacoteCosmos.ts'
 
 const VERSAO_Z3 = pacoteZ3.version
+
+function exportarCosmos(): Plugin {
+  return {
+    name: 'cosmos-exportacao-assinada',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'cosmos-502426c.json', source: JSON.stringify(PACOTE_COSMOS, null, 2) + '\n' })
+    },
+  }
+}
 
 /** Cabeçalhos de isolamento entre origens, exigidos pelo Z3 (SharedArrayBuffer). */
 const ISOLAMENTO = {
@@ -207,7 +218,7 @@ export default defineConfig(({ mode }) => {
   const arquivo = mode === 'arquivo'
   return {
     base: arquivo ? './' : '/cosmos/',
-    plugins: [preact(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [serviceWorker()])],
+    plugins: [preact(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [exportarCosmos(), serviceWorker()])],
     publicDir: arquivo ? false : 'public',
     server: { headers: ISOLAMENTO },
     preview: { headers: ISOLAMENTO },

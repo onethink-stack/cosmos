@@ -4,8 +4,10 @@ import { add, mul, qsqrt2, toString } from '../motor/qsqrt2'
 import { conferirElosCosmos, type ConferenciaElosCosmos } from '../motor/elosCosmos'
 import elos from '../dados/elos-assinados.json'
 import cadeia from '../dados/cadeia-F0-F4.json'
+import outras from '../dados/cadeia-outras-F5-F8.json'
 
-const conferenciaAssinaturas = conferirElosCosmos(elos, cadeia.fases)
+const fasesAssinadas = [...cadeia.fases, ...outras.fases]
+const conferenciaAssinaturas = conferirElosCosmos(elos, fasesAssinadas)
 
 export function textoCosmos(valor: unknown): string {
   if (valor === null || valor === undefined) return 'Não informado'
@@ -23,7 +25,7 @@ export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
   useEffect(() => {
     let ativo = true
     setAssinatura(null)
-    const publicada = cadeia.fases.find((f) => f.id === fase.id)
+    const publicada = fasesAssinadas.find((f) => f.id === fase.id)
     void verificarHashTeoria(fase).then(async (valido) => {
       if (ativo) setHash(valido ? '✓ hash_teoria confere' : '✕ hash_teoria divergente')
       if (publicada) {
@@ -49,7 +51,7 @@ export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
     <p>Afirmação declarada: <strong>{String(fase.afirmacao)}</strong></p>
     {conta && <p>Conta exata em ℚ(√2): <code>{conta}</code></p>}
     <p class={assinatura?.verificado ? 'cosmos-assinatura-verificada' : 'cosmos-assinatura-pendente'} role="status">
-      {assinatura ? assinatura.detalhe : cadeia.fases.some((f) => f.id === fase.id) ? 'Verificando C1–C8 e assinaturas Ed25519…' : 'não verificado: faltam elos assinados'}
+      {assinatura ? assinatura.detalhe : fasesAssinadas.some((f) => f.id === fase.id) ? 'Verificando C1–C8 e assinaturas Ed25519…' : 'não verificado: faltam elos assinados'}
     </p>
     {assinatura?.cabeca && <details><summary>Resumo da cadeia assinada</summary><code>{assinatura.cabeca}</code></details>}
     <p class="suave">Assinaturas conferem autoria da chave e integridade dos elos; não provam consistência lógica.</p>

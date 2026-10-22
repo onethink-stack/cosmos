@@ -16,7 +16,7 @@ export function CosmosApp() {
         </div>
       </div></header>
       <main class="cosmos-main">{rota.tela === 'outras' ? <OutrasFases /> : <CadeiaFases />}</main>
-      <footer class="rodape cosmos-log-rodape">Q(√2) · Ed25519 · OTS pendente<span class="cosmos-log-links">{!__MODO_ARQUIVO__ && <><a href="./cosmos-502426c.json" download>JSON</a> · </>}<a href="https://github.com/onethink-stack/cosmos">Fonte · AGPL-3.0+</a></span></footer>
+      <footer class="rodape cosmos-log-rodape">Q(√2) · Ed25519 · selo {VOCAB_COSMOS.selo}<span class="cosmos-log-links">OTS pendente · {!__MODO_ARQUIVO__ && <><a href="./cosmos-502426c.json" download>JSON</a> · </>}<a href="https://github.com/onethink-stack/cosmos">Fonte · AGPL-3.0+</a></span></footer>
     </>
   )
 }

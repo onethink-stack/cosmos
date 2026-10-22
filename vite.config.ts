@@ -196,7 +196,7 @@ function semLinksExternos(): Plugin {
 export default defineConfig(({ mode }) => {
   const arquivo = mode === 'arquivo'
   return {
-    base: './',
+    base: arquivo ? './' : '/cosmos/',
     plugins: [preact(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [serviceWorker()])],
     publicDir: arquivo ? false : 'public',
     server: { headers: ISOLAMENTO },

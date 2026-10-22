@@ -11,4 +11,6 @@ export const PACOTE_COSMOS = {
   fases: [...principal.fases, ...outras.fases],
   elos_assinados: assinaturas.elos_assinados,
   cadeia: assinaturas.cadeia,
+  resumo_final: assinaturas.resumo_final,
+  carimbo_ots: 'pendente',
 }

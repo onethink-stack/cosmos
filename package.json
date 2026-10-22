@@ -8,6 +8,7 @@
     "dev": "node scripts/copiar-z3.mjs && vite --host",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:3-notebooks": "vitest run testes/teste-3-notebooks.test.ts --reporter verbose",
     "typecheck": "tsc --noEmit && tsc --noEmit -p servidor",
     "build": "tsc --noEmit -p tsconfig.build.json && node scripts/copiar-z3.mjs && vite build --mode arquivo && node scripts/copiar-arquivo.mjs && vite build",
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",

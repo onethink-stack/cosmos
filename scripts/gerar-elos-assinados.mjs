@@ -37,7 +37,7 @@ for (const [indice, fase] of fases.entries()) {
   elos.push({ indice, anterior, registroTexto, assinatura: hex(nacl.sign.detached(new TextEncoder().encode(texto), par.secretKey)) })
   anterior = hash(texto)
 }
-const resultado = { selo: '502426c', elos_assinados, cadeia: { formato: 'cadeia-v1', chave: pubkey, elos } }
+const resultado = { selo: '502426c', elos_assinados, cadeia: { formato: 'cadeia-v1', chave: pubkey, elos }, resumo_final: anterior }
 const arquivoElos = new URL('src/dados/elos-assinados.json', raiz)
 if (existsSync(arquivoElos)) {
   const anteriorPublicado = JSON.parse(readFileSync(arquivoElos, 'utf8'))

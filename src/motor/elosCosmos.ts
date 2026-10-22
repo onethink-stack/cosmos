@@ -20,6 +20,7 @@ export async function conferirElosCosmos(pacote: unknown, fases: Record<string, 
     if (!Array.isArray(assinados) || !Array.isArray(elos) || assinados.length !== fases.length || elos.length !== fases.length) return recusa('Quantidade de elos divergente das nove fases.')
     const conferencia = await conferirCadeia(pacote.cadeia)
     if (conferencia.veredito !== 'aceita') return recusa(`${conferencia.motivo}: ${conferencia.detalhe}`)
+    if ('resumo_final' in pacote && pacote.resumo_final !== conferencia.cabeca) return recusa('O resumo final não corresponde à cabeça da cadeia assinada.')
     for (const [i, fase] of fases.entries()) {
       if (!conferirFaseCosmos(fase).valida || !await verificarHashTeoria(fase)) return recusa(`Hash ou metadados divergentes em ${fase.id}.`)
       const assinado = assinados[i]

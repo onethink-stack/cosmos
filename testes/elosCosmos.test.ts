@@ -86,7 +86,9 @@ describe('assinaturas dos elos Cosmos', () => {
     expect(PACOTE_COSMOS.fases).toHaveLength(9)
     expect(PACOTE_COSMOS.pubkey).toBe(PUBKEY_SELO_502426C)
     expect((await conferirElosCosmos(PACOTE_COSMOS, PACOTE_COSMOS.fases)).verificado).toBe(true)
-    expect(Object.keys(PACOTE_COSMOS)).toEqual(['formato', 'selo', 'pubkey', 'fases', 'elos_assinados', 'cadeia'])
+    expect(Object.keys(PACOTE_COSMOS)).toEqual(['formato', 'selo', 'pubkey', 'fases', 'elos_assinados', 'cadeia', 'resumo_final', 'carimbo_ots'])
+    expect(PACOTE_COSMOS.resumo_final).toBe((await conferirCadeia(PACOTE_COSMOS.cadeia)).cabeca)
+    expect(PACOTE_COSMOS.carimbo_ots).toBe('pendente')
   })
   it('recusa F8 adulterada e a remoção conjunta dos quatro elos finais', async () => {
     const adulteradas = structuredClone(fases)
@@ -97,5 +99,6 @@ describe('assinaturas dos elos Cosmos', () => {
     truncado.cadeia.elos = truncado.cadeia.elos.slice(0, 5)
     truncado.elos_assinados = truncado.elos_assinados.slice(0, 5)
     expect((await conferirElosCosmos(truncado, fases.slice(0, 5))).verificado).toBe(false)
+    expect((await conferirElosCosmos({ ...PACOTE_COSMOS, resumo_final: '0'.repeat(64) }, fases)).verificado).toBe(false)
   })
 })

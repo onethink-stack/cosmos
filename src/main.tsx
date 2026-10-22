@@ -5,7 +5,7 @@ import './ui/estilo.css'
 import './ui/telas.css'
 import './ui/cosmos.css'
 
-export const somenteCosmos = (hash: string) => hash.replace(/^#\/?/, '').split(/[/?]/)[0] === 'cadeia'
+export const somenteCosmos = (hash: string) => ['cadeia', 'outras'].includes(hash.replace(/^#\/?/, '').split(/[/?]/)[0])
 const modoCosmos = somenteCosmos(location.hash)
 // Trocar de aplicação reinicia o documento para também descarregar o motor antigo.
 window.addEventListener('hashchange', (evento) => {

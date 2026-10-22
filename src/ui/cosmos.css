@@ -289,3 +289,5 @@ main.pagina-registros { padding-top:120px; padding-bottom:120px; }
 .cosmos-motor h3 { font-size:12px; margin:0 0 12px; font-weight:500; }
 .cosmos-motor p,.cosmos-motor li { font-size:11px; }
 @media(max-width:600px) { .cosmos-progresso-fases { gap:7px; } .cosmos-progresso-fases small { font-size:8px; overflow-wrap:anywhere; } }
+.cosmos-assinatura-pendente { color:#725100; background:#fff3bf; border-left:3px solid #d3a000; padding:12px; }
+.cosmos-motor code { white-space:normal; overflow-wrap:anywhere; }

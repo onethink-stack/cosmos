@@ -1,12 +1,103 @@
 {
   "formato": "cadeia-v1",
-  "descricao": "Cadeia F0-F4 modelo cosmos/#/cadeia - pessoa(phi) - Z35/Z39 Q(sqrt2) - selo 502426c",
+  "descricao": "Cadeia Cosmos F0-F4 com coeficientes exatos",
   "selo": "502426c",
   "fases": [
-    {"id":"F0","pessoa":null,"testemunha":null,"campo":null,"selo":"502426c","situacao":"aberto","afirmacao":"consistente","tipo":"hipotese","dominio":"cadeia pessoal","estado":"proposta","gramatica":"m2","traducao":"t1","hash_teoria":null},
-    {"id":"F1","pessoa":"pessoa(φ)","testemunha":null,"campo":null,"selo":"502426c","situacao":"aberto","afirmacao":"consistente","tipo":"definicao","dominio":"cadeia pessoal","estado":"proposta","gramatica":"m2","traducao":"t1","hash_teoria":null},
-    {"id":"F2","pessoa":"pessoa(φ)","testemunha":"Z35/Z39","campo":"ℚ(√2)","selo":"502426c","situacao":"aberto","afirmacao":"segue","tipo":"teorema","dominio":"cadeia pessoal","estado":"proposta","gramatica":"m2","traducao":"t1","hash_teoria":null},
-    {"id":"F3","pessoa":"pessoa(φ)","testemunha":"Z35/Z39","campo":"ℚ(√2)","selo":"502426c","situacao":"fechado","afirmacao":"consistente","tipo":"evidencia","dominio":"cadeia pessoal","estado":"corroborada","gramatica":"m2","traducao":"t1","hash_teoria":null},
-    {"id":"F4","pessoa":"pessoa(φ)","testemunha":"Z35/Z39","campo":"ℚ(√2)","selo":"502426c","situacao":"fechado","afirmacao":"segue","tipo":"fechamento","dominio":"cadeia pessoal","estado":"corroborada","gramatica":"m2","traducao":"t1","hash_teoria":null}
+    {
+      "id": "F0",
+      "pessoa": null,
+      "testemunha": [],
+      "campo": null,
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "hipotese",
+      "tipo": "cadeia pessoal",
+      "dominio": "cosmos",
+      "estado": "proposta",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "035f418fd55ac6fe60d6dcbc0fb5a544e41dc77b6e5e07c2a950e24a3bcae069"
+    },
+    {
+      "id": "F1",
+      "pessoa": "pessoa(φ)",
+      "testemunha": [],
+      "campo": null,
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "definicao",
+      "tipo": "definicao",
+      "dominio": "pessoa",
+      "estado": "proposta",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "d28cecfce04161e4ab87e3197041dfdd9690a0238551eb5a1d3b572a8754d01a"
+    },
+    {
+      "id": "F2",
+      "pessoa": "pessoa(φ)",
+      "testemunha": [
+        "Z35",
+        "Z39"
+      ],
+      "campo": {
+        "a": 0,
+        "b": 1,
+        "repr": "0 + 1√2"
+      },
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "teorema",
+      "tipo": "teorema",
+      "dominio": "campo",
+      "estado": "corrobora",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "e58e091fb018095cbddd1b42721e0150837295d70245afb60625603411e01fdb"
+    },
+    {
+      "id": "F3",
+      "pessoa": "pessoa(φ)",
+      "testemunha": [
+        "Z35",
+        "Z39"
+      ],
+      "campo": {
+        "a": 1,
+        "b": 1,
+        "repr": "1 + 1√2"
+      },
+      "selo": "502426c",
+      "situacao": "fechado",
+      "afirmacao": "evidencia",
+      "tipo": "evidencia",
+      "dominio": "testemunha",
+      "estado": "corroborada",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "d9258bfcbefa504156de5007637219b82ea8088f52b1bd63abcbd3122aaf6a20"
+    },
+    {
+      "id": "F4",
+      "pessoa": "pessoa(φ)",
+      "testemunha": [
+        "Z35",
+        "Z39"
+      ],
+      "campo": {
+        "a": 2,
+        "b": 1,
+        "repr": "2 + 1√2"
+      },
+      "selo": "502426c",
+      "situacao": "fechado",
+      "afirmacao": "fechamento",
+      "tipo": "fechamento",
+      "dominio": "selo",
+      "estado": "segue",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "0e6a209906e26ebaf0b9729f3566412b5bbb3b4b9c7c0ea25458fd061ddad58d"
+    }
   ]
 }

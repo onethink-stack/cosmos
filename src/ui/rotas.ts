@@ -12,6 +12,7 @@ export type Rota =
   | { tela: 'backup' }
   | { tela: 'sistemas' }
   | { tela: 'cadeia' }
+  | { tela: 'outras' }
   | { tela: 'modelo' }
   | { tela: 'mundo' }
   | { tela: 'historico' }
@@ -43,6 +44,8 @@ export function lerRota(hash: string): Rota {
       return { tela: 'sistemas' }
     case 'cadeia':
       return { tela: 'cadeia' }
+    case 'outras':
+      return { tela: 'outras' }
     case 'modelo':
       return { tela: 'modelo' }
     case 'mundo':

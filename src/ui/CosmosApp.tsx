@@ -1,14 +1,17 @@
 import { CadeiaFases } from './Inicio'
+import { OutrasFases } from './OutrasFases'
+import { useRota } from './rotas'
 
 /** Entrada isolada: sem banco de notas, bibliotecas de axiomas ou motor Z3. */
 export function CosmosApp() {
+  const rota = useRota()
   return (
     <>
       <header class="topo"><div class="topo-dentro">
         <a href="#/inicio" class="marca"><span class="marca-nome">COSMOS</span></a>
-        <nav aria-label="Navegação"><a href="#/inicio">Início</a> · <a href="#/notas">Caderno Lógico</a></nav>
+        <nav aria-label="Navegação"><a href="#/cadeia">F0–F4</a> · <a href="#/outras">F5–F8</a> · <a href="#/notas">Caderno Lógico</a></nav>
       </div></header>
-      <main><CadeiaFases /></main>
+      <main>{rota.tela === 'outras' ? <OutrasFases /> : <CadeiaFases />}</main>
       <footer class="rodape">COSMOS · Cadeia F0–F4 · <a href="https://github.com/onethink-stack/cosmos">Código-fonte · AGPL-3.0 ou posterior</a></footer>
     </>
   )

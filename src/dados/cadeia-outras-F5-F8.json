@@ -1,0 +1,79 @@
+{
+  "formato": "cadeia-v1",
+  "descricao": "Etapas adicionais F5-F8; IPFS pendente",
+  "selo": "502426c",
+  "fases": [
+    {
+      "id": "F5",
+      "pessoa": null,
+      "testemunha": [
+        "Z35",
+        "Z39"
+      ],
+      "campo": {
+        "a": 3,
+        "b": 1
+      },
+      "selo": "502426c",
+      "situacao": "fechado",
+      "afirmacao": "entrega",
+      "tipo": "entrega",
+      "dominio": "entrega",
+      "estado": "entregue",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "731d8b9b4183dad7985e5ec78d325e7b122280200d68bc456401e925c2e849ff"
+    },
+    {
+      "id": "F6",
+      "pessoa": [
+        "pessoa(psi)",
+        "pessoa(omega)"
+      ],
+      "testemunha": [
+        "Z35",
+        "Z39"
+      ],
+      "campo": null,
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "multi-pessoa",
+      "tipo": "multi-pessoa",
+      "dominio": "pessoas",
+      "estado": "proposta",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "f13ed734fd8159c74c3efae49866ae0e0b76f59c414aae605522208fdcf2dfd8"
+    },
+    {
+      "id": "F7",
+      "pessoa": null,
+      "testemunha": [],
+      "campo": null,
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "verificar selo puro",
+      "tipo": "verificacao",
+      "dominio": "selo",
+      "estado": "proposta",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "0aaba31b74c0bee900dc20872df58b2e5e53e8e6e9ce29fb836c7165903b91e7"
+    },
+    {
+      "id": "F8",
+      "pessoa": null,
+      "testemunha": [],
+      "campo": null,
+      "selo": "502426c",
+      "situacao": "aberto",
+      "afirmacao": "publicar IPFS",
+      "tipo": "publicacao",
+      "dominio": "IPFS",
+      "estado": "proposta",
+      "gramatica": "m2",
+      "traducao": "t1",
+      "hash_teoria": "86b859cb2de0e74434f90a04228b59007660f173dfe835edd42ce3d4e7422467"
+    }
+  ]
+}

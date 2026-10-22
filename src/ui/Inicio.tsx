@@ -2,6 +2,7 @@ import { MarcaCosmos } from './MarcaCosmos'
 import cadeia from '../dados/cadeia-F0-F4.json'
 import { VOCAB_COSMOS } from '../dados/vocabularioCosmos'
 import { conferirFaseCosmos, progressoCosmos, validarFaseCosmos } from '../motor/cadeiaCosmos'
+import { textoCosmos, VerificacaoCosmos } from './VerificacaoCosmos'
 
 export function CadeiaFases() {
   const progresso = progressoCosmos(cadeia.fases)
@@ -63,28 +64,21 @@ export function CadeiaFases() {
               <div class="cadeia-etapa-topo"><span>{fase.tipo}</span><span>{fase.estado}</span></div>
               <h2>{fase.pessoa ?? fase.dominio}</h2>
               <p class="cadeia-afirmacao">{fase.afirmacao}</p>
-              {fase.testemunha && <p class="cadeia-testemunha"><span>Testemunha</span> <strong>{fase.testemunha}</strong> <span>em</span> <strong>{fase.campo}</strong></p>}
+              {fase.testemunha.length > 0 && <p class="cadeia-testemunha"><span>Testemunha</span> <strong>{textoCosmos(fase.testemunha)}</strong> <span>em</span> <strong>{textoCosmos(fase.campo)}</strong></p>}
               {validacao.aplica && <p class="cadeia-exata" role={validacao.valida ? undefined : 'alert'}>
                 {validacao.valida ? 'Vocabulário simbólico válido: Z35/Z39 em ℚ(√2) · sem aproximação decimal' : validacao.erros.join(' ')}
               </p>}
               <details class="cadeia-campos">
                 <summary>Ver os {Object.keys(fase).length} campos <span aria-hidden="true">＋</span></summary>
                 <dl>{Object.entries(fase).map(([campo, valor]) => (
-                  <div key={campo}><dt>{campo}</dt><dd>{valor ?? <span class="cadeia-nulo">Não informado</span>}
+                  <div key={campo}><dt>{campo}</dt><dd>{textoCosmos(valor)}
                     {campo === 'selo' && <span class="cosmos-checagem">{conferencia.seloValido ? '✓ válido' : '✕ inválido'}</span>}
                     {campo === 'pessoa' && <span class="cosmos-checagem">{conferencia.pessoaPresente ? '✓ presente' : conferencia.pessoaExigida ? '✕ ausente' : 'Não exigida em F0'}</span>}
                     {campo === 'testemunha' && conferencia.testemunhaExigida && <span class="cosmos-checagem">{conferencia.simbolica.erros.some((erro) => erro.startsWith('A testemunha')) ? '✕ inválida' : '✓ Z35 e Z39 presentes'}</span>}
-                    {campo === 'campo' && conferencia.testemunhaExigida && <span class="cosmos-checagem">{valor === VOCAB_COSMOS.campo ? '✓ exato · não float' : '✕ campo inexato ou ausente'}</span>}
+                    {campo === 'campo' && conferencia.testemunhaExigida && <span class="cosmos-checagem">{conferencia.simbolica.valida ? '✓ exato · não float' : '✕ campo ou testemunha inválido'}</span>}
                   </dd></div>
                 ))}</dl>
-                <section class="cosmos-motor" aria-label={`Verificação da fase ${fase.id}`}>
-                  <h3>Motor Cosmos</h3>
-                  <p>{conferencia.valida ? '✓ Metadados válidos' : '✕ Metadados inválidos'} · {conferencia.campos13Validos ? '13 campos conferidos' : 'campos divergentes'}</p>
-                  <p>Afirmação declarada: <strong>{fase.afirmacao}</strong></p>
-                  <p><strong>C1–C8 cadeia-v1:</strong> não verificado · faltam chave, elos e assinaturas no arquivo de fases.</p>
-                  <p class="suave">A conferência dos metadados não prova consistência nem consequência lógica.</p>
-                  {!conferencia.valida && <ul role="alert">{conferencia.erros.map((erro) => <li key={erro}>{erro}</li>)}</ul>}
-                </section>
+                <VerificacaoCosmos fase={fase} />
               </details>
               <p class="cadeia-selo">selo <code>{fase.selo}</code></p>
             </article>

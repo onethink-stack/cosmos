@@ -1,5 +1,7 @@
 import { MarcaCosmos } from './MarcaCosmos'
 import cadeia from '../dados/cadeia-F0-F4.json'
+import { VOCAB_COSMOS } from '../dados/vocabularioCosmos'
+import { validarFaseCosmos } from '../motor/cadeiaCosmos'
 
 export function CadeiaFases() {
   return (
@@ -15,6 +17,17 @@ export function CadeiaFases() {
           <span>SELO</span><code>{cadeia.selo}</code>
         </aside>
       </header>
+      <section class="cosmos-glossario" aria-labelledby="cosmos-glossario-titulo">
+        <h2 id="cosmos-glossario-titulo">Vocabulário Cosmos</h2>
+        <dl>
+          <div><dt>Pessoa</dt><dd>{VOCAB_COSMOS.pessoa}</dd></div>
+          <div><dt>Testemunhas</dt><dd>{VOCAB_COSMOS.testemunha.join(' / ')}</dd></div>
+          <div><dt>Campo exato</dt><dd>{VOCAB_COSMOS.campo}</dd></div>
+          <div><dt>Selo</dt><dd><code>{VOCAB_COSMOS.selo}</code></dd></div>
+          <div><dt>Fases</dt><dd>{VOCAB_COSMOS.fases.join(' → ')}</dd></div>
+          <div class="cosmos-glossario-campos"><dt>13 campos fixos</dt><dd>{VOCAB_COSMOS.campos13.join(' · ')}</dd></div>
+        </dl>
+      </section>
       <nav class="cadeia-percurso" aria-label="Fases da cadeia">
         {cadeia.fases.map((fase) => (
           <a href={`#fase-${fase.id}`} onClick={(evento) => {
@@ -26,7 +39,9 @@ export function CadeiaFases() {
         ))}
       </nav>
       <ol class="cadeia-etapas">
-        {cadeia.fases.map((fase) => (
+        {cadeia.fases.map((fase) => {
+          const validacao = validarFaseCosmos(fase)
+          return (
           <li id={`fase-${fase.id}`} class="cadeia-etapa" key={fase.id}>
             <div class="cadeia-indice"><span>{fase.id}</span><small>{fase.situacao}</small></div>
             <article>
@@ -34,7 +49,9 @@ export function CadeiaFases() {
               <h2>{fase.pessoa ?? fase.dominio}</h2>
               <p class="cadeia-afirmacao">{fase.afirmacao}</p>
               {fase.testemunha && <p class="cadeia-testemunha"><span>Testemunha</span> <strong>{fase.testemunha}</strong> <span>em</span> <strong>{fase.campo}</strong></p>}
-              {fase.id === 'F2' && <p class="cadeia-exata">Campo exato ℚ(√2) · sem aproximação decimal</p>}
+              {validacao.aplica && <p class="cadeia-exata" role={validacao.valida ? undefined : 'alert'}>
+                {validacao.valida ? 'Vocabulário simbólico válido: Z35/Z39 em ℚ(√2) · sem aproximação decimal' : validacao.erros.join(' ')}
+              </p>}
               <details class="cadeia-campos">
                 <summary>Ver os {Object.keys(fase).length} campos <span aria-hidden="true">＋</span></summary>
                 <dl>{Object.entries(fase).map(([campo, valor]) => (
@@ -44,7 +61,7 @@ export function CadeiaFases() {
               <p class="cadeia-selo">selo <code>{fase.selo}</code></p>
             </article>
           </li>
-        ))}
+        )})}
       </ol>
     </section>
   )

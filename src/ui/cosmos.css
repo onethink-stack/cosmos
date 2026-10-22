@@ -258,3 +258,12 @@ main.pagina-registros { padding-top:120px; padding-bottom:120px; }
  .cadeia-campos dl { grid-template-columns:1fr; }
 }
 @media print { .cadeia-campos>dl { display:grid; } .cadeia-ferramentas { display:none; } }
+
+.cosmos-glossario { border-top:1px solid #d9d7d2; padding:24px 0 30px; }
+.cosmos-glossario h2 { font-size:12px; letter-spacing:.12em; margin:0 0 22px; }
+.cosmos-glossario dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; margin:0; }
+.cosmos-glossario dt { font-size:10px; color:#686868; margin-bottom:7px; }
+.cosmos-glossario dd { margin:0; font-size:14px; overflow-wrap:anywhere; }
+.cosmos-glossario-campos { grid-column:1/-1; }
+.cosmos-glossario-campos dd { font-size:11px; line-height:1.9; }
+@media(max-width:600px) { .cosmos-glossario dl { grid-template-columns:repeat(2,minmax(0,1fr)); } }

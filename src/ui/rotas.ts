@@ -23,7 +23,7 @@ export type Rota =
 let visitas = 0
 
 export function lerRota(hash: string): Rota {
-  const partes = hash.replace(/^#\/?/, '').split('/')
+  const partes = hash.replace(/^#\/?/, '').split('?')[0].split('/')
   switch (partes[0]) {
     case 'notas':
       return { tela: 'notas' }

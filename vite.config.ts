@@ -26,11 +26,16 @@ function serviceWorker(): Plugin {
     enforce: 'post',
     generateBundle(_, bundle) {
       const doBuild = Object.keys(bundle).filter((f) => !f.endsWith('.map') && f !== 'sw.js')
+      // O Caderno antigo só é baixado quando a pessoa sai da rota Cosmos.
+      const precache = doBuild.filter((f) => {
+        const item = bundle[f]
+        return item.type !== 'chunk' || !Object.keys(item.modules).some((m) => /[\\/]dados[\\/](biblioteca|teorias|tptp)\.ts$/.test(m))
+      })
       // só arquivos do topo de public/ (a pasta z3/, de 35 MB, entra no cache só quando usada)
       const publicos = readdirSync('public', { withFileTypes: true })
         .filter((e) => e.isFile())
         .map((e) => e.name)
-      const arquivos = [...new Set(['./', ...doBuild, ...publicos].map((f) => (f === './' ? f : `./${f}`)))].sort()
+      const arquivos = [...new Set(['./', ...precache, ...publicos].map((f) => (f === './' ? f : `./${f}`)))].sort()
       const conteudoHtml = bundle['index.html']
       const hash = createHash('sha256')
       hash.update(arquivos.join('\n'))
@@ -137,7 +142,12 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(paginaDoApp().then(isolado))
     return
   }
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then((r) => r || fetch(req)).then(isolado))
+  e.respondWith(caches.match(req, { ignoreSearch: true }).then(async (r) => {
+    if (r) return r
+    const resposta = await fetch(req)
+    if (resposta.ok) await (await caches.open(CACHE)).put(req, resposta.clone())
+    return resposta
+  }).then(isolado))
 })
 `
 }

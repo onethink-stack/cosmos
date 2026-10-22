@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import cadeia from '../src/dados/cadeia-F0-F4.json'
 import { VOCAB_COSMOS } from '../src/dados/vocabularioCosmos'
-import { validarFaseCosmos } from '../src/motor/cadeiaCosmos'
+import { conferirFaseCosmos, progressoCosmos, validarFaseCosmos } from '../src/motor/cadeiaCosmos'
 
 describe('vocabulário e validação simbólica Cosmos', () => {
   it('mantém exatamente as cinco fases e seus treze campos', () => {
@@ -25,5 +25,33 @@ describe('vocabulário e validação simbólica Cosmos', () => {
   }
   it('não impõe a regra F2/F3 às outras fases', () => {
     for (const id of ['F0', 'F1', 'F4']) expect(validarFaseCosmos({ id, campo: null, testemunha: null }).aplica).toBe(false)
+  })
+})
+
+describe('conferência dos metadados e progresso', () => {
+  it('confere todas as fases canônicas sem exigir pessoa em F0', () => {
+    for (const fase of cadeia.fases) expect(conferirFaseCosmos(fase).valida).toBe(true)
+    expect(conferirFaseCosmos(cadeia.fases[0]).pessoaExigida).toBe(false)
+  })
+  it('recusa selo alterado, campos extras, campos ausentes e pessoa errada', () => {
+    const fase = cadeia.fases[1]
+    expect(conferirFaseCosmos({ ...fase, selo: 'outro' }).valida).toBe(false)
+    expect(conferirFaseCosmos({ ...fase, extra: 'campo' }).valida).toBe(false)
+    const { gramatica: _gramatica, ...incompleta } = fase
+    expect(conferirFaseCosmos(incompleta).valida).toBe(false)
+    expect(conferirFaseCosmos({ ...fase, pessoa: null }).valida).toBe(false)
+  })
+  it('exige testemunhas e campo exato também em F4', () => {
+    expect(conferirFaseCosmos({ ...cadeia.fases[4], testemunha: 'Z35' }).valida).toBe(false)
+    expect(conferirFaseCosmos({ ...cadeia.fases[4], campo: 1.4142135623730951 }).valida).toBe(false)
+  })
+  it('recusa situações, afirmações e identificadores desconhecidos', () => {
+    for (const alteracao of [{ situacao: 'qualquer' }, { afirmacao: 'qualquer' }, { id: 'F5' }]) {
+      expect(conferirFaseCosmos({ ...cadeia.fases[1], ...alteracao }).valida).toBe(false)
+    }
+  })
+  it('calcula duas fases fechadas como 40%, três abertas como 60%', () => {
+    expect(progressoCosmos(cadeia.fases)).toEqual({ total: 5, fechadas: 2, abertas: 3, percentualFechado: 40, percentualAberto: 60 })
+    expect(progressoCosmos([]).percentualFechado).toBe(0)
   })
 })

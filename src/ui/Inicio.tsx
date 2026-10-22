@@ -1,9 +1,10 @@
 import { MarcaCosmos } from './MarcaCosmos'
 import cadeia from '../dados/cadeia-F0-F4.json'
 import { VOCAB_COSMOS } from '../dados/vocabularioCosmos'
-import { validarFaseCosmos } from '../motor/cadeiaCosmos'
+import { conferirFaseCosmos, progressoCosmos, validarFaseCosmos } from '../motor/cadeiaCosmos'
 
 export function CadeiaFases() {
+  const progresso = progressoCosmos(cadeia.fases)
   return (
     <section class="cadeia-fases" aria-labelledby="cadeia-titulo">
       <header class="cadeia-abertura">
@@ -28,6 +29,19 @@ export function CadeiaFases() {
           <div class="cosmos-glossario-campos"><dt>13 campos fixos</dt><dd>{VOCAB_COSMOS.campos13.join(' · ')}</dd></div>
         </dl>
       </section>
+      <section class="cosmos-progresso" aria-labelledby="cosmos-progresso-titulo">
+        <div class="cosmos-progresso-topo">
+          <h2 id="cosmos-progresso-titulo">Reação em cadeia</h2>
+          <strong>{progresso.percentualFechado}% fechada</strong>
+        </div>
+        <progress value={progresso.fechadas} max={progresso.total} aria-label="Fases fechadas" />
+        <p>{progresso.fechadas} de {progresso.total} fases fechadas · {progresso.percentualAberto}% aberta</p>
+        <ol class="cosmos-progresso-fases">
+          {cadeia.fases.map((fase) => <li key={fase.id} class={fase.situacao === 'fechado' ? 'fase-fechada' : 'fase-aberta'}>
+            <strong>{fase.id}</strong><span>{fase.situacao}</span><small>{fase.estado}</small>
+          </li>)}
+        </ol>
+      </section>
       <nav class="cadeia-percurso" aria-label="Fases da cadeia">
         {cadeia.fases.map((fase) => (
           <a href={`#fase-${fase.id}`} onClick={(evento) => {
@@ -41,6 +55,7 @@ export function CadeiaFases() {
       <ol class="cadeia-etapas">
         {cadeia.fases.map((fase) => {
           const validacao = validarFaseCosmos(fase)
+          const conferencia = conferirFaseCosmos(fase)
           return (
           <li id={`fase-${fase.id}`} class="cadeia-etapa" key={fase.id}>
             <div class="cadeia-indice"><span>{fase.id}</span><small>{fase.situacao}</small></div>
@@ -55,8 +70,21 @@ export function CadeiaFases() {
               <details class="cadeia-campos">
                 <summary>Ver os {Object.keys(fase).length} campos <span aria-hidden="true">＋</span></summary>
                 <dl>{Object.entries(fase).map(([campo, valor]) => (
-                  <div key={campo}><dt>{campo}</dt><dd>{valor ?? <span class="cadeia-nulo">Não informado</span>}</dd></div>
+                  <div key={campo}><dt>{campo}</dt><dd>{valor ?? <span class="cadeia-nulo">Não informado</span>}
+                    {campo === 'selo' && <span class="cosmos-checagem">{conferencia.seloValido ? '✓ válido' : '✕ inválido'}</span>}
+                    {campo === 'pessoa' && <span class="cosmos-checagem">{conferencia.pessoaPresente ? '✓ presente' : conferencia.pessoaExigida ? '✕ ausente' : 'Não exigida em F0'}</span>}
+                    {campo === 'testemunha' && conferencia.testemunhaExigida && <span class="cosmos-checagem">{conferencia.simbolica.erros.some((erro) => erro.startsWith('A testemunha')) ? '✕ inválida' : '✓ Z35 e Z39 presentes'}</span>}
+                    {campo === 'campo' && conferencia.testemunhaExigida && <span class="cosmos-checagem">{valor === VOCAB_COSMOS.campo ? '✓ exato · não float' : '✕ campo inexato ou ausente'}</span>}
+                  </dd></div>
                 ))}</dl>
+                <section class="cosmos-motor" aria-label={`Verificação da fase ${fase.id}`}>
+                  <h3>Motor Cosmos</h3>
+                  <p>{conferencia.valida ? '✓ Metadados válidos' : '✕ Metadados inválidos'} · {conferencia.campos13Validos ? '13 campos conferidos' : 'campos divergentes'}</p>
+                  <p>Afirmação declarada: <strong>{fase.afirmacao}</strong></p>
+                  <p><strong>C1–C8 cadeia-v1:</strong> não verificado · faltam chave, elos e assinaturas no arquivo de fases.</p>
+                  <p class="suave">A conferência dos metadados não prova consistência nem consequência lógica.</p>
+                  {!conferencia.valida && <ul role="alert">{conferencia.erros.map((erro) => <li key={erro}>{erro}</li>)}</ul>}
+                </section>
               </details>
               <p class="cadeia-selo">selo <code>{fase.selo}</code></p>
             </article>

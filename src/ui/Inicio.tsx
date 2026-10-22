@@ -1,4 +1,3 @@
-import { MarcaCosmos } from './MarcaCosmos'
 import cadeia from '../dados/cadeia-F0-F4.json'
 import { VOCAB_COSMOS } from '../dados/vocabularioCosmos'
 import { conferirFaseCosmos, progressoCosmos, validarFaseCosmos } from '../motor/cadeiaCosmos'
@@ -14,10 +13,6 @@ export function CadeiaFases() {
           <h1 id="cadeia-titulo">Uma pessoa.<br /><em>Uma cadeia.</em></h1>
           <p class="cadeia-intro">Da hipótese ao fechamento, cada fase conserva o seu lugar.</p>
         </div>
-        <aside class="cadeia-assinatura" aria-label="Selo da cadeia">
-          <MarcaCosmos className="cadeia-marca" />
-          <span>SELO</span><code>{cadeia.selo}</code>
-        </aside>
       </header>
       <section class="cosmos-glossario" aria-labelledby="cosmos-glossario-titulo">
         <h2 id="cosmos-glossario-titulo">Vocabulário Cosmos</h2>
@@ -93,7 +88,6 @@ export function Inicio() {
   return (
     <section class="inicio" aria-label="COSMOS">
       <div class="inicio-composicao">
-        <MarcaCosmos className="inicio-curva" />
         <div class="inicio-consulta">
           <p class="inicio-rubrica">PREMISSA / INFERÊNCIA</p>
           <h1><a href="#/perguntar">O que se segue<br />desta premissa?<span class="inicio-seta" aria-hidden="true">↗</span></a></h1>

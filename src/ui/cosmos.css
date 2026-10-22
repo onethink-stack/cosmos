@@ -295,3 +295,28 @@ main.pagina-registros { padding-top:120px; padding-bottom:120px; }
 .inicio .inicio-composicao { display:flex; align-items:center; }
 .inicio .inicio-consulta { margin-left:0; padding:45px 0; }
 @media(max-width:700px) { .inicio .inicio-consulta { padding:80px 0; } }
+
+/* Home técnica: fases assinadas, sem abertura editorial. */
+.cosmos-main { padding-top:16px; padding-bottom:28px; }
+.cosmos-log { max-width:800px; margin:3vh auto 4vh; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+.cosmos-log-fases { list-style:none; padding:0; margin:0; }
+.cosmos-log-fase { border-bottom:1px solid #eee; }
+.cosmos-log-fase > summary { display:grid; grid-template-columns:30px minmax(0,1fr) 116px 8ch; gap:18px; align-items:baseline; padding:13px 0; list-style:none; cursor:pointer; font-size:13px; line-height:1.5; }
+.cosmos-log-fase > summary::-webkit-details-marker { display:none; }
+.cosmos-log-fase > summary:hover { background:#fafafa; }
+.cosmos-log-id { color:#71717a; }
+.cosmos-log-nome { overflow-wrap:anywhere; }
+.cosmos-log-ok { color:#166534; font-size:11px; }
+.cosmos-log-pendente { color:#855c00; font-size:11px; }
+.cosmos-log-hash { color:#71717a; font-size:11px; }
+.cosmos-log-detalhes { margin:0; padding:0 0 12px 48px; }
+.cosmos-log-rodape { display:flex; justify-content:space-between; gap:20px; color:#71717a; font-size:11px; }
+.cosmos-log-links { font-size:10px; }
+.cosmos-log-links a { color:inherit; }
+@media(max-width:600px) {
+ .cosmos-log { margin:20px 0 40px; }
+ .cosmos-log-fase > summary { grid-template-columns:24px minmax(0,1fr) auto; gap:10px; padding:16px 0; font-size:12px; }
+ .cosmos-log-hash { grid-column:2 / -1; }
+ .cosmos-log-detalhes { padding-left:0; }
+ .cosmos-log-rodape { flex-wrap:wrap; gap:8px; }
+}

@@ -12,11 +12,11 @@ export function CosmosApp() {
         <a href="#/cadeia" class="marca" aria-label="Cosmos 502426c"><span class="marca-nome">COSMOS</span></a>
         <div class="cosmos-acessos">
           {rota.tela === 'cadeia' && <span class="cosmos-selo-discreto">selo {VOCAB_COSMOS.selo}</span>}
-          <nav class="cosmos-navegacao" aria-label="Navegação"><a href="#/cadeia">F0–F4</a> · <a href="#/outras">F5–F8</a> · <a href="#/notas">Notas</a></nav>
+          <nav class="cosmos-navegacao" aria-label="Navegação"><a href="#/cadeia">F0–F8</a> · <a href="#/outras">F5–F8</a> · <a href="#/notas">Notas</a></nav>
         </div>
       </div></header>
-      <main>{rota.tela === 'outras' ? <OutrasFases /> : <CadeiaFases />}</main>
-      <footer class="rodape">COSMOS · Cadeia F0–F8 · {!__MODO_ARQUIVO__ && <><a href="./cosmos-502426c.json" download>Baixar F0–F8 assinadas</a> · </>}<a href="https://github.com/onethink-stack/cosmos">Código-fonte · AGPL-3.0 ou posterior</a></footer>
+      <main class="cosmos-main">{rota.tela === 'outras' ? <OutrasFases /> : <CadeiaFases />}</main>
+      <footer class="rodape cosmos-log-rodape">Q(√2) · Ed25519 · OTS pendente<span class="cosmos-log-links">{!__MODO_ARQUIVO__ && <><a href="./cosmos-502426c.json" download>JSON</a> · </>}<a href="https://github.com/onethink-stack/cosmos">Fonte · AGPL-3.0+</a></span></footer>
     </>
   )
 }

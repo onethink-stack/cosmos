@@ -36,8 +36,12 @@ describe('a forma canônica e o hash da teoria', () => {
   it('a leitura do JSON recusa chave repetida em qualquer nível, e lê o resto como o JSON.parse', () => {
     expect(() => lerJsonEstrito('{"a": 1, "b": {"c": 2, "c": 3}}')).toThrow(/chave repetida: c/)
     expect(() => lerJsonEstrito('{"a": 1} x')).toThrow(/sobra/)
-    const texto = '{"a": [1, -2.5e3, "é\\n\\"", true, null], "b": {}}'
+    const texto = '{"a": [1, -25, 0, "é\\n\\"", true, null], "b": {}}'
     expect(lerJsonEstrito(texto)).toEqual(JSON.parse(texto))
+  })
+
+  it('a leitura do JSON recusa o número com ponto ou expoente, e o que não é JSON (NaN, Infinity)', () => {
+    for (const n of ['1.0', '1e0', '-2.5e3', '10E2', 'NaN', 'Infinity']) expect(() => lerJsonEstrito(`{"aridade": ${n}}`), n).toThrow()
   })
 
   it('ordena pelos pontos de código, não pelas unidades de UTF-16', () => {

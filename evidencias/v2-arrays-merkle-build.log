@@ -1,0 +1,50 @@
+
+> cosmos-502426c@0.1.0 build
+> tsc --noEmit -p tsconfig.build.json && node scripts/copiar-z3.mjs && vite build --mode arquivo && node scripts/copiar-arquivo.mjs && vite build
+
+Z3 em public/z3/
+vite v8.3.4 building client environment for arquivo...
+transforming...
+✓ 158 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: index-C3fdWVKi.js
+[plugin vite:singlefile] Inlining: style-8m0Lfm3n.css
+computing gzip size...
+dist-arquivo/z3worker-DmKOTgkK.js    166.59 kB
+dist-arquivo/index.html            1,257.56 kB │ gzip: 465.60 kB
+
+✓ built in 1.01s
+arquivo único em public/caderno-logico.html
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 158 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/LICENSES/MIT-preact.txt               1.08 kB │ gzip:   0.67 kB
+dist/LICENSES/MIT-z3-solver.txt            1.09 kB │ gzip:   0.65 kB
+dist/LICENSES/MIT-vite.txt                 1.10 kB │ gzip:   0.67 kB
+dist/LICENSES/Unlicense-tweetnacl.txt      1.21 kB │ gzip:   0.71 kB
+dist/LICENSES/Unicode-3.0.txt              1.99 kB │ gzip:   1.07 kB
+dist/THIRD_PARTY_NOTICES.md                3.11 kB
+dist/LICENCAS.md                           3.90 kB
+dist/index.html                            4.10 kB │ gzip:   1.70 kB
+dist/sw.js                                 4.43 kB
+dist/LICENSES/Apache-2.0.txt               9.72 kB │ gzip:   3.53 kB
+dist/cosmos-502426c.json                  12.33 kB │ gzip:   3.01 kB
+dist/dist/cosmos-502426c.json             12.33 kB │ gzip:   3.01 kB
+dist/LICENSES/CC-BY-4.0.txt               18.65 kB │ gzip:   5.95 kB
+dist/assets/cosmos-app-THvZv5DU.png       19.80 kB
+dist/LICENSE                              34.52 kB
+dist/assets/z3worker-DmKOTgkK.js         166.59 kB
+dist/assets/index-8m0Lfm3n.css            46.95 kB │ gzip:  10.06 kB
+dist/assets/index-BuYaL8-P.js             83.41 kB │ gzip:  31.38 kB
+dist/assets/cadernoLegado-DzOLDWfD.js  1,054.18 kB │ gzip: 386.51 kB
+
+✓ built in 1.55s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

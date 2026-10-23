@@ -1,0 +1,23 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 C:/Users/gusta/AppData/Local/Temp/cosmos-v2-revisao-15021f207de042249440566256cab696/snapshot
+
+received "cleanupThread" command from terminated worker: 3
+(node:9280) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19316) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11220) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  53 passed (53)
+      Tests  769 passed (769)
+   Start at  21:32:06
+   Duration  217.80s (tests 90%, import 5%, transform 4%, worker 1%)
+
+    Isolate  53 workers spawned · ~436ms startup each (spawn + environment, per file)
+             at least ~22.70s faster with isolate: false — reuses workers across files instead of one per file
+

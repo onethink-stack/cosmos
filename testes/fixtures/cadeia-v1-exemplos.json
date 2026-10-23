@@ -1,0 +1,928 @@
+{
+ "formato": "cadeia-v1",
+ "descricao": "As cadeias de exemplo do formato cadeia-v1 (especificacao/cadeia-v1.md), assinadas com as chaves dos testes 1, 2 e 3 da RFC 8032. Cada exemplo tem o veredito esperado; nas aceitas, o número de elos e o resumo da cadeia; nas recusadas, o código e o elo do defeito. Os pares de versões têm a relação esperada.",
+ "chaves": {
+  "teste 1": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+  "teste 2": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+  "teste 3": "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025"
+ },
+ "exemplos": [
+  {
+   "id": "K01",
+   "descricao": "um elo só: o registro fechado R09, pela chave do teste 1",
+   "esperado": {
+    "veredito": "aceita",
+    "elos": 1,
+    "cabeca": "97642938321ce028658be033f4de61f461f0804d2e6e8c0d38b1a10794dc9c47"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "70764f37f4397f63f7554f74dda258bd23bb4fbba23fe2993aa59f98cc17e0238afe36dfeb9370919baf38b70e1a4448ab52a8aaac0d2cb6ded2ecd39da8b005"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K02",
+   "descricao": "quatro elos pela chave do teste 1; o último é o R01, um segue com refutação, e os arquivos dela vão em arquivos",
+   "esperado": {
+    "veredito": "aceita",
+    "elos": 4,
+    "cabeca": "dfbd69c252c4bfd46c7690d0d67d63063261c11667ec5e637d7715e0a2ee8bb1"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "K03",
+   "descricao": "dois elos pela chave do teste 2, com os registros dela (o autor é o SHA-256 da chave dela)",
+   "esperado": {
+    "veredito": "aceita",
+    "elos": 2,
+    "cabeca": "7fe721b743462f6f1a3f8cdae1add7ade0bd26abe7c50297fec675e7092051dd"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "61203c4d8bd95b08baf080bcaf2f55d405ef552a88844e5dcd9bcb231f52f68d420e43e6ba504f68831a9db81bdf83f61c2be1e2be397def77cfd18595d1ba04"
+     },
+     {
+      "indice": 1,
+      "anterior": "1822b67e8709737a0f0a61dcf7b839e5cefe011e7ea3e4117d922b25629decbe",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"¬P(a)\",\"formaCanonica\":\"(¬ (P a))\",\"teoria\":{\"nome\":\"Ana crê que a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"B[Ana] P(a)\"],\"hash\":\"fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981\"},\"tipo\":\"observação\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"sem avaliação\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f\",\"compromisso\":{\"hash\":\"f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c\",\"sal\":\"dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":2,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[1,[0]]]},\"pertence\":[],\"acessos\":{\"Ana\":[[0,1],[1,1]]}}}}",
+      "assinatura": "7c1f9071e3ad414ef9861d890dadc9ce7670b9e2ac9a8cb1939fe65aa4f148a6ba7c67c3d05a890d0d0ed3decc07d7cc1d292de533470861a6dbe1e4ea77b60b"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K04",
+   "descricao": "três elos pela chave do teste 3",
+   "esperado": {
+    "veredito": "aceita",
+    "elos": 3,
+    "cabeca": "27f2916c64dba1cb47d03333c8759e1a13407fc9f3bcbe78d8a6c19d8c07d8e8"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4b4e7a2c484553c10d4266caa3076df8e4eee77fbe8370ef7c9ba9ff4145d1422d52f47a3a1c508cafdcc4c2e70726fc4d0902088862c66f18e377c33ec14a00"
+     },
+     {
+      "indice": 1,
+      "anterior": "b5e26143e73527b07f21bc8c8295a5953ef3af96dbda31504980919213eda9d6",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "796146237778dda87b7a1998f9703a3c3c20375501bb143332b11f25c9f3b5655f928ba281baffd74f4125e599afd805f9e475a61b339efe72a0d1d74b3bf40e"
+     },
+     {
+      "indice": 2,
+      "anterior": "5384c860d7f01aa9e70345cf7636cfdbf3e2fd13d3cd61dd65433e5bb296bdad",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"¬P(a)\",\"formaCanonica\":\"(¬ (P a))\",\"teoria\":{\"nome\":\"Ana crê que a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"B[Ana] P(a)\"],\"hash\":\"fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981\"},\"tipo\":\"observação\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"sem avaliação\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c\",\"sal\":\"dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":2,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[1,[0]]]},\"pertence\":[],\"acessos\":{\"Ana\":[[0,1],[1,1]]}}}}",
+      "assinatura": "605880d7818d17ca7776c4578af457c5bfda09a0bb9135d75b48d22938d6d44687e33ff14fc9da373b1a33fb8b76580e933ba0434594efb155c7e9326c21bd0e"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K10",
+   "descricao": "a chave repetida no objeto da cadeia, com o mesmo valor",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C1"
+   },
+   "cadeiaTexto": "{\"formato\":\"cadeia-v1\",\"chave\":\"d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\",\"chave\":\"d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\",\"elos\":[{\"indice\":0,\"anterior\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"registroTexto\":\"{\\\"formato\\\":\\\"registro-v1\\\",\\\"situacao\\\":\\\"fechado\\\",\\\"afirmacao\\\":\\\"nao-segue\\\",\\\"teoria\\\":{\\\"nome\\\":\\\"Todo P é Q\\\",\\\"hash\\\":\\\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\\\"},\\\"tipo\\\":\\\"hipótese\\\",\\\"dominio\\\":\\\"exemplo da especificação registro-v1\\\",\\\"estado\\\":\\\"proposta\\\",\\\"semantica\\\":{\\\"gramatica\\\":\\\"m2\\\",\\\"traducao\\\":\\\"t1\\\"},\\\"autor\\\":\\\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\\\",\\\"compromisso\\\":{\\\"hash\\\":\\\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\\\"}}\",\"assinatura\":\"70764f37f4397f63f7554f74dda258bd23bb4fbba23fe2993aa59f98cc17e0238afe36dfeb9370919baf38b70e1a4448ab52a8aaac0d2cb6ded2ecd39da8b005\"}]}"
+  },
+  {
+   "id": "K11",
+   "descricao": "a assinatura do elo 1 em hexadecimal maiúsculo",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C1",
+    "elo": 1
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4C23033C72D2ED1E8F9745D9F410E4FCD1F8EBB3250B7EABD0DB4E549CF21E6FF1B78B6352D3CEE47DA463C94A4F76541139615B7BCA6A5A94A63766FF837D0B"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "K12",
+   "descricao": "uma cadeia sem elos",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C1"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": []
+   }
+  },
+  {
+   "id": "K13",
+   "descricao": "o índice do elo 0 escrito como 0.0 (número com ponto)",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C1"
+   },
+   "cadeiaTexto": "{\"formato\":\"cadeia-v1\",\"chave\":\"d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\",\"elos\":[{\"indice\":0.0,\"anterior\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"registroTexto\":\"{\\\"formato\\\":\\\"registro-v1\\\",\\\"situacao\\\":\\\"fechado\\\",\\\"afirmacao\\\":\\\"nao-segue\\\",\\\"teoria\\\":{\\\"nome\\\":\\\"Todo P é Q\\\",\\\"hash\\\":\\\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\\\"},\\\"tipo\\\":\\\"hipótese\\\",\\\"dominio\\\":\\\"exemplo da especificação registro-v1\\\",\\\"estado\\\":\\\"proposta\\\",\\\"semantica\\\":{\\\"gramatica\\\":\\\"m2\\\",\\\"traducao\\\":\\\"t1\\\"},\\\"autor\\\":\\\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\\\",\\\"compromisso\\\":{\\\"hash\\\":\\\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\\\"}}\",\"assinatura\":\"70764f37f4397f63f7554f74dda258bd23bb4fbba23fe2993aa59f98cc17e0238afe36dfeb9370919baf38b70e1a4448ab52a8aaac0d2cb6ded2ecd39da8b005\"}]}"
+  },
+  {
+   "id": "K14",
+   "descricao": "o formato cadeia-v2",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C2"
+   },
+   "cadeia": {
+    "formato": "cadeia-v2",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "70764f37f4397f63f7554f74dda258bd23bb4fbba23fe2993aa59f98cc17e0238afe36dfeb9370919baf38b70e1a4448ab52a8aaac0d2cb6ded2ecd39da8b005"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K15",
+   "descricao": "a chave neutra, com assinaturas forjadas (R = neutro, S = 0) que valeriam para qualquer mensagem: o OpenSSL as aceita",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C3"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "0100000000000000000000000000000000000000000000000000000000000000",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"01d0fabd251fcbbe2b93b4b927b26ad2a1a99077152e45ded1e678afa45dbec5\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     },
+     {
+      "indice": 1,
+      "anterior": "b5059bbbf1289780bde2bc1172facac2f80ee01e79a6e1e5942a7e64ddf804cc",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"01d0fabd251fcbbe2b93b4b927b26ad2a1a99077152e45ded1e678afa45dbec5\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K16",
+   "descricao": "a chave do teste 1 somada ao ponto de ordem 2, com uma assinatura que vale na equação sem cofator: o OpenSSL a aceita",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C3"
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "16a567fe7d4ef5482ab4012c369bf8c5f11e8d0c2559dcda50fde59708f8aee5",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"189eee6edfa0791f17ce0b6e864c69f87eb892c0544badbfee1e5dd54a6157ba\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "8cfaaaacdef4aff9fa0d69f4ce7eeca5934dba1052918be1cde5ed0f9f86c9a6d3c2289285bc19478c63749a941a08193d6507d112e621c2b6e704e9e3e6d10f"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K17",
+   "descricao": "o elo 1 diz índice 5, assinado assim pela própria chave",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C4",
+    "elo": 1
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 5,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "b97c5a9d5b07c566ba6d65be9c5711657d0db7940aa3f57567fa2579a5816286390f55ad4fe3adf7ea012ed8e145fa268b9504258ccc1f37e5ed424dc3afa001"
+     },
+     {
+      "indice": 2,
+      "anterior": "9e90175252db464c5a16c283110755ac25a7308871d8ffb06829d26266f1ed34",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "c3862cdaccee6f1e404a9c6bc122431a1fdf2c8a25b77ad5d383a892c2546da917e0a05aaca19465c8cbf9c58b9ba48ff16e2fe49eb67f7bf137ce892b841605"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K18",
+   "descricao": "o elo 1 tirado do meio: o que era o elo 2 fica na posição 1",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C4",
+    "elo": 1
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "K19",
+   "descricao": "o elo 1 aponta para o elo 0 de outra cadeia (a do teste 2), assinado pela própria chave",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C5",
+    "elo": 1
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "1822b67e8709737a0f0a61dcf7b839e5cefe011e7ea3e4117d922b25629decbe",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "96f3da190787d856b94ef80121c378c929e8af699706153d9ffd0b50e3ba9a608231711b9be3c9de896c78c5aa097ec82a09b98794fbc6a77a335519e5c50006"
+     },
+     {
+      "indice": 2,
+      "anterior": "716272869f9fb25935370715cacde55321644f6bfcad3498195cc25bba1446f2",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "e4e4dbb4d0f534770436b4c57b619e838ea685878e7f37fd1f2e2c03ee302cbd8deeae0999e77bd7228ea0bbdcb42b2d28327bc2345a222919660c869fb47907"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K20",
+   "descricao": "o elo 0 sem os 64 zeros no anterior",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C5",
+    "elo": 0
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "abababababababababababababababababababababababababababababababab",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "35f06c3f1ec21dea67bd10316593450afcd85b8a61d7bc86dc9879f46b5f6136ac4b895ecf10749bb7ab891d75705313b9a8abe5490a7d4d32372ea5509e530f"
+     },
+     {
+      "indice": 1,
+      "anterior": "54d614159f8037ae9254a1df84c6a6acde441d58d1fe964b565bc605ecf26708",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "8c00f43204c8bf5f4fe874362c6c724bc6467a85de678231dd497e5979df8deb462099f7c5b4bb5dc1a6e2c0033e887168715417f866eebfdcf990d51be38c02"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K21",
+   "descricao": "o registro não é JSON (cortado no meio), assinado assim",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C6",
+    "elo": 0
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"abe",
+      "assinatura": "266d2c583abf8107daa582b07f84bc7754dde0732610ec9c1cb5771d0de7547fc0e87c3572cdf69746638a9d98846512175b45f0891e2b90c639931f685cda00"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K22",
+   "descricao": "o registro com a chave estado repetida, assinado assim",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C6",
+    "elo": 0
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "b9b84cabeaa7ec2bd2bfde79e7a6d38eb64dee7e4796d7e7c03e76109fc48401845492add16dfb5b20a9bbf4a809e4741561a565808cf483c902703a49bb3e04"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K23",
+   "descricao": "no elo 1, um registro da chave do teste 2, assinado pela chave do teste 1",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C7",
+    "elo": 1
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "53b657aea615b3293eb25c71065fab74ce5b91310ce07f710d69aea8ea9556782619b836f2965a4f7b1631f06479a9a79464a1add4f4b61354fdf9a145bdee05"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K24",
+   "descricao": "o registro do elo 2 mudado depois da assinatura (o estado)",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C8",
+    "elo": 2
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"refutada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "K25",
+   "descricao": "os elos da chave do teste 1 assinados pela chave do teste 2",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C8",
+    "elo": 0
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "eca1cf6f0c56fdb81298a73a0182afd67e96b48f4e69192cf893bb6350c6d4ddd37a7ee9c49f7747b51be2b8ede3a79cf471b41467600b342650fb8d9025bb0b"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K26",
+   "descricao": "a assinatura com S + L no lugar de S (a mesma assinatura, fora do intervalo)",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C8",
+    "elo": 0
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "70764f37f4397f63f7554f74dda258bd23bb4fbba23fe2993aa59f98cc17e02377d22c3c06f782e9714c305aed13235dab52a8aaac0d2cb6ded2ecd39da8b015"
+     }
+    ]
+   }
+  },
+  {
+   "id": "K27",
+   "descricao": "a assinatura do elo 1 copiada no elo 2",
+   "esperado": {
+    "veredito": "recusada",
+    "motivo": "C8",
+    "elo": 2
+   },
+   "cadeia": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  }
+ ],
+ "versoes": [
+  {
+   "id": "V01",
+   "descricao": "a mesma cadeia",
+   "esperado": {
+    "relacao": "igual"
+   },
+   "antiga": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   },
+   "nova": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "V02",
+   "descricao": "a nova acrescenta dois elos à antiga",
+   "esperado": {
+    "relacao": "extensao"
+   },
+   "antiga": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     }
+    ]
+   },
+   "nova": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "V03",
+   "descricao": "a nova perdeu o último elo",
+   "esperado": {
+    "relacao": "encurtada"
+   },
+   "antiga": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   },
+   "nova": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     }
+    ]
+   }
+  },
+  {
+   "id": "V04",
+   "descricao": "a chave do teste 1 assinou outro registro no elo 2 (R08 no lugar de R09): duas histórias",
+   "esperado": {
+    "relacao": "bifurcada",
+    "elo": 2
+   },
+   "antiga": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"fechado\",\"afirmacao\":\"nao-segue\",\"teoria\":{\"nome\":\"Todo P é Q\",\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\"}}",
+      "assinatura": "f47912747b2f333cfc9e74416e2420974dce411a956b95d5e7c567a7c6e9b13e2c80a87a0833bb3e38d1376cbf0a25cd782117ad20933b079403766f8010400e"
+     },
+     {
+      "indice": 3,
+      "anterior": "991bc2b51896dc21e57048d05e6dcb4440e2c82cb8ba5867a061d040521ee020",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "9b124ebe41d31485953c4e68f73a219e61b4124a71b558694d1669a3efa7c6ac2270912744ba45ec7afd0d4745da7ff501495b97271ab735220478fa458b2703"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   },
+   "nova": {
+    "formato": "cadeia-v1",
+    "chave": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "68bc9097b6ab909fae79d5e0cad75e23bd06901bbe198b59ba09c751843e68a5a6ab4eeb037caaa669a04dd3df38d5d20abcc413a1ac2355c5011a07f86d8106"
+     },
+     {
+      "indice": 1,
+      "anterior": "58e0d4fd8124f9ac5ebdbfde0d5a9e027a0e7a5b9d9f1a30c3d0c91dd87f432b",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4c23033c72d2ed1e8f9745d9f410e4fcd1f8ebb3250b7eabd0db4e549cf21e6ff1b78b6352d3cee47da463c94a4f76541139615b7bca6a5a94a63766ff837d0b"
+     },
+     {
+      "indice": 2,
+      "anterior": "42db920f11cc189208069bc8f96d3a12fdcbf9e689533973ca1f222c3d0b744e",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"¬P(a)\",\"formaCanonica\":\"(¬ (P a))\",\"teoria\":{\"nome\":\"Ana crê que a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"B[Ana] P(a)\"],\"hash\":\"fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981\"},\"tipo\":\"observação\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"sem avaliação\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c\",\"sal\":\"dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":2,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[1,[0]]]},\"pertence\":[],\"acessos\":{\"Ana\":[[0,1],[1,1]]}}}}",
+      "assinatura": "470f66c73e29b0e5aaa5788ca29c0eea459c5fc8a6831bf8a991c82461601049c852892231eb7bc5440c7a0ffd82f3403cfa9be81c223f2e546106ecfe2e6b05"
+     },
+     {
+      "indice": 3,
+      "anterior": "34f3ea46fcf334f33a94cf9b0a0222e5d1cf16bfdcc98ee6cabc42b6d42cbb16",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q, e a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\",\"P(a)\"],\"hash\":\"99d84e53cec18e7b9d812e406ea518ff7ed076f41bcfc23ec8655cd4b5cd4b16\"},\"tipo\":\"teorema\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9\",\"compromisso\":{\"hash\":\"d46a0fae5d5677a2415e3c9fa9d9f042cfda8ca60a9299d5eef784e04fa3d20e\",\"sal\":\"a4ef9488148765d5faebec641b33c149d6e60ed9b5d8aae40511bcc407e9e5d6\"},\"certificado\":{\"refutacao\":{\"problema\":{\"arquivo\":\"arquivos/R01-refutacao.smt2\",\"sha256\":\"cfbc316e4f610b3a6b607e77e9acb1de5e7190dfdb2eddceb8c179cb53349529\"},\"prova\":{\"arquivo\":\"arquivos/R01-refutacao.alethe\",\"sha256\":\"bd193155cdcd0040d977f0e1a59e18f4fa2c0ef564496848a12ea6dc7bfab2cd\"}},\"modeloDasPremissas\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "c178c455fbbf9243bbf1bdf9626187ce26ea2a145277eec074befc843d87664155abcfb9df687bfc0b31a6efedf8a6493e827bf00d42c33cb1fb5ed3af555d0d"
+     }
+    ],
+    "arquivos": {
+     "arquivos/R01-refutacao.smt2": "; R01: as premissas e a negação da fórmula\n; ∀x (P(x) ⟹ Q(x))\n; P(a)\n; ¬(Q(a))\n; tradução t1 do Caderno\n(set-logic ALL)\n(declare-sort Obj 0)\n(declare-sort Mundo 0)\n(declare-fun |p:Q/1| (Mundo Obj) Bool)\n(declare-fun w0 () Mundo)\n(declare-fun |p:P/1| (Mundo Obj) Bool)\n(declare-fun |c:a| () Obj)\n(assert (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assert (|p:P/1| w0 |c:a|))\n(assert (not (|p:Q/1| w0 |c:a|)))\n(check-sat)\n",
+     "arquivos/R01-refutacao.alethe": "(assume a0 (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))))\n(assume a1 (|p:P/1| w0 |c:a|))\n(assume a2 (not (|p:Q/1| w0 |c:a|)))\n(step t0 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule implies_neg1)\n(anchor :step t1)\n(assume t1.a0 (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))\n(step t1.t0 (cl (or (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule forall_inst :args (|c:a|))\n(step t1.t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule or :premises (t1.t0))\n(step t1.t2 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t1.t3 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t1.t3.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t1.t3 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t1.t4 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t1.t2 t1.t3 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t1.t5 (cl (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t1.t1 t1.t4) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n(step t1 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule subproof :discharge (t1.a0))\n(step t2 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule resolution :premises (t0 t1) :args ((forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) true))\n(step t3 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule implies_neg2)\n(step t4 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t2 t3) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true))\n(step t5 (cl (=> (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule contraction :premises (t4))\n(step t6 (cl (not (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) :rule implies :premises (t5))\n(step t7 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|))) (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) :rule or_pos)\n(step t8 (cl (|p:Q/1| w0 |c:a|) (not (|p:P/1| w0 |c:a|)) (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule reordering :premises (t7))\n(step t9 (cl (not (or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)))) :rule resolution :premises (t8 a2 a1) :args ((|p:Q/1| w0 |c:a|) true (|p:P/1| w0 |c:a|) false))\n(step t10 (cl (not (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) (not (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule equiv_pos2)\n(anchor :step t11 :args ((x!1 Obj) (:= (x!1 Obj) x!1)))\n(step t11.t0 (cl (= (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule rare_rewrite :args (\"bool-impl-elim\" (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1)))\n(step t11 (cl (= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))))) :rule bind)\n(step t12 (cl (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) :rule resolution :premises (t10 t11 a0) :args ((= (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1)))) false (forall ((x!1 Obj)) (=> (|p:P/1| w0 x!1) (|p:Q/1| w0 x!1))) false))\n(step t13 (cl) :rule resolution :premises (t6 t9 t12) :args ((or (not (|p:P/1| w0 |c:a|)) (|p:Q/1| w0 |c:a|)) true (forall ((x!1 Obj)) (or (not (|p:P/1| w0 x!1)) (|p:Q/1| w0 x!1))) false))\n"
+    }
+   }
+  },
+  {
+   "id": "V05",
+   "descricao": "cadeias de chaves diferentes não são versões uma da outra",
+   "esperado": {
+    "relacao": "outra-chave"
+   },
+   "antiga": {
+    "formato": "cadeia-v1",
+    "chave": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "61203c4d8bd95b08baf080bcaf2f55d405ef552a88844e5dcd9bcb231f52f68d420e43e6ba504f68831a9db81bdf83f61c2be1e2be397def77cfd18595d1ba04"
+     },
+     {
+      "indice": 1,
+      "anterior": "1822b67e8709737a0f0a61dcf7b839e5cefe011e7ea3e4117d922b25629decbe",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"¬P(a)\",\"formaCanonica\":\"(¬ (P a))\",\"teoria\":{\"nome\":\"Ana crê que a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"B[Ana] P(a)\"],\"hash\":\"fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981\"},\"tipo\":\"observação\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"sem avaliação\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f\",\"compromisso\":{\"hash\":\"f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c\",\"sal\":\"dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":2,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[1,[0]]]},\"pertence\":[],\"acessos\":{\"Ana\":[[0,1],[1,1]]}}}}",
+      "assinatura": "7c1f9071e3ad414ef9861d890dadc9ce7670b9e2ac9a8cb1939fe65aa4f148a6ba7c67c3d05a890d0d0ed3decc07d7cc1d292de533470861a6dbe1e4ea77b60b"
+     }
+    ]
+   },
+   "nova": {
+    "formato": "cadeia-v1",
+    "chave": "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025",
+    "elos": [
+     {
+      "indice": 0,
+      "anterior": "0000000000000000000000000000000000000000000000000000000000000000",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"nao-segue\",\"formula\":\"Q(a)\",\"formaCanonica\":\"(Q a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"hipótese\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"proposta\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"260facff397a7fc43558d6622a0df158f97a49d4c485769cb9b3bf8e2de6290d\",\"sal\":\"0a4401c378d372c75c9baec36b9308db2c3d48e213e9196ff45cf0dc00b28ee0\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[],\"Q/1\":[]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "4b4e7a2c484553c10d4266caa3076df8e4eee77fbe8370ef7c9ba9ff4145d1422d52f47a3a1c508cafdcc4c2e70726fc4d0902088862c66f18e377c33ec14a00"
+     },
+     {
+      "indice": 1,
+      "anterior": "b5e26143e73527b07f21bc8c8295a5953ef3af96dbda31504980919213eda9d6",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"P(a)\",\"formaCanonica\":\"(P a)\",\"teoria\":{\"nome\":\"Todo P é Q\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"Q\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"∀x (P(x) ⟹ Q(x))\"],\"hash\":\"a2d9de15b78e754e180e7ad5d039942257f7d3dc64ffb034dce7743e50f8593c\"},\"tipo\":\"axioma matemático\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"corroborada\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"06677af4712995bb64f058bc3660f55041908f92767c86ecc96f1c15ed85784d\",\"sal\":\"416a9ec3af53eb6b8db58bfc5636aa63cd87942d457aadf5685081c8e803f77f\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":1,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[0,[0]]],\"Q/1\":[[0,[0]]]},\"pertence\":[],\"acessos\":{}}}}",
+      "assinatura": "796146237778dda87b7a1998f9703a3c3c20375501bb143332b11f25c9f3b5655f928ba281baffd74f4125e599afd805f9e475a61b339efe72a0d1d74b3bf40e"
+     },
+     {
+      "indice": 2,
+      "anterior": "5384c860d7f01aa9e70345cf7636cfdbf3e2fd13d3cd61dd65433e5bb296bdad",
+      "registroTexto": "{\"formato\":\"registro-v1\",\"situacao\":\"aberto\",\"afirmacao\":\"consistente\",\"formula\":\"¬P(a)\",\"formaCanonica\":\"(¬ (P a))\",\"teoria\":{\"nome\":\"Ana crê que a é P\",\"fichas\":[{\"simbolo\":\"P\",\"tipo\":\"predicado\",\"aridade\":1},{\"simbolo\":\"a\",\"tipo\":\"constante\",\"aridade\":0}],\"premissas\":[\"B[Ana] P(a)\"],\"hash\":\"fb5c48aeb9ac62b0f092ac932f4863d24171bbd45194a1f1ce80b74feca61981\"},\"tipo\":\"observação\",\"dominio\":\"exemplo da especificação registro-v1\",\"estado\":\"sem avaliação\",\"semantica\":{\"gramatica\":\"m2\",\"traducao\":\"t1\"},\"autor\":\"dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e\",\"compromisso\":{\"hash\":\"f5a9d2b7cd457d28499488010a661e4526af3e57806fe8e8827de2d6d901157c\",\"sal\":\"dc0be92f8b80255e35308e11303f5971b16d4c72a2f9b57961543a24bc7d058d\"},\"certificado\":{\"modelo\":{\"objetos\":1,\"mundos\":2,\"constantes\":{\"a\":0},\"funcoes\":{},\"predicados\":{\"P/1\":[[1,[0]]]},\"pertence\":[],\"acessos\":{\"Ana\":[[0,1],[1,1]]}}}}",
+      "assinatura": "605880d7818d17ca7776c4578af457c5bfda09a0bb9135d75b48d22938d6d44687e33ff14fc9da373b1a33fb8b76580e933ba0434594efb155c7e9326c21bd0e"
+     }
+    ]
+   }
+  }
+ ]
+}

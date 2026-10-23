@@ -24,11 +24,16 @@ describe('armazém do motor de fundo (SQLite)', () => {
   })
 
   it('as respostas do Z3 ficam guardadas (só sim/não), com as notas que a prova usou', () => {
-    const z = respostasZ3(abrir(':memory:'))
-    expect(z.obter('k')).toBeUndefined()
-    z.guardar('k', 'unsat', 12, [0, 2])
-    expect(z.obter('k')).toEqual({ resultado: 'unsat', nucleo: [0, 2] })
-    z.guardar('s', 'sat', 3)
-    expect(z.obter('s')).toEqual({ resultado: 'sat', nucleo: null })
+    const db = abrir(':memory:')
+    try {
+      const z = respostasZ3(db)
+      expect(z.obter('k')).toBeUndefined()
+      z.guardar('k', 'unsat', 12, [0, 2])
+      expect(z.obter('k')).toEqual({ resultado: 'unsat', nucleo: [0, 2] })
+      z.guardar('s', 'sat', 3)
+      expect(z.obter('s')).toEqual({ resultado: 'sat', nucleo: null })
+    } finally {
+      db.close()
+    }
   })
 })

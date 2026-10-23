@@ -1,0 +1,93 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/regressao-jcs-v2.test.ts testes/regressao-transparencia.test.ts
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+ ❯ testes/regressao-transparencia.test.ts (5 tests | 2 failed) 728ms
+   ❯ transparência Merkle e checkpoints (5)
+     × exige a raiz vazia correta nas duas árvores de tamanho zero 23ms
+     × recusa checkpoint vazio com raiz incorreta, inclusive na comparação direta 8ms
+ ❯ testes/regressao-jcs-v2.test.ts (6 tests | 2 failed) 28ms
+   ❯ perfil JCS v2 com restrição NFC adicional (6)
+     × rejeita getters em arrays sem executar o getter 12ms
+     × rejeita lacuna mascarada por propriedade extra e símbolos em arrays 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testes/regressao-jcs-v2.test.ts > perfil JCS v2 com restrição NFC adicional > rejeita getters em arrays sem executar o getter
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ testes/regressao-jcs-v2.test.ts:24:42
+     22|     const array: number[] = []
+     23|     Object.defineProperty(array, '0', { enumerable: true, get() { cham…
+     24|     expect(() => canonicalizarV2(array)).toThrow(/Accessor/)
+       |                                          ^
+     25|     expect(chamadas).toBe(0)
+     26|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  testes/regressao-jcs-v2.test.ts > perfil JCS v2 com restrição NFC adicional > rejeita lacuna mascarada por propriedade extra e símbolos em arrays
+AssertionError: expected [Function] to throw an error
+ ❯ testes/regressao-jcs-v2.test.ts:30:44
+     28|   it('rejeita lacuna mascarada por propriedade extra e símbolos em arr…
+     29|     const esparso = Object.assign(new Array(1), { extra: 1 })
+     30|     expect(() => canonicalizarV2(esparso)).toThrow()
+       |                                            ^
+     31|     expect(() => canonicalizarV2(Object.assign([1], { [Symbol('extra')…
+     32|     expect(() => canonicalizarV2(Object.defineProperty([1], 'extra', {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  testes/regressao-transparencia.test.ts > transparência Merkle e checkpoints > exige a raiz vazia correta nas duas árvores de tamanho zero
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ testes/regressao-transparencia.test.ts:32:65
+     30|     const empty = await raizMerkle([]), wrong = '0'.repeat(64)
+     31|     expect(await verificarConsistencia(0, 0, empty, empty, [])).toBe(t…
+     32|     expect(await verificarConsistencia(0, 0, wrong, wrong, [])).toBe(f…
+       |                                                                 ^
+     33|     expect(await verificarConsistencia(0, 0, empty, wrong, [])).toBe(f…
+     34|     expect(await verificarConsistencia(0, 0, wrong, empty, [])).toBe(f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  testes/regressao-transparencia.test.ts > transparência Merkle e checkpoints > recusa checkpoint vazio com raiz incorreta, inclusive na comparação direta
+AssertionError: expected 'igual' to be 'continuidade_invalida' // Object.is equality
+
+Expected: "continuidade_invalida"
+Received: "igual"
+
+ ❯ testes/regressao-transparencia.test.ts:42:55
+     40|     const wrong = { ...empty, raiz: '0'.repeat(64) }
+     41|     expect(await avaliarCheckpoint(empty, empty, [])).toBe('igual')
+     42|     expect(await avaliarCheckpoint(wrong, wrong, [])).toBe('continuida…
+       |                                                       ^
+     43|     expect(await avaliarCheckpoint(empty, wrong, [])).toBe('continuida…
+     44|     expect(await avaliarCheckpoint(wrong, empty, [])).toBe('continuida…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 7 passed (11)
+   Start at  21:20:08
+   Duration  2.51s (tests 52%, transform 33%, import 12%, worker 3%)
+
+    Isolate  2 workers spawned · ~499ms startup each (spawn + environment, per file)
+             at least ~499ms faster with isolate: false — reuses workers across files instead of one per file
+

@@ -1,0 +1,13 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/z3.test.ts testes/provas-t1.test.ts testes/registros.test.ts --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+
+ Test Files  3 passed (3)
+      Tests  35 passed (35)
+   Start at  20:47:16
+   Duration  63.30s (tests 92%, transform 6%, import 2%)
+

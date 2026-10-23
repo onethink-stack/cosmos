@@ -1,0 +1,44 @@
+{
+  "escopo": "diagnostico local; nao substitui suite de testes ou auditoria independente",
+  "envelopeV1": {
+    "verificado": true,
+    "detalhe": "✓ C1-C8 verificado: elos assinados com 502426c",
+    "cabeca": "4bd9026dd6ed7ea5b637788081bf553475977b22e772fc4c4dc0e550e59656ff",
+    "integridadeCadeia": true,
+    "validacaoEnvelopeCompleto": true
+  },
+  "checkpoint": {
+    "raizCalculada": "842ecb720637b4477272c892bd4d542376a52cf1e73e9e14b62c95cfc73e841c",
+    "raizArquivo": "842ecb720637b4477272c892bd4d542376a52cf1e73e9e14b62c95cfc73e841c",
+    "folhas": 9,
+    "inclusoesValidas": 9,
+    "continuidadesValidas": 8
+  },
+  "achados": {
+    "arrayAccessor": {
+      "aceito": false,
+      "erro": "Accessor não é dado JSON",
+      "chamadasGetter": 0
+    },
+    "arrayEsparsoComExtra": {
+      "aceito": false,
+      "erro": "Array esparso ou com propriedades extras",
+      "tamanhoOriginal": 1,
+      "chavesOriginais": [
+        "extra"
+      ]
+    },
+    "consistenciaVazia": {
+      "raizVaziaCorreta": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raizIncorretaUsada": "0000000000000000000000000000000000000000000000000000000000000000",
+      "aceitaRaizesIncorretas": false
+    }
+  },
+  "hashes": {
+    "src/dados/cadeia-F0-F4.json": "aba1b7a19c4a1447bc9da61f404478ce2be79c49a896ecf80567f54dd3cb6587",
+    "src/dados/cadeia-outras-F5-F8.json": "866c2bc76e65fb94186c76b72e6dbcb713ef72fff4e7a21f5b36a8b6e8edff22",
+    "src/dados/elos-assinados.json": "4c19b93be7cadff2ce79a81679580e57d0865197bd607bac92700aa851676aca",
+    "src/dados/selo-publico.json": "ab32fe665f2a980d49fda6784df97bb6b01e7d20e35b499601a5d46d46cc032a",
+    "dist/cosmos-502426c.json": "9e4d4fd13f16ff48d79ebbbb6c354bf5802374b2a2d247dc31d8d9890492f267"
+  }
+}

@@ -19,7 +19,12 @@
     "motor:montar": "vite build --config servidor/vite.config.ts --logLevel warn",
     "motor": "npm run motor:montar && node --no-warnings servidor/dist/motor-de-fundo.js",
     "motor:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File servidor/iniciar-com-o-windows.ps1",
-    "motor:windows:remover": "powershell -NoProfile -ExecutionPolicy Bypass -File servidor/iniciar-com-o-windows.ps1 -Remover"
+    "motor:windows:remover": "powershell -NoProfile -ExecutionPolicy Bypass -File servidor/iniciar-com-o-windows.ps1 -Remover",
+    "v2:api": "vite build --config src/v2/vite.config.ts && node dist-v2/api.mjs",
+    "ots:stamp": "python scripts/cosmos-ots.py stamp",
+    "ots:verify": "python scripts/cosmos-ots.py verify",
+    "ots:upgrade": "python scripts/cosmos-ots.py upgrade",
+    "v2:checkpoint": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/gerar-checkpoint-cosmos.mjs"
   },
   "dependencies": {
     "preact": "^11.0.1",

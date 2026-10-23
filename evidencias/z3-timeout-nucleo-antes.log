@@ -1,0 +1,45 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/z3.test.ts -t prazo original inválido
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+ ❯ testes/z3.test.ts (24 tests | 1 failed | 23 skipped) 745ms
+   ❯ Z3: parâmetros reproduzíveis e prazo finito (3)
+     × recusa o prazo original inválido antes de reduzi-lo para a tentativa com núcleo 427ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testes/z3.test.ts > Z3: parâmetros reproduzíveis e prazo finito > recusa o prazo original inválido antes de reduzi-lo para a tentativa com núcleo
+AssertionError: promise resolved "{ resultado: 'unsat', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "nucleo": [
++     0,
++     1,
++   ],
++   "resultado": "unsat",
+  }
+
+ ❯ testes/z3.test.ts:74:73
+     72|     const fs = prepararFormulas(['P(a)', '¬P(a)'], [])
+     73|     for (const prazo of [Infinity, Number.MAX_VALUE, 4294967295]) {
+     74|       await expect(checarZ3ComNucleo(api, fs, prazo, new Set(), [0, 1]…
+       |                                                                         ^
+     75|     }
+     76|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  21:05:52
+   Duration  2.25s (tests 41%, transform 41%, import 16%, worker 1%)
+

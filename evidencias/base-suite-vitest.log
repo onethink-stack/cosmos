@@ -1,0 +1,18 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+(node:25860) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  45 passed (45)
+      Tests  728 passed (728)
+   Start at  18:22:19
+   Duration  173.15s (tests 89%, import 6%, transform 4%, worker 1%)
+
+    Isolate  45 workers spawned · ~380ms startup each (spawn + environment, per file)
+             at least ~16.74s faster with isolate: false — reuses workers across files instead of one per file
+

@@ -24,6 +24,14 @@ export type ResultadoZ3 = 'sat' | 'unsat' | 'unknown'
 export const VERSAO_TRADUCAO_Z3 = 't1'
 
 export const TEMPO_Z3_MS = 20_000
+/** Seed explícita para repetir a busca na mesma versão do Z3; não fixa o tempo de CPU. */
+export const SEED_Z3 = 0
+
+function validarPrazoZ3(tempoMs: number): void {
+  if (!Number.isFinite(tempoMs) || !Number.isInteger(tempoMs) || tempoMs <= 0 || tempoMs >= 0xffffffff) {
+    throw new RangeError('O prazo Z3 deve ser um inteiro positivo menor que 4294967295 ms.')
+  }
+}
 
 type Expr = any
 
@@ -94,6 +102,8 @@ export async function checarZ3ComNucleo(
   numericos: Set<string> = new Set(),
   grupos?: (number | null)[],
 ): Promise<RespostaComNucleo> {
+  // Validar o prazo original: Math.min poderia esconder Infinity ou um estouro.
+  validarPrazoZ3(tempoMs)
   // o Z3 é instável aqui: as mesmas leis às vezes saem em menos de 1 s marcando as
   // notas e travam sem marcar, às vezes o contrário. Primeiro marcando, com prazo
   // curto (se sair, já vem com as notas que a prova usou); senão, sem marcar
@@ -169,6 +179,7 @@ function montarSolver(
   grupos?: (number | null)[],
   opcoes: Record<string, string | number | boolean> = {},
 ): any {
+  validarPrazoZ3(tempoMs)
   const ctx = obterContexto(api)
   // nomes das variáveis novas contados a partir de 0 em cada checagem: a mesma lista de fórmulas
   // chega ao Z3 sempre com os mesmos nomes, e o resultado não depende do que rodou antes
@@ -320,8 +331,10 @@ function montarSolver(
   const solver = new Solver()
   // (o Z3 às vezes fica preso numa fase em que não confere o prazo: quem o usa
   // num worker o troca por outro se ele passar muito do prazo)
-  solver.set('timeout', tempoMs)
+  solver.set('random_seed', SEED_Z3)
   for (const [k, v] of Object.entries(opcoes)) solver.set(k, v)
+  // Opções adicionais não podem desligar o prazo passado pelo chamador.
+  solver.set('timeout', tempoMs)
   formulas.forEach((f, i) => {
     const e = formula(f, new Map(), w0)
     const g = grupos?.[i]

@@ -245,6 +245,8 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
     },
     test: {
+      // Cada instância WASM do Z3 reserva 2 GiB nesta versão instalada.
+      maxWorkers: 1,
       include: ['testes/**/*.test.ts', 'servidor/**/*.test.ts'],
     },
   }

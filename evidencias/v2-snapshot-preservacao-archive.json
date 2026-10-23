@@ -1,0 +1,42 @@
+[
+  {
+    "arquivo": "src/dados/cadeia-F0-F4.json",
+    "sha256": "aba1b7a19c4a1447bc9da61f404478ce2be79c49a896ecf80567f54dd3cb6587",
+    "identico_ao_head": false
+  },
+  {
+    "arquivo": "src/dados/cadeia-outras-F5-F8.json",
+    "sha256": "866c2bc76e65fb94186c76b72e6dbcb713ef72fff4e7a21f5b36a8b6e8edff22",
+    "identico_ao_head": false
+  },
+  {
+    "arquivo": "src/dados/elos-assinados.json",
+    "sha256": "4c19b93be7cadff2ce79a81679580e57d0865197bd607bac92700aa851676aca",
+    "identico_ao_head": false
+  },
+  {
+    "arquivo": "src/dados/selo-publico.json",
+    "sha256": "ab32fe665f2a980d49fda6784df97bb6b01e7d20e35b499601a5d46d46cc032a",
+    "identico_ao_head": false
+  },
+  {
+    "arquivo": "public/pwa-512x512.png",
+    "sha256": "34aa267c3a4734ba609de474162f760e1c779d0fc02291edbc6a375237cbcc24",
+    "identico_ao_head": true
+  },
+  {
+    "arquivo": "public/pwa-192x192.png",
+    "sha256": "615fa5fae96dfb1a95935a0b0183d94ecc1fbba349b2c64478e8a90418d32b33",
+    "identico_ao_head": true
+  },
+  {
+    "arquivo": "public/apple-touch-icon.png",
+    "sha256": "ccbf3bc0eaae23cfbe30471c2c974a87101b37be1bfaef235e19d5556bc16e67",
+    "identico_ao_head": true
+  },
+  {
+    "arquivo": "public/favicon-32x32.png",
+    "sha256": "6e1a1a957b4a1119b8d7515c7080a5e98925781bd55bbdedb4142ceeee2f48a9",
+    "identico_ao_head": true
+  }
+]

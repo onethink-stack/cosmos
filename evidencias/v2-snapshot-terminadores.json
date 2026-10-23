@@ -1,0 +1,26 @@
+[
+  {
+    "arquivo": "cadeia-F0-F4.json",
+    "CRLFworkspace": 0,
+    "CRLFarchive": 103,
+    "igualNormalizandoAmbos": true
+  },
+  {
+    "arquivo": "cadeia-outras-F5-F8.json",
+    "CRLFworkspace": 0,
+    "CRLFarchive": 76,
+    "igualNormalizandoAmbos": true
+  },
+  {
+    "arquivo": "elos-assinados.json",
+    "CRLFworkspace": 0,
+    "CRLFarchive": 120,
+    "igualNormalizandoAmbos": true
+  },
+  {
+    "arquivo": "selo-publico.json",
+    "CRLFworkspace": 0,
+    "CRLFarchive": 5,
+    "igualNormalizandoAmbos": true
+  }
+]

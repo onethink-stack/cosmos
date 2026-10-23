@@ -1,0 +1,46 @@
+21:33:40 [vite] (client) Re-optimizing dependencies because vite config has changed
+21:33:41 [vite] (client) [optimizer] scanning dependencies...
+{
+  "escopo": "diagnostico local; nao substitui suite de testes ou auditoria independente",
+  "envelopeV1": {
+    "verificado": true,
+    "detalhe": "✓ C1-C8 verificado: elos assinados com 502426c",
+    "cabeca": "4bd9026dd6ed7ea5b637788081bf553475977b22e772fc4c4dc0e550e59656ff",
+    "integridadeCadeia": true,
+    "validacaoEnvelopeCompleto": true
+  },
+  "checkpoint": {
+    "raizCalculada": "842ecb720637b4477272c892bd4d542376a52cf1e73e9e14b62c95cfc73e841c",
+    "raizArquivo": "842ecb720637b4477272c892bd4d542376a52cf1e73e9e14b62c95cfc73e841c",
+    "folhas": 9,
+    "inclusoesValidas": 9,
+    "continuidadesValidas": 8
+  },
+  "achados": {
+    "arrayAccessor": {
+      "aceito": false,
+      "erro": "Accessor não é dado JSON",
+      "chamadasGetter": 0
+    },
+    "arrayEsparsoComExtra": {
+      "aceito": false,
+      "erro": "Array esparso ou com propriedades extras",
+      "tamanhoOriginal": 1,
+      "chavesOriginais": [
+        "extra"
+      ]
+    },
+    "consistenciaVazia": {
+      "raizVaziaCorreta": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raizIncorretaUsada": "0000000000000000000000000000000000000000000000000000000000000000",
+      "aceitaRaizesIncorretas": false
+    }
+  },
+  "hashes": {
+    "src/dados/cadeia-F0-F4.json": "6e162a0c472948699eedd29ad27f700ee860de9614c6255be15d18a37e465aee",
+    "src/dados/cadeia-outras-F5-F8.json": "71412ef3d4a9d1393ccfa30d5707c81de4dd68626e3a087d14698de7ec975882",
+    "src/dados/elos-assinados.json": "39056c6c70bb1e62316d5cc4c46168c2f166e5f8209503a796f9d0a17172810a",
+    "src/dados/selo-publico.json": "ae185b4162b7278765750510408ecc50a5fd39aa883e715db02d414afe934971",
+    "dist/cosmos-502426c.json": "9e4d4fd13f16ff48d79ebbbb6c354bf5802374b2a2d247dc31d8d9890492f267"
+  }
+}

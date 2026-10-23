@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
-import { conferirFaseCosmos, verificarHashTeoria } from '../motor/cadeiaCosmos'
+import { conferirFaseCosmos, verificarHashTeoria, verificarSelosCosmos, type ResultadoVerificacao } from '../motor/cadeiaCosmos'
+import { PACOTE_COSMOS } from '../dados/pacoteCosmos'
 import { add, mul, qsqrt2, toString } from '../motor/qsqrt2'
 import { conferirElosCosmos, type ConferenciaElosCosmos } from '../motor/elosCosmos'
 import elos from '../dados/elos-assinados.json'
@@ -22,9 +23,12 @@ export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
   const conferencia = conferirFaseCosmos(fase)
   const [hash, setHash] = useState('Verificando hash…')
   const [assinatura, setAssinatura] = useState<ConferenciaElosCosmos | null>(null)
+  const [selos, setSelos] = useState<ResultadoVerificacao | null>(null)
   useEffect(() => {
     let ativo = true
     setAssinatura(null)
+    setSelos(null)
+    void verificarSelosCosmos(fase, PACOTE_COSMOS).then((r) => { if (ativo) setSelos(r) })
     const publicada = fasesAssinadas.find((f) => f.id === fase.id)
     void verificarHashTeoria(fase).then(async (valido) => {
       if (ativo) setHash(valido ? '✓ hash_teoria confere' : '✕ hash_teoria divergente')
@@ -46,10 +50,17 @@ export function VerificacaoCosmos({ fase }: { fase: Record<string, unknown> }) {
     : fase.id === 'F4' ? `1 + (1 + 1√2) = ${toString(add(qsqrt2(1, 0), qsqrt2(1, 1)))}` : null
   return <section class="cosmos-motor" aria-label={`Verificação da fase ${fase.id}`}>
     <h3>Motor Cosmos</h3>
+    {selos && <dl class="cosmos-quatro-selos" aria-label="Escopos de verificação">
+      <div><dt>Integridade · SHA-256</dt><dd>{selos.integridade}</dd></div>
+      <div><dt>Autoria · Ed25519</dt><dd>{selos.assinatura}</dd></div>
+      <div><dt>Prova formal</dt><dd>não aplicável à ficha v1</dd></div>
+      <div><dt>Timestamp · Bitcoin</dt><dd>{selos.timestamp}</dd></div>
+      <div><dt>Conclusão sobre conteúdo</dt><dd>{selos.conclusao}</dd></div>
+    </dl>}
     <p>{conferencia.valida ? '✓ Metadados válidos' : '✕ Metadados inválidos'} · {conferencia.campos13Validos ? '13 campos conferidos' : 'campos divergentes'}</p>
     <p role="status">{hash}</p>
     <p>Afirmação declarada: <strong>{String(fase.afirmacao)}</strong></p>
-    {conta && <p>Conta exata em ℚ(√2): <code>{conta}</code></p>}
+    {conta && <p>Conta exata em ℤ[√2] ⊂ ℚ(√2): <code>{conta}</code></p>}
     <p class={assinatura?.verificado ? 'cosmos-assinatura-verificada' : 'cosmos-assinatura-pendente'} role="status">
       {assinatura ? assinatura.detalhe : fasesAssinadas.some((f) => f.id === fase.id) ? 'Verificando C1–C8 e assinaturas Ed25519…' : 'não verificado: faltam elos assinados'}
     </p>

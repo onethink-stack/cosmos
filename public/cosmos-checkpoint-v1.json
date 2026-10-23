@@ -1,0 +1,194 @@
+{
+  "formato": "cosmos-checkpoint-v2",
+  "publicacao_independente": "pendente",
+  "checkpoint": {
+    "log": "cosmos-v1-502426c",
+    "tamanho": 9,
+    "raiz": "842ecb720637b4477272c892bd4d542376a52cf1e73e9e14b62c95cfc73e841c"
+  },
+  "resumo_final": "4bd9026dd6ed7ea5b637788081bf553475977b22e772fc4c4dc0e550e59656ff",
+  "pubkey": "6e97907683718d984dd96bd156ecd3c504bf35c513e1cf1d842f4bc9241b7382",
+  "inclusao": [
+    {
+      "indice": 0,
+      "prova": [
+        "389c70932cab5019f3504f9d96012cbdebb63617943e8e3522b735ba8f74fd1d",
+        "274c97c6117bbf607772bdb57815adeca0ee6da5ad2de9bab41a1bfe9ecb28e2",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 1,
+      "prova": [
+        "d44d625142eb655f5b3489708414de7e3473b68d3adb4ea99390f8f86a36f3de",
+        "274c97c6117bbf607772bdb57815adeca0ee6da5ad2de9bab41a1bfe9ecb28e2",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 2,
+      "prova": [
+        "d23228f1cc7d0b4eb540257fbf73e2160ab4bcc0a5bbf40b3f4e14114f2fec93",
+        "3f5e5eb744197ec54f8179aa3cf3a4f85f8afa4e2f2dc6988f4e1d59a26b5674",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 3,
+      "prova": [
+        "af16efffa4ab03bad9c9e1ad752bc123c2ddd895a78dd3eb7e53e527bae21562",
+        "3f5e5eb744197ec54f8179aa3cf3a4f85f8afa4e2f2dc6988f4e1d59a26b5674",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 4,
+      "prova": [
+        "9952281f24f3604e0ba925f6a8e3a611f618f25fd32841a187849ba7e5f37cae",
+        "8b6431ca51c7448e81d59ca0dbcef8906178726599b961a1f492dbe9ae300a38",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 5,
+      "prova": [
+        "b71cf802cab3fc84a0595baeb5b26524d410019739fbac6c746fe0b5cbb6ada3",
+        "8b6431ca51c7448e81d59ca0dbcef8906178726599b961a1f492dbe9ae300a38",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 6,
+      "prova": [
+        "5731a6f39ef13abb95aa064f38a679082b83cca083e222bb03027ccac053338b",
+        "5765300d1209a56a3d62ff3621302d037bcb90cdeb3b37cf0870cd14285967da",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 7,
+      "prova": [
+        "ab1303e9fce47f761b4086d77dc31aaf03874045825d6940b06e0764d4b0848e",
+        "5765300d1209a56a3d62ff3621302d037bcb90cdeb3b37cf0870cd14285967da",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "indice": 8,
+      "prova": [
+        "56a0f0761ab386ba8624101c5317637bf7c165981c2a0385da8f27a26a80db71"
+      ]
+    }
+  ],
+  "continuidade": [
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 1,
+        "raiz": "d44d625142eb655f5b3489708414de7e3473b68d3adb4ea99390f8f86a36f3de"
+      },
+      "prova": [
+        "389c70932cab5019f3504f9d96012cbdebb63617943e8e3522b735ba8f74fd1d",
+        "274c97c6117bbf607772bdb57815adeca0ee6da5ad2de9bab41a1bfe9ecb28e2",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 2,
+        "raiz": "3f5e5eb744197ec54f8179aa3cf3a4f85f8afa4e2f2dc6988f4e1d59a26b5674"
+      },
+      "prova": [
+        "274c97c6117bbf607772bdb57815adeca0ee6da5ad2de9bab41a1bfe9ecb28e2",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 3,
+        "raiz": "7714322bdb9fc1ef903de43eba8be3a492b21cab855045130d41709ada796371"
+      },
+      "prova": [
+        "af16efffa4ab03bad9c9e1ad752bc123c2ddd895a78dd3eb7e53e527bae21562",
+        "d23228f1cc7d0b4eb540257fbf73e2160ab4bcc0a5bbf40b3f4e14114f2fec93",
+        "3f5e5eb744197ec54f8179aa3cf3a4f85f8afa4e2f2dc6988f4e1d59a26b5674",
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 4,
+        "raiz": "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536"
+      },
+      "prova": [
+        "6c909ca16018661bc4172a36feb4442175fef6870fe643611d1d7ec7b6c6c533",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 5,
+        "raiz": "99722764ce6488f0250d1dd60b6544ab850fd9911462e2e0267589f1614fbfbe"
+      },
+      "prova": [
+        "b71cf802cab3fc84a0595baeb5b26524d410019739fbac6c746fe0b5cbb6ada3",
+        "9952281f24f3604e0ba925f6a8e3a611f618f25fd32841a187849ba7e5f37cae",
+        "8b6431ca51c7448e81d59ca0dbcef8906178726599b961a1f492dbe9ae300a38",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 6,
+        "raiz": "2023bb84b6cb7db91040e4a111cec8c24e5391ae334a0d23dc3e6a7c48df471e"
+      },
+      "prova": [
+        "5765300d1209a56a3d62ff3621302d037bcb90cdeb3b37cf0870cd14285967da",
+        "8b6431ca51c7448e81d59ca0dbcef8906178726599b961a1f492dbe9ae300a38",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 7,
+        "raiz": "f89f6009743db40b1d789c607d7d3452babd18de7627d0d0de7922474161beb2"
+      },
+      "prova": [
+        "ab1303e9fce47f761b4086d77dc31aaf03874045825d6940b06e0764d4b0848e",
+        "5731a6f39ef13abb95aa064f38a679082b83cca083e222bb03027ccac053338b",
+        "5765300d1209a56a3d62ff3621302d037bcb90cdeb3b37cf0870cd14285967da",
+        "7a04a6cad1586d7a832683e23c4208dec476a6cc294b62c9501aba3f723f9536",
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    },
+    {
+      "anterior": {
+        "log": "cosmos-v1-502426c",
+        "tamanho": 8,
+        "raiz": "56a0f0761ab386ba8624101c5317637bf7c165981c2a0385da8f27a26a80db71"
+      },
+      "prova": [
+        "79b0581768644004b9d571c397f73023ce6ba948da88904044e0f2c7421b6a5e"
+      ]
+    }
+  ]
+}

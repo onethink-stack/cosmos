@@ -1,0 +1,41 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+(node:31200) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13664) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12056) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ servidor/armazem.test.ts (2 tests | 1 failed) 74ms
+   ❯ armazém do motor de fundo (SQLite) (2)
+     × as respostas do Z3 ficam guardadas (só sim/não), com as notas que a prova usou 22ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  servidor/armazem.test.ts > armazém do motor de fundo (SQLite) > as respostas do Z3 ficam guardadas (só sim/não), com as notas que a prova usou
+Error: statement has been finalized
+ ❯ Object.guardar servidor/armazem.ts:101:19
+     99|     },
+    100|     guardar: (chave: string, resultado: 'sat' | 'unsat', ms: number, n…
+    101|       void gravar.run(chave, resultado, ms, nucleo ? JSON.stringify(nu…
+       |                   ^
+    102|   }
+    103| }
+ ❯ servidor/armazem.test.ts:31:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 52 passed (53)
+      Tests  1 failed | 763 passed (764)
+   Start at  20:48:39
+   Duration  202.13s (tests 90%, import 5%, transform 4%, worker 1%)
+
+    Isolate  53 workers spawned · ~404ms startup each (spawn + environment, per file)
+             at least ~21.02s faster with isolate: false — reuses workers across files instead of one per file
+

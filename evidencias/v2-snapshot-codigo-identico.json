@@ -1,0 +1,4 @@
+{
+  "diferencasCodigo": [],
+  "criterio": "arquivos selecionados em src/testes/servidor/scripts/public, package.json e vite.config.ts"
+}

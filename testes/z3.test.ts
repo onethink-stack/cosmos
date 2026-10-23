@@ -3,7 +3,7 @@ import { init, killThreads } from 'z3-solver'
 import { importarTptp } from '../src/dados/tptp'
 import type { EntradaDicionario } from '../src/dados/tipos'
 import { analisar, nao, nomesNumericos, prepararFormulas } from '../src/motor/motor'
-import { checarZ3, checarZ3ComNucleo } from '../src/motor/z3'
+import { checarUmaVez, checarZ3, checarZ3ComNucleo, SEED_Z3 } from '../src/motor/z3'
 import { validar } from '../src/logica/validador'
 import { expandir } from '../src/logica/acucar'
 
@@ -36,6 +36,45 @@ const z3 = (fs: string[], d: EntradaDicionario[] = []) => checarZ3(api, preparar
 /** premissas ⊢ φ ? (premissas ∧ ¬φ sem modelo) */
 const segue = (premissas: string[], phi: string, d: EntradaDicionario[] = []) =>
   checarZ3(api, [...prepararFormulas(premissas, d), nao(expandir(validar(phi, d).ast!))])
+
+describe('Z3: parâmetros reproduzíveis e prazo finito', () => {
+  it('aplica seed e prazo a cada solver e repete o mesmo veredito', async () => {
+    const parametros: [string, unknown][] = []
+    const instrumentada = {
+      ...api,
+      Context: function (nome: string) {
+        const ctx = new api.Context(nome)
+        const Original = ctx.Solver
+        ctx.Solver = class extends Original {
+          set(chave: string, valor: unknown) {
+            parametros.push([chave, valor])
+            super.set(chave, valor)
+          }
+        }
+        return ctx
+      },
+    }
+    const fs = prepararFormulas(['P(a)', '¬P(a)'], [])
+    for (let i = 0; i < 3; i++) {
+      expect((await checarUmaVez(instrumentada, fs, 1000, new Set(), undefined, { timeout: 0 })).resultado).toBe('unsat')
+    }
+    expect(parametros.filter(([k]) => k === 'random_seed').map(([, v]) => v)).toEqual([SEED_Z3, SEED_Z3, SEED_Z3])
+    expect(parametros.filter(([k]) => k === 'timeout').map(([, v]) => v)).toEqual([0, 1000, 0, 1000, 0, 1000])
+  }, 30_000)
+
+  it('recusa prazo ilimitado, fracionário ou fora do uint32', async () => {
+    for (const prazo of [0, -1, NaN, Infinity, 1.5, 0xffffffff, 0x100000000]) {
+      await expect(checarZ3(api, [], prazo)).rejects.toThrow(RangeError)
+    }
+  })
+
+  it('recusa o prazo original inválido antes de reduzi-lo para a tentativa com núcleo', async () => {
+    const fs = prepararFormulas(['P(a)', '¬P(a)'], [])
+    for (const prazo of [Infinity, Number.MAX_VALUE, 4294967295]) {
+      await expect(checarZ3ComNucleo(api, fs, prazo, new Set(), [0, 1])).rejects.toThrow(RangeError)
+    }
+  })
+})
 
 describe('Z3: mesma semântica do motor finito, sem limite de tamanho', () => {
   it('T1 e T2 com os axiomas', async () => {

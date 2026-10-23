@@ -320,3 +320,5 @@ main.pagina-registros { padding-top:120px; padding-bottom:120px; }
  .cosmos-log-detalhes { padding-left:0; }
  .cosmos-log-rodape { flex-wrap:wrap; gap:8px; }
 }
+.cosmos-escopos { color:#71717a; font-size:10px; line-height:1.8; margin:0 0 20px; }
+.cosmos-quatro-selos dd { text-transform:none; }

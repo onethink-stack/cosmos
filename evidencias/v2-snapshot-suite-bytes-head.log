@@ -1,0 +1,22 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 C:/Users/gusta/AppData/Local/Temp/cosmos-v2-revisao-15021f207de042249440566256cab696/snapshot
+
+(node:2824) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13332) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18080) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  53 passed (53)
+      Tests  769 passed (769)
+   Start at  21:36:31
+   Duration  197.02s (tests 89%, import 6%, transform 5%, worker 1%)
+
+    Isolate  53 workers spawned · ~392ms startup each (spawn + environment, per file)
+             at least ~20.41s faster with isolate: false — reuses workers across files instead of one per file
+

@@ -1,5 +1,32 @@
 import { VOCAB_COSMOS } from '../dados/vocabularioCosmos'
 import { qsqrt2, toString } from './qsqrt2'
+import { PUBKEY_SELO_502426C, verificar } from './selo'
+
+export type ResultadoVerificacao = {
+  integridade: 'valida' | 'invalida'
+  assinatura: 'valida' | 'invalida' | 'ausente'
+  provaFormal: 'conferida' | 'falhou' | 'nao_aplicavel'
+  timestamp: 'pendente' | 'confirmado' | 'ausente'
+  conclusao: 'valida' | 'invalida' | 'inconclusivo'
+}
+
+/** Histórico v1: verifica hashes e assinaturas, sem inventar certificado formal ou OTS.
+ * A confirmação OTS é verificada no cliente Node separado, nunca por uma string do JSON.
+ */
+export async function verificarSelosCosmos(fase: Record<string, unknown>, pacote: unknown): Promise<ResultadoVerificacao> {
+  let integridade: ResultadoVerificacao['integridade'] = 'invalida'
+  try { if (conferirFaseCosmos(fase).valida && await verificarHashTeoria(fase)) integridade = 'valida' } catch { /* recusa */ }
+  const p = pacote && typeof pacote === 'object' ? pacote as Record<string, unknown> : {}
+  const elos = Array.isArray(p.elos_assinados) ? p.elos_assinados : []
+  const candidatos = elos.filter((e) => e && typeof e === 'object' && e.fase === fase.id)
+  let assinatura: ResultadoVerificacao['assinatura'] = 'ausente'
+  if (candidatos.length) {
+    const e = candidatos[0]
+    assinatura = candidatos.length === 1 && e.pubkey === PUBKEY_SELO_502426C && e.hash_teoria === fase.hash_teoria && verificar(String(fase.hash_teoria), String(e.assinatura), e.pubkey) ? 'valida' : 'invalida'
+  }
+  return { integridade, assinatura, provaFormal: 'nao_aplicavel', timestamp: p.carimbo_ots === 'pendente' ? 'pendente' : 'ausente',
+    conclusao: integridade === 'invalida' || assinatura === 'invalida' ? 'invalida' : 'inconclusivo' }
+}
 
 export interface FaseCosmos { id: string; testemunha: unknown; campo: unknown }
 export function campoExato(campo: unknown): boolean {

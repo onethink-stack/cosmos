@@ -165,7 +165,8 @@ function conferirFicha(f: unknown): Ficha {
 
 /**
  * O valor de um texto JSON, recusando (R1) uma chave repetida em qualquer objeto: os leitores de JSON discordam sobre
- * qual valor fica (uns o primeiro, outros o último), e duas conferências leriam registros diferentes.
+ * qual valor fica (uns o primeiro, outros o último), e duas conferências leriam registros diferentes. Pela mesma
+ * razão, recusa o número escrito com ponto ou expoente.
  */
 export function lerJsonEstrito(texto: string): unknown {
   let i = 0
@@ -188,16 +189,18 @@ export function lerJsonEstrito(texto: string): unknown {
     if (c === '{') {
       i++
       const o: Record<string, unknown> = {}
+      const vistas = new Set<string>()
       espaco()
       if (texto[i] === '}') return i++, o
       for (;;) {
         espaco()
         if (texto[i] !== '"') erro('chave sem aspas')
         const k = cadeia()
-        if (Object.prototype.hasOwnProperty.call(o, k)) erro(`chave repetida: ${k}`)
+        if (vistas.has(k)) erro(`chave repetida: ${k}`)
+        vistas.add(k)
         espaco()
         if (texto[i++] !== ':') erro('falta o :')
-        o[k] = valor()
+        Object.defineProperty(o, k, { value: valor(), enumerable: true, writable: true, configurable: true })
         espaco()
         if (texto[i] === ',') i++
         else if (texto[i] === '}') return i++, o
@@ -223,8 +226,12 @@ export function lerJsonEstrito(texto: string): unknown {
     if (c === 'n') return literal('null', null)
     const m = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/.exec(texto.slice(i))
     if (!m) return erro('valor inválido')
+    // os números dos formatos são inteiros: 1.0 e 1e0 seriam o inteiro 1 aqui e uma fração num leitor em Python
+    if (m[2] || m[3]) return erro(`número que não é inteiro: ${m[0]}`)
+    const numero = Number(m[0])
+    if (!Number.isSafeInteger(numero)) return erro('inteiro fora do intervalo seguro')
     i += m[0].length
-    return Number(m[0])
+    return numero
   }
   const v = valor()
   espaco()

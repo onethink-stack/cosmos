@@ -1,4 +1,9 @@
-/** Coeficientes inteiros seguros: representação exata usada pelas fases Cosmos. */
+/** Representação limitada de ℤ[√2] = {a + b√2 | a,b ∈ ℤ}.
+ * Coeficientes são Number inteiros seguros; operações usam BigInt intermediário
+ * e rejeitam estouro ao retornar. Não implementa o corpo ℚ(√2) completo:
+ * não há coeficientes racionais gerais ou divisão. Não é função hash.
+ * O nome histórico é preservado para compatibilidade com a v1.
+ */
 export type Qsqrt2 = { a: number; b: number }
 export const qsqrt2 = (a: number, b: number): Qsqrt2 => {
   if (!Number.isSafeInteger(a) || !Number.isSafeInteger(b)) throw new RangeError('Coeficientes devem ser inteiros seguros; aproximações decimais não são aceitas.')

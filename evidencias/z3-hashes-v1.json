@@ -1,0 +1,22 @@
+[
+  {
+    "Path": "C:\\Users\\gusta\\Desktop\\AI quantica\\src\\dados\\cadeia-F0-F4.json",
+    "Hash": "ABA1B7A19C4A1447BC9DA61F404478CE2BE79C49A896ECF80567F54DD3CB6587"
+  },
+  {
+    "Path": "C:\\Users\\gusta\\Desktop\\AI quantica\\src\\dados\\cadeia-outras-F5-F8.json",
+    "Hash": "866C2BC76E65FB94186C76B72E6DBCB713EF72FFF4E7A21F5B36A8B6E8EDFF22"
+  },
+  {
+    "Path": "C:\\Users\\gusta\\Desktop\\AI quantica\\src\\dados\\elos-assinados.json",
+    "Hash": "4C19B93BE7CADFF2CE79A81679580E57D0865197BD607BAC92700AA851676ACA"
+  },
+  {
+    "Path": "C:\\Users\\gusta\\Desktop\\AI quantica\\src\\dados\\selo-publico.json",
+    "Hash": "AB32FE665F2A980D49FDA6784DF97BB6B01E7D20E35B499601A5D46D46CC032A"
+  },
+  {
+    "Path": "C:\\Users\\gusta\\Desktop\\AI quantica\\dist\\cosmos-502426c.json",
+    "Hash": "9E4D4FD13F16FF48D79EBBBB6C354BF5802374B2A2D247DC31D8D9890492F267"
+  }
+]

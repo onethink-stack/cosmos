@@ -37,4 +37,12 @@ O run [40054367715](https://github.com/onethink-stack/cosmos/actions/runs/400543
 
 A preparação do workflow foi corrigida para instalar Python 3.12 e as versões já fixadas em `scripts/requirements-ots.txt`, no destino `node_modules/.cosmos-ots-python` já usado pelo script histórico. A instalação ocorre depois de npm ci. Nenhum teste, produção OTS, timeout Z3 ou hash protegido foi alterado. Os testes executam somente `inspect` offline: isso não consulta calendários, não atualiza .ots e não confirma Bitcoin. A nova CI executará novamente a suíte inteira, sem filtrar falhas.
 
+### Segunda CI remota — preservação do alvo OTS no checkout Windows
+
+Run [40090048572](https://github.com/onethink-stack/cosmos/actions/runs/40090048572), commit `4d6e9daf18541b9355e953a99744ab340c4f7cac`: Linux aprovou **995/995**, 65 arquivos, 108,43 s, typecheck, os dois builds e **13/13**. Windows aprovou **994/995**, 65 arquivos, 139,45 s, com uma falha de vínculo SHA-256 do alvo OTS. O resultado conjunto não é verde.
+
+A reprodução offline confirmou que o alvo original LF confere; trocar seu LF por CRLF reproduz exatamente `vínculo SHA-256 divergente`. O checkout Git com `core.autocrlf=true` também reproduziu essa conversão antes da correção. Fonte: `evidencias/p1-selagem-ots-terminadores.json` e conferência de checkout. O alvo local permanece byte a byte idêntico ao blob HEAD, SHA-256 `02d262a9de3a63e32353a9c3a6f30fb9073a2e3481ed678ad25ae2185792330d`.
+
+A correção acrescenta somente `-text` para o alvo público OTS e sua prova em `.gitattributes`, preservando os bytes históricos também no checkout Windows. Os arquivos não foram regravados nem recarimbados; testes e verificador permanecem sem alteração. A confirmação Bitcoin continua pendente.
+
 Publicação autorizada nesta etapa: exclusivamente a branch P1 para executar sua CI. Sem merge ou push em master/main/Fase 3, sem tag nova e sem deploy. Isso não resolve a confirmação Bitcoin do OTS nem cria âncora independente.

@@ -22,6 +22,9 @@ src/interfaces/config.ts -text
 src/ui/icons/cosmos-moeda-oficial.png -text
 src/v2/api-node.ts -text
 src/v2/servidor.ts -text
+# OTS assina os bytes do alvo: CRLF de checkout invalidaria o vínculo histórico.
+public/cosmos-502426c-resumo.txt -text
+public/cosmos-502426c-resumo.txt.ots -text
 scripts/verificar-p1-selada.mjs text eol=lf
 scripts/validar-p1-ci.mjs text eol=lf
 evidencias/p1-groq-sha256-esperados.json text eol=lf

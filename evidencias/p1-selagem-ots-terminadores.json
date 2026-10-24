@@ -1,0 +1,23 @@
+[
+  {
+    "caso": "LF_original",
+    "saida": 0,
+    "resultado": {
+      "estado": "enviado_calendario",
+      "vinculoValido": true,
+      "sha256_alvo": "02d262a9de3a63e32353a9c3a6f30fb9073a2e3481ed678ad25ae2185792330d",
+      "calendarios": [
+        "https://alice.btc.calendar.opentimestamps.org",
+        "https://bob.btc.calendar.opentimestamps.org"
+      ],
+      "confirmacaoVerificada": false
+    }
+  },
+  {
+    "caso": "CRLF_reproduzido",
+    "saida": 1,
+    "resultado": {
+      "erro": "vínculo SHA-256 divergente"
+    }
+  }
+]

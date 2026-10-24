@@ -1,0 +1,21 @@
+{
+  "run_id": 40054367715,
+  "commit": "961661bdc62b57f65d6f640078c251e135d91f9c",
+  "conclusao": "failure",
+  "url": "https://github.com/onethink-stack/cosmos/actions/runs/40054367715",
+  "linux": {
+    "duracaoSegundos": 118.02,
+    "falhas": 2,
+    "total": 995,
+    "aprovados": 993
+  },
+  "windows": {
+    "duracaoSegundos": 141.38,
+    "falhas": 2,
+    "total": 995,
+    "aprovados": 993
+  },
+  "erro": "ModuleNotFoundError: No module named opentimestamps",
+  "teste": "testes/regressao-ots.test.ts",
+  "correcao": "Somente preparar Python e dependencias OTS ja declaradas no runner; sem consulta de rede OTS"
+}

@@ -31,4 +31,10 @@ f80b54678ec4da70f4257c42c2904eefc64b07f897c59d7f3cb070d27a496021
 
 O run ID e a conclusão real da CI serão entregues após a execução remota. Não se reutiliza o ID histórico `39664843135` como prova do P1. O artefato de cada runner identifica o commit realmente executado e o hash do verificador. O CI histórico Fase 3/commit `502426c` permanece apenas como referência.
 
+### Primeira CI remota — dependência de ambiente identificada
+
+O run [40054367715](https://github.com/onethink-stack/cosmos/actions/runs/40054367715), commit `961661bdc62b57f65d6f640078c251e135d91f9c`, terminou com **993/995**, 64 arquivos aprovados e um com falha nos dois runners: Linux 118,02 s e Windows 141,38 s. As duas falhas são de `testes/regressao-ots.test.ts`, com `ModuleNotFoundError: No module named 'opentimestamps'`. Não é resultado verde.
+
+A preparação do workflow foi corrigida para instalar Python 3.12 e as versões já fixadas em `scripts/requirements-ots.txt`, no destino `node_modules/.cosmos-ots-python` já usado pelo script histórico. A instalação ocorre depois de npm ci. Nenhum teste, produção OTS, timeout Z3 ou hash protegido foi alterado. Os testes executam somente `inspect` offline: isso não consulta calendários, não atualiza .ots e não confirma Bitcoin. A nova CI executará novamente a suíte inteira, sem filtrar falhas.
+
 Publicação autorizada nesta etapa: exclusivamente a branch P1 para executar sua CI. Sem merge ou push em master/main/Fase 3, sem tag nova e sem deploy. Isso não resolve a confirmação Bitcoin do OTS nem cria âncora independente.

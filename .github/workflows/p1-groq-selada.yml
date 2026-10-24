@@ -30,6 +30,11 @@ jobs:
           cache: npm
       - name: Instalar o lockfile (sem auditoria automática)
         run: npm ci --no-audit --no-fund
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependências OTS existentes para os testes offline
+        run: python -m pip install --disable-pip-version-check --no-deps --target node_modules/.cosmos-ots-python -r scripts/requirements-ots.txt
       - name: Testes seriais, typecheck, dois builds e verificador
         run: node scripts/validar-p1-ci.mjs
       - name: Evidências do commit executado

@@ -1,0 +1,73 @@
+{
+  "formato": "cosmos-b-gpu-planejamento-v1",
+  "estado": "ponte-sintetica-prototipada-caracara-pendente-host-nao-compilado",
+  "autorizacaoArquitetural": {
+    "origem": "resposta expressa do operador nesta conversa",
+    "decisao": "GPU gera testemunhos; CPU serializa Alethe (recomendado)",
+    "assinaturaCriptografica": null
+  },
+  "protocoloReferencia": "FASE4_B_GPU_PROTOCOLO.md",
+  "referenciaCpuCommit": "c64457f91e9e00ff82b68afc5f3a768a9171c98b",
+  "referenciaCpuCiHistorica": "40118753348",
+  "entradaSmt2Sha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd",
+  "fragmento": "instancia-booleana-fixa-4-pombos-3-caixas",
+  "variaveis": 12,
+  "clausulas": 34,
+  "atribuicoes": 4096,
+  "bufferEntradaBytesPropostos": 288,
+  "bufferSaidaBytesPropostos": 16384,
+  "bufferEntradaSha256": "b4dc6d8a68cb5190f49def3ffaa82e44a29c63ab7803313c87792ede8da664c3",
+  "tradutorSha256": "12149b9703722eec815a4862d38a01e660e4201752334bb1a2e57769fa61980a",
+  "kernel": {
+    "linguagem": "WGSL",
+    "sha256": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33",
+    "entrypoint": "calcular",
+    "workgroupSizeProposto": 64,
+    "gruposPropostos": 64,
+    "implementado": true,
+    "executado": false
+  },
+  "host": {
+    "runtimeProposto": "wgpu-nativo",
+    "versaoAprovada": null,
+    "revisaoAprovada": null,
+    "lockfileSha256": null,
+    "toolchainAprovada": null,
+    "binarioSha256": null,
+    "backendObservado": null,
+    "fallbackSoftwarePermitido": false,
+    "versaoSelecionada": "30.0.1",
+    "toolchainSelecionada": "1.99.1",
+    "backendSelecionado": "Vulkan"
+  },
+  "dispositivoInventarioLocal": {
+    "nome": "AMD Radeon(TM) Vega 8 Graphics",
+    "driver": "31.0.21024.7004",
+    "suporteWgpuDemonstrado": false,
+    "despachoGpuRealDemonstrado": false
+  },
+  "ponteAlethe": {
+    "estado": "prototipo-sintetico-aguarda-checker",
+    "conversorSha256": "12149b9703722eec815a4862d38a01e660e4201752334bb1a2e57769fa61980a",
+    "solverCpuSubstitutoPermitido": false,
+    "reutilizarProvaCvc5ComoProvaDaSaidaGpu": false,
+    "provaMaxBytes": 1048576,
+    "checkerPrazoMaxMs": 20000,
+    "provaSinteticaBytes": 7881,
+    "resolucoesSinteticas": 48
+  },
+  "checker": {
+    "releaseAprovado": "carcara-1.1.0",
+    "sha256EsperadoAprovado": "fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda",
+    "resultadoSobreProvaGpu": null
+  },
+  "resultadoB": "pendente",
+  "novaPublicacaoEfetuada": false,
+  "limites": [
+    "Arquivo de planejamento, nao certificado de execucao.",
+    "Pins null porque os artefatos novos ainda nao existem ou nao foram aprovados.",
+    "Prototipo da ponte precisa passar no Carcara antes de alegar viabilidade demonstrada.",
+    "Inventario da GPU nao comprova disponibilidade ou execucao wgpu.",
+    "Prova valida nao atesta criptograficamente hardware fisico."
+  ]
+}

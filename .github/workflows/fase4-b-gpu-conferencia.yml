@@ -1,0 +1,87 @@
+name: Fase 4 B - ponte e host GPU (sem deploy)
+on:
+  push:
+    branches: ['codex/fase4-b-gpu']
+    paths:
+      - '.github/workflows/fase4-b-gpu-conferencia.yml'
+      - 'scripts/fase4-b-*.mjs'
+      - 'fase4-b-gpu/**'
+      - 'evidencias/fase4-b-gpu-pacote/**'
+      - 'FASE4_B_PUBLICACAO.json'
+permissions:
+  contents: read
+concurrency:
+  group: fase4-b-gpu-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ponte:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Testar tradutor e ponte, sem GPU
+        run: node --test scripts/fase4-b-ponte.test.mjs
+      - name: Obter checker e conferir pin aprovado
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/fase4-ferramentas
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 60 \
+            -o tmp/fase4-ferramentas/carcara-linux https://github.com/ufmg-smite/carcara/releases/download/carcara-1.1.0/carcara-linux
+          printf '%s  %s\n' fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda tmp/fase4-ferramentas/carcara-linux | sha256sum --check --strict
+          chmod u+x tmp/fase4-ferramentas/carcara-linux
+      - name: Conferir prototipo com testemunhos sinteticos, sem alegar GPU
+        run: node scripts/fase4-b-conferencia.mjs "$GITHUB_WORKSPACE/tmp/fase4-ferramentas/carcara-linux"
+      - name: Conferir pacote de GPU real quando presente
+        if: hashFiles('evidencias/fase4-b-gpu-pacote/pacote.json') != ''
+        run: node scripts/fase4-b-conferencia.mjs "$GITHUB_WORKSPACE/tmp/fase4-ferramentas/carcara-linux" "$GITHUB_WORKSPACE/evidencias/fase4-b-gpu-pacote"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fase4-b-conferencia-${{ github.sha }}
+          path: |
+            evidencias/fase4-b-run-ponte/*
+            evidencias/fase4-b-run-gpu/*
+          if-no-files-found: warn
+  host:
+    needs: ponte
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Rust pinado e alvo Windows GNU (runner descartavel)
+        run: rustup toolchain install 1.99.1 --profile minimal --target x86_64-pc-windows-gnu
+      - name: Linker cruzado oficial Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-posix
+      - name: Lockfile e compilacao sem GPU
+        env:
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc-posix
+          RUSTFLAGS: '-C target-feature=+crt-static'
+        run: |
+          set -euo pipefail
+          cd fase4-b-gpu
+          if test ! -f Cargo.lock; then cargo +1.99.1 generate-lockfile; fi
+          cargo +1.99.1 build --locked --release --target x86_64-pc-windows-gnu
+      - name: Registrar pins reais do host e dependencias
+        run: node scripts/fase4-b-build-manifesto.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fase4-b-host-windows-${{ github.sha }}
+          path: |
+            fase4-b-gpu/target/x86_64-pc-windows-gnu/release/cosmos-b-gpu-host.exe
+            fase4-b-gpu/Cargo.lock
+            fase4-b-gpu/host-build.json
+            fase4-b-gpu/kernel.wgsl
+          if-no-files-found: error

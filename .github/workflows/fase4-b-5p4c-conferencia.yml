@@ -1,0 +1,81 @@
+name: Fase 4 B 5p4c - compilacao e Carcara sintetico (sem deploy)
+on:
+  push:
+    branches: ['codex/fase4-b-5p4c']
+    paths:
+      - '.github/workflows/fase4-b-5p4c-conferencia.yml'
+      - 'FASE4_B_5P4C_*.ts'
+      - 'fase4-b-5p4c/**'
+      - 'scripts/fase4-b-5p4c-*'
+permissions:
+  contents: read
+concurrency:
+  group: fase4-b-5p4c-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ponte:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Testes locais da ponte, sem GPU
+        run: node --experimental-strip-types --test scripts/fase4-b-5p4c.test.mjs scripts/fase4-b-ponte.test.mjs
+      - name: Carcara oficial sob pin aprovado
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/fase4-b-5p4c
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 60 \
+            -o tmp/fase4-b-5p4c/carcara-linux https://github.com/ufmg-smite/carcara/releases/download/carcara-1.1.0/carcara-linux
+          printf '%s  %s\n' fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda tmp/fase4-b-5p4c/carcara-linux | sha256sum --check --strict
+          chmod u+x tmp/fase4-b-5p4c/carcara-linux
+      - name: Positivo sintetico e tres negativos reais
+        run: node --experimental-strip-types scripts/fase4-b-5p4c-carcara.mjs "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-linux" "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-sintetico"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fase4-b-5p4c-carcara-${{ github.sha }}
+          path: tmp/fase4-b-5p4c/carcara-sintetico/*
+          if-no-files-found: error
+  host:
+    needs: ponte
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Toolchain fixada no runner descartavel
+        run: rustup toolchain install 1.99.1 --profile minimal --target x86_64-pc-windows-gnu
+      - name: Linker oficial Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-posix
+      - name: Naga e build Windows sem executar GPU
+        env:
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc-posix
+          RUSTFLAGS: '-C target-feature=+crt-static'
+        run: |
+          set -euo pipefail
+          cd fase4-b-5p4c/host
+          cargo +1.99.1 test --locked --release --target x86_64-unknown-linux-gnu
+          cargo +1.99.1 build --locked --release --target x86_64-pc-windows-gnu
+      - name: Pins reais do novo executavel
+        run: node --experimental-strip-types scripts/fase4-b-5p4c-build-manifesto.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fase4-b-5p4c-host-windows-${{ github.sha }}
+          path: |
+            fase4-b-5p4c/host/target/x86_64-pc-windows-gnu/release/cosmos-b-gpu-host.exe
+            fase4-b-5p4c/host/host-build.json
+            fase4-b-5p4c/host/Cargo.lock
+            fase4-b-5p4c/host/kernel.wgsl
+          if-no-files-found: error

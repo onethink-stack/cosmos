@@ -1,0 +1,16 @@
+[package]
+name = "cosmos-b-gpu-host"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "vulkan", "wgsl"] }
+serde_json = "=1.0.154"
+
+[profile.release]
+panic = "abort"
+strip = true

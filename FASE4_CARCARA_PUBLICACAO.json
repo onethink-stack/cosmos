@@ -1,0 +1,88 @@
+{
+  "formato": "cosmos-fase4-publicacao-autorizada-v1",
+  "baseP1": "33e8c48e5e89b475c34c268a3ad7ea65f96c31f5",
+  "branch": "codex/fase4-carcara-alethe",
+  "autorizacaoReferencia": "FASE4_PUBLICACAO_AUTORIZADA.md",
+  "arquivos": [
+    {
+      "arquivo": ".gitattributes",
+      "bytes": 1610,
+      "sha256": "d6b0442b625786fbecbb8e1fadf64a2dacf6e9d17cd24cb5fbaa1cd31fbc26cd"
+    },
+    {
+      "arquivo": "src/fase4/entrada-4-pombos-3-caixas.smt2",
+      "bytes": 1693,
+      "sha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd"
+    },
+    {
+      "arquivo": "src/fase4/referencia-cpu-node.ts",
+      "bytes": 8262,
+      "sha256": "c6f8ad6d314481d83b0ea34cb37d0aaf2e3d0d6418f9446498517a55d98abe64"
+    },
+    {
+      "arquivo": "src/fase4/manifesto-cpu.json",
+      "bytes": 1361,
+      "sha256": "bacf068cea9ee3d965208c9976d78a74c4c152a362919e5ab5b2c9b927c231c2"
+    },
+    {
+      "arquivo": "scripts/fase4-referencia-cpu.mjs",
+      "bytes": 1732,
+      "sha256": "5c7b93a8d49fd463eb271929a6587b4f16bcf3af4b8eb5b9ffb8e0d82756164a"
+    },
+    {
+      "arquivo": "scripts/fase4-carcara-conferencia.mjs",
+      "bytes": 12752,
+      "sha256": "2ffb3bb2bff918412bc5244dbd1686f300a8cd830c26df5f329ddecc3dae1229"
+    },
+    {
+      "arquivo": ".github/workflows/fase4-carcara-conferencia.yml",
+      "bytes": 2756,
+      "sha256": "d3962e694cbb91492bc8fa85759451557c161c9f694ad0f48e974c061f65be62"
+    },
+    {
+      "arquivo": "evidencias/fase4-cpu-referencia/entrada.smt2",
+      "bytes": 1693,
+      "sha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd"
+    },
+    {
+      "arquivo": "evidencias/fase4-cpu-referencia/proof.alethe",
+      "bytes": 5357,
+      "sha256": "68c77a0feaaf9bc8ecb06a4b28b0bc8fca83225ce7f93c69fe5bff8b8e9db934"
+    },
+    {
+      "arquivo": "evidencias/fase4-cpu-referencia/cert.json",
+      "bytes": 387,
+      "sha256": "86e7d0168bcb8fde63a46b461d84f19730e8c8d732380f9d9ac53443aa3e8054"
+    },
+    {
+      "arquivo": "evidencias/fase4-carcara-pin-aprovado.json",
+      "bytes": 2172,
+      "sha256": "92c23ba248c81301c2d0a1c7ed23e30e7862cc8de2b533f32721aaf4ff3f5f27"
+    },
+    {
+      "arquivo": "evidencias/fase4-carcara-recibo.template.json",
+      "bytes": 6592,
+      "sha256": "8355ee89ba8a9315fad3286cada66b42cda1ea5f37a1898086cd5d322a6a19ae"
+    },
+    {
+      "arquivo": "FASE4_PUBLICACAO_AUTORIZADA.md",
+      "bytes": 2129,
+      "sha256": "c6bc7f0b0aaa3dcbac27cd127ecc6712a0a1359fb1f9123c9610aeea0cb0c446"
+    },
+    {
+      "arquivo": "FASE4_CONFERENCIA_CARCARA.md",
+      "bytes": 10706,
+      "sha256": "a74f71bbc63e3c883a6d04ac78e9416baef79aaea00ff166efe709e60488e58e"
+    }
+  ],
+  "inventarioNaoIncluiASiProprio": true,
+  "preservacaoWorkspaceLocalAntes": {
+    "identicos": 13,
+    "total": 13
+  },
+  "limites": [
+    "Somente conferencia CPU Linux, sem deploy/GPU/merge.",
+    "Testes 1035/1035 referem-se ao workspace local anterior, nao a execucao desta CI.",
+    "Arquivos locais preexistentes alterados nao incluidos."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "formato": "cosmos-referencia-cpu-manifesto-v1",
+  "escopo": "referencia-cpu-preparatoria",
+  "gpu": "pendente",
+  "entrada": {
+    "arquivo": "entrada-4-pombos-3-caixas.smt2",
+    "sha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd",
+    "semantica": "4 pombos; 3 caixas; exatamente uma caixa por pombo; no maximo um pombo por caixa",
+    "resultadoEsperado": "unsat"
+  },
+  "produtorConsultado": {
+    "nome": "cvc5",
+    "versao": "1.4.2",
+    "plataforma": "Win64-x86_64-static",
+    "url": "https://github.com/cvc5/cvc5/releases/download/cvc5-1.4.2/cvc5-Win64-x86_64-static.zip",
+    "arquivoReleaseSha256": "9055de9b724724890ba5a19cfdc98f68a8c0653284afa843096dec432a0f88c3",
+    "binarioLocalSha256": "868a0d7a5e3acba7d7e71b95c7a7f89fdc7b82d1ab8d2ea4a84ff067274bdf5a",
+    "origemPinArquivo": "digest do asset informado pela API publica oficial GitHub, conferido no download",
+    "origemPinBinario": "calculado localmente apos verificar o arquivo ZIP; nao e assinatura do fornecedor",
+    "argumentos": ["--dump-proofs", "--proof-format-mode=alethe", "--seed=0"]
+  },
+  "checker": {
+    "nome": "Carcara",
+    "estadoLocal": "indisponivel",
+    "binarioSha256": null,
+    "observacao": "Sem Rust/Carcara no PATH consultado; release consultado oferece somente Linux. Nao houve conferência semantica real nesta entrega."
+  }
+}

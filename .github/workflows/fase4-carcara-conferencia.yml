@@ -1,0 +1,67 @@
+name: Fase 4 - conferencia CPU Carcara (B GPU pendente)
+
+on:
+  push:
+    branches: ['codex/fase4-carcara-alethe']
+    paths:
+      - '.github/workflows/fase4-carcara-conferencia.yml'
+      - 'scripts/fase4-*.mjs'
+      - 'src/fase4/**'
+      - 'evidencias/fase4-cpu-referencia/**'
+      - 'evidencias/fase4-carcara-pin-aprovado.json'
+      - 'evidencias/fase4-carcara-recibo.template.json'
+      - 'FASE4_CARCARA_PUBLICACAO.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fase4-carcara-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  conferir-cpu:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Baixar candidato oficial e conferir pin aprovado antes de executar
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/fase4-ferramentas
+          curl --fail --silent --show-error --location --max-redirs 5 --connect-timeout 10 --max-time 60 \
+            --proto '=https' --proto-redir '=https' \
+            --output tmp/fase4-ferramentas/carcara-linux \
+            https://github.com/ufmg-smite/carcara/releases/download/carcara-1.1.0/carcara-linux
+          printf '%s  %s\n' fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda tmp/fase4-ferramentas/carcara-linux | sha256sum --check --strict
+          test "$(stat -c %s tmp/fase4-ferramentas/carcara-linux)" = 5402048
+          chmod u+x tmp/fase4-ferramentas/carcara-linux
+      - name: Conferir positivo e somente depois quatro negativos reais
+        run: node --experimental-strip-types scripts/fase4-carcara-conferencia.mjs "$GITHUB_WORKSPACE/tmp/fase4-ferramentas/carcara-linux"
+      - name: Evidencias publicas desta execucao (sem binario, cofres ou ambiente)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fase4-carcara-cpu-${{ github.sha }}
+          path: |
+            evidencias/fase4-run/*.json
+            evidencias/fase4-run/caso-1/entrada.smt2
+            evidencias/fase4-run/caso-1/proof.alethe
+            evidencias/fase4-run/caso-1/cert.json
+            evidencias/fase4-run/caso-2/entrada.smt2
+            evidencias/fase4-run/caso-2/proof.alethe
+            evidencias/fase4-run/caso-2/cert.json
+            evidencias/fase4-run/caso-3/entrada.smt2
+            evidencias/fase4-run/caso-3/proof.alethe
+            evidencias/fase4-run/caso-3/cert.json
+            evidencias/fase4-run/caso-4/entrada.smt2
+            evidencias/fase4-run/caso-4/proof.alethe
+            evidencias/fase4-run/caso-4/cert.json
+          if-no-files-found: warn
+          retention-days: 14

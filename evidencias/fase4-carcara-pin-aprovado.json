@@ -1,0 +1,39 @@
+{
+  "formato": "cosmos-carcara-pin-aprovacao-v1",
+  "estado": "pin-aprovado-por-declaracao-expressa-no-chat",
+  "release": "carcara-1.1.0",
+  "asset": "carcara-linux",
+  "bytesAprovados": 5402048,
+  "sha256EsperadoAprovado": "fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda",
+  "origemPinReferenciaPublica": "https://github.com/ufmg-smite/carcara/releases/tag/carcara-1.1.0",
+  "urlAsset": "https://github.com/ufmg-smite/carcara/releases/download/carcara-1.1.0/carcara-linux",
+  "hipoteseConfiancaAprovada": "confianca inicial no HTTPS do projeto oficial ufmg-smite/carcara",
+  "aprovacao": {
+    "tipo": "declaracao-expressa-do-usuario-nesta-conversa",
+    "referencia": "Mensagem do operador aprovando explicitamente este asset, digest, tamanho e hipotese de confianca",
+    "nomeCivilDeclaradoNestaMensagem": null,
+    "assinaturaCriptografica": null,
+    "registroLocalDeclaradoUtc": "2026-10-24T17:46:38.8647282Z",
+    "tempoAutenticado": false,
+    "declaracao": "Aprovo o uso, para a conferência CPU Linux documentada, do asset Carcara `carcara-1.1.0/carcara-linux`, SHA-256 `fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda`, tamanho 5.402.048 bytes, sob a hipótese de confiança inicial no HTTPS do projeto oficial `ufmg-smite/carcara`. Reconheço que o digest não é assinatura do fabricante e que a compatibilidade com a prova cvc5 1.4.2 ainda precisa ser demonstrada. Esta aprovação não autoriza commit, push, publicação da seleção, deploy ou execução GPU."
+  },
+  "autorizacoesConcedidasPorEstaDeclaracao": {
+    "usoDoPinNaConferenciaCpuLinuxDocumentada": true,
+    "commit": false,
+    "push": false,
+    "publicacaoSelecao": false,
+    "deploy": false,
+    "execucaoGpu": false
+  },
+  "estadoExecucao": {
+    "carcaraExecutado": false,
+    "runnerIniciado": false,
+    "compatibilidadeDemonstrada": false,
+    "bGpu": "pendente"
+  },
+  "limites": [
+    "Aprovacao humana expressa no chat, nao assinatura criptografica ou autenticacao civil.",
+    "Preserva o recibo historico de digest observado sem reescreve-lo.",
+    "Nao e recibo de execucao, veredito formal ou autorizacao de publicacao em Actions."
+  ]
+}

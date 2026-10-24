@@ -1,0 +1,178 @@
+{
+  "formato": "cosmos-fase4-carcara-recibo-v1",
+  "tipo": "template-nao-executado",
+  "estado": "preparacao",
+  "baseHistorica": {
+    "commitP1": "33e8c48e5e89b475c34c268a3ad7ea65f96c31f5",
+    "branchLocal": "codex/fase4-carcara-alethe",
+    "ciP1Historica": "40090389127",
+    "verificadorP1Sha256": "f80b54678ec4da70f4257c42c2904eefc64b07f897c59d7f3cb070d27a496021",
+    "verificadorPublicoHistorico": "17a016817c539658d4a92c01d8cb5284333ff115",
+    "observacao": "Referencias historicas; nao comprovam esta execucao. Fontes CPU ainda locais, ausentes do commit P1."
+  },
+  "execucao": {
+    "autorizacaoOperadorReferencia": null,
+    "inventarioFontesReferencia": null,
+    "inventarioFontesSha256": null,
+    "commitExecutadoSeAplicavel": null,
+    "ciRunIdSeAplicavel": null,
+    "ciRunUrlSeAplicavel": null,
+    "sistema": null,
+    "arquitetura": null,
+    "nodeVersao": null,
+    "inicioDeclaradoUtc": null,
+    "duracaoMs": null,
+    "tempoAutenticado": false,
+    "observacao": "Nenhum runner iniciado. Data declarada de runner nao e OTS. Nao registrar dump de ambiente ou caminhos privados."
+  },
+  "checker": {
+    "nome": "Carcara",
+    "releaseCandidato": "carcara-1.1.0",
+    "assetCandidato": "carcara-linux",
+    "versaoObservada": null,
+    "sha256EsperadoAprovado": null,
+    "origemPinReferenciaPublica": null,
+    "hipoteseConfiancaAprovada": null,
+    "sha256Observado": null,
+    "pinConferidoAntesDeExecutar": null,
+    "estado": "nao-disponibilizado",
+    "assinaturaDoBinarioVerificada": null,
+    "observacao": "Nao preencher pin com hash inventado. Calcular digest local nao autentica sozinho a origem; assinatura de commit nao autentica automaticamente asset."
+  },
+  "artefatos": {
+    "entrada": {
+      "arquivoPublico": "evidencias/fase4-cpu-referencia/entrada.smt2",
+      "sha256Esperado": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd",
+      "sha256ObservadoNoRunner": null
+    },
+    "prova": {
+      "arquivoPublico": "evidencias/fase4-cpu-referencia/proof.alethe",
+      "bytesEsperados": 5357,
+      "bytesObservadosNoRunner": null,
+      "sha256Esperado": "68c77a0feaaf9bc8ecb06a4b28b0bc8fca83225ce7f93c69fe5bff8b8e9db934",
+      "sha256ObservadoNoRunner": null
+    },
+    "certificado": {
+      "arquivoPublico": "evidencias/fase4-cpu-referencia/cert.json",
+      "sha256EsperadoNoInventarioConfiavel": null,
+      "sha256ObservadoNoRunner": null,
+      "produtorSha256Esperado": "868a0d7a5e3acba7d7e71b95c7a7f89fdc7b82d1ab8d2ea4a84ff067274bdf5a"
+    }
+  },
+  "positivo": {
+    "estado": "nao-executado",
+    "trabalhoRelativoNovo": "tmp/fase4-conferencia-carcara-1",
+    "comandoEfetivoSemSegredos": null,
+    "prazoMs": 20000,
+    "duracaoMs": null,
+    "exitCodeCli": null,
+    "resultadoCliArquivoPublico": null,
+    "resultadoCliSha256": null,
+    "estadoCliObservado": null,
+    "exitCodeCarcaraObservado": null,
+    "stdoutCarcaraObservado": null,
+    "diagnosticoDiretoArquivoPublico": null,
+    "diagnosticoDiretoSha256": null,
+    "observacao": "Exige pin conferido, CLI verificado-cpu, status zero e veredito exclusivo valid do checker real. Nao preencher com resultado de mock."
+  },
+  "negativos": [
+    {
+      "caso": "byte-adulterado-hash-antigo",
+      "escopo": "integridade-antes-do-checker",
+      "estado": "nao-executado",
+      "mutacaoExataReferenciaPublica": null,
+      "provaMutanteSha256": null,
+      "certificadoMutanteSha256": null,
+      "hashProvaRecalculadoNoCertificado": false,
+      "trabalhoRelativoNovo": null,
+      "exitCodeCli": null,
+      "estadoCliObservado": null,
+      "checkerExecutado": null,
+      "evidenciaReferenciaPublica": null,
+      "evidenciaSha256": null,
+      "classificacaoObservada": null
+    },
+    {
+      "caso": "prova-truncada-hash-recalculado",
+      "escopo": "estrutura-no-checker-real",
+      "estado": "nao-executado",
+      "mutacaoExataReferenciaPublica": null,
+      "provaMutanteSha256": null,
+      "certificadoMutanteSha256": null,
+      "hashProvaRecalculadoNoCertificado": null,
+      "trabalhoRelativoNovo": null,
+      "exitCodeCli": null,
+      "estadoCliObservado": null,
+      "checkerExecutado": null,
+      "exitCodeCarcara": null,
+      "duracaoMs": null,
+      "evidenciaReferenciaPublica": null,
+      "evidenciaSha256": null,
+      "classificacaoObservada": null
+    },
+    {
+      "caso": "passo-invalido-hash-recalculado",
+      "escopo": "semantica-no-checker-real",
+      "estado": "nao-executado",
+      "mutacaoExataReferenciaPublica": null,
+      "provaMutanteSha256": null,
+      "certificadoMutanteSha256": null,
+      "hashProvaRecalculadoNoCertificado": null,
+      "trabalhoRelativoNovo": null,
+      "exitCodeCli": null,
+      "estadoCliObservado": null,
+      "checkerExecutado": null,
+      "exitCodeCarcara": null,
+      "duracaoMs": null,
+      "evidenciaReferenciaPublica": null,
+      "evidenciaSha256": null,
+      "classificacaoObservada": null
+    },
+    {
+      "caso": "premissa-fora-do-problema-hash-recalculado",
+      "escopo": "premissas-autorizadas-no-checker-real",
+      "estado": "nao-executado",
+      "mutacaoExataReferenciaPublica": null,
+      "provaMutanteSha256": null,
+      "certificadoMutanteSha256": null,
+      "hashProvaRecalculadoNoCertificado": null,
+      "trabalhoRelativoNovo": null,
+      "exitCodeCli": null,
+      "estadoCliObservado": null,
+      "checkerExecutado": null,
+      "exitCodeCarcara": null,
+      "duracaoMs": null,
+      "evidenciaReferenciaPublica": null,
+      "evidenciaSha256": null,
+      "classificacaoObservada": null
+    }
+  ],
+  "preservacao": {
+    "workspaceOrigem13Pins": {
+      "estadoNestaExecucao": "nao-aferido",
+      "antesReferenciaPublica": null,
+      "depoisReferenciaPublica": null,
+      "identicos": null,
+      "totalEsperado": 13
+    },
+    "runnerSelecaoPublica": {
+      "estado": "nao-aferido",
+      "inventarioConferidoReferenciaPublica": null,
+      "observacao": "Selecao reduzida nao permite alegar 13/13 de arquivos ausentes."
+    }
+  },
+  "conclusao": {
+    "referenciaCpuFormal": "pendente",
+    "homologacaoWindows": "pendente",
+    "homologacaoLinux": "pendente",
+    "bGpu": "pendente",
+    "ots": "fora-deste-procedimento",
+    "limites": [
+      "Este arquivo e template; nao comprova execucao.",
+      "Indisponibilidade, timeout e falha de transporte nao comprovam rejeicao semantica.",
+      "Erro de parsing nao substitui negativo de inferencia invalida.",
+      "Positivo Linux nao certifica Windows nem computacao GPU.",
+      "Recibo JSON nao e assinatura, auditoria imutavel ou atestacao de hardware."
+    ]
+  }
+}

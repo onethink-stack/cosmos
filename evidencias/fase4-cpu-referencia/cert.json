@@ -1,0 +1,9 @@
+{
+  "formato": "cosmos-referencia-cpu-v1",
+  "escopo": "cpu-sem-atestacao-gpu",
+  "entradaSha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd",
+  "resultado": "unsat",
+  "provaSha256": "68c77a0feaaf9bc8ecb06a4b28b0bc8fca83225ce7f93c69fe5bff8b8e9db934",
+  "produtor": "cvc5",
+  "produtorSha256": "868a0d7a5e3acba7d7e71b95c7a7f89fdc7b82d1ab8d2ea4a84ff067274bdf5a"
+}

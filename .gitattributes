@@ -28,3 +28,6 @@ public/cosmos-502426c-resumo.txt.ots -text
 scripts/verificar-p1-selada.mjs text eol=lf
 scripts/validar-p1-ci.mjs text eol=lf
 evidencias/p1-groq-sha256-esperados.json text eol=lf
+# Referência CPU Fase 4: entrada e artefatos com digest sobre bytes exatos.
+src/fase4/entrada-4-pombos-3-caixas.smt2 -text
+evidencias/fase4-cpu-referencia/** -text

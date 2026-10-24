@@ -5,15 +5,15 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/copiar-z3.mjs && vite --host",
+    "dev": "vite --host",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:3-notebooks": "vitest run testes/teste-3-notebooks.test.ts --reporter verbose",
     "typecheck": "tsc --noEmit && tsc --noEmit -p servidor",
-    "build": "tsc --noEmit -p tsconfig.build.json && node scripts/copiar-z3.mjs && vite build --mode arquivo && node scripts/copiar-arquivo.mjs && vite build",
+    "build": "tsc --noEmit -p tsconfig.build.json && vite build --mode arquivo && vite build",
     "build:arquivo": "tsc --noEmit && vite build --mode arquivo",
     "build:tudo": "npm run build",
-    "preview": "node scripts/copiar-z3.mjs && vite preview --host",
+    "preview": "vite preview --host",
     "icones": "node scripts/gerar-branding-cosmos.mjs",
     "cifrar": "node --experimental-strip-types --no-warnings scripts/cifrar-sistema.ts",
     "motor:montar": "vite build --config servidor/vite.config.ts --logLevel warn",
@@ -27,18 +27,31 @@
     "v2:checkpoint": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/gerar-checkpoint-cosmos.mjs"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "@radix-ui/react-slot": "1.5.0",
+    "@scure/base": "2.4.0",
+    "@scure/bip32": "2.4.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
     "preact": "^11.0.1",
-    "tweetnacl": "1.0.3",
-    "z3-solver": "^5.2.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0",
+    "tweetnacl": "1.0.3"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
+    "@tailwindcss/vite": "4.3.3",
     "@types/node": "^22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "fake-indexeddb": "^6.2.5",
     "sharp": "0.35.5",
+    "tailwindcss": "4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vite-plugin-singlefile": "^2.3.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "z3-solver": "^5.2.0"
   }
 }

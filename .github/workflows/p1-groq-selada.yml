@@ -1,0 +1,43 @@
+name: P1 Groq selada - 995 testes e 13 hashes
+
+on:
+  push:
+    branches: ['codex/p1-groq-selada']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p1-groq-selada-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  selagem:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - name: Instalar o lockfile (sem auditoria automática)
+        run: npm ci --no-audit --no-fund
+      - name: Testes seriais, typecheck, dois builds e verificador
+        run: node scripts/validar-p1-ci.mjs
+      - name: Evidências do commit executado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-groq-selada-${{ matrix.os }}
+          path: |
+            tmp/p1-ci-testes.json
+            tmp/p1-ci-verificacao.json
+          if-no-files-found: warn

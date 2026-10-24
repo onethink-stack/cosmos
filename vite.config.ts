@@ -4,12 +4,35 @@ import preact from '@preact/preset-vite'
 import type { Plugin } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { defineConfig } from 'vitest/config'
-import pacoteZ3 from 'z3-solver/package.json' with { type: 'json' }
+import tailwindcss from '@tailwindcss/vite'
 import { PACOTE_COSMOS } from './src/dados/pacoteCosmos.ts'
 
-const VERSAO_Z3 = pacoteZ3.version
 // Não há VitePWA: o manifest canônico é o arquivo público, compartilhado pelos dois nomes.
 const MANIFEST_COSMOS = JSON.parse(readFileSync(new URL('./public/manifest.webmanifest', import.meta.url), 'utf8'))
+
+/** A entrega v3 não empacota nem serve o solver/bibliotecas do Caderno legado. */
+function somenteRuntimeV3(arquivo: boolean): Plugin {
+  return {
+    name: 'cosmos-v3-sem-runtime-legado',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (/(^|\/)z3(\/|$)|\/caderno-logico\.html(?:[?#]|$)/.test(req.url ?? '')) { res.statusCode = 404; res.end('Recurso legado fora da v3'); return }
+        next()
+      })
+    },
+    generateBundle() {
+      for (const id of this.getModuleIds()) {
+        if (/[\\/]node_modules[\\/]z3-solver[\\/]|[\\/]dados[\\/](biblioteca|teorias|tptp|z3)\.ts(?:\?|$)|[\\/]motor[\\/]z3(?:Modelo|worker)?\.ts(?:\?|$)/.test(id)) throw new Error(`Dependência legada no runtime v3: ${id}`)
+      }
+      if (arquivo) return
+      for (const entry of readdirSync('public', { withFileTypes: true })) {
+        if (!entry.isFile() || ['caderno-logico.html', 'cosmos-offline.html'].includes(entry.name)) continue
+        this.emitFile({ type: 'asset', fileName: entry.name, source: readFileSync(`public/${entry.name}`) })
+      }
+      this.emitFile({ type: 'asset', fileName: 'cosmos-offline.html', source: readFileSync('dist-arquivo/index.html') })
+    },
+  }
+}
 
 function conferirManifestCosmos(): Plugin {
   return {
@@ -61,7 +84,7 @@ function serviceWorker(): Plugin {
       })
       // só arquivos do topo de public/ (a pasta z3/, de 35 MB, entra no cache só quando usada)
       const publicos = readdirSync('public', { withFileTypes: true })
-        .filter((e) => e.isFile())
+        .filter((e) => e.isFile() && !['caderno-logico.html', 'cosmos-offline.html'].includes(e.name))
         .map((e) => e.name)
       const arquivos = [...new Set(['./', ...precache, ...publicos].map((f) => (f === './' ? f : `./${f}`)))].sort()
       const conteudoHtml = bundle['index.html']
@@ -83,8 +106,7 @@ function codigoSW(versao: string, arquivos: string[]): string {
   return `// Gerado no build. Cache-first: depois do primeiro acesso, tudo funciona offline.
 // Também acrescenta os cabeçalhos COOP/COEP (isolamento entre origens), que o
 // GitHub Pages não envia e que o Z3 (WebAssembly com threads) exige.
-const CACHE = 'caderno-logico-${versao}'
-const CACHE_Z3 = 'caderno-z3-${VERSAO_Z3}'
+const CACHE = 'cosmos-v3-${versao}'
 const ARQUIVOS = ${JSON.stringify(arquivos, null, 2)}
 
 self.addEventListener('install', (e) => {
@@ -98,7 +120,7 @@ self.addEventListener('activate', (e) => {
       .then((ks) =>
         Promise.all(
           ks
-            .filter((k) => (k.startsWith('caderno-logico-') && k !== CACHE) || (k.startsWith('caderno-z3-') && k !== CACHE_Z3))
+            .filter((k) => k.startsWith('caderno-logico-') || k.startsWith('caderno-z3-') || (k.startsWith('cosmos-v3-') && k !== CACHE))
             .map((k) => caches.delete(k)),
         ),
       )
@@ -113,15 +135,6 @@ function isolado(r) {
   h.set('Cross-Origin-Opener-Policy', 'same-origin')
   h.set('Cross-Origin-Resource-Policy', 'same-origin')
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h })
-}
-
-async function doZ3(req) {
-  const c = await caches.open(CACHE_Z3)
-  const guardado = await c.match(req, { ignoreSearch: true })
-  if (guardado) return guardado
-  const r = await fetch(req)
-  if (r.ok) await c.put(req, r.clone())
-  return r
 }
 
 // A página do app vem da rede quando há internet (assim uma versão nova chega
@@ -161,10 +174,6 @@ self.addEventListener('fetch', (e) => {
   const req = e.request
   const url = new URL(req.url)
   if (req.method !== 'GET' || url.origin !== self.location.origin) return
-  if (url.pathname.includes('/z3/')) {
-    e.respondWith(doZ3(req).then(isolado))
-    return
-  }
   // só o endereço do app recebe index.html (um download também chega como navegação)
   if (req.mode === 'navigate' && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
     e.respondWith(paginaDoApp().then(isolado))
@@ -206,8 +215,8 @@ function avisosDeLicenca(arquivo: boolean): Plugin {
       const texto = arquivo
         ? [
             AVISO_DO_CADERNO,
-            'Este arquivo inclui o Preact, o Z3 e um trecho do Vite, com os avisos abaixo, e dados do Unicode.',
-            ...['MIT-preact.txt', 'MIT-z3-solver.txt', 'MIT-vite.txt', 'Unicode-3.0.txt', 'Unlicense-tweetnacl.txt'].map((n) => readFileSync(`LICENSES/${n}`, 'utf8').trim()),
+            'Este arquivo inclui Preact, trechos de Vite, TweetNaCl e dados do Unicode, com os avisos abaixo.',
+            ...['MIT-preact.txt', 'MIT-vite.txt', 'Unicode-3.0.txt', 'Unlicense-tweetnacl.txt', 'MIT-scure-bip32.txt', 'MIT-scure-base.txt', 'MIT-noble-hashes.txt', 'MIT-noble-curves.txt', 'MIT-react.txt', 'MIT-react-dom.txt', 'MIT-shadcn.txt', 'MIT-radix-slot.txt', 'MIT-radix-compose-refs.txt', 'Apache-cva.txt', 'MIT-clsx.txt', 'MIT-tailwind-merge.txt', 'MIT-tailwindcss.txt', 'OFL-JetBrainsMono.txt'].map((n) => readFileSync(`LICENSES/${n}`, 'utf8').trim()),
             readFileSync('LICENSE', 'utf8').trim(),
           ].join('\n\n')
         : AVISO_DO_CADERNO
@@ -235,7 +244,7 @@ export default defineConfig(({ mode }) => {
   const arquivo = mode === 'arquivo'
   return {
     base: arquivo ? './' : '/cosmos/',
-    plugins: [preact(), conferirManifestCosmos(), avisosDeLicenca(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [exportarCosmos(), serviceWorker()])],
+    plugins: [preact({ reactAliasesEnabled: false, exclude: /src[\\/]interfaces[\\/]/ }), tailwindcss(), conferirManifestCosmos(), avisosDeLicenca(arquivo), somenteRuntimeV3(arquivo), ...(arquivo ? [semLinksExternos(), viteSingleFile()] : [exportarCosmos(), serviceWorker()])],
     publicDir: arquivo ? false : 'public',
     server: { headers: ISOLAMENTO },
     preview: { headers: ISOLAMENTO },
@@ -243,6 +252,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: arquivo ? 'dist-arquivo' : 'dist',
       emptyOutDir: true,
+      copyPublicDir: false,
     },
     test: {
       // Cada instância WASM do Z3 reserva 2 GiB nesta versão instalada.

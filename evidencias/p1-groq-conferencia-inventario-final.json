@@ -1,0 +1,62 @@
+[
+  {
+    "arquivo": "src/integracoes/groq-contratos.ts",
+    "esperado": "5ad0d09d71dba73be448b5c240db38d0b1e07dc680a5bef8001d7de15896f6f7",
+    "atual": "5ad0d09d71dba73be448b5c240db38d0b1e07dc680a5bef8001d7de15896f6f7",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/provedores/groq.ts",
+    "esperado": "221ff610e4e58f35b0f26cad6784724199f2f0ead0d289f68bcf8e66d0032f20",
+    "atual": "221ff610e4e58f35b0f26cad6784724199f2f0ead0d289f68bcf8e66d0032f20",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/groq-node.ts",
+    "esperado": "f6fbf760ecb1f1f259eb59dc672c140557d8cf5818e993cc56894f8ca380a011",
+    "atual": "f6fbf760ecb1f1f259eb59dc672c140557d8cf5818e993cc56894f8ca380a011",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/ponte-node.ts",
+    "esperado": "e1db625918eaf28f4bb225813e528cf61541934a255eac08a4cdc42ff3b2f563",
+    "atual": "e1db625918eaf28f4bb225813e528cf61541934a255eac08a4cdc42ff3b2f563",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/groq-cliente.ts",
+    "esperado": "91c08928a930229e0150a9d99601080b5c1c9eefbd84725ff4a037be58a7e51a",
+    "atual": "91c08928a930229e0150a9d99601080b5c1c9eefbd84725ff4a037be58a7e51a",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/GroqIntegracao.tsx",
+    "esperado": "f298587e0158c4e30ad57e286094f9b7053ece4c8e34885c961bcbf04aae7bf2",
+    "atual": "f298587e0158c4e30ad57e286094f9b7053ece4c8e34885c961bcbf04aae7bf2",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/Integracoes.tsx",
+    "esperado": "1308bb073ff8e9643e83617f9a915e1d20e14e24ad9a9c10a33ba00e2a2b280c",
+    "atual": "1308bb073ff8e9643e83617f9a915e1d20e14e24ad9a9c10a33ba00e2a2b280c",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/integracoes.css",
+    "esperado": "59ce35d22c12aad744c7700aa1679ca20b569ab559409f4c1e44bdc0250d99b9",
+    "atual": "59ce35d22c12aad744c7700aa1679ca20b569ab559409f4c1e44bdc0250d99b9",
+    "identico": true
+  },
+  {
+    "arquivo": "scripts/integracoes-p0.mjs",
+    "esperado": "4f078fdeda42be4bd95a9d30f8d0c6a4ec7cac118639906e61136209427d29e6",
+    "atual": "4f078fdeda42be4bd95a9d30f8d0c6a4ec7cac118639906e61136209427d29e6",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-groq.test.ts",
+    "esperado": "08f809f2038ff0497694ed6ad714c92ab01614bd07cad1084ac3ad2584f544ae",
+    "atual": "08f809f2038ff0497694ed6ad714c92ab01614bd07cad1084ac3ad2584f544ae",
+    "identico": true
+  }
+]

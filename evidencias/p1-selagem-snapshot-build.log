@@ -1,0 +1,72 @@
+vite v8.3.4 building client environment for arquivo...
+transforming...
+✓ 113 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: index-DX1z0HSd.js
+[plugin vite:singlefile] Inlining: style-FIyVlGBO.css
+computing gzip size...
+dist-arquivo/index.html  3,259.51 kB │ gzip: 2,101.71 kB
+
+✓ built in 2.29s
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 113 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/cosmos-502426c-resumo.txt                        0.06 kB │ gzip:     0.07 kB
+dist/cosmos-ots-status.json                           0.30 kB │ gzip:     0.21 kB
+dist/manifest.json                                    0.45 kB │ gzip:     0.21 kB
+dist/manifest.webmanifest                             0.45 kB
+dist/cosmos-502426c-resumo.txt.ots                    0.53 kB
+dist/LICENSES/MIT-radix-compose-refs.txt              1.06 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-radix-slot.txt                      1.06 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-shadcn.txt                          1.06 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-tailwind-merge.txt                  1.07 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-tailwindcss.txt                     1.07 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-preact.txt                          1.08 kB │ gzip:     0.67 kB
+dist/LICENSES/MIT-react-dom.txt                       1.08 kB │ gzip:     0.66 kB
+dist/LICENSES/MIT-react.txt                           1.08 kB │ gzip:     0.66 kB
+dist/LICENSES/MIT-z3-solver.txt                       1.09 kB │ gzip:     0.65 kB
+dist/LICENSES/MIT-vite.txt                            1.10 kB │ gzip:     0.67 kB
+dist/LICENSES/MIT-clsx.txt                            1.10 kB │ gzip:     0.66 kB
+dist/LICENSES/MIT-noble-curves.txt                    1.10 kB │ gzip:     0.69 kB
+dist/LICENSES/MIT-noble-hashes.txt                    1.10 kB │ gzip:     0.69 kB
+dist/LICENSES/MIT-scure-base.txt                      1.11 kB │ gzip:     0.69 kB
+dist/LICENSES/MIT-scure-bip32.txt                     1.12 kB │ gzip:     0.69 kB
+dist/LICENSES/Unlicense-tweetnacl.txt                 1.21 kB │ gzip:     0.71 kB
+dist/LICENSES/Unicode-3.0.txt                         1.99 kB │ gzip:     1.07 kB
+dist/favicon-32x32.png                                2.78 kB
+dist/favicon.ico                                      2.80 kB
+dist/LICENCAS.md                                      3.90 kB
+dist/index.html                                       4.12 kB │ gzip:     1.75 kB
+dist/LICENSES/OFL-JetBrainsMono.txt                   4.39 kB │ gzip:     1.97 kB
+dist/sw.js                                            4.57 kB
+dist/THIRD_PARTY_NOTICES.md                           4.82 kB
+dist/cosmos-checkpoint-v1.json                        7.31 kB │ gzip:     1.27 kB
+dist/LICENSES/Apache-2.0.txt                          9.72 kB │ gzip:     3.53 kB
+dist/LICENSES/Apache-cva.txt                         10.75 kB │ gzip:     3.72 kB
+dist/cosmos-502426c.json                             12.33 kB │ gzip:     3.01 kB
+dist/dist/cosmos-502426c.json                        12.33 kB │ gzip:     3.01 kB
+dist/LICENSES/CC-BY-4.0.txt                          18.65 kB │ gzip:     5.95 kB
+dist/LICENSE                                         34.52 kB
+dist/apple-touch-icon.png                            75.89 kB
+dist/icone-192.png                                   86.82 kB
+dist/pwa-192x192.png                                 86.82 kB
+dist/assets/JetBrainsMono-Regular-CA-Os4ii.woff2     92.38 kB
+dist/cosmos-app.png                                 589.80 kB
+dist/icone-512.png                                  589.80 kB
+dist/icone-maskable-512.png                         589.80 kB
+dist/pwa-512x512.png                                589.80 kB
+dist/assets/cosmos-moeda-oficial-_q78Nhl8.png     1,774.62 kB
+dist/cosmos-offline.html                          3,259.51 kB │ gzip: 2,101.71 kB
+dist/assets/index-cvn5yT4M.css                      162.00 kB │ gzip:    30.89 kB
+dist/assets/index-Nip6CZpC.js                       536.37 kB │ gzip:   175.06 kB
+
+✓ built in 1.99s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

@@ -6,3 +6,22 @@ especificacao/provas-t1/** text eol=lf
 especificacao/provas-t1/independente/** -text
 # os registros de exemplo do formato aberto: os arquivos dos certificados têm o SHA-256 no registro
 especificacao/registros-v1/** text eol=lf
+
+# Selagem P1: preservar os bytes auditados também no checkout Windows/Linux.
+# config.ts contém CRLF; api-node.ts/servidor.ts v2 têm terminadores mistos.
+# -text evita que Git altere os SHA-256 ao adicionar ou extrair esses arquivos.
+package.json -text
+package-lock.json -text
+src/dados/cadeia-F0-F4.json -text
+src/dados/cadeia-outras-F5-F8.json -text
+src/dados/elos-assinados.json -text
+src/dados/selo-publico.json -text
+src/integracoes/contratos.ts -text
+src/integracoes/politica.ts -text
+src/interfaces/config.ts -text
+src/ui/icons/cosmos-moeda-oficial.png -text
+src/v2/api-node.ts -text
+src/v2/servidor.ts -text
+scripts/verificar-p1-selada.mjs text eol=lf
+scripts/validar-p1-ci.mjs text eol=lf
+evidencias/p1-groq-sha256-esperados.json text eol=lf

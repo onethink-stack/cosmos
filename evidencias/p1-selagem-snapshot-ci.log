@@ -1,0 +1,685 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run --maxWorkers=1 --reporter=default --reporter=json --outputFile=tmp/p1-ci-testes.json
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica/tmp/p1-selada-snapshot
+
+ ❯ testes/z3.test.ts (24 tests | 24 skipped) 63ms
+   ↓ Z3: parâmetros reproduzíveis e prazo finito (3)
+     ↓ aplica seed e prazo a cada solver e repete o mesmo veredito
+     ↓ recusa prazo ilimitado, fracionário ou fora do uint32
+     ↓ recusa o prazo original inválido antes de reduzi-lo para a tentativa com núcleo
+   ↓ Z3: mesma semântica do motor finito, sem limite de tamanho (5)
+     ↓ T1 e T2 com os axiomas
+     ↓ prova consequência: dos axiomas segue ∃x (x ∈ A)
+     ↓ igualdade e funções
+     ↓ o que só tem modelo infinito: o Z3 não acusa contradição (responde "não sei")
+     ↓ lógica modal: □, ◇ e crenças KD45
+   ↓ Z3 com números reais (7)
+     ↓ contas e comparações com constantes
+     ↓ quantificadores sobre ℝ
+     ↓ funções numéricas: h decrescente e positiva ⟹ 1/h crescente
+     ↓ sem h > 0 não segue: o Z3 não acusa contradição
+     ↓ números e objetos juntos
+     ↓ inteiros (ℤ): só os números inteiros
+     ↓ símbolos que misturam números e objetos (fichas com o tipo de cada argumento)
+   ↓ TPTP com aritmética (TFF) (6)
+     ↓ $int vira ℤ, as contas viram contas, e o Z3 confere
+     ↓ quem devolve $int é inteiro: sem essa lei, n poderia ser 2,5
+     ↓ símbolos que misturam objetos e números ganham o tipo de cada argumento
+     ↓ números do TPTP: negativos, frações e notação científica
+     ↓ $distinct: dois a dois diferentes
+     ↓ racionais viram reais; multiplicar racionais desconhecidos não é lido (ℚ ≠ ℝ aí)
+   ↓ Z3: prova para qualquer tamanho, com o núcleo (as leis que a prova usou) (2)
+     ↓ o inverso do inverso: provado, e o núcleo não tem a lei que não tem nada a ver
+     ↓ cancelamento: provado (vale também em grupos infinitos)
+   ↓ Z3: o que só vale em cenários finitos não é provado (1)
+     ↓ injetiva ⟹ sobrejetiva: vale em todo cenário finito, mas o Z3 não prova (falha nos naturais)
+ ✓ testes/gramatica-oraculos.test.ts (14 tests) 54752ms
+   ✓ oráculos independentes: árvores sorteadas, escritas pelos dois impressores (5)
+     ✓ com todos os parênteses, o leitor monta a árvore sorteada 4432ms
+     ✓ só com os parênteses necessários, também 1310ms
+     ✓ transformações que não mudam a árvore: parênteses em volta, grafias ASCII, espaços 5978ms
+     ✓ E16: as duas formas da mensagem, com a fórmula inteira, são as fórmulas certas 2510ms
+   ✓ todos os textos de até 5 peças de um alfabeto pequeno (1)
+     ✓ nunca quebram; aceitos, imprimir e o impressor 2 leem de volta a mesma árvore 25808ms
+   ✓ quantificadores aninhados: a regra de consumo conferida pelo texto (2)
+     ✓ nas 2.000 árvores sorteadas, nos dois impressores 5910ms
+     ✓ 1.000 árvores com metade dos nós quantificadores: o leitor monta a árvore e cada escopo bate com o texto 3536ms
+   ✓ expansão conferida por um oráculo próprio: ⊆, ⋂, ⋃, ∅, ∈, ∉ e domínios, com nomes que colidem (3)
+     ✓ 3.000 fórmulas: a árvore e a árvore expandida são as do oráculo, inclusive a variável nova 1950ms
+     ✓ o sentido não muda: em mundos finitos, a expandida vale exatamente quando a original vale 1813ms
+   ✓ prioridade dos diagnósticos: falhas de várias etapas no mesmo texto (1)
+     ✓ 3.000 textos: vale a falha da etapa mais cedo, com as posições certas 1353ms
+ ✓ testes/conta-local.test.ts (21 tests) 39423ms
+   ✓ Dados cifrados, backup e persistência concorrente (4)
+     ✓ autentica titular e cifra; dados errados ou outra chave não são tratados como vazios 1374ms
+     ✓ backup valida metadados e não contém seed ou chave privada em claro 801ms
+   ✓ Fluxo completo da conta de teste (11)
+     ✓ reutiliza cofre V4, mantém dados cifrados entre bloqueio e nova entrada 2923ms
+     ✓ senha errada não desbloqueia, e criar/restaurar não sobrescreve cofre existente 2592ms
+     ✓ assina transferência, exige a senha, recusa repetição e reconstrói saldo 8168ms
+     ✓ backup restaura dados e ledger; restauração com senha errada não grava cofre 6364ms
+     ✓ conflito externo de dados impede salvar e impede exportar backup desatualizado 1341ms
+     ✓ restauração retoma após quota falhar ao gravar cofre, sem substituir bytes de dados 5533ms
+     ✓ backup de perfil válido mas de outro cofre não é restaurado 2333ms
+     ✓ bloquear uma transferência enfileirada impede sua gravação 2288ms
+     ✓ importação preserva prefixo mais longo e recusa fork assinado 1661ms
+     ✓ recusa operações bloqueadas, cofre alterado, e rede pública 1298ms
+     ✓ bloqueia automaticamente por inatividade sem reter senha ou dados no snapshot 1521ms
+ ✓ testes/motor-logico.test.ts (28 tests) 16701ms
+   ✓ conjunto grande demais para o motor finito (4)
+     ✓ separa as notas sem nome em comum com as outras: a rodada segue com o resto, e o Z3 confere o que ficou à parte 2061ms
+     ✓ tudo ligado: nada dá para separar; fica tudo para o Z3, que pode achar a contradição 1013ms
+   ✓ o Z3 confere o "segue até N" do motor finito (6)
+     ✓ o motor finito diz "segue" (até N) — e sem o Z3 isso não vira "provado" 2025ms
+     ✓ segundo modelo (z3Curto): o Z3 faz uma tentativa curta e não insiste minutos; sem isso, insiste até o prazo 4044ms
+     ✓ o Z3 acha o cenário infinito: deixa de "seguir" 2016ms
+     ✓ o Z3 prova: fica "provado", e as notas são as do núcleo da prova 1035ms
+     ✓ as notas que o conselheiro sugere vão sozinhas ao Z3: provado com elas, o núcleo vale (e as outras nem entram) 2040ms
+     ✓ o que não decidiu a tempo também vai para o Z3 (mesmo sem aprofundamento), e provado vira "segue" com o núcleo 2021ms
+ ✓ testes/limites.test.ts (20 tests) 8848ms
+   ✓ limites do parser: erro controlado em vez de estourar a pilha (7)
+     ✓ cadeia longa: recusada acima do máximo, aceita e usada pelo motor abaixo dele 832ms
+     ✓ entradas de 100 mil níveis ou termos: erro com código, nunca exceção 5753ms
+   ✓ quadro KD45 de modelos vindos de fora (7)
+     ✓ todas as relações de 1 a 4 mundos: o resultado bate com a definição calculada de outro jeito 1946ms
+ ✓ testes/v4-carteira-localnet.test.ts (14 tests) 7869ms
+   ✓ Cofre e identidade V4 somente teste (10)
+     ✓ nova geração tem sal/IV/cifra distintos e não admite senha curta 781ms
+     ✓ senha incorreta e adulteração da cifra, sal ou IV falham na autenticação 2898ms
+     ✓ mesmo cofre deriva deterministamente no caminho autorizado e índices diferentes divergem 2342ms
+(node:24980) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ testes/regressao-admissao-v2.test.ts (7 tests) 1360ms
+   ✓ admissão multiusuário v2 (7)
+     ✓ reconstrói índice somente após conferir novamente todas as assinaturas 344ms
+ ✓ testes/elosCosmos.test.ts (10 tests) 2882ms
+   ✓ assinaturas dos elos Cosmos (10)
+     ✓ confere os nove elos por C1–C8 e vincula seus hashes à chave fixada 745ms
+     ✓ recusa assinatura isolada alterada, selo falso e chave substituída 325ms
+     ✓ confere o pacote público com nove fases e sem chave privada 729ms
+     ✓ recusa F8 adulterada e a remoção conjunta dos quatro elos finais 552ms
+ ✓ testes/regressao-envelope.test.ts (6 tests) 3246ms
+   ✓ regressão do envelope Cosmos v1 (6)
+     ✓ recusa adulteração externa de formato 523ms
+     ✓ recusa adulteração externa de carimbo_ots 304ms
+     ✓ não ignora fases do envelope quando o chamador passa fases válidas 444ms
+     ✓ recusa campos externos desconhecidos e campos obrigatórios ausentes 831ms
+     ✓ distingue cadeia interna válida de envelope completo 856ms
+ ✓ testes/cadeia.test.ts (3 tests) 3908ms
+   ✓ os exemplos de cadeia-v1 (2)
+     ✓ cada cadeia dá o veredito esperado, com o código e o elo do defeito, e o resumo nas aceitas 1148ms
+     ✓ cada par de versões dá a relação esperada 1008ms
+   ✓ três notebooks trocam cadeias por arquivo (1)
+     ✓ cada um aceita as cadeias dos outros e acusa qualquer alteração 1747ms
+ ❯ testes/gramatica.test.ts (203 tests | 3 skipped) 2975ms
+   ✓ gramática normativa: cada exemplo do pacote é lido como o arquivo diz (186)
+     ✓ versão m2, 185 exemplos 5ms
+     ✓ G001 P(a) 6ms
+     ✓ G002 P(a, f(b)) 1ms
+     ✓ G003 x_i = y 1ms
+     ✓ G004 xᵢ = y 1ms
+     ✓ G005 x' = x'' 1ms
+     ✓ G006 a ≠ b 1ms
+     ✓ G007 a != b 1ms
+     ✓ G008 a ∈ A ⋂ B 2ms
+     ✓ G009 A ⋂ B ⊆ C 1ms
+     ✓ G010 (A ⋃ B) ⊆ C 1ms
+     ✓ G011 x + 2 · y ≤ 3 1ms
+     ✓ G012 −x^2 = −4 1ms
+     ✓ G013 2^3^2 = 512 0ms
+     ✓ G014 a ∈ ∅ 0ms
+     ✓ G015 P(a) ∨ Q(a) ∧ R(a) 1ms
+     ✓ G016 P(a) ⟹ Q(a) ⟹ R(a) 1ms
+     ✓ G017 P(a) ⟺ Q(a) ⟺ R(a) 1ms
+     ✓ G018 ¬P(a) ∧ Q(a) 1ms
+     ✓ G019 ~P(a) & Q(a) -> R(a) 1ms
+     ✓ G020 ∀x P(x) ⟹ Q(b) 2ms
+     ✓ G021 (∀x P(x)) ⟹ Q(b) 1ms
+     ✓ G022 ∀x (P(x)) ⟹ Q(b) 1ms
+     ✓ G023 ∀x (P(x) ⟹ Q(b)) 1ms
+     ✓ G024 ¬∀x P(x) ∨ Q(b) 1ms
+     ✓ G025 P(a) ∧ ∀x P(x) ⟹ Q(b) 1ms
+     ✓ G026 ∀x∈S P(x) 1ms
+     ✓ G027 ∃x∈ℝ x · x = 2 3ms
+     ✓ G028 ∀x ∃y R(x, y) 1ms
+     ✓ G029 ∀x (P(x) ∧ ∀x Q(x)) 1ms
+     ✓ G030 □P(a) ⟹ ◇P(a) 1ms
+     ✓ G031 B[Igreja Católica] P(a) ∧ Q(a) 1ms
+     ✓ G032 B[x] B[y] P(a) 0ms
+     ✓ G033 []P(a) -> <>P(a) 0ms
+     ✓ G034 P(x) 0ms
+     ✓ G035 (∀x P(x)) ∧ Q(x) 1ms
+     ✓ G036 A ⟹ B 1ms
+     ✓ G037 A ⟹ B 1ms
+     ✓ G038 P(a 0ms
+     ✓ G039 P(a) ∧ 0ms
+     ✓ G040 P(a) Q(a) 0ms
+     ✓ G041 ¬a 0ms
+     ✓ G042 ∀x 1ms
+     ✓ G043 a = b = c 0ms
+     ✓ G044 f() = a 0ms
+     ✓ G045 P(a) $ Q(a) 0ms
+     ✓ G046 ℝ = a 0ms
+     ✓ G047 B[] P(a) 0ms
+     ✓ G048 (A ⋂ B) = C 0ms
+     ✓ G049 a ≠ a 0ms
+     ✓ G050 P (a) 0ms
+     ✓ G051 ação = b 1ms
+     ✓ G052 ∀x P(x) ∧ Q(x) 1ms
+     ✓ G053 ∃x (P(x) ∧ Q(x)) 1ms
+     ✓ G054 ∀x ∃y R(x, y) ∧ Q(b) 1ms
+     ✓ G055 ∀x∈S P(x) ⟹ Q(x) 1ms
+     ✓ G056 ∀x P(x) ⟹ Q(b) ⟺ R(b) 1ms
+     ✓ G057 x² = 4 1ms
+     ✓ G058 x^2 = 4 0ms
+     ✓ G059 x2 = 4 0ms
+     ✓ G060 xⁿ = y 1ms
+     ✓ G061 ²x = 4 1ms
+     ✓ G062 ∀x P(x²) 1ms
+     ✓ G063 B[Ana²] P(a) 1ms
+     ✓ G064 xᵃ = y 0ms
+     ✓ G065 x⁺ = y 0ms
+     ✓ G066 ٣x = y 0ms
+     ✓ G067 x₁ = y 0ms
+     ✓ G068 x_1 = y 0ms
+     ✓ G069 2x = 4 1ms
+     ✓ G070 B [Ana] P(a) 1ms
+     ✓ G071 f (a) = b 0ms
+     ✓ G072 P(a)∧Q(a) 0ms
+     ✓ G073 (P(a) ∧ ∀x P(x)) ⟹ Q(b) 1ms
+     ✓ G074 ∀x ∃y P(x) ⟹ Q(y) 1ms
+     ✓ G075 (∀x ∃y R(x, y)) ∧ Q(b) 1ms
+     ✓ G076 ∀x (∃y R(x, y)) ∧ Q(x) 1ms
+     ✓ G077 ∀x P(x) ∧ (∃y Q(y) ⟹ R(x)) ∨ S(x) 1ms
+     ✓ G078 ¬(∀x P(x) ∨ ∃y Q(y)) ∧ R(a) 1ms
+     ✓ G079 ∀x (∀y R(x, y) ⟹ ∃z R(y, z)) ⟹ P(x) 1ms
+     ✓ G080 ∃x ∀y R(x, y) ∧ ∃z P(z) ⟹ Q(x) 1ms
+     ✓ G081 ∀x ∃y (P(x)) ∧ Q(y) 0ms
+     ✓ G082 (∀x P(x) ∧ Q(x)) ∨ ∃y R(y, y) ⟹ P(y) 1ms
+     ✓ G083 B[Ana] ∀x P(x) ∧ Q(x) 0ms
+     ✓ G084 ∀x∈A ∃y∈B R(x, y) ∧ P(x) 0ms
+     ✓ G085 ∀x (∃y (R(x, y)) ∨ Q(y)) ∧ P(x) 1ms
+     ✓ G086 A ⊆ B 0ms
+     ✓ G087 z ∈ A ∧ A ⊆ B 0ms
+     ✓ G088 A ⊆ B ∧ B ⊆ C 0ms
+     ✓ G089 ∀z (z ∈ A ∧ A ⊆ B) 0ms
+     ✓ G090 a ⊆ b ⟹ ∀z P(z) 0ms
+     ✓ G091 z ∈ A ∧ z1 ∈ B ∧ A ⊆ B 0ms
+     ✓ G092 z1 ∈ A ∧ A ⊆ B 0ms
+     ✓ G093 z ⊆ z1 0ms
+     ✓ G094 z(a) ∧ A ⊆ B 0ms
+     ✓ G095 f(z) ⊆ B 0ms
+     ✓ G096 B[z] (A ⊆ B) 0ms
+     ✓ G097 ∅ ⊆ A 0ms
+     ✓ G098 A ⊆ ∅ 0ms
+     ✓ G099 ∀z∈A (z ⊆ B) 0ms
+     ✓ G100 x ∈ A ⋂ B ⋃ C 0ms
+     ✓ G101 x ∈ A ⋃ B ⋂ C 0ms
+     ✓ G102 x ∉ A ⋃ B 0ms
+     ✓ G103 x ∉ A ⋂ (B ⋃ C) 0ms
+     ✓ G104 A ⋂ B ⊆ C ⋃ D 0ms
+     ✓ G105 ∀x∈A ⋂ B P(x) 1ms
+     ✓ G106 ∃x∈A P(x) 1ms
+     ✓ G107 ∃x∈A ⋃ B x ∉ C 1ms
+     ✓ G108 x ∈ ∅ ⋃ A 0ms
+     ✓ G109 x ∈ A ⋂ ∅ 0ms
+     ✓ G110 ∀x∈x P(x) 1ms
+     ✓ G111 ∀x∈A ∀x∈x P(x) 1ms
+     ✓ G112 ∃y∈f(y) Q(y) 1ms
+     ✓ G113 ∀x∈A ∀y∈x P(y) 1ms
+     ✓ G114 P(a $ ∧ 0ms
+     ✓ G115 a ≠ a ∧ (P(b $ ∧ 0ms
+     ✓ G116 \foo ∧ ¬ $ 1ms
+     ✓ G117 x⁺ = y ∧ (P(a) 0ms
+     ✓ G118 _ ∧ P(a 0ms
+     ✓ G119 (P(a) ∧ Q(b) 0ms
+     ✓ G120 ((P(a) 0ms
+     ✓ G121 P(a)) ∧ ¬ 0ms
+     ✓ G122 P(a)) ∧ (Q(b) 0ms
+     ✓ G123 a ≠ a ∧ P(b ∧ 0ms
+     ✓ G124 P(a) Q(b) ∧ a ≠ a 1ms
+     ✓ G125 a ≠ a ∧ ∧ P(b) 1ms
+     ✓ G126 a ≠ a ∧ (∀x P(x)) ∧ Q(x) ∧ x² = y 1ms
+     ✓ G127 f(a) = b ∧ f(a, b) = c 1ms
+     ✓ G128 x ≠ x ∧ ∀x P(x) 1ms
+     ✓ G129 ∀a P(a) 0ms
+     ✓ G130 ∀P Q(P) 0ms
+     ✓ G131 P(a, a) 1ms
+     ✓ G132 f = a 0ms
+     ✓ G133 a(b) = b 0ms
+     ✓ G134 n = a 0ms
+     ✓ G135 n < a 0ms
+     ✓ G136 P(n) 0ms
+     ✓ G137 f(a) = n 0ms
+     ✓ G138 g(n, a) = a 0ms
+     ✓ G139 g(a, n) = a 0ms
+     ✓ G140 ∀x∈ℝ x = a 1ms
+     ✓ G141 n + a = n 0ms
+     ✓ G142 (a) < n 0ms
+     ✓ G143 x + 1 = y 0ms
+     ✓ G144 Pessoa(Joao) 1ms
+     ✓ G145 Pesoa(Joao) 1ms
+     ✓ G146 (Pesoa(Joao)) 1ms
+     ✓ G147 Pessoa(Maria) 1ms
+     ✓ G148 Pessoa(Joa) 0ms
+     ✓ G149 Pessoa(ab) 0ms
+     ✓ G150 Pesoa(Joao) ∧ Pesoa(Maria) 1ms
+     ✓ G151 Pessoa(x) ∧ ∀x Mortal(x) 0ms
+     ✓ G152 Mortal(x²) 0ms
+     ✓ G153 Rato(Joao) 1ms
+     ✓ G154 x ∈ A ⋂/ B 0ms
+     ✓ G155 a ++b = c 0ms
+     ✓ G156 a − · b = c 0ms
+     ✓ G157 a / −]b = c 4ms
+     ✓ G158 a ≤= b 0ms
+     ✓ G159 a ≤ / b 0ms
+     ✓ G160 ,P(a) 0ms
+     ✓ G161 ∧ P(a) 0ms
+     ✓ G162 (P(a) ◇Q(b)) ∧ R(c) 0ms
+     ✓ G163 −(a ¬b) = c 0ms
+     ✓ G164 P(f(a ¬b)) 0ms
+     ✓ G165 P(f(a b)) 0ms
+     ✓ G166 (a = b) = c 0ms
+     ✓ G167 0 / Aⱼ < 1 0ms
+     ✓ G168 0.5 ≥ a_1 0ms
+     ✓ G169 ∀x 1 < A_x 0ms
+     ✓ G170 ∀x 1 < h(x) 0ms
+     ✓ G171 z ∈ (A) 0ms
+     ✓ G172 ((x² = y)) 0ms
+     ✓ G173 (B[Ana] (x² = y ⟺ x² ∈ B)) 1ms
+     ✓ G174 ∃u∈ℝ ∃u∈u P(u) 0ms
+     ✓ G175 x_² = y 0ms
+     ✓ G176 ∀x² P(x²) 0ms
+     ✓ G177 P(a) ∨, Q(b) 0ms
+     ✓ G178 ∃y∈] P(y) 0ms
+     ✓ G179 P(a) ⟹ ] Q(b) 0ms
+     ✓ G180 P(a)﻿∧ Q(b) 0ms
+     ✓ G181 P(a)∧ Q(b) 0ms
+     ✓ G182 P(a)∧ Q(b) 0ms
+     ✓ G183 P(a) ∧　Q(b) 0ms
+     ✓ G184 P(𑎀) 0ms
+     ✓ G185 P(𞗐x) ∧ 𐵐 = a 0ms
+   ✓ o léxico e os diagnósticos do pacote batem com o Caderno (4)
+     ✓ os espaços e as letras do pacote são os que o léxico usa (Unicode 16.0, não o do ambiente) 8ms
+     ✓ cada grafia vira o símbolo que o arquivo diz 6ms
+     ✓ os sobrescritos do E17 são os que o validador avisa 2ms
+     ✓ o arquivo de diagnósticos tem os códigos do Caderno, E0 a E18, cada um com o seu inicio 1ms
+   ✓ E16: aviso de escopo, nunca erro, e dá para desligar (4)
+     ✓ mostra a leitura do Caderno e a alternativa com parênteses 2ms
+     ✓ desligado, some o aviso e a árvore fica igual 2ms
+     ✓ com o corpo entre parênteses não há aviso, e a fórmula é a mesma 1ms
+     ✓ E14 e E16 não se repetem no mesmo quantificador 0ms
+   ✓ caracteres fora do plano básico do Unicode contam como um caractere só (2)
+     ✓ 𝑥 e 𝒜 são letras e começam nomes 0ms
+     ✓ um emoji é um só E8, e as posições contam pontos de código 1ms
+   ✓ E17: sobrescrito em nome é aviso, e o nome continua sendo outro nome (2)
+     ✓ sugere a potência com ^ quando o sobrescrito está no fim 0ms
+     ✓ x² não é ligado por ∀x: é uma constante 1ms
+   ✓ testes gerados: o leitor nunca quebra, e imprimir e ler de novo dá a mesma árvore (2)
+     ✓ 3.000 fórmulas sorteadas: imprimir a árvore e ler de novo dá a mesma árvore 2405ms
+     ✓ 3.000 textos aleatórios com os símbolos da linguagem: sempre árvore ou erro, nunca exceção 367ms
+   ❯ escopo do quantificador: as duas leituras são fórmulas diferentes em todos os componentes (3)
+     ↓ a escrita sem parênteses é a mesma fórmula que a explícita
+     ↓ motor finito: com P(c), ¬P(d) e ¬Q(b), a leitura do Caderno é falsa e a dos livros segue
+     ↓ Z3: as mesmas duas respostas, para qualquer tamanho
+ ✓ testes/integracoes-api.test.ts (56 tests) 2760ms
+   ✓ P0 tarefa 4: orçamento e execução pela fronteira autenticada (10)
+     ✓ duplicatas concorrentes compartilham resultado; outro id respeita concorrência 323ms
+     ✓ expiração interrompe execução pendente sem esperar atraso do adaptador 303ms
+   ✓ P0 tarefa 3: teste explícito simulado sob a fronteira HTTP (12)
+     ✓ desconexão cancela espera e libera a exclusão mútua 406ms
+ ❯ testes/traducao-z3.test.ts (44 tests | 44 skipped) 56ms
+   ❯ tradução para o Z3: cada exemplo do pacote dá o veredito que o arquivo diz (44)
+     ↓ a versão do Z3 é a registrada no pacote: trocar de versão é uma decisão, não um acaso
+     ↓ versão t1, 42 exemplos, e os dois motores nunca se contradizem
+     ↓ Z01 constantes rígidas
+     ↓ Z02 funções de objeto variam com o mundo
+     ↓ Z03 ∈ varia com o mundo
+     ↓ Z04 predicados variam com o mundo
+     ↓ Z05 constantes numéricas rígidas
+     ↓ Z06 funções numéricas rígidas
+     ↓ Z07 função de objeto com argumento numérico varia com o mundo
+     ↓ Z08 predicado com argumento numérico varia com o mundo
+     ↓ Z09 as fórmulas valem no mundo real, que é um dos mundos
+     ↓ Z10 □ vale também no mundo real
+     ↓ Z11 S5: axioma T
+     ↓ Z12 S5: axioma 4
+     ↓ Z13 S5: axioma 5
+     ↓ Z14 ◇ e ◇¬ juntos
+     ↓ Z15 crença não é verdade (sem T)
+     ↓ Z16 KD45: D (serial)
+     ↓ Z17 KD45: 4 (transitiva)
+     ↓ Z18 KD45: 5 (euclidiana)
+     ↓ Z19 titulares independentes
+     ↓ Z20 □ chega aos mundos de cada titular
+     ↓ Z21 crer numa necessidade é tê-la (□ sobre todos os mundos)
+     ↓ Z22 crença e possibilidade
+     ↓ Z23 domínio constante (Barcan)
+     ↓ Z24 domínio não vazio
+     ↓ Z25 igualdade e substituição
+     ↓ Z26 ⟺ como igualdade de verdades
+     ↓ Z27 ⊆ expandido
+     ↓ Z28 ⋂ expandido
+     ↓ Z29 ∅: nada pertence
+     ↓ Z30 ∅ ⊆ qualquer conjunto
+     ↓ Z31 ∀x∈S expandido
+     ↓ Z32 número mais um
+     ↓ Z33 raiz de 2 nos reais
+     ↓ Z34 raiz de 2 nos inteiros
+     ↓ Z35 raiz de 2 com ∃x∈ℝ
+     ↓ Z36 potência à direita
+     ↓ Z37 quadrado não negativo
+     ↓ Z38 ímpar não é dobro
+     ↓ Z39 divisão por zero dá algum número
+     ↓ Z40 divisão por zero é função do numerador
+     ↓ Z41 função numérica é função
+     ↓ Z42 função numérica quantificada
+ ✓ testes/regressao-ots.test.ts (3 tests) 2297ms
+   ✓ OTS: vínculo real e estados sem confirmação inventada (3)
+     ✓ a leitura local da prova real não inventa confirmação Bitcoin 841ms
+     ✓ recusa prova vinculada a outros bytes 738ms
+     ✓ recusa bytes que não são um arquivo OTS 713ms
+stdout | testes/teste-3-notebooks.test.ts > critério SUMA: simulação de três notebooks trocando arquivos > A exporta, B e C importam, e os três recusam a adulteração de um byte em F2
+Notebook C: alteração de 1 byte em F2 detectada — C8, assinatura inválida.
+
+stdout | testes/teste-3-notebooks.test.ts > critério SUMA: simulação de três notebooks trocando arquivos > A exporta, B e C importam, e os três recusam a adulteração de um byte em F2
+Notebook B: alteração de 1 byte em F2 detectada — C8, assinatura inválida.
+
+stdout | testes/teste-3-notebooks.test.ts > critério SUMA: simulação de três notebooks trocando arquivos > A exporta, B e C importam, e os três recusam a adulteração de um byte em F2
+Notebook A: alteração de 1 byte em F2 detectada — C8, assinatura inválida.
+Simulação local A/B/C; não representa três aparelhos físicos nem carimbo Bitcoin.
+3 notebooks trocam cadeias por arquivo e cada um acusa qualquer alteração - OK
+
+ ✓ testes/teste-3-notebooks.test.ts (2 tests) 2254ms
+   ✓ critério SUMA: simulação de três notebooks trocando arquivos (2)
+     ✓ A exporta, B e C importam, e os três recusam a adulteração de um byte em F2 2246ms
+ ✓ testes/integracoes-groq.test.ts (51 tests) 1901ms
+   ✓ Groq: ponta a ponta com API P0, ponte real e provedor mockado (14)
+     ✓ revogação durante chamada aborta até a próxima conferência e nunca publica resultado 1036ms
+ ✓ testes/ed25519.test.ts (5 tests) 2609ms
+   ✓ a conferência Ed25519 estrita (5)
+     ✓ aceita as assinaturas dos testes da RFC 8032 e recusa as mexidas 500ms
+     ✓ dá o mesmo que o Node em chaves e mensagens sorteadas 2066ms
+ ✓ testes/descobrir.test.ts (9 tests) 2209ms
+   ✓ descobrir consequências (4)
+     ✓ com Ax1–Ax7: tudo o que lista segue de fato, e nada do que já está escrito aparece 1064ms
+   ✓ descobrir com prazo (a etapa 7 da reação em cadeia) (3)
+     ✓ acha as mesmas consequências, com as mesmas notas de origem, que a busca sem prazo 1003ms
+ ✓ testes/sat.test.ts (4 tests) 1743ms
+   ✓ resolvedor SAT (4)
+     ✓ concorda com o resolvedor anterior em 3-SAT difícil (perto do limiar) 1020ms
+     ✓ para no prazo 312ms
+ ✓ testes/mundo.test.ts (21 tests) 1651ms
+   ✓ o mundo no segundo modelo (1)
+     ✓ o observado derruba leis, induz outras, confirma e refuta teses 366ms
+   ✓ conferir nos dados sem percorrer tudo (4)
+     ✓ dá o mesmo valor que percorrer todos os objetos (fórmulas sorteadas) 989ms
+ ✓ testes/teorias.test.ts (30 tests) 1801ms
+   ✓ biblioteca de teorias (7)
+     ✓ Teoria de grupos: fórmulas válidas e teoremas conferidos 880ms
+ ❯ testes/registros.test.ts (7 tests | 2 skipped) 128ms
+   ✓ a forma canônica e o hash da teoria (5)
+     ✓ troca as variáveis ligadas por #1, #2… na ordem dos quantificadores, na árvore expandida da m2 27ms
+     ✓ o hash da teoria não depende da ordem nem da repetição das premissas 9ms
+     ✓ a leitura do JSON recusa chave repetida em qualquer nível, e lê o resto como o JSON.parse 9ms
+     ✓ a leitura do JSON recusa o número com ponto ou expoente, e o que não é JSON (NaN, Infinity) 3ms
+     ✓ ordena pelos pontos de código, não pelas unidades de UTF-16 1ms
+   ❯ os exemplos de registros-v1 (2)
+     ↓ cada exemplo dá o veredito esperado na conferência do Caderno (menos a prova, que é do Carcara)
+     ↓ cada registro do lote cego 1 dá a resposta que o Caderno registrou antes (sem o Carcara)
+ ✓ testes/cacada.test.ts (21 tests) 1575ms
+   ✓ caçar falhas: modelo inicial da Axelar (3)
+     ✓ uma aprovação consumida não volta: vale, e a chave incluir o commandId é uma das regras que sustentam 522ms
+ ❯ testes/provas-t1.test.ts (5 tests | 5 skipped) 47ms
+   ❯ certificados da t1: o problema provado é o da tradução (5)
+     ↓ um registro por exemplo normativo, com as mesmas fórmulas, a mesma versão e o mesmo veredito
+     ↓ cada problema é exatamente o texto que a tradução t1 manda ao Z3
+     ↓ os SHA-256 do registro conferem com os problemas, as provas e o arquivo de regras
+     ↓ cada sat traz um modelo, que a conferência do Caderno aceita sem busca; com a primeira fórmula negada, recusa
+     ↓ as provas não têm passo sem justificativa, e cada regra RARE que usam está no arquivo de regras
+ ❯ testes/modelos-exatos.test.ts (12 tests | 2 skipped) 114ms
+   ✓ contas exatas (4)
+     ✓ lê os racionais só nas três escritas do formato 6ms
+     ✓ conta as raízes por Sturm e isola cada uma 5ms
+     ✓ decide a irredutibilidade até o grau 3 1ms
+     ✓ faz as contas em Q(√2) sem arredondar 3ms
+   ✓ a conferência do modelo exato (6)
+     ✓ aceita o modelo certo e recusa a fórmula negada 17ms
+     ✓ recusa a testemunha debaixo de ¬ (o contraexemplo de polaridade da rodada 31) 6ms
+     ✓ trata ∅ como um objeto: ∀x (x ≠ ∅) é falsa (o contraexemplo do ∅ da rodada 31) 3ms
+     ✓ recusa α mal dado: polinômio redutível (o contraexemplo de python -O), intervalo com duas raízes, índice errado 3ms
+     ✓ recusa a forma errada: campo desconhecido, testemunha a mais ou a menos, ℤ não inteiro, exceção sem mundo ou repetida 8ms
+     ✓ divide por zero com D0, que só depende do numerador 3ms
+   ❯ o emissor: o modelo exato tirado do Z3 (2)
+     ↓ cada sat com números dos exemplos normativos sai com um modelo que a conferência aceita
+     ↓ não emite o que a v1 não confere: ∀ sobre ℝ
+(node:34044) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ testes/regressao-api-v2.test.ts (2 tests) 463ms
+   ✓ API local v2 com limites e autenticação (2)
+     ✓ admite pedido assinado, repete idempotentemente e recusa assinatura adulterada 364ms
+ ✓ testes/pergunta.test.ts (9 tests) 883ms
+   ✓ perguntar: isto segue das notas? (9)
+     ✓ dos axiomas segue ∃x (x ∈ A), usando Ax3, Ax5 e Ax6 447ms
+     ✓ o conjunto de notas devolvido é irredutível: sem qualquer uma delas, deixa de seguir 306ms
+ ✓ testes/regressao-transparencia.test.ts (5 tests) 545ms
+   ✓ transparência Merkle e checkpoints (5)
+     ✓ confere inclusão para todos os índices e árvores assimétricas 312ms
+ ✓ testes/motor.test.ts (14 tests) 526ms
+ ✓ testes/integracoes-ui.test.ts (13 tests) 543ms
+ ✓ testes/modelo.test.ts (15 tests) 549ms
+ ✓ testes/explicacao.test.ts (13 tests) 485ms
+ ✓ testes/saturacao.test.ts (10 tests) 427ms
+ ✓ testes/modal.test.ts (22 tests) 289ms
+ ✓ testes/historico.test.ts (4 tests) 201ms
+ ✓ testes/biblioteca.test.ts (7 tests) 204ms
+ ✓ testes/regressao-selos.test.ts (3 tests) 133ms
+ ✓ testes/vinculo.test.ts (5 tests) 168ms
+ ✓ testes/banco.test.ts (3 tests) 157ms
+ ✓ testes/especificacao.test.ts (2 tests) 161ms
+ ✓ testes/correcoes.test.ts (6 tests) 163ms
+ ✓ testes/protegido.test.ts (6 tests) 154ms
+ ✓ testes/lacunas.test.ts (7 tests) 165ms
+ ✓ testes/v3-catalogo-certificados.test.ts (4 tests) 132ms
+ ✓ testes/dados.test.ts (17 tests) 105ms
+ ✓ testes/skolem.test.ts (5 tests) 112ms
+ ✓ testes/validador.test.ts (32 tests) 61ms
+ ✓ testes/integracoes-rag.test.ts (19 tests) 87ms
+ ✓ testes/resposta.test.ts (9 tests) 92ms
+ ✓ testes/portugues.test.ts (7 tests) 77ms
+ ✓ testes/conselheiro.test.ts (8 tests) 60ms
+ ✓ testes/integracoes-orcamento.test.ts (18 tests) 83ms
+(node:3084) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ servidor/armazem.test.ts (2 tests) 46ms
+ ✓ testes/numeros.test.ts (5 tests) 59ms
+ ✓ testes/cadeiaCosmos.test.ts (40 tests) 47ms
+ ✓ testes/backup.test.ts (10 tests) 36ms
+ ✓ testes/interfaces-produtos.test.ts (6 tests) 39ms
+ ✓ testes/integracoes-provedores.test.ts (6 tests) 34ms
+ ✓ testes/integracoes-observabilidade.test.ts (10 tests) 28ms
+ ✓ testes/regressao-parser.test.ts (6 tests) 16ms
+ ✓ testes/v3-escrow.test.ts (8 tests) 22ms
+ ✓ testes/qsqrt2.test.ts (3 tests) 12ms
+ ✓ testes/regressao-jcs-v2.test.ts (6 tests) 16ms
+ ✓ testes/edicao.test.ts (6 tests) 14ms
+ ✓ testes/grau.test.ts (2 tests) 12ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testes/gramatica.test.ts > escopo do quantificador: as duas leituras são fórmulas diferentes em todos os componentes
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/gramatica.test.ts:226:17
+    224|   let api: any
+    225|   beforeAll(async () => {
+    226|     api = await init()
+       |                 ^
+    227|   }, 60_000)
+    228|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  testes/gramatica.test.ts > escopo do quantificador: as duas leituras são fórmulas diferentes em todos os componentes
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/gramatica.test.ts:229:27
+    227|   }, 60_000)
+    228|   afterAll(async () => {
+    229|     await killThreads(api.em)
+       |                           ^
+    230|   })
+    231|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  testes/modelos-exatos.test.ts > o emissor: o modelo exato tirado do Z3
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/modelos-exatos.test.ts:147:17
+    145|   let api: any
+    146|   beforeAll(async () => {
+    147|     api = await init()
+       |                 ^
+    148|   }, 60_000)
+    149|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  testes/modelos-exatos.test.ts > o emissor: o modelo exato tirado do Z3
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/modelos-exatos.test.ts:150:27
+    148|   }, 60_000)
+    149|   afterAll(async () => {
+    150|     await killThreads(api.em)
+       |                           ^
+    151|   })
+    152|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  testes/provas-t1.test.ts > certificados da t1: o problema provado é o da tradução
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/provas-t1.test.ts:45:17
+     43|   let api: any
+     44|   beforeAll(async () => {
+     45|     api = await init()
+       |                 ^
+     46|   }, 60_000)
+     47|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  testes/provas-t1.test.ts > certificados da t1: o problema provado é o da tradução
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/provas-t1.test.ts:48:27
+     46|   }, 60_000)
+     47|   afterAll(async () => {
+     48|     await killThreads(api.em)
+       |                           ^
+     49|   })
+     50|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  testes/registros.test.ts > os exemplos de registros-v1
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/registros.test.ts:58:17
+     56|   let api: any
+     57|   beforeAll(async () => {
+     58|     api = await init()
+       |                 ^
+     59|   }, 60_000)
+     60|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  testes/registros.test.ts > os exemplos de registros-v1
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/registros.test.ts:61:27
+     59|   }, 60_000)
+     60|   afterAll(async () => {
+     61|     await killThreads(api.em)
+       |                           ^
+     62|   })
+     63|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  testes/traducao-z3.test.ts > tradução para o Z3: cada exemplo do pacote dá o veredito que o arquivo diz
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/traducao-z3.test.ts:25:17
+     23|   let api: any
+     24|   beforeAll(async () => {
+     25|     api = await init()
+       |                 ^
+     26|   }, 60_000)
+     27|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  testes/traducao-z3.test.ts > tradução para o Z3: cada exemplo do pacote dá o veredito que o arquivo diz
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/traducao-z3.test.ts:28:27
+     26|   }, 60_000)
+     27|   afterAll(async () => {
+     28|     await killThreads(api.em)
+       |                           ^
+     29|   })
+     30|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  testes/z3.test.ts [ testes/z3.test.ts ]
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ ../../node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init ../../node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init ../../node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/z3.test.ts:14:15
+     12|
+     13| beforeAll(async () => {
+     14|   api = await init()
+       |               ^
+     15| }, 60_000)
+     16|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  testes/z3.test.ts [ testes/z3.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/z3.test.ts:18:25
+     16|
+     17| afterAll(async () => {
+     18|   await killThreads(api.em)
+       |                         ^
+     19| })
+     20|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+
+ Test Files  6 failed | 59 passed (65)
+      Tests  915 passed | 80 skipped (995)
+   Start at  23:22:49
+   Duration  222.86s (tests 88%, import 6%, transform 5%, worker 1%)
+
+    Isolate  65 workers spawned · ~437ms startup each (spawn + environment, per file)
+             at least ~27.97s faster with isolate: false — reuses workers across files instead of one per file
+
+JSON report written to C:/Users/gusta/Desktop/AI quantica/tmp/p1-selada-snapshot/tmp/p1-ci-testes.json
+CI P1 não aprovada. Logs anteriores preservados; sem retry automático ou relaxamento de checks.

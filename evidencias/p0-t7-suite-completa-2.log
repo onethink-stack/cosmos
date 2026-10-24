@@ -1,0 +1,23 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+received "cleanupThread" command from terminated worker: 1
+(node:6544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9952) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:5464) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  64 passed (64)
+      Tests  944 passed (944)
+   Start at  22:00:49
+   Duration  241.63s (tests 91%, import 5%, transform 4%, worker 1%)
+
+    Isolate  64 workers spawned · ~395ms startup each (spawn + environment, per file)
+             at least ~24.85s faster with isolate: false — reuses workers across files instead of one per file
+

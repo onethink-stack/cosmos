@@ -1,0 +1,74 @@
+@scope (.account-app) {
+  :scope { --text:#171a21; --muted:#5e6673; --p-line:#d8dde5; --p-accent:#315fd6; --p-on-accent:#fff; --hover:#edf2fc; color:var(--text); background:#f7f8fa; }
+  .account-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; padding:24px 32px; border-bottom:1px solid var(--p-line); background:#fff; }
+  .account-header>a { font-size:24px; font-weight:650; letter-spacing:-.8px; }
+  .account-header>a>span { font-size:13px; font-weight:400; letter-spacing:normal; color:var(--muted); margin-left:12px; }
+  .account-main { max-width:1150px; margin:auto; padding:40px 28px; }
+  .account-heading { margin-bottom:30px; }
+  .account-heading h1 { font-size:32px; letter-spacing:-.8px; margin:8px 0 14px; }
+  .account-heading>p:last-child { font-size:14px; color:var(--muted); line-height:1.8; }
+  .account-grid { display:grid; grid-template-columns:1.1fr 1fr; gap:24px; align-items:start; margin-bottom:28px; }
+  .account-footer { font-size:12px; color:var(--muted); padding:28px 0 0; }
+  @media(max-width:760px) { .account-header { padding:20px; } .account-main { padding:28px 20px; } .account-grid { grid-template-columns:1fr; } .account-heading h1 { font-size:28px; } }
+}
+@scope (.product-root) {
+  .account-card { min-width:0; border:1px solid var(--p-line); border-radius:12px; padding:28px; background:var(--account-surface,#ffffff06); }
+  .account-app .account-card { --account-surface:#fff; }
+  .account-card>header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+  .account-card h2 { font-size:19px; }
+  .account-card h3 { font-size:16px; }
+  .account-card p { font-size:14px; color:var(--muted); line-height:1.8; }
+  .account-card>p { margin-bottom:20px; }
+  .account-card code { display:block; overflow-wrap:anywhere; word-break:break-word; font:12px/1.9 'JetBrains Mono',monospace; }
+  .account-tag { font-size:10px; padding:4px 7px; border:1px solid var(--p-line); color:var(--muted); border-radius:5px; }
+  .account-eyebrow { font-size:10px!important; letter-spacing:.08em; font-weight:600; }
+  .account-form { display:grid; gap:20px; }
+  .account-form label,.local-transfer-confirm>label,.account-disclosure>label { display:block; font-size:13px; font-weight:500; }
+  .account-form label>small { font-weight:400; color:var(--muted); margin-left:6px; }
+  .account-form input,.local-transfer-confirm label>input:not([type=checkbox]),.account-disclosure label>input { display:block; width:100%; margin-top:8px; }
+  .account-form textarea { width:100%; display:block; min-height:82px; resize:vertical; border:1px solid var(--p-line); border-radius:8px; padding:12px; background:transparent; font:13px/1.7 'JetBrains Mono',monospace; margin-top:8px; }
+  .account-form textarea:focus { outline:2px solid var(--p-accent); outline-offset:2px; }
+  .account-form>.product-button { justify-self:start; }
+  .account-card .account-hint { font-size:12px; color:var(--muted); }
+  .account-card .account-error { padding:14px 16px; border:1px solid #b87868; border-radius:8px; margin:20px 0 0; color:var(--text); font-size:13px; overflow-wrap:anywhere; }
+  .account-card .account-success { padding:14px 16px; border:1px solid #729680; border-radius:8px; margin:20px 0 0; color:var(--text); font-size:13px; overflow-wrap:anywhere; }
+  .account-checklist { padding-left:18px; margin:24px 0 0; color:var(--muted); font-size:12px; line-height:1.8; }
+  .account-checklist li { padding:5px 0; }
+  .account-file { display:inline-flex; align-items:center; gap:10px; min-height:42px; padding:10px 14px; border:1px solid var(--p-line); border-radius:8px; cursor:pointer; font-size:13px; position:relative; overflow:hidden; }
+  .account-file:hover { background:var(--hover); }
+  .account-file:focus-within { outline:2px solid var(--p-accent); outline-offset:2px; }
+  .account-file input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .account-identity { display:flex; gap:14px; align-items:center; margin-bottom:24px; }
+  .account-identity>span { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; background:var(--hover); font-size:20px; }
+  .account-identity p { font-size:12px; margin-top:4px; }
+  .account-details { margin:20px 0; }
+  .account-details>div { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:13px 0; border-bottom:1px solid var(--p-line); font-size:12px; }
+  .account-details dt { color:var(--muted); flex-shrink:0; max-width:45%; }
+  .account-details dd { margin:0; text-align:right; min-width:0; }
+  .account-disclosure { border-block:1px solid var(--p-line); padding:16px 0; margin:20px 0; }
+  .account-disclosure summary { font-size:13px; font-weight:500; cursor:pointer; }
+  .account-disclosure[open] summary { margin-bottom:20px; }
+  .account-disclosure p { font-size:12px; margin:14px 0; }
+  .account-disclosure>.product-button-outline { margin:14px 0 0; }
+  .account-link { color:var(--text); font-size:14px; text-decoration:underline; text-underline-offset:4px; }
+  .local-wallet-balance { display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; margin:28px 0; }
+  .local-wallet-balance strong { font:36px/1.5 'JetBrains Mono',monospace; letter-spacing:-1px; overflow-wrap:anywhere; }
+  .local-wallet-balance>span { color:var(--muted); font-size:12px; }
+  .local-wallet-network { padding:18px; border:1px solid var(--p-line); border-radius:8px; margin-bottom:24px; display:grid; gap:10px; }
+  .local-wallet-network>span { font-size:12px; color:var(--muted); }
+  .local-transfer { max-width:680px; }
+  .local-transfer-confirm { border:1px solid #729680; border-radius:8px; padding:24px; margin-top:24px; }
+  .local-transfer-confirm>.account-checkbox { display:flex; align-items:flex-start; gap:12px; margin-bottom:20px; font-size:13px; line-height:1.8; }
+  .account-checkbox input { width:18px; height:18px; margin-top:3px; flex-shrink:0; }
+  .account-actions,.local-ledger-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:20px; }
+  .local-receipts { display:grid; gap:16px; }
+  .local-receipts article { padding:16px 0; border-bottom:1px solid var(--p-line); }
+  .local-receipts strong { font-size:14px; }
+  .local-receipts p { margin:8px 0; }
+  .local-portfolio { max-width:1100px; }
+  .account-banner { display:flex; justify-content:space-between; gap:20px; align-items:center; border:1px solid var(--p-line); border-radius:8px; padding:16px 20px; margin-bottom:24px; font-size:13px; color:var(--muted); background:var(--hover); }
+  .account-banner a { flex-shrink:0; font-weight:600; color:var(--text); text-decoration:underline; text-underline-offset:4px; }
+  .product-switcher .account-nav { border:1px solid var(--p-line); margin-left:6px; }
+  .account-nav>i { width:5px; height:5px; background:currentColor; display:inline-block; border-radius:50%; margin-right:6px; }
+  @media(max-width:680px) { .account-card { padding:22px; } .account-card h2 { font-size:18px; } .local-wallet-balance strong { font-size:29px; } .local-transfer-confirm { padding:18px; } .account-banner { align-items:flex-start; flex-direction:column; gap:10px; } .product-switcher .account-nav { margin-left:2px; } }
+}

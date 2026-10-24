@@ -1,0 +1,16 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/integracoes-groq.test.ts testes/integracoes-api.test.ts testes/integracoes-ui.test.ts testes/integracoes-observabilidade.test.ts --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+
+ Test Files  4 passed (4)
+      Tests  130 passed (130)
+   Start at  22:59:26
+   Duration  9.90s (tests 79%, transform 11%, import 9%, worker 1%)
+
+    Isolate  4 workers spawned · ~491ms startup each (spawn + environment, per file)
+             at least ~1.47s faster with isolate: false — reuses workers across files instead of one per file
+

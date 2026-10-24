@@ -1,0 +1,30 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/integracoes-groq.test.ts --maxWorkers=1 -t revisão muda na conferência final
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+ ❯ testes/integracoes-groq.test.ts (51 tests | 1 failed | 50 skipped) 158ms
+   × revisão muda na conferência final: resultado antigo nunca conecta a nova configuração 154ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testes/integracoes-groq.test.ts > revisão muda na conferência final: resultado antigo nunca conecta a nova configuração
+AssertionError: expected 200 to be greater than or equal to 400
+ ❯ testes/integracoes-groq.test.ts:251:41
+    249|     const r = fetch(`${url}/groq/testar`, { method: 'POST' }); await a…
+    250|     await fetch(`${url}/groq/configuracao`, { method: 'PUT', body: JSO…
+    251|     liberar(); expect((await r).status).toBeGreaterThanOrEqual(400)
+       |                                         ^
+    252|     const atual = await (await fetch(`${url}/groq/estado`)).json()
+    253|     expect(atual).toMatchObject({ estado: 'local', configuracao: { rev…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 50 skipped (51)
+   Start at  22:58:49
+   Duration  1.68s (transform 67%, import 19%, tests 13%, worker 1%)
+

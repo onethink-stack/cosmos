@@ -1,0 +1,18 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run testes/integracoes-orcamento.test.ts testes/integracoes-api.test.ts testes/integracoes-provedores.test.ts testes/regressao-api-v2.test.ts testes/interfaces-produtos.test.ts --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+(node:20224) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  5 passed (5)
+      Tests  78 passed (78)
+   Start at  21:02:32
+   Duration  8.05s (tests 62%, transform 25%, import 11%, worker 2%)
+
+    Isolate  5 workers spawned · ~501ms startup each (spawn + environment, per file)
+             at least ~2.01s faster with isolate: false — reuses workers across files instead of one per file
+

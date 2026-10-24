@@ -1,0 +1,131 @@
+
+> cosmos-502426c@0.1.0 test
+> vitest run --maxWorkers=1
+
+
+ RUN  v5.0.3 C:/Users/gusta/Desktop/AI quantica
+
+ ❯ testes/gramatica.test.ts (203 tests | 3 skipped) 3007ms
+failed to asynchronously prepare wasm: RangeError: Array buffer allocation failed
+Aborted(RangeError: Array buffer allocation failed)
+ ❯ testes/modelos-exatos.test.ts (12 tests | 2 skipped) 214ms
+ ❯ testes/provas-t1.test.ts (5 tests | 5 skipped) 48ms
+ ❯ testes/registros.test.ts (7 tests | 2 skipped) 75ms
+(node:33632) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32772) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25088) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testes/gramatica.test.ts > escopo do quantificador: as duas leituras são fórmulas diferentes em todos os componentes
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/gramatica.test.ts:226:17
+    224|   let api: any
+    225|   beforeAll(async () => {
+    226|     api = await init()
+       |                 ^
+    227|   }, 60_000)
+    228|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  testes/gramatica.test.ts > escopo do quantificador: as duas leituras são fórmulas diferentes em todos os componentes
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/gramatica.test.ts:229:27
+    227|   }, 60_000)
+    228|   afterAll(async () => {
+    229|     await killThreads(api.em)
+       |                           ^
+    230|   })
+    231|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  testes/modelos-exatos.test.ts > o emissor: o modelo exato tirado do Z3
+RuntimeError: Aborted(RangeError: Array buffer allocation failed)
+ ❯ abort node_modules/z3-solver/build/z3-built.js:848:11
+ ❯ node_modules/z3-solver/build/z3-built.js:948:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  testes/modelos-exatos.test.ts > o emissor: o modelo exato tirado do Z3
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/modelos-exatos.test.ts:150:27
+    148|   }, 60_000)
+    149|   afterAll(async () => {
+    150|     await killThreads(api.em)
+       |                           ^
+    151|   })
+    152|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  testes/provas-t1.test.ts > certificados da t1: o problema provado é o da tradução
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/provas-t1.test.ts:45:17
+     43|   let api: any
+     44|   beforeAll(async () => {
+     45|     api = await init()
+       |                 ^
+     46|   }, 60_000)
+     47|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  testes/provas-t1.test.ts > certificados da t1: o problema provado é o da tradução
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/provas-t1.test.ts:48:27
+     46|   }, 60_000)
+     47|   afterAll(async () => {
+     48|     await killThreads(api.em)
+       |                           ^
+     49|   })
+     50|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  testes/registros.test.ts > os exemplos de registros-v1
+RangeError: WebAssembly.Memory(): could not allocate memory
+ ❯ node_modules/z3-solver/build/z3-built.js:617:18
+ ❯ init node_modules/z3-solver/build/low-level/wrapper.__GENERATED__.js:7:21
+ ❯ init node_modules/z3-solver/build/node.js:59:49
+ ❯ testes/registros.test.ts:58:17
+     56|   let api: any
+     57|   beforeAll(async () => {
+     58|     api = await init()
+       |                 ^
+     59|   }, 60_000)
+     60|   afterAll(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  testes/registros.test.ts > os exemplos de registros-v1
+TypeError: Cannot read properties of undefined (reading 'em')
+ ❯ testes/registros.test.ts:61:27
+     59|   }, 60_000)
+     60|   afterAll(async () => {
+     61|     await killThreads(api.em)
+       |                           ^
+     62|   })
+     63|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  4 failed | 60 passed (64)
+      Tests  932 passed | 12 skipped (944)
+   Start at  21:55:17
+   Duration  248.18s (tests 90%, import 5%, transform 4%, worker 1%)
+
+    Isolate  64 workers spawned · ~390ms startup each (spawn + environment, per file)
+             at least ~24.59s faster with isolate: false — reuses workers across files instead of one per file
+

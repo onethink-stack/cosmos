@@ -25,6 +25,33 @@ A conferência dos elos retorna `integridadeCadeia` e `validacaoEnvelopeCompleto
 
 ## Desenvolvimento e testes
 
+### Três interfaces de produto (locais)
+
+- `#/i-ai`: assistente monocromático com consulta ao catálogo local, sem LLM/RAG conectado.
+- `#/lab`: laboratório matemático/físico, exemplos didáticos e rascunhos sem publicação.
+- `#/terminal`: terminal COSMOS [COSM], com moeda oficial e mercado **DEMONSTRAÇÃO**.
+
+As novas telas usam React + Tailwind + componentes adaptados de shadcn/ui. Núcleo
+Preact/V4 preservado em rotas separadas. Não existem `/comprovados/`, endpoint RAG
+ou feed COSM configurados neste checkout. Não há negociação ou staking real.
+Veja [ENTREGA_TRES_INTERFACES.md](ENTREGA_TRES_INTERFACES.md) para fontes, limites,
+capturas 4K e evidências. Sem deploy nesta entrega.
+
+### Laboratório V4 somente local
+
+`#/laboratorio`, aberto por `127.0.0.1` ou `localhost`, oferece cofre de teste cifrado,
+derivação secp256k1 no caminho autorizado `m/44'/1'/0'/0/x` e endereços Bech32
+`tb1q`. Esse perfil é personalizado: o caminho convencional P2WPKH é BIP84.
+Nenhum endereço representa saldo Bitcoin; não há broadcast, importação de
+carteira real, exposição de seed ou acesso à chave Ed25519 histórica.
+
+O perfil assinado comprova autoria sob chave, não identidade civil/pessoa única.
+O genesis da simulação usa 1.000.000 de unidades de teste configuráveis e a queima
+da V3; unidades pertencem a atores fictícios, separados da carteira. Estado do
+ledger fica em memória e é perdido ao sair da tela/recarregar. Não é Bitcoin
+regtest, consenso entre nós nem emissão financeira. Detalhes e evidências em
+[ENTREGA_V4_LOCAL.md](ENTREGA_V4_LOCAL.md).
+
 Node 22.14 ou compatível, Python 3.10+ para integração OTS:
 
 ```powershell
@@ -80,3 +107,11 @@ Veja [especificação versionada](especificacao/cosmos-v2.md). Há admissão aut
 As réplicas padrão são diretórios do mesmo computador: não são redundância entre máquinas ou provedores. Não há moeda transferível, prova de humanidade, revisão humana automática ou garantia de independência entre chaves.
 
 Fontes: [JCS](https://www.rfc-editor.org/rfc/rfc8785.html), [transparência](https://www.rfc-editor.org/rfc/rfc9162.html), [OpenTimestamps](https://opentimestamps.org/), [SQLite transações](https://www.sqlite.org/lang_transaction.html).
+
+## Conta local e ledger de teste
+
+Em `http://127.0.0.1:4174/cosmos/#/conta`, a conta reutiliza o cofre V4 ou cria um cofre novo de teste. Há bloqueio por inatividade, backup/restauração cifrados, rascunhos e consultas cifrados no aparelho, genesis e transferências locais assinadas. Cada assinatura exige a senha novamente. Nenhuma seed/chave privada é exibida ou enviada à rede.
+
+O saldo funcional está em **Conta** e **Terminal → Portfolio**. Cotações e ordens do cenário de mercado continuam DEMO. O ledger é trocado por arquivo, sem rede pública ou consenso distribuído; endereços `cosmos-local:` não recebem Bitcoin/ATOM ou ativos externos. A API Ed25519 v2 e as fases históricas continuam separadas.
+
+Consulte [uso, testes e limites da conta local](ENTREGA_CONTA_LOCAL.md). Essa implementação não oferece recuperação de senha por servidor nem mercado financeiro real.

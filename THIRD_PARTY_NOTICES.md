@@ -10,7 +10,18 @@ terceiros, cada um com a sua licença. Os textos completos estão em
 | Faixas das classes L e N do Unicode 16.0 | `src/logica/unicode16.ts` | Unicode License V3, © 1991-2026 Unicode, Inc. | [LICENSES/Unicode-3.0.txt](LICENSES/Unicode-3.0.txt) |
 | Preact | Empacotado no app | MIT, © 2015-present Jason Miller | [LICENSES/MIT-preact.txt](LICENSES/MIT-preact.txt) |
 | TweetNaCl.js 1.0.3 | Assinaturas Ed25519 do selo Cosmos | Unlicense, domínio público | [LICENSES/Unlicense-tweetnacl.txt](LICENSES/Unlicense-tweetnacl.txt) |
-| Z3 (pacote z3-solver) | Copiado para o app, em `z3/` | MIT, © Microsoft Corporation | [LICENSES/MIT-z3-solver.txt](LICENSES/MIT-z3-solver.txt) |
+| @scure/bip32 2.4.0 | Derivação secp256k1 do laboratório V4 | MIT, Patricio Palladino / Paul Miller | [LICENSES/MIT-scure-bip32.txt](LICENSES/MIT-scure-bip32.txt) |
+| @scure/base 2.4.0 | Codificação Bech32 local V4 | MIT, Paul Miller | [LICENSES/MIT-scure-base.txt](LICENSES/MIT-scure-base.txt) |
+| @noble/hashes 2.4.0 | SHA-256 e RIPEMD-160 V4 | MIT, Paul Miller | [LICENSES/MIT-noble-hashes.txt](LICENSES/MIT-noble-hashes.txt) |
+| @noble/curves 2.4.0 | Dependência secp256k1 de scure/bip32 | MIT, Paul Miller | [LICENSES/MIT-noble-curves.txt](LICENSES/MIT-noble-curves.txt) |
+| React / React DOM 19.3.1 | Três interfaces de produto; núcleo histórico Preact separado | MIT, Meta Platforms | [React](LICENSES/MIT-react.txt), [React DOM](LICENSES/MIT-react-dom.txt) |
+| shadcn/ui | Button/Input adaptados em `src/interfaces/ui/` | MIT, shadcn | [LICENSES/MIT-shadcn.txt](LICENSES/MIT-shadcn.txt) |
+| Radix Slot / Compose Refs | Primitiva dos componentes shadcn | MIT, WorkOS | [Slot](LICENSES/MIT-radix-slot.txt), [Compose Refs](LICENSES/MIT-radix-compose-refs.txt) |
+| class-variance-authority 0.7.1 | Variantes de componentes | Apache-2.0 | [LICENSES/Apache-cva.txt](LICENSES/Apache-cva.txt) |
+| clsx / tailwind-merge | Composição de classes | MIT | [clsx](LICENSES/MIT-clsx.txt), [tailwind-merge](LICENSES/MIT-tailwind-merge.txt) |
+| Tailwind CSS 4.3.3 | Utilitários CSS sem preflight global | MIT, Tailwind Labs | [LICENSES/MIT-tailwindcss.txt](LICENSES/MIT-tailwindcss.txt) |
+| JetBrains Mono Regular | Fonte local dos números do Terminal | SIL OFL-1.1, JetBrains | [LICENSES/OFL-JetBrainsMono.txt](LICENSES/OFL-JetBrainsMono.txt) |
+| Z3 (pacote z3-solver) | Fonte e testes históricos; dependência de desenvolvimento, fora do runtime web V3/V4 | MIT, © Microsoft Corporation | [LICENSES/MIT-z3-solver.txt](LICENSES/MIT-z3-solver.txt) |
 | Trecho de apoio do Vite (o polyfill de `modulepreload`) | Empacotado no app | MIT, © 2019-present, VoidZero Inc. and Vite contributors | [LICENSES/MIT-vite.txt](LICENSES/MIT-vite.txt) |
 
 ## Detalhes

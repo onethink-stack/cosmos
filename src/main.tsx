@@ -1,28 +1,40 @@
 import { render } from 'preact'
 import { CosmosApp } from './ui/CosmosApp'
-import { guarda } from './ui/rotas'
+import { createElement } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { ProdutosApp } from './interfaces/Produtos'
+import { iniciarSessaoLocal } from './local/conta'
+import { rotaProduto } from './interfaces/config'
 import './ui/estilo.css'
 import './ui/telas.css'
 import './ui/cosmos.css'
+import './ui/v3/claro.css'
+import './ui/v3/terminal.css'
 
-export const somenteCosmos = (hash: string) => ['', 'inicio', 'cadeia', 'outras'].includes(hash.replace(/^#\/?/, '').split(/[/?]/)[0])
-const modoCosmos = somenteCosmos(location.hash)
-// Trocar de aplicação reinicia o documento para também descarregar o motor antigo.
-window.addEventListener('hashchange', (evento) => {
-  if (somenteCosmos(location.hash) !== modoCosmos) {
-    evento.stopImmediatePropagation()
-    if (!modoCosmos && guarda.sair && !guarda.sair()) {
-      history.replaceState(null, '', evento.oldURL)
-      return
-    }
-    location.reload()
+// A v3 não inicializa o Caderno antigo, seus motores ou o banco privado.
+const modoCosmos = true
+const container = document.getElementById('app')!
+let raizReact: Root | null = null
+let produtoAtivo = false
+function montarInterface() {
+  const produto = location.hash.split('?')[0] === '#/integracoes' ? 'integracoes' : rotaProduto(location.hash, location.pathname)
+  if (produto) {
+    if (!produtoAtivo) { render(null, container); raizReact = createRoot(container) }
+    raizReact!.render(createElement(ProdutosApp, { rota: produto, key: produto }))
+  } else {
+    if (raizReact) { raizReact.unmount(); raizReact = null }
+    render(<CosmosApp />, container)
   }
-}, true)
-
-if (modoCosmos) render(<CosmosApp />, document.getElementById('app')!)
-else void import('./cadernoLegado').then(({ iniciarCaderno }) => iniciarCaderno()).catch((erro) => {
-  document.getElementById('app')!.textContent = 'Não foi possível carregar as notas do Cosmos 502426c. Recarregue a página.'
-  console.error(erro)
+  produtoAtivo = !!produto
+}
+const encerrarSessaoLocal = iniciarSessaoLocal()
+montarInterface()
+window.addEventListener('hashchange', montarInterface)
+if (import.meta.hot) import.meta.hot.dispose(() => {
+  window.removeEventListener('hashchange', montarInterface)
+  encerrarSessaoLocal()
+  if (raizReact) raizReact.unmount()
+  else render(null, container)
 })
 
 // PWA: só no build publicado (http/https). No arquivo único (file://) não há service worker.

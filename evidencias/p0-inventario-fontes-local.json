@@ -1,0 +1,106 @@
+[
+  {
+    "arquivo": "scripts/integracoes-p0.mjs",
+    "sha256": "cb77a336b4dd34aeaabfd801f82c4105dcee3091b8ab35007d33f370d93b345b"
+  },
+  {
+    "arquivo": "src/integracoes/api-node.ts",
+    "sha256": "eeaeeaa19dc44731dc6221045c75eb282cf9b2d679861a0c91f579ffd2250498"
+  },
+  {
+    "arquivo": "src/integracoes/contexto-rag.ts",
+    "sha256": "f1d3800fb31a5b08d37d53490fc2f91d97e3d5cec8b22652b04a24327eb845a9"
+  },
+  {
+    "arquivo": "src/integracoes/contratos.ts",
+    "sha256": "eadf6e1a83e5a15f56c49a367c3549b1e67415b913f2631538c3fe350e17d53b"
+  },
+  {
+    "arquivo": "src/integracoes/credenciais-node.ts",
+    "sha256": "6daac1ddea19531f5a3071b93cc065181c1017953259793ee52fa031309b930e"
+  },
+  {
+    "arquivo": "src/integracoes/execucao-node.ts",
+    "sha256": "5166029a8ffa5e304bb3f91859ffebea05f9b4c4e3fb9af22a8d91bdf258ddfd"
+  },
+  {
+    "arquivo": "src/integracoes/fontes.ts",
+    "sha256": "1f240fbbdde790552b129dce8859dbf44c23217bfbd16ccb48120ea51ec8e655"
+  },
+  {
+    "arquivo": "src/integracoes/observabilidade-node.ts",
+    "sha256": "374365521a35c6e776d3ee147a273a46e1026e0bfe0b0549951c2f4ec45ff2a1"
+  },
+  {
+    "arquivo": "src/integracoes/orcamento-node.ts",
+    "sha256": "c7e363d6d8c6665e2beeb6b27910b9fdba1e97dfb49de94bc323b9096a84357e"
+  },
+  {
+    "arquivo": "src/integracoes/permissoes.ts",
+    "sha256": "cbfff58a0e9ecfc07517a9c4733ea51e1dbe88e5e5e885e005c61ab73ffc94b6"
+  },
+  {
+    "arquivo": "src/integracoes/politica.ts",
+    "sha256": "b49f7776298c752cc5bbfaae7fa1c0ebe21b99e781cf8b13d4c9424195d0987e"
+  },
+  {
+    "arquivo": "src/integracoes/ponte-node.ts",
+    "sha256": "4b2ed5f6eaa439c128b5c5bd8bf551a11d0239dadf9ae83c5092fa4d7cd46c77"
+  },
+  {
+    "arquivo": "src/integracoes/provedores-node.ts",
+    "sha256": "7c9b0d161230c634dfaf614ace672d0f1c41b3e87ebe2f5752e2b4b6787f9a27"
+  },
+  {
+    "arquivo": "src/integracoes/servidor-node.ts",
+    "sha256": "dc1e7f12e066fefa6016a71c1a74e8f73d3585b017a675f005780dafe3f47ee4"
+  },
+  {
+    "arquivo": "src/interfaces/integracoes-cliente.ts",
+    "sha256": "e17396d82e6c0bb8adc921b9012bee69b4eca882939b03a410f3cd6ab71e6e1e"
+  },
+  {
+    "arquivo": "src/interfaces/integracoes.css",
+    "sha256": "34725e44c2834a2b16c88bcde2a5137d8f24be0d4e5ed2b2005c6783e4f7ec63"
+  },
+  {
+    "arquivo": "src/interfaces/Integracoes.tsx",
+    "sha256": "a3910c7dc4d1815345cb0a562e9836976d4b4b7ab631d1092ddef9eb0e229538"
+  },
+  {
+    "arquivo": "src/interfaces/Produtos.tsx",
+    "sha256": "d1f3c900a7a74e8ed5f92a2a0f58763dd33418d5891b448fe023cf05c42887c9"
+  },
+  {
+    "arquivo": "src/main.tsx",
+    "sha256": "569718dc8713144bd97e611cc09f571d7eef0865fc3d6dc9fe4c0bd0b18a2442"
+  },
+  {
+    "arquivo": "src/ui/CosmosApp.tsx",
+    "sha256": "14a1dbb4742fb487ab2597fedb5551220e2f695c52c237e0b458cc931dfba8bf"
+  },
+  {
+    "arquivo": "testes/integracoes-api.test.ts",
+    "sha256": "95e86e57206416c0d804fceb668c1ae3ae83f576f36a29e31a6cf546f738d796"
+  },
+  {
+    "arquivo": "testes/integracoes-observabilidade.test.ts",
+    "sha256": "9d2cfe28ebfbb63dadfe80469dc5ec7eca3e19668be994de050a9729b7c50f69"
+  },
+  {
+    "arquivo": "testes/integracoes-orcamento.test.ts",
+    "sha256": "f7f4e7cb213481cc1e3290728af1ff3e9a381a243f6fec36725b4fba65c1f07a"
+  },
+  {
+    "arquivo": "testes/integracoes-provedores.test.ts",
+    "sha256": "01aaeb0726ad4529ae615ed7b3339d493aecf0aa48b6f095ac46eb06da019109"
+  },
+  {
+    "arquivo": "testes/integracoes-rag.test.ts",
+    "sha256": "67938831b7d81e8149e0ab588c188b85ab927149d5e42596aa5fb59ddebd1bd7"
+  },
+  {
+    "arquivo": "testes/integracoes-ui.test.ts",
+    "sha256": "26392019391bee13178b546e55f574fe9acf6395705777e47ef926f47db2c900"
+  }
+]

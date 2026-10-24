@@ -1,0 +1,106 @@
+[
+  {
+    "arquivo": "scripts/integracoes-p0.mjs",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/api-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/contexto-rag.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/contratos.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/credenciais-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/execucao-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/fontes.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/observabilidade-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/orcamento-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/permissoes.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/politica.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/ponte-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/provedores-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/integracoes/servidor-node.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/integracoes-cliente.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/integracoes.css",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/Integracoes.tsx",
+    "identico": true
+  },
+  {
+    "arquivo": "src/interfaces/Produtos.tsx",
+    "identico": true
+  },
+  {
+    "arquivo": "src/main.tsx",
+    "identico": true
+  },
+  {
+    "arquivo": "src/ui/CosmosApp.tsx",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-api.test.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-observabilidade.test.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-orcamento.test.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-provedores.test.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-rag.test.ts",
+    "identico": true
+  },
+  {
+    "arquivo": "testes/integracoes-ui.test.ts",
+    "identico": true
+  }
+]

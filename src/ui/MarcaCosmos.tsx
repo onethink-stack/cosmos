@@ -1,4 +1,4 @@
-import logoCosmos from '../assets/cosmos-app.png'
+import logoCosmos from './icons/cosmos-moeda-oficial.png'
 
 export function MarcaCosmos({ className = '' }: { className?: string }) {
   return (

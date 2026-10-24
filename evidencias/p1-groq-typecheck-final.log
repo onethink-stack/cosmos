@@ -1,0 +1,4 @@
+
+> cosmos-502426c@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p servidor
+

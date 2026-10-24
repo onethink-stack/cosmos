@@ -1,0 +1,108 @@
+/** @jsxImportSource react */
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { AXIOMAS_EXEMPLO, conflitosLiterais } from './dados'
+import { REGISTROS_PUBLICOS } from '../v3/catalogo'
+import { useContaLocal } from './Conta'
+import { salvarDadosConta } from '../local/conta'
+import { GraficoConvergencia } from './Graficos'
+import { BarraJanela, Icone } from './Janela'
+import './labs.css'
+
+type Aba = 'biblioteca' | 'rascunhos' | 'verificacao' | 'referencias'
+type Registro = { id: string; nome: string; formula: string; dominio: string; descricao: string; rascunho?: boolean }
+const MODELOS: Registro[] = AXIOMAS_EXEMPLO.map(r => ({ ...r,
+  nome: { '001': 'Indução', '002': 'Simetria', '003': 'Conservação' }[r.id],
+  dominio: r.dominio === 'Physics' ? 'Física' : 'Matemática',
+  descricao: {
+    '001': 'A indução exige um caso base P(0) e um passo indutivo. A fórmula representa apenas o passo, não uma prova completa.',
+    '002': 'Teorema de Noether: uma simetria contínua da ação está associada a uma corrente conservada, sob as hipóteses do teorema.',
+    '003': 'Conservação local de energia e momento em espaço-tempo plano. A equação é uma referência, sem certificado anexado.',
+  }[r.id],
+}))
+const REFERENCIAS: Registro[] = [
+  { id: 'REF-001', nome: 'Lei da Implicação Lógica', formula: 'φ → ψ', dominio: 'Lógica', descricao: 'Se φ implica ψ e φ é verdadeira, então ψ é verdadeira. A expressão isolada não é uma prova: as premissas precisam ser estabelecidas.' },
+  { id: 'REF-002', nome: 'Quantificador Universal', formula: '∀n P(n)', dominio: 'Matemática', descricao: 'P(n) é afirmada para todo n no domínio declarado. A validade depende do domínio e das hipóteses, não apenas da notação.' },
+  { id: 'REF-003', nome: 'Lei de Gauss (eletrostática)', formula: '∇ · E = ρ/ε₀', dominio: 'Física', descricao: 'A divergência do campo elétrico é igual à densidade de carga dividida pela permissividade do vácuo, no domínio da eletrostática clássica.' },
+]
+const SECOES = [
+  { id: 'biblioteca', nome: 'Biblioteca', descricao: 'Explore exemplos e consulte os registros públicos da cadeia.' },
+  { id: 'rascunhos', nome: 'Meus rascunhos', descricao: 'Organize suas fórmulas antes de verificar ou reunir evidências.' },
+  { id: 'verificacao', nome: 'Verificação', descricao: 'Procure contradições literais entre os rascunhos da conta local.' },
+  { id: 'referencias', nome: 'Modelos e fórmulas', descricao: 'Consulte equações da física e experimente instrumentos lógicos.' },
+] as const
+
+export function Labs({ navigation }: { navigation: ReactNode }) {
+  const [aba, setAba] = useState<Aba>(() => { const secao = new URLSearchParams(location.hash.split('?')[1]).get('secao'); return SECOES.some(s => s.id === secao) ? secao as Aba : 'biblioteca' }), [busca, setBusca] = useState('')
+  const [filtroDominio, setFiltroDominio] = useState('Todos'), [copiado, setCopiado] = useState(false)
+  const conta = useContaLocal(), rascunhos = conta.dados?.rascunhos ?? []
+  const [salvando, setSalvando] = useState(false), [erroDados, setErroDados] = useState(''), [editando, setEditando] = useState<string | null>(null)
+  const [selecionado, setSelecionado] = useState('REF-001')
+  const [inspecao, setInspecao] = useState<'registro' | 'evidencias'>('registro')
+  const [editor, setEditor] = useState(false), [nome, setNome] = useState(''), [formula, setFormula] = useState(''), [dominio, setDominio] = useState('')
+  const [log, setLog] = useState<string[]>([]), [resultado, setResultado] = useState<string[] | null>(null)
+  const [gateA, setGateA] = useState(true), [gateB, setGateB] = useState(false)
+  const nomeInput = useRef<HTMLInputElement>(null)
+  const registrosRef = useRef<HTMLElement>(null), inspecaoRef = useRef<HTMLElement>(null)
+  useEffect(() => { if (editor) nomeInput.current?.focus() }, [editor])
+  useEffect(() => { window.scrollTo(0, 0) }, [aba])
+  useEffect(() => { setEditor(false); setNome(''); setFormula(''); setDominio(''); setLog([]); setResultado(null); setErroDados('') }, [conta.perfil?.perfil.pubkey])
+  const secao = SECOES.find(s => s.id === aba)!
+  const itens = aba === 'rascunhos' ? rascunhos : REFERENCIAS
+  const visiveis = itens.filter(r => `${r.nome} ${r.formula} ${r.dominio}`.toLowerCase().includes(busca.trim().toLowerCase()) && (filtroDominio === 'Todos' || r.dominio === filtroDominio))
+  const ativo = visiveis.find(r => r.id === selecionado) ?? visiveis[0]
+  const publicos = busca.trim() ? REGISTROS_PUBLICOS.filter(r => `${r.id} ${r.titulo} ${r.hash} ${r.dominio}`.toLowerCase().includes(busca.trim().toLowerCase())) : []
+  const navegar = (a: Aba) => { setAba(a); setBusca(''); setFiltroDominio('Todos'); setEditor(false) }
+  const novo = (base?: Registro) => { if (!conta.perfil) { setErroDados('Entre na conta local para criar e salvar rascunhos.'); return }; setEditando(null); setNome(base ? `${base.nome} — estudo` : ''); setFormula(base?.formula ?? ''); setDominio(base?.dominio ?? ''); setEditor(true) }
+  const registrar = (texto: string) => setLog(l => [texto, ...l].slice(0, 12))
+  const inspecionar = (r: Registro) => {
+    setSelecionado(r.id); setCopiado(false); setInspecao('registro'); registrar(`${r.id} · referência ou rascunho consultado.`)
+    if (window.innerWidth <= 900) inspecaoRef.current?.scrollIntoView({ block: 'start' })
+  }
+  const verificar = () => { const conflitos = conflitosLiterais(rascunhos.map(r => r.formula)); setResultado(conflitos); registrar(`Triagem literal: ${conflitos.length} par(es) em ${rascunhos.length} rascunho(s).`) }
+
+  return <div className="product-root labs-app reference-app" data-section={aba}><BarraJanela />
+    <aside className="labs-sidebar">
+      <a className="labs-brand" href="#/lab">Cosmos <span>Labs</span></a>
+      <div className="labs-project"><span className="labs-project-icon">φ</span><div>Espaço de pesquisa<small>Sessão local</small></div></div>
+      <p className="labs-nav-label">ÁREA DE TRABALHO</p>
+      <nav className="labs-sections" aria-label="Seções do Labs">{SECOES.filter(s => s.id !== 'referencias').map((s, i) => <button key={s.id} aria-current={aba === s.id ? 'page' : undefined} onClick={() => navegar(s.id)}><Icone nome={(['book', 'file', 'shield', 'tools'] as const)[i]} />{s.id === 'rascunhos' ? 'Rascunhos' : s.nome}{s.id === 'rascunhos' && <span className="labs-count">{rascunhos.length}</span>}</button>)}<a href="#/certificados"><Icone nome="file" />Evidências</a></nav>
+      <div className="labs-resources"><button onClick={() => navegar('referencias')}>Ferramentas e fórmulas <span>↗</span></button><p className="labs-nav-label">REGISTROS E EVIDÊNCIAS</p><a href="#/cadeia">Cadeia pessoal <span>↗</span></a><a href="#/certificados">Evidências <span>↗</span></a><a href="#/dicionario">Dicionário <span>↗</span></a></div>
+      <div className="labs-sidebar-bottom">{navigation}<p>Rascunhos cifrados por titular.<br />Nenhuma publicação automática.</p></div>
+    </aside>
+    <main className="labs-main">
+      <header className="labs-topbar"><div>Cosmos <span>/</span> Labs <span>/</span> <strong>{secao.nome}</strong></div><span className="labs-local"><i /> Ambiente local</span></header>
+      <section className="labs-page-heading"><div><p className="labs-eyebrow">CONHECIMENTO E EVIDÊNCIAS</p><h1>{aba === 'biblioteca' ? 'Laboratório' : secao.nome}</h1><p>{secao.descricao}</p></div><Button onClick={() => novo()} aria-expanded={editor}>＋ Novo registro</Button></section>
+      <div className="labs-mobile-navigation">{navigation}</div>{!conta.perfil && <div className="account-banner"><span>Entre para criar e salvar rascunhos cifrados. A biblioteca pública continua disponível.</span><a href="#/conta">Entrar na conta local →</a></div>}{erroDados && <p className="labs-result has-conflict" role="alert">{erroDados} {!conta.perfil && <a href="#/conta">Entrar na conta local →</a>}</p>}
+      {editor && <form className="labs-editor" aria-label="Novo rascunho" onSubmit={e => {
+        e.preventDefault(); if (!nome.trim() || !formula.trim() || salvando) return
+        setSalvando(true); setErroDados('')
+        const id = editando ?? `D${String(rascunhos.length + 1).padStart(2, '0')}`
+        const r = { id, nome: nome.trim().normalize('NFC'), formula: formula.trim().normalize('NFC'), dominio: (dominio.trim() || 'Sem domínio').normalize('NFC'), descricao: 'Rascunho local. Sem prova, assinatura ou publicação.', rascunho: true }
+        void salvarDadosConta(d => ({ ...d, rascunhos: editando ? d.rascunhos.map(x => x.id === editando ? r : x) : [...d.rascunhos, r] })).then(() => {
+          registrar(`${id} · rascunho cifrado salvo no aparelho.`); setSelecionado(id); setResultado(null); setAba('rascunhos'); setBusca(''); setEditor(false)
+        }).catch(() => setErroDados('Não foi possível salvar. Confira a conta, o espaço ou conflito entre abas. O texto continua no editor.')).finally(() => setSalvando(false))
+      }}><header><div><h2>{editando ? 'Editar rascunho' : 'Novo rascunho'}</h2><p>Uma fórmula por registro. Isso ainda não é um axioma verificado.</p></div><button disabled={salvando} type="button" onClick={() => setEditor(false)} aria-label="Fechar editor">×</button></header><div className="labs-editor-fields"><label>Nome<Input disabled={salvando} ref={nomeInput} aria-label="Nome do rascunho" placeholder="Ex.: Conservação de energia" required maxLength={80} value={nome} onChange={e => setNome(e.target.value)} /></label><label>Domínio <small>opcional</small><Input disabled={salvando} aria-label="Domínio do rascunho" placeholder="Ex.: Física" maxLength={80} value={dominio} onChange={e => setDominio(e.target.value)} /></label><label className="labs-formula-field">Fórmula<textarea disabled={salvando} aria-label="Fórmula do rascunho" placeholder="Escreva a expressão. Ex.: A ou ¬A" required maxLength={300} value={formula} onChange={e => setFormula(e.target.value)} /></label></div><footer><span>Cifrado neste aparelho · até 300 caracteres</span><div><Button disabled={salvando} type="button" variant="outline" onClick={() => setEditor(false)}>Cancelar</Button><Button type="submit" disabled={!nome.trim() || !formula.trim() || salvando}>Salvar rascunho</Button></div></footer></form>}
+
+      {(aba === 'biblioteca' || aba === 'rascunhos') && <>
+        <div className="labs-summary"><button onClick={() => navegar('biblioteca')}><strong>{REFERENCIAS.length}</strong> referências didáticas</button><a href="#/cadeia"><strong>{REGISTROS_PUBLICOS.length}</strong> registros públicos <span>↗</span></a><button onClick={() => navegar('rascunhos')}><strong>{rascunhos.length}</strong> rascunhos salvos</button></div>
+        <div className="labs-toolbar"><label><span aria-hidden="true">⌕</span><Input aria-label="Pesquisar no Labs" placeholder={aba === 'biblioteca' ? 'Buscar nome, fórmula, domínio ou hash…' : 'Buscar nos seus rascunhos…'} value={busca} onChange={e => setBusca(e.target.value)} /></label><select aria-label="Filtrar domínio" value={filtroDominio} onChange={e => setFiltroDominio(e.target.value)}>{['Todos', ...new Set(itens.map(r => r.dominio))].map(d => <option key={d}>{d}</option>)}</select><span>{visiveis.length} {visiveis.length === 1 ? 'resultado' : 'resultados'}</span>{busca && <button className="labs-text-button" onClick={() => setBusca('')}>Limpar busca</button>}</div>
+        <div className="labs-library-layout"><section ref={registrosRef} className="labs-records" aria-label={aba === 'biblioteca' ? 'Referências didáticas' : 'Rascunhos locais'}><div className="labs-list-heading"><h2>{aba === 'biblioteca' ? 'Referências didáticas' : 'Rascunhos locais'}</h2><span>{aba === 'biblioteca' ? 'Exemplos didáticos' : 'Não publicados'}</span></div>
+          {visiveis.map(r => <button key={r.id} className={`labs-record ${ativo?.id === r.id ? 'is-selected' : ''}`} aria-pressed={ativo?.id === r.id} onClick={() => inspecionar(r)}><div className="labs-record-meta"><span>{r.id}</span><span>{r.dominio}</span></div><div className="labs-record-title"><h3>{r.nome}</h3><span aria-hidden="true">→</span></div><p className="labs-record-formula">{r.formula}</p></button>)}
+          {!visiveis.length && <div className="labs-empty"><span className="labs-empty-symbol">∅</span><h3>{busca ? 'Nenhum resultado' : 'Seus rascunhos aparecem aqui'}</h3><p>{busca ? 'Tente outro nome, fórmula ou domínio.' : 'Entre na conta, crie uma fórmula e use a verificação para procurar pares contraditórios.'}</p>{!busca && <Button disabled={!conta.perfil} variant="outline" onClick={() => novo()}>Criar primeiro rascunho</Button>}</div>}
+        </section><aside ref={inspecaoRef} className="labs-inspector" aria-label="Detalhes do registro selecionado" aria-live="polite"><button className="labs-inspector-back" onClick={() => registrosRef.current?.scrollIntoView({ block: 'start' })}>← Voltar à lista</button>{ativo ? <><p className="labs-eyebrow">REGISTRO SELECIONADO · {ativo.id}</p><h2>{ativo.nome}</h2><div className="labs-inspector-tabs" role="tablist" aria-label="Inspeção do registro" onKeyDown={e => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) { e.preventDefault(); const proxima = e.key === 'Home' ? 'registro' : e.key === 'End' ? 'evidencias' : inspecao === 'registro' ? 'evidencias' : 'registro'; setInspecao(proxima); e.currentTarget.querySelector<HTMLButtonElement>(`#labs-tab-${proxima}`)?.focus() } }}><button role="tab" tabIndex={inspecao === 'registro' ? 0 : -1} aria-selected={inspecao === 'registro'} aria-controls="labs-inspector-registro" id="labs-tab-registro" onClick={() => setInspecao('registro')}>Registro</button><button role="tab" tabIndex={inspecao === 'evidencias' ? 0 : -1} aria-selected={inspecao === 'evidencias'} aria-controls="labs-inspector-evidencias" id="labs-tab-evidencias" onClick={() => setInspecao('evidencias')}>Evidências</button></div><div id="labs-inspector-registro" role="tabpanel" aria-labelledby="labs-tab-registro" hidden={inspecao !== 'registro'} className="labs-inspector-content"><p className="labs-inspector-label">Expressão</p><div className="labs-inspector-formula"><span>{ativo.formula}</span><button aria-label="Copiar expressão" title={copiado ? 'Copiado' : 'Copiar expressão'} onClick={() => { void navigator.clipboard.writeText(ativo.formula).then(() => setCopiado(true)).catch(() => setErroDados('Não foi possível copiar. Selecione a expressão manualmente.')) }}><Icone nome="file" />{copiado && <small>Copiado</small>}</button></div><h3>Descrição</h3><p>{ativo.descricao}</p><h3 className="labs-metadata-heading">Metadados</h3><dl><div><dt>ID</dt><dd>{ativo.id}</dd></div><div><dt>Domínio</dt><dd>{ativo.dominio}</dd></div><div><dt>Origem</dt><dd>{ativo.rascunho ? 'Sua sessão local' : 'Exemplo didático'}</dd></div><div><dt>Verificação formal</dt><dd>Não executada</dd></div></dl></div><div id="labs-inspector-evidencias" role="tabpanel" aria-labelledby="labs-tab-evidencias" hidden={inspecao !== 'evidencias'} className="labs-inspector-content"><h3>Evidências do registro</h3><p>{ativo.rascunho ? 'Rascunho cifrado da conta local. Nenhum certificado formal foi anexado.' : 'Referência didática. Não há prova formal, hash de teoria ou assinatura vinculada a este exemplo.'}</p><a href="#/certificados">Consultar certificados existentes ↗</a></div><Button onClick={() => navegar('verificacao')}><Icone nome="shield" />Verificar registro</Button><Button variant="ghost" onClick={() => novo(ativo)}>Usar como rascunho</Button><small>Integridade e autoria não comprovam a verdade de uma afirmação.</small>{ativo.rascunho && <Button variant="ghost" onClick={() => { setEditando(ativo.id); setNome(ativo.nome); setFormula(ativo.formula); setDominio(ativo.dominio); setEditor(true) }}>Editar rascunho</Button>}</> : <><h2>Inspeção do registro</h2><p>Selecione um resultado para consultar a fórmula, a origem e o estado de verificação.</p></>}</aside></div>
+        {publicos.length > 0 && aba === 'biblioteca' && <section className="labs-public-results"><h2>Registros públicos relacionados</h2><p>Dados históricos da cadeia pessoal. Os hashes não foram alterados.</p>{publicos.map(r => <a href="#/cadeia" key={r.id}><strong>{r.id} · {r.titulo}</strong><code>{r.hash.slice(0, 20)}…</code><span>Abrir origem ↗</span></a>)}</section>}
+      </>}
+
+      {aba === 'verificacao' && <div className="labs-verification-layout"><section className="labs-surface labs-verification"><div className="labs-surface-heading"><span className="labs-step">01</span><div><h2>Contradições literais</h2><p>Compara os rascunhos em busca de pares como A e ¬A.</p></div></div><div className="labs-verification-body"><div className="labs-verification-inputs"><h3>Rascunhos da conta <span>{rascunhos.length}</span></h3>{rascunhos.length ? rascunhos.map(r => <div key={r.id}><span>{r.id} · {r.nome}</span><code>{r.formula}</code></div>) : <p>Nenhum rascunho disponível. Entre na conta e crie uma fórmula para iniciar.</p>}</div><div className="labs-verification-actions"><Button disabled={!rascunhos.length} onClick={verificar}>Verificar contradições</Button><Button disabled={!conta.perfil} variant="outline" onClick={() => novo()}>Adicionar fórmula</Button></div>{resultado !== null && <div className={`labs-result ${resultado.length ? 'has-conflict' : ''}`} role="status"><strong>{resultado.length ? `${resultado.length} par(es) contraditório(s)` : 'Nenhum par literal encontrado'}</strong>{resultado.length > 0 && <ul>{resultado.map(c => <li key={c}><code>{c}</code> e <code>¬{c}</code></li>)}</ul>}<p>{resultado.length ? 'Foram encontradas expressões literais opostas. Revise os rascunhos e suas hipóteses.' : 'Isso não prova consistência de fórmulas gerais. O resultado permanece inconclusivo fora da comparação literal.'}</p></div>}</div></section><aside className="labs-surface labs-method"><p className="labs-eyebrow">O QUE ESTA ETAPA FAZ</p><h2>Escopo explícito</h2><ol><li>Usa apenas rascunhos desta conta local.</li><li>Reconhece literais simples: A, B, φ, ψ e suas negações.</li><li>Não executa solver ou kernel formal.</li><li>Não assina, publica ou certifica resultados.</li></ol><a href="#/certificados">Consultar certificados existentes ↗</a></aside></div>}
+
+      {aba === 'referencias' && <div className="labs-tools"><div className="labs-tool-group-heading"><h2>Fundamentos e conservação</h2><p>Referências didáticas preservadas. Sem certificado formal anexado.</p></div><div className="labs-equations">{MODELOS.map(r => <article className="labs-surface labs-equation" key={r.id}><h3>{r.nome}</h3><strong>{r.formula}</strong><p>{r.descricao}</p><Button variant="outline" onClick={() => novo(r)}>Usar como rascunho</Button></article>)}</div><div className="labs-tool-group-heading"><h2>Física matemática</h2><p>Equações de referência. As hipóteses de cada teoria continuam necessárias.</p></div><div className="labs-equations">{[['01', 'Mecânica quântica', 'iℏ ∂ψ/∂t = Ĥψ', 'Schrödinger · evolução de um estado quântico'], ['02', 'Eletromagnetismo', '∇·E = ρ/ε₀', 'Maxwell · lei de Gauss'], ['03', 'Relatividade especial', 'E² = (pc)² + (mc²)²', 'Relação entre energia e momento']].map(([id, title, eq, desc]) => <article key={id} className="labs-surface labs-equation"><p className="labs-eyebrow">{id} / {title}</p><strong>{eq}</strong><p>{desc}</p></article>)}</div>
+        <div className="labs-tool-group-heading"><h2>Explorador lógico</h2><p>Experimente a tabela-verdade ou inspecione as referências.</p></div><div className="labs-explorers"><section className="labs-surface labs-gates"><header><h3>Portas lógicas</h3><span>Interativo</span></header><div className="labs-gate-inputs"><p>Altere as entradas:</p><button aria-label="Alternar entrada A" aria-pressed={gateA} onClick={() => setGateA(!gateA)}>A <strong>{Number(gateA)}</strong></button><button aria-label="Alternar entrada B" aria-pressed={gateB} onClick={() => setGateB(!gateB)}>B <strong>{Number(gateB)}</strong></button></div><div className="labs-gate-outputs">{[['AND', '∧', gateA && gateB], ['OR', '∨', gateA || gateB], ['XOR', '⊕', gateA !== gateB]].map(([n, s, v]) => <div key={String(n)}><span>{s}</span><small>{n}</small><strong>{Number(v)}</strong></div>)}</div><footer>Álgebra booleana · tabela-verdade exata</footer></section><section className="labs-surface labs-relations"><header><h3>Relações de referência</h3><span>Ilustrativo</span></header><div className="labs-relation-center">φ + ψ</div><div className="labs-relation-links">{REFERENCIAS.map(r => <button key={r.id} onClick={() => { navegar('biblioteca'); setSelecionado(r.id) }}><span>{r.formula}</span>{r.nome} <b>↗</b></button>)}</div><footer>Exploração de exemplos · sem derivação formal</footer></section></div>
+        <details className="labs-surface labs-numerical"><summary>Séries e convergência <span>Referências numéricas</span></summary><div><article><h3>Problema de Basileia</h3><p className="labs-series">∑<sub>n=1</sub><sup>∞</sup> 1/n² = π²/6</p><p>Série convergente de referência.</p></article><article><h3>Curva de convergência ilustrativa</h3><GraficoConvergencia /><p>Exemplo visual. Não representa uma execução do motor.</p></article></div></details>
+      </div>}
+      <details className="labs-activity"><summary>Atividade desta sessão <span>{log.length} eventos</span></summary><div>{log.length ? log.map((l, i) => <p key={`${i}-${l}`}>{l}</p>) : <p>Nenhuma ação registrada. Consulte uma referência ou crie um rascunho.</p>}</div></details>
+      <footer className="labs-footer"><span>Cosmos Labs</span><span>Dados cifrados no aparelho · sem publicação</span><a href="#/laboratorio">Cofre de teste V4 ↗</a></footer>
+    </main>
+  </div>
+}

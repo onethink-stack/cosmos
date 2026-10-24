@@ -1,0 +1,15 @@
+{
+  "formato": "cosmos-b-5p4c-host-pin-v1",
+  "origem": "GitHub Actions proprio autorizado",
+  "runId": 40128153884,
+  "commit": "5c7d837b85ef5c4028695a14045c97ec82ff49b1",
+  "artifactId": 12574415270,
+  "zipSha256": "5b98fc91ee544dd367fba2b97205bdab16710339b93ec8a606922bacb2cb2fef",
+  "exeSha256": "98b69259443e67dd03731dcb589c162a39ad04054bc4c68b40a77bc3872dd7a6",
+  "exeBytes": 6227968,
+  "hostBuildSha256": "caa61b69d8da0aae8293ded9e8bcfdb46b2baae88477a075d70714aeee08726a",
+  "kernelSha256": "31a3c66e68dcbf6401a55fd0f2736d0aadcd1f00f3b5a8d997f8d12dacb53e22",
+  "cargoLockSha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82",
+  "entradaBufferSha256": "affa7efa353813570254cfa98cab972e84889843f0cd7348962b3e76ee4813c1",
+  "gpuExecutada": false
+}

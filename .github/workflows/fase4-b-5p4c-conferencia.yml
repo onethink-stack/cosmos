@@ -1,4 +1,4 @@
-name: Fase 4 B 5p4c - compilacao e Carcara sintetico (sem deploy)
+name: Fase 4 B 5p4c - GPU e Carcara independente (sem deploy)
 on:
   push:
     branches: ['codex/fase4-b-5p4c']
@@ -7,6 +7,7 @@ on:
       - 'FASE4_B_5P4C_*.ts'
       - 'fase4-b-5p4c/**'
       - 'scripts/fase4-b-5p4c-*'
+      - 'evidencias/fase4-b-5p4c-gpu-pacote/**'
 permissions:
   contents: read
 concurrency:
@@ -24,7 +25,7 @@ jobs:
         with:
           node-version: '22.14.0'
       - name: Testes locais da ponte, sem GPU
-        run: node --experimental-strip-types --test scripts/fase4-b-5p4c.test.mjs scripts/fase4-b-ponte.test.mjs
+        run: node --experimental-strip-types --test scripts/fase4-b-5p4c.test.mjs scripts/fase4-b-5p4c-gpu.test.mjs scripts/fase4-b-ponte.test.mjs
       - name: Carcara oficial sob pin aprovado
         shell: bash
         run: |
@@ -36,11 +37,15 @@ jobs:
           chmod u+x tmp/fase4-b-5p4c/carcara-linux
       - name: Positivo sintetico e tres negativos reais
         run: node --experimental-strip-types scripts/fase4-b-5p4c-carcara.mjs "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-linux" "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-sintetico"
+      - name: Saida GPU real e sete negativos, sem fixture no caminho
+        run: node --experimental-strip-types scripts/fase4-b-5p4c-carcara-gpu.mjs "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-linux" "$GITHUB_WORKSPACE/tmp/fase4-b-5p4c/carcara-gpu" "$GITHUB_WORKSPACE/evidencias/fase4-b-5p4c-gpu-pacote"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: fase4-b-5p4c-carcara-${{ github.sha }}
-          path: tmp/fase4-b-5p4c/carcara-sintetico/*
+          path: |
+            tmp/fase4-b-5p4c/carcara-sintetico/*
+            tmp/fase4-b-5p4c/carcara-gpu/*
           if-no-files-found: error
   host:
     needs: ponte

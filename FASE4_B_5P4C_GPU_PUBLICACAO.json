@@ -1,0 +1,79 @@
+{
+  "formato": "cosmos-b-5p4c-gpu-publicacao-v1",
+  "base": "5c7d837b85ef5c4028695a14045c97ec82ff49b1",
+  "branch": "codex/fase4-b-5p4c",
+  "autorizacao": "Operador: prosseguir ate finalizar, com medidas e protecao; sem merge/deploy.",
+  "estado": "gpu-real-executada-conferencia-linux-pendente",
+  "arquivos": [
+    {
+      "arquivo": "FASE4_B_5P4C_GPU_ENSAIO.md",
+      "bytes": 2772,
+      "sha256": "b8402a80fec6b608ae5b434aa7904b46ca70df4d10d149bbae81e8c62de673c2"
+    },
+    {
+      "arquivo": ".github/workflows/fase4-b-5p4c-conferencia.yml",
+      "bytes": 3797,
+      "sha256": "48bb52c4448e2e6d539b3a8496c75dd6486e91a66e823562ee4cfac36c2a5fe9"
+    },
+    {
+      "arquivo": "scripts/fase4-b-5p4c-executar-gpu.mjs",
+      "bytes": 7216,
+      "sha256": "f515d67d29b4bb5d510e16aeb257f735aafe89203a5c123abb3e2d22faac0a7c"
+    },
+    {
+      "arquivo": "scripts/fase4-b-5p4c-pacote.mjs",
+      "bytes": 4169,
+      "sha256": "2d7d299bd40cac2a2c60dc477bf98e7da0632922722d65edf9b6d2716b71bcb6"
+    },
+    {
+      "arquivo": "scripts/fase4-b-5p4c-carcara-gpu.mjs",
+      "bytes": 5349,
+      "sha256": "b93852eca525bc9c139c5bdca071063cc20090181c0e9f989393e0e7c1d29304"
+    },
+    {
+      "arquivo": "scripts/fase4-b-5p4c-gpu.test.mjs",
+      "bytes": 2630,
+      "sha256": "f00faf8bbeb28cfaa6857254eeb897938c1aef9bde1f4ccf5384e4a77cfc5c3b"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/pacote.json",
+      "bytes": 2091,
+      "sha256": "1ca81791594afe34f20ff40ecc3cad339065fd93041152faec45ed0b3e4f5842"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/entrada.bin",
+      "bytes": 616,
+      "sha256": "affa7efa353813570254cfa98cab972e84889843f0cd7348962b3e76ee4813c1"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/kernel.wgsl",
+      "bytes": 756,
+      "sha256": "31a3c66e68dcbf6401a55fd0f2736d0aadcd1f00f3b5a8d997f8d12dacb53e22"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/testemunhos.bin",
+      "bytes": 4194304,
+      "sha256": "d92ccfe9ce8e5614ffa10a93bd8b52502489aa005a987713622bc61d4864cfec"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/testemunhos-repeticao.bin",
+      "bytes": 4194304,
+      "sha256": "d92ccfe9ce8e5614ffa10a93bd8b52502489aa005a987713622bc61d4864cfec"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/host-metadata.json",
+      "bytes": 603,
+      "sha256": "e63ef9a8e7c391e5b710dd1f17fe41b608535d432b226e407477b69c0842ff56"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/host-build.json",
+      "bytes": 2282,
+      "sha256": "caa61b69d8da0aae8293ded9e8bcfdb46b2baae88477a075d70714aeee08726a"
+    },
+    {
+      "arquivo": "evidencias/fase4-b-5p4c-gpu-pacote/host-build-pin.json",
+      "bytes": 774,
+      "sha256": "b0035daef12086364479f7b946cdbafdc016a300e9497265e55e20ef051eb572"
+    }
+  ]
+}

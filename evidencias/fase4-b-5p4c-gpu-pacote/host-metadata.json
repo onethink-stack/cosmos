@@ -1,0 +1,23 @@
+{
+  "adapterName": "AMD Radeon(TM) Vega 8 Graphics",
+  "backend": "Vulkan",
+  "bytesReadback": 4194304,
+  "device": 5597,
+  "deviceType": "IntegratedGpu",
+  "dispatch": [
+    16384,
+    1,
+    1
+  ],
+  "driver": "AMD proprietary driver",
+  "driverInfo": "23.10.24.07 (AMD proprietary shader compiler)",
+  "duracaoMs": 428,
+  "fallbackCpu": false,
+  "formato": "cosmos-b-gpu-5p4c-host-observacao-v1",
+  "hostVersao": "0.1.0",
+  "limiteDeEvidencia": "observacao operacional, nao atestacao criptografica do hardware",
+  "limiteMs": 20000,
+  "vendor": 4098,
+  "wgpuVersao": "30.0.1",
+  "workgroupSize": 64
+}

@@ -31,13 +31,13 @@
     },
     {
       "arquivo": "scripts/fase4-carcara-conferencia.mjs",
-      "bytes": 12752,
-      "sha256": "2ffb3bb2bff918412bc5244dbd1686f300a8cd830c26df5f329ddecc3dae1229"
+      "bytes": 14402,
+      "sha256": "36c5e0ea0d375f39ecb4471e7eedf923f2b04d7715d5b7c82cf9f44b589cdb18"
     },
     {
       "arquivo": ".github/workflows/fase4-carcara-conferencia.yml",
-      "bytes": 2756,
-      "sha256": "d3962e694cbb91492bc8fa85759451557c161c9f694ad0f48e974c061f65be62"
+      "bytes": 3006,
+      "sha256": "6258f6eed2fe64a70aafa9882f2b7ed38f4141980725a6e1130fc7dd16d0692a"
     },
     {
       "arquivo": "evidencias/fase4-cpu-referencia/entrada.smt2",
@@ -66,13 +66,23 @@
     },
     {
       "arquivo": "FASE4_PUBLICACAO_AUTORIZADA.md",
-      "bytes": 2129,
-      "sha256": "c6bc7f0b0aaa3dcbac27cd127ecc6712a0a1359fb1f9123c9610aeea0cb0c446"
+      "bytes": 3497,
+      "sha256": "4e3aad9055b66a8a69f5f414c2ae9c17a6cbda3d7c953df65e88a7fb4dd10e78"
     },
     {
       "arquivo": "FASE4_CONFERENCIA_CARCARA.md",
       "bytes": 10706,
       "sha256": "a74f71bbc63e3c883a6d04ac78e9416baef79aaea00ff166efe709e60488e58e"
+    },
+    {
+      "arquivo": "scripts/fase4-extrair-cvc5.mjs",
+      "bytes": 1122,
+      "sha256": "71f7a97409d15550a60d902ac0e9a0856a32dabb6da53a484ec2355f53ab7e11"
+    },
+    {
+      "arquivo": "scripts/fase4-extrair-cvc5.test.mjs",
+      "bytes": 1815,
+      "sha256": "72b79b646466af8d8f150207c2bbe675e82cea04c215ccbece0555e696ed503b"
     }
   ],
   "inventarioNaoIncluiASiProprio": true,
@@ -84,5 +94,12 @@
     "Somente conferencia CPU Linux, sem deploy/GPU/merge.",
     "Testes 1035/1035 referem-se ao workspace local anterior, nao a execucao desta CI.",
     "Arquivos locais preexistentes alterados nao incluidos."
-  ]
+  ],
+  "ajusteExtracao": {
+    "referenciaRunAnterior": "40118276380",
+    "originalPreservado": true,
+    "regra": "remover-somente-container-externo-dump-cvc5-v1",
+    "testesNode": 5,
+    "checkerEPinInalterados": true
+  }
 }

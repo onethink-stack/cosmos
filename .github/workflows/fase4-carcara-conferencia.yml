@@ -43,7 +43,9 @@ jobs:
           test "$(stat -c %s tmp/fase4-ferramentas/carcara-linux)" = 5402048
           chmod u+x tmp/fase4-ferramentas/carcara-linux
       - name: Conferir positivo e somente depois quatro negativos reais
-        run: node --experimental-strip-types scripts/fase4-carcara-conferencia.mjs "$GITHUB_WORKSPACE/tmp/fase4-ferramentas/carcara-linux"
+        run: |
+          node --test scripts/fase4-extrair-cvc5.test.mjs
+          node --experimental-strip-types scripts/fase4-carcara-conferencia.mjs "$GITHUB_WORKSPACE/tmp/fase4-ferramentas/carcara-linux"
       - name: Evidencias publicas desta execucao (sem binario, cofres ou ambiente)
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,6 +53,9 @@ jobs:
           name: fase4-carcara-cpu-${{ github.sha }}
           path: |
             evidencias/fase4-run/*.json
+            evidencias/fase4-run/derivacao-cvc5/entrada.smt2
+            evidencias/fase4-run/derivacao-cvc5/proof.alethe
+            evidencias/fase4-run/derivacao-cvc5/cert.json
             evidencias/fase4-run/caso-1/entrada.smt2
             evidencias/fase4-run/caso-1/proof.alethe
             evidencias/fase4-run/caso-1/cert.json

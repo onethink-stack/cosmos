@@ -6,6 +6,7 @@ import { resolve, join, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { platform, arch, release } from 'node:os'
+import { extrairCorpoCvc5 } from './fase4-extrair-cvc5.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const dir = join(root, 'evidencias/fase4-run')
@@ -93,9 +94,26 @@ try {
   recibo.artefatos.prova.bytesObservadosNoRunner = prova.length
   recibo.artefatos.certificado.sha256EsperadoNoInventarioConfiavel = inventario.arquivos.find(f => f.arquivo === 'evidencias/fase4-cpu-referencia/cert.json').sha256
   recibo.artefatos.certificado.sha256ObservadoNoRunner = sha(certBytes)
-  const positivo = cli(pacote, 'tmp/fase4-conferencia-carcara-1')
+  // A referência original permanece intacta. O dump cvc5 contém um contêiner
+  // externo que o checker não considera um comando Alethe. Extrair em cópia.
+  const extraida = extrairCorpoCvc5(prova)
+  const pacoteConferencia = join(dir, 'derivacao-cvc5')
+  mkdirSync(pacoteConferencia)
+  writeFileSync(join(pacoteConferencia, 'entrada.smt2'), entrada, { flag: 'wx' })
+  writeFileSync(join(pacoteConferencia, 'proof.alethe'), extraida.corpo, { flag: 'wx' })
+  const certExtraido = { ...cert, provaSha256: sha(extraida.corpo) }
+  writeFileSync(join(pacoteConferencia, 'cert.json'), JSON.stringify(certExtraido, null, 2) + '\n', { flag: 'wx' })
+  const derivacao = gravar('derivacao-cvc5.json', {
+    regra: 'remover-somente-container-externo-dump-cvc5-v1', origemSha256: sha(prova), destinoSha256: sha(extraida.corpo),
+    bytesOrigem: prova.length, bytesDestino: extraida.corpo.length,
+    prefixoRemovidoHex: extraida.prefixoHex, sufixoRemovidoHex: extraida.sufixoHex,
+    fonte: 'https://github.com/cvc5/cvc5/blob/cvc5-1.4.2/contrib/get-carcara-checker',
+    observacao: 'Apenas extração reversível de contêiner; passos internos e CRLF preservados. Certificado derivado não é nova assinatura.' })
+  recibo.artefatos.provaConferida = { arquivoPublico: 'evidencias/fase4-run/derivacao-cvc5/proof.alethe',
+    sha256: sha(extraida.corpo), bytes: extraida.corpo.length, derivacaoReferencia: derivacao.referencia, derivacaoSha256: derivacao.sha256 }
+  const positivo = cli(pacoteConferencia, 'tmp/fase4-conferencia-carcara-1')
   const p = gravar('positivo-cli.json', positivo)
-  const diagPositivo = direto(join(pacote, 'proof.alethe'), join(pacote, 'entrada.smt2'))
+  const diagPositivo = direto(join(pacoteConferencia, 'proof.alethe'), join(pacoteConferencia, 'entrada.smt2'))
   const d = gravar('positivo-checker-direto.json', diagPositivo)
   Object.assign(recibo.positivo, { estado: positivo.resultado?.estado === 'verificado-cpu' ? 'aprovado' : 'nao-aprovado',
     comandoEfetivoSemSegredos: positivo.comando, duracaoMs: positivo.duracaoMs, exitCodeCli: positivo.exitCode,
@@ -105,14 +123,15 @@ try {
     observacao: 'Saídas reais do CLI e do checker direto preservadas, sem aprovação alternativa.' })
   if (positivo.exitCode !== 0 || positivo.resultado?.estado !== 'verificado-cpu' || diagPositivo.exitCode !== 0
     || diagPositivo.erro || diagPositivo.signal || diagPositivo.stdout.trim() !== 'valid') throw new Error('positivo-nao-aprovado')
-  const texto = prova.toString('utf8')
+  const provaConferida = extraida.corpo
+  const texto = provaConferida.toString('utf8')
   const originalPasso = '(step t0 (cl @p_4 @p_8) :rule or :premises (a28))'
   const originalPremissa = '(assume a0 (! (or p0h0 p0h1 p0h2) :named @p_1))'
   if (texto.split(originalPasso).length !== 2 || texto.split(originalPremissa).length !== 2) throw new Error('mutacao-inaplicavel')
-  const alteradoByte = Buffer.from(prova); alteradoByte[0] ^= 1
+  const alteradoByte = Buffer.from(provaConferida); alteradoByte[0] ^= 1
   const casos = [
     { bytes: alteradoByte, recalcular: false, mudanca: 'XOR 1 no primeiro byte; certificado original.', classe: 'integridade' },
-    { bytes: prova.subarray(0, Math.floor(prova.length / 2)), recalcular: true, mudanca: 'Truncar para metade dos bytes.', classe: 'estrutura' },
+    { bytes: provaConferida.subarray(0, Math.floor(provaConferida.length / 2)), recalcular: true, mudanca: 'Truncar corpo extraído para metade dos bytes.', classe: 'estrutura' },
     { bytes: Buffer.from(texto.replace(originalPasso, '(step t0 (cl @p_4) :rule or :premises (a28))')), recalcular: true,
       mudanca: 'Em t0, remover literal @p_8 da conclusão de or, preservando regra e premissa a28.', classe: 'semantica' },
     { bytes: Buffer.from(texto.replace(originalPremissa, '(assume a0 (! false :named @p_1))')), recalcular: true,
@@ -125,7 +144,7 @@ try {
     mkdirSync(destino)
     writeFileSync(join(destino, 'entrada.smt2'), entrada, { flag: 'wx' })
     writeFileSync(join(destino, 'proof.alethe'), caso.bytes, { flag: 'wx' })
-    const c = { ...cert, ...(caso.recalcular ? { provaSha256: sha(caso.bytes) } : {}) }
+    const c = { ...certExtraido, ...(caso.recalcular ? { provaSha256: sha(caso.bytes) } : {}) }
     const cbytes = Buffer.from(JSON.stringify(c, null, 2) + '\n')
     writeFileSync(join(destino, 'cert.json'), cbytes, { flag: 'wx' })
     const trabalho = `tmp/fase4-negativo-${i + 1}`

@@ -77,6 +77,7 @@ jobs:
       - name: Registrar pins reais do host e dependencias
         run: node scripts/fase4-b-build-manifesto.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: fase4-b-host-windows-${{ github.sha }}
           path: |

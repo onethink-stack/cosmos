@@ -30,7 +30,9 @@ try {
   if (!gpu) saida = gerarTestemunhosSinteticosB(smt)
   else {
     const meta = JSON.parse(readFileSync(join(gpu, 'pacote.json'), 'utf8'))
-    if (meta.formato !== 'cosmos-b-gpu-pacote-v1' || meta.gpuFisicaObservada !== true || meta.fallbackCpu !== false) throw new Error('pacote-sem-gpu-fisica')
+    const requeridos = ['entrada.bin', 'kernel.wgsl', 'host-metadata.json', 'host-build.json', 'host-build-pin.json', 'testemunhos-repeticao.bin']
+    if (meta.formato !== 'cosmos-b-gpu-pacote-v1' || meta.gpuFisicaObservada !== true || meta.fallbackCpu !== false
+      || !meta.arquivos || JSON.stringify(Object.keys(meta.arquivos).sort()) !== JSON.stringify(requeridos.sort())) throw new Error('pacote-sem-gpu-fisica')
     saida = readFileSync(join(gpu, 'testemunhos.bin'))
     if (meta.saidaSha256 !== shaB(saida) || meta.smt2Sha256 !== shaB(smt)) throw new Error('vinculo-gpu-divergente')
     for (const [nome, hash] of Object.entries(meta.arquivos)) {
@@ -38,10 +40,23 @@ try {
         || shaB(readFileSync(join(gpu, nome))) !== hash) throw new Error('arquivo-gpu-divergente')
     }
     if (!saida.equals(readFileSync(join(gpu, 'testemunhos-repeticao.bin')))) throw new Error('divergencia-repeticao-gpu')
+    const host = JSON.parse(readFileSync(join(gpu, 'host-metadata.json'), 'utf8'))
+    const build = JSON.parse(readFileSync(join(gpu, 'host-build.json'), 'utf8'))
+    const pinHost = JSON.parse(readFileSync(join(gpu, 'host-build-pin.json'), 'utf8'))
+    if (!['IntegratedGpu', 'DiscreteGpu'].includes(host.deviceType) || host.vendor !== 4098 || !/vega 8/i.test(host.adapterName)
+      || host.backend !== 'Vulkan' || host.fallbackCpu !== false || host.wgpuVersao !== '30.0.1'
+      || JSON.stringify(host.dispatch) !== '[64,1,1]' || host.workgroupSize !== 64 || host.bytesReadback !== 16384
+      || pinHost.formato !== 'cosmos-b-gpu-host-pin-v1' || build.exeSha256 !== pinHost.exeSha256 || meta.exeSha256 !== pinHost.exeSha256
+      || shaB(readFileSync(join(gpu, 'host-build.json'))) !== pinHost.hostBuildSha256
+      || build.wgpu !== '30.0.1' || build.rustToolchain !== '1.99.1' || build.target !== 'x86_64-pc-windows-gnu'
+      || build.arquivos['kernel.wgsl'] !== pinHost.kernelSha256 || meta.kernelSha256 !== pinHost.kernelSha256
+      || shaB(readFileSync(join(gpu, 'kernel.wgsl'))) !== pinHost.kernelSha256
+      || build.arquivos['Cargo.lock'] !== pinHost.cargoLockSha256 || meta.cargoLockSha256 !== pinHost.cargoLockSha256) throw new Error('metadados-host-gpu-divergentes')
     recibo.pacoteGpu = meta
   }
   const p = converterTestemunhosB(smt, saida)
   if (gpu && !p.buffer.equals(readFileSync(join(gpu, 'entrada.bin')))) throw new Error('buffer-nao-corresponde-smt2')
+  if (gpu && (recibo.pacoteGpu.provaLocalSha256 !== p.provaSha256 || recibo.pacoteGpu.provaLocalBytes !== p.prova.length)) throw new Error('prova-local-e-linux-divergem')
   writeFileSync(join(destino, 'entrada.smt2'), smt, { flag: 'wx' })
   writeFileSync(join(destino, 'entrada.bin'), p.buffer, { flag: 'wx' })
   writeFileSync(join(destino, 'testemunhos.bin'), saida, { flag: 'wx' })

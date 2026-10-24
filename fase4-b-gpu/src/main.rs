@@ -29,10 +29,12 @@ fn executar() -> Result<(), String> {
     }
     let destino = PathBuf::from(&args[2]);
     fs::create_dir(&destino).map_err(|_| "destino-deve-ser-novo")?;
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: wgpu::Backends::VULKAN, ..Default::default() });
+    let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
+    descriptor.backends = wgpu::Backends::VULKAN;
+    let instance = wgpu::Instance::new(descriptor);
     let adapter = esperar(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
-        force_fallback_adapter: false, compatible_surface: None,
+        force_fallback_adapter: false, compatible_surface: None, apply_limit_buckets: false,
     }), inicio)?.map_err(|_| "adaptador-vulkan-indisponivel")?;
     let info = adapter.get_info();
     if !matches!(info.device_type, wgpu::DeviceType::IntegratedGpu | wgpu::DeviceType::DiscreteGpu)
@@ -50,7 +52,7 @@ fn executar() -> Result<(), String> {
     }), inicio)?.map_err(|_| "device-indisponivel")?;
     let entrada = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("entrada-288"), size: 288, usage: wgpu::BufferUsages::STORAGE, mapped_at_creation: true });
-    entrada.slice(..).get_mapped_range_mut().copy_from_slice(&input); entrada.unmap();
+    entrada.slice(..).get_mapped_range_mut().map_err(|_| "map-entrada-falhou")?.copy_from_slice(&input); entrada.unmap();
     let saida = device.create_buffer(&wgpu::BufferDescriptor { label: Some("saida-16384"), size: 16384,
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
     let inicial: Vec<u8> = (0..4096).flat_map(|_| 0xfffffffeu32.to_le_bytes()).collect();
@@ -82,7 +84,7 @@ fn executar() -> Result<(), String> {
             Err(_) => return Err("canal-readback-falhou".into()),
         }
     }
-    let bytes = leitura.slice(..).get_mapped_range().to_vec(); leitura.unmap();
+    let bytes = leitura.slice(..).get_mapped_range().map_err(|_| "leitura-mapeada-falhou")?.to_vec(); leitura.unmap();
     if bytes.len() != 16384 { return Err("saida-tamanho-invalido".into()); }
     fs::write(destino.join("testemunhos.bin"), &bytes).map_err(|_| "escrita-saida-falhou")?;
     fs::write(destino.join("entrada.bin"), &input).map_err(|_| "escrita-entrada-falhou")?;

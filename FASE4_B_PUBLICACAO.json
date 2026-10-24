@@ -6,72 +6,78 @@
   "arquivos": [
     {
       "arquivo": ".gitattributes",
-      "sha256": "a20a865e011d9af5edd7508b39460915fc2f4fe46f9c37235d23fa12d94318e6",
-      "bytes": 1751
+      "bytes": 1751,
+      "sha256": "a20a865e011d9af5edd7508b39460915fc2f4fe46f9c37235d23fa12d94318e6"
     },
     {
       "arquivo": "FASE4_B_GPU_PROTOCOLO.md",
-      "sha256": "436fb14687f4d57f2f85a86c61c4279b6b24ebce3fb036c81b6f9f36a1186577",
-      "bytes": 12649
+      "bytes": 12649,
+      "sha256": "436fb14687f4d57f2f85a86c61c4279b6b24ebce3fb036c81b6f9f36a1186577"
     },
     {
       "arquivo": "FASE4_B_AUTORIZACAO.md",
-      "sha256": "b0c6abc967d58734b041aff237c178f98958016115cc96295f354002259c187d",
-      "bytes": 1735
+      "bytes": 1735,
+      "sha256": "b0c6abc967d58734b041aff237c178f98958016115cc96295f354002259c187d"
     },
     {
       "arquivo": "evidencias/fase4-b-gpu-planejamento.json",
-      "sha256": "490ab491d10c7cd903549cd4d8332f6b179e24b672e24b3cf18a4f9e7916ef7f",
-      "bytes": 2852
+      "bytes": 2852,
+      "sha256": "490ab491d10c7cd903549cd4d8332f6b179e24b672e24b3cf18a4f9e7916ef7f"
     },
     {
       "arquivo": "scripts/fase4-b-ponte.mjs",
-      "sha256": "12149b9703722eec815a4862d38a01e660e4201752334bb1a2e57769fa61980a",
-      "bytes": 6319
+      "bytes": 6365,
+      "sha256": "9dc8d0890b7ce4b864fe6ff1bfbb6a84e8a9320dfdd69e998fe2474a6c590cea"
     },
     {
       "arquivo": "scripts/fase4-b-ponte.test.mjs",
-      "sha256": "3c10253540f9a4c04af5a0af49a99f0e7b0ed0cc5a515b10636c89fbe4c64235",
-      "bytes": 2302
+      "bytes": 2302,
+      "sha256": "3c10253540f9a4c04af5a0af49a99f0e7b0ed0cc5a515b10636c89fbe4c64235"
     },
     {
       "arquivo": "scripts/fase4-b-conferencia.mjs",
-      "sha256": "33ddd9534fa28d78834cef28965c7cee6cd1f5b90245521bfe46562024367305",
-      "bytes": 5845
+      "bytes": 7564,
+      "sha256": "baeaf93fc95e9243e3136442a9b9883ba2da34ad8a1b6bc93f76a1bae50d454a"
     },
     {
       "arquivo": "scripts/fase4-b-build-manifesto.mjs",
-      "sha256": "9d272df0c28011530c00a0687a44b2fcba0294755eece3bd19317090b1633092",
-      "bytes": 2414
+      "bytes": 2414,
+      "sha256": "9d272df0c28011530c00a0687a44b2fcba0294755eece3bd19317090b1633092"
     },
     {
       "arquivo": "fase4-b-gpu/Cargo.toml",
-      "sha256": "4ce033752a91d79aa553e5273c30cafb327ecf7ce7b63681fff710bc993e1b80",
-      "bytes": 306
+      "bytes": 306,
+      "sha256": "4ce033752a91d79aa553e5273c30cafb327ecf7ce7b63681fff710bc993e1b80"
     },
     {
       "arquivo": "fase4-b-gpu/rust-toolchain.toml",
-      "sha256": "576afb27e75c5482936bea6f6b84c4e2e47d1d5330fbd33b781ef4466cc0ee75",
-      "bytes": 87
+      "bytes": 87,
+      "sha256": "576afb27e75c5482936bea6f6b84c4e2e47d1d5330fbd33b781ef4466cc0ee75"
     },
     {
       "arquivo": "fase4-b-gpu/kernel.wgsl",
-      "sha256": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33",
-      "bytes": 740
+      "bytes": 740,
+      "sha256": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33"
     },
     {
       "arquivo": "fase4-b-gpu/src/main.rs",
-      "sha256": "23748b1e33fb97e0336bb4f72dd68afc6b4264c5af082018a9477f1417841f7c",
-      "bytes": 7201
+      "bytes": 7361,
+      "sha256": "a757c91f9fd47d9e0accc83c2f4cf40bba9ebdfaad325c86b5a41d965223759b"
     },
     {
       "arquivo": ".github/workflows/fase4-b-gpu-conferencia.yml",
-      "sha256": "9ef763a173d13d0bbf6d4f94394b0e19eae0d304b72359529b4cdd55c28f9ed0",
-      "bytes": 3579
+      "bytes": 3600,
+      "sha256": "d09cf1ffc646ec03c0cc4a58ef910b4dfb13524e4f2555b69c4ccca1ca09301d"
+    },
+    {
+      "arquivo": "scripts/fase4-b-executar-gpu.mjs",
+      "bytes": 6753,
+      "sha256": "7beec73acb854b6758e233b066ab546f0c4edcac4c5373ae03838c302b7fb89c"
     }
   ],
   "inventarioNaoIncluiASiProprio": true,
   "preservacaoLocalAntes": "13/13",
   "gpuExecutada": false,
-  "estado": "ponte-antes-do-host"
+  "estado": "ponte-homologada-host-corrigido-antes-execucao-gpu",
+  "ponteReferenciaRun": "40121560671"
 }

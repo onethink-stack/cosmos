@@ -62,10 +62,9 @@ const termos = c => nomesB.flatMap((_, v) => c.pos & (1 << v) ? [lit(v, false)] 
 
 export function converterTestemunhosB(smt2, saida) {
   const t = traduzirSmt2B(smt2), w = validarTestemunhosB(saida, t.clausulas)
-  const linhas = [], folhas = []
+  const linhas = t.clausulas.map((c, j) => `(assume a${j} (or ${c.literais.map(l => lit(l.v, l.negativo)).join(' ')}))`), folhas = []
   t.clausulas.forEach((c, j) => {
     const ls = c.literais.map(l => lit(l.v, l.negativo))
-    linhas.push(`(assume a${j} (or ${ls.join(' ')}))`)
     linhas.push(`(step c${j} (cl ${ls.join(' ')}) :rule or :premises (a${j}))`)
     folhas.push({ pos: c.pos, neg: c.neg, id: `c${j}` })
   })

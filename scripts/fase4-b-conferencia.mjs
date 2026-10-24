@@ -52,6 +52,8 @@ try {
       || build.arquivos['kernel.wgsl'] !== pinHost.kernelSha256 || meta.kernelSha256 !== pinHost.kernelSha256
       || shaB(readFileSync(join(gpu, 'kernel.wgsl'))) !== pinHost.kernelSha256
       || build.arquivos['Cargo.lock'] !== pinHost.cargoLockSha256 || meta.cargoLockSha256 !== pinHost.cargoLockSha256) throw new Error('metadados-host-gpu-divergentes')
+    if (JSON.stringify(Object.keys(build.arquivos).sort()) !== JSON.stringify(['Cargo.lock', 'Cargo.toml', 'kernel.wgsl', 'rust-toolchain.toml', 'src/main.rs'].sort())) throw new Error('fontes-host-incompletas')
+    for (const [nome, hash] of Object.entries(build.arquivos)) if (shaB(readFileSync(join(root, 'fase4-b-gpu', nome))) !== hash) throw new Error('fonte-host-diferente-da-executada')
     recibo.pacoteGpu = meta
   }
   const p = converterTestemunhosB(smt, saida)
@@ -82,6 +84,35 @@ try {
   const negativo = conferir('proof-negativa.alethe'); recibo.negativo = negativo
   if (negativo.erro || negativo.signal || negativo.status !== 1 || negativo.stdout.trim() !== 'invalid'
     || /parser error/i.test(negativo.stderr)) throw new Error('negativo-semantico-nao-recusado')
+  recibo.negativosAlethe = [{ caso: 'polaridade-pivo-invertida', provaMutanteSha256: shaB(Buffer.from(mutante)), ...negativo }]
+  const premissaOriginal = '(assume a0 (or p0h0 p0h1 p0h2))'
+  const premissaFora = texto.replace(premissaOriginal, '(assume a0 false)')
+  if (premissaFora === texto || !p.prova.subarray(-2).equals(Buffer.from(')\n'))) throw new Error('mutacoes-nao-construidas')
+  for (const [nome, bytes, parser] of [
+    ['truncamento', p.prova.subarray(0, p.prova.length - 2), true],
+    ['premissa-fora', Buffer.from(premissaFora), false],
+  ]) {
+    const arquivo = `proof-${nome}.alethe`
+    writeFileSync(join(destino, arquivo), bytes, { flag: 'wx' })
+    const n = conferir(arquivo)
+    recibo.negativosAlethe.push({ caso: nome, provaMutanteSha256: shaB(bytes), ...n })
+    if (n.erro || n.signal || n.status !== 1 || n.stdout.trim() !== 'invalid'
+      || parser !== /parser error/i.test(n.stderr)
+      || (!parser && !/not in original problem's assumptions/.test(n.stderr))) throw new Error('negativo-alethe-nao-recusado')
+  }
+  recibo.negativosTestemunhos = []
+  for (const [caso, valor, offset, esperado] of [
+    ['slot-nao-escrito', 0xFFFFFFFE, 0, 'slot-nao-escrito'],
+    ['sentinela-sat', 0xFFFFFFFF, 0, 'sentinela-sat'],
+    ['indice-invalido', 34, 0, 'indice-fora-do-dominio'],
+    ['clausula-verdadeira', 0, 4095 * 4, 'testemunho-nao-falsifica-clausula'],
+  ]) {
+    const alterado = Buffer.from(saida); alterado.writeUInt32LE(valor, offset)
+    let motivo = null
+    try { converterTestemunhosB(smt, alterado) } catch (e) { motivo = e.message }
+    recibo.negativosTestemunhos.push({ caso, natureza: 'mutacao-intencional-em-copia', hashRecalculado: shaB(alterado), motivo })
+    if (motivo !== esperado) throw new Error('negativo-testemunho-nao-recusado')
+  }
   recibo.estado = gpu ? 'prova-da-saida-gpu-conferida-linux' : 'ponte-sintetica-conferida-nao-e-execucao-gpu'
   recibo.bGpu = gpu ? 'execucao-local-e-conferencia-linux-registradas-revisao-pendente' : 'pendente'
   console.log(`${recibo.estado}; prova ${p.prova.length} bytes; positivo valid e negativo semântico invalid.`)

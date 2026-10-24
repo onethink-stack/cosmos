@@ -1,0 +1,14 @@
+{
+  "formato": "cosmos-b-gpu-host-pin-v1",
+  "autorizacaoReferencia": "FASE4_B_AUTORIZACAO.md",
+  "origemPinReferenciaPublica": "https://github.com/onethink-stack/cosmos/actions/runs/40122354955/artifacts/12572075206",
+  "hipoteseConfianca": "artefato da CI autorizada do projeto; digest ZIP conferido contra metadados GitHub; nao assinatura do fabricante",
+  "buildCommit": "1553375dd8c680e764ecef077033bfa5ef67151d",
+  "artefatoZipSha256": "6abef6ae40764235f32d8e875a6ede9d03cc5fcc431b6967c086cdd5bd65209c",
+  "exeSha256": "cab9b944d89f94d1adb6d37a0c3c219ac4b173c7adf81d5565c6e3792a7eb3bf",
+  "hostBuildSha256": "125e6ff7830bab8ad367301b4ae17aa9fb2b52507dabcd50f227cc22eda2e6b9",
+  "kernelSha256": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33",
+  "cargoLockSha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82",
+  "entradaBufferSha256": "b4dc6d8a68cb5190f49def3ffaa82e44a29c63ab7803313c87792ede8da664c3",
+  "gpuExecutadaAoRegistrarPin": false
+}

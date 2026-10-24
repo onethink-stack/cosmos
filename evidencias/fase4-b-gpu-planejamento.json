@@ -1,6 +1,6 @@
 {
   "formato": "cosmos-b-gpu-planejamento-v1",
-  "estado": "ponte-sintetica-prototipada-caracara-pendente-host-nao-compilado",
+  "estado": "gpu-fisica-executada-duas-vezes-conferencia-linux-pendente",
   "autorizacaoArquitetural": {
     "origem": "resposta expressa do operador nesta conversa",
     "decisao": "GPU gera testemunhos; CPU serializa Alethe (recomendado)",
@@ -25,29 +25,30 @@
     "workgroupSizeProposto": 64,
     "gruposPropostos": 64,
     "implementado": true,
-    "executado": false
+    "executado": true
   },
   "host": {
     "runtimeProposto": "wgpu-nativo",
     "versaoAprovada": null,
     "revisaoAprovada": null,
-    "lockfileSha256": null,
+    "lockfileSha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82",
     "toolchainAprovada": null,
-    "binarioSha256": null,
-    "backendObservado": null,
+    "binarioSha256": "cab9b944d89f94d1adb6d37a0c3c219ac4b173c7adf81d5565c6e3792a7eb3bf",
+    "backendObservado": "Vulkan",
     "fallbackSoftwarePermitido": false,
     "versaoSelecionada": "30.0.1",
     "toolchainSelecionada": "1.99.1",
-    "backendSelecionado": "Vulkan"
+    "backendSelecionado": "Vulkan",
+    "hostBuildCommit": "1553375dd8c680e764ecef077033bfa5ef67151d"
   },
   "dispositivoInventarioLocal": {
     "nome": "AMD Radeon(TM) Vega 8 Graphics",
     "driver": "31.0.21024.7004",
-    "suporteWgpuDemonstrado": false,
-    "despachoGpuRealDemonstrado": false
+    "suporteWgpuDemonstrado": true,
+    "despachoGpuRealDemonstrado": true
   },
   "ponteAlethe": {
-    "estado": "prototipo-sintetico-aguarda-checker",
+    "estado": "ponte-sintetica-validada-linux-saida-gpu-aguarda-checker",
     "conversorSha256": "12149b9703722eec815a4862d38a01e660e4201752334bb1a2e57769fa61980a",
     "solverCpuSubstitutoPermitido": false,
     "reutilizarProvaCvc5ComoProvaDaSaidaGpu": false,
@@ -61,7 +62,7 @@
     "sha256EsperadoAprovado": "fcd06852931d36b13e6d3f7965c81a068f5cfe2f3c5e7da2d91af500f8f1bfda",
     "resultadoSobreProvaGpu": null
   },
-  "resultadoB": "pendente",
+  "resultadoB": "pendente-conferencia-linux-da-saida-gpu",
   "novaPublicacaoEfetuada": false,
   "limites": [
     "Arquivo de planejamento, nao certificado de execucao.",

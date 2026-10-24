@@ -1,0 +1,49 @@
+{
+  "formato": "cosmos-b-gpu-pacote-v1",
+  "estado": "gpu-executada-conferencia-linux-pendente",
+  "gpuFisicaObservada": true,
+  "fallbackCpu": false,
+  "smt2Sha256": "5ead6b1b65836e0610ab91e657ad35b4c57122211f07126383ade24afd875edd",
+  "bufferEntradaSha256": "b4dc6d8a68cb5190f49def3ffaa82e44a29c63ab7803313c87792ede8da664c3",
+  "saidaSha256": "dbf295e5e6cc3e0784f02510525770b751ddab93df3d4975aeaed950a8d2efe2",
+  "bytesSaida": 16384,
+  "repeticoesIdenticas": true,
+  "exeSha256": "cab9b944d89f94d1adb6d37a0c3c219ac4b173c7adf81d5565c6e3792a7eb3bf",
+  "kernelSha256": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33",
+  "cargoLockSha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82",
+  "provaLocalSha256": "bb38fae47209882635be92ea790f23c169eb143fea03398dc3453b6f910f65d7",
+  "provaLocalBytes": 7881,
+  "arquivos": {
+    "entrada.bin": "b4dc6d8a68cb5190f49def3ffaa82e44a29c63ab7803313c87792ede8da664c3",
+    "kernel.wgsl": "01ce76832cbaa5faa3c9073c098e14fc75e2709109cbe4cdea4f1caf6dd8fb33",
+    "testemunhos-repeticao.bin": "dbf295e5e6cc3e0784f02510525770b751ddab93df3d4975aeaed950a8d2efe2",
+    "host-metadata.json": "bd754f1b856655fdfcba66387eba89b3b188996470e914eb203c94a3ebbc748b",
+    "host-build.json": "125e6ff7830bab8ad367301b4ae17aa9fb2b52507dabcd50f227cc22eda2e6b9",
+    "host-build-pin.json": "e0ae40a64fb53e877fe6c0569ce0d17d53825844b54e4e98d50a61dc56b1b31c"
+  },
+  "execucoesLocais": [
+    {
+      "execucao": 1,
+      "status": 0,
+      "signal": null,
+      "erro": null,
+      "stdout": "GPU física IntegratedGpu, Vulkan, dispatch 64x64, 16384 bytes\n",
+      "stderr": "",
+      "duracaoMs": 1772
+    },
+    {
+      "execucao": 2,
+      "status": 0,
+      "signal": null,
+      "erro": null,
+      "stdout": "GPU física IntegratedGpu, Vulkan, dispatch 64x64, 16384 bytes\n",
+      "stderr": "",
+      "duracaoMs": 365
+    }
+  ],
+  "duracaoTotalMs": 2214,
+  "limites": [
+    "Observação operacional local, não atestação criptográfica do hardware.",
+    "Prova ainda requer Carcara Linux independente."
+  ]
+}

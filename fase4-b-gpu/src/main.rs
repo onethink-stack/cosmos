@@ -103,3 +103,14 @@ fn executar() -> Result<(), String> {
 fn main() {
     if let Err(e) = executar() { eprintln!("B GPU interrompido: {e}"); std::process::exit(2); }
 }
+
+#[test]
+fn kernel_wgsl_parse_e_validacao_sem_executar_gpu() {
+    let modulo = wgpu::naga::front::wgsl::parse_str(include_str!("../kernel.wgsl")).expect("WGSL deve ser valido");
+    wgpu::naga::valid::Validator::new(wgpu::naga::valid::ValidationFlags::all(), wgpu::naga::valid::Capabilities::empty())
+        .validate(&modulo).expect("kernel deve passar validacao Naga");
+    assert_eq!(modulo.entry_points.len(), 1);
+    assert_eq!(modulo.entry_points[0].name, "calcular");
+    assert_eq!(modulo.entry_points[0].workgroup_size, [64, 1, 1]);
+    assert_eq!(modulo.global_variables.len(), 2);
+}

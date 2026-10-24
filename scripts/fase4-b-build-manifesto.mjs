@@ -10,7 +10,9 @@ const run = (bin, args) => execFileSync(bin, args, { encoding: 'utf8', timeout: 
 const rustc = run('rustup', ['which', '--toolchain', '1.99.1', 'rustc'])
 const gcc = realpathSync(run('which', ['x86_64-w64-mingw32-gcc-posix']))
 const arquivos = ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'kernel.wgsl', 'src/main.rs']
-const objdump = run('x86_64-w64-mingw32-objdump', ['-p', exe])
+// O dump completo contém tabelas de unwind grandes; filtrar em streaming,
+// mantendo limite de saída. Comando literal fechado, sem argumento de cliente.
+const dlls = run('bash', ['-o', 'pipefail', '-c', "x86_64-w64-mingw32-objdump -p fase4-b-gpu/target/x86_64-pc-windows-gnu/release/cosmos-b-gpu-host.exe | awk '/DLL Name:/ {print $3}'"])
 const manifesto = { formato: 'cosmos-b-gpu-host-build-v1', commit: process.env.GITHUB_SHA ?? null,
   runId: process.env.GITHUB_RUN_ID ?? null, target: 'x86_64-pc-windows-gnu', rustToolchain: '1.99.1',
   rustc: run('rustc', ['+1.99.1', '-Vv']), rustcBinarioSha256: shaB(readFileSync(rustc)),
@@ -21,7 +23,7 @@ const manifesto = { formato: 'cosmos-b-gpu-host-build-v1', commit: process.env.G
   rustflags: '-C target-feature=+crt-static', backendCompilado: 'Vulkan',
   arquivos: Object.fromEntries(arquivos.map(f => [f, shaB(readFileSync(pasta + f))])),
   exeSha256: shaB(readFileSync(exe)), exeBytes: readFileSync(exe).length,
-  dllsImportadas: [...objdump.matchAll(/DLL Name:\s*([^\r\n]+)/g)].map(m => m[1].trim()),
+  dllsImportadas: dlls.split(/\r?\n/).filter(Boolean),
   kernelExecutado: false, observacao: 'Compilação cruzada; não executa GPU no runner nem constitui atestação de hardware.' }
 writeFileSync(pasta + 'host-build.json', JSON.stringify(manifesto, null, 2) + '\n', { flag: 'wx' })
 console.log(JSON.stringify({ exeSha256: manifesto.exeSha256, cargoLockSha256: manifesto.arquivos['Cargo.lock'], kernelSha256: manifesto.arquivos['kernel.wgsl'], dlls: manifesto.dllsImportadas }))

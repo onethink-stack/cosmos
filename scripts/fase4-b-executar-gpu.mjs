@@ -19,7 +19,8 @@ try {
   const exe = join(ferramenta, 'cosmos-b-gpu-host.exe')
   if (pin.formato !== 'cosmos-b-gpu-host-pin-v1' || shaB(buildBytes) !== pin.hostBuildSha256
     || lstatSync(exe).isSymbolicLink() || shaB(readFileSync(exe)) !== pin.exeSha256 || build.exeSha256 !== pin.exeSha256
-    || build.wgpu !== '30.0.1' || build.rustToolchain !== '1.99.1' || build.target !== 'x86_64-pc-windows-gnu') throw new Error('pin-host-ou-toolchain-divergente')
+    || build.wgpu !== '30.0.1' || build.rustToolchain !== '1.99.1' || build.target !== 'x86_64-pc-windows-gnu'
+    || JSON.stringify(Object.keys(build.arquivos).sort()) !== JSON.stringify(['Cargo.lock', 'Cargo.toml', 'kernel.wgsl', 'rust-toolchain.toml', 'src/main.rs'].sort())) throw new Error('pin-host-ou-toolchain-divergente')
   const kernel = readFileSync(join(root, 'fase4-b-gpu/kernel.wgsl'))
   if (shaB(kernel) !== pin.kernelSha256 || build.arquivos['kernel.wgsl'] !== pin.kernelSha256
     || shaB(readFileSync(join(root, 'fase4-b-gpu/Cargo.lock'))) !== pin.cargoLockSha256

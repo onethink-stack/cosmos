@@ -72,7 +72,8 @@ jobs:
         run: |
           set -euo pipefail
           cd fase4-b-gpu
-          if test ! -f Cargo.lock; then cargo +1.99.1 generate-lockfile; fi
+          test -f Cargo.lock
+          cargo +1.99.1 test --locked --release --target x86_64-unknown-linux-gnu
           cargo +1.99.1 build --locked --release --target x86_64-pc-windows-gnu
       - name: Registrar pins reais do host e dependencias
         run: node scripts/fase4-b-build-manifesto.mjs

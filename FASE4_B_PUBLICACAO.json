@@ -41,8 +41,8 @@
     },
     {
       "arquivo": "scripts/fase4-b-build-manifesto.mjs",
-      "bytes": 2414,
-      "sha256": "9d272df0c28011530c00a0687a44b2fcba0294755eece3bd19317090b1633092"
+      "bytes": 2659,
+      "sha256": "3b0c9e079660f9b68b05c22c3587aaf4aa0a20335eb9dd27f7723e6e65216f97"
     },
     {
       "arquivo": "fase4-b-gpu/Cargo.toml",
@@ -61,23 +61,29 @@
     },
     {
       "arquivo": "fase4-b-gpu/src/main.rs",
-      "bytes": 7361,
-      "sha256": "a757c91f9fd47d9e0accc83c2f4cf40bba9ebdfaad325c86b5a41d965223759b"
+      "bytes": 7957,
+      "sha256": "652630f5762e9ae862740dfaf203bd8b07e68c5510865d4ef00afecc0562fdc9"
     },
     {
       "arquivo": ".github/workflows/fase4-b-gpu-conferencia.yml",
-      "bytes": 3600,
-      "sha256": "d09cf1ffc646ec03c0cc4a58ef910b4dfb13524e4f2555b69c4ccca1ca09301d"
+      "bytes": 3635,
+      "sha256": "f7ed1d5b9bf6ae45398538e37aa73b5854efbdce6ff5ebb666a7f912e5984403"
     },
     {
       "arquivo": "scripts/fase4-b-executar-gpu.mjs",
-      "bytes": 6753,
-      "sha256": "7beec73acb854b6758e233b066ab546f0c4edcac4c5373ae03838c302b7fb89c"
+      "bytes": 6920,
+      "sha256": "cea5c1f200fa7257c245e4625beeb7b5c33358ac832f8cebc311aa46d85bd3f2"
+    },
+    {
+      "arquivo": "fase4-b-gpu/Cargo.lock",
+      "bytes": 25590,
+      "sha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82"
     }
   ],
   "inventarioNaoIncluiASiProprio": true,
   "preservacaoLocalAntes": "13/13",
   "gpuExecutada": false,
-  "estado": "ponte-homologada-host-corrigido-antes-execucao-gpu",
-  "ponteReferenciaRun": "40121560671"
+  "estado": "ponte-homologada-lock-congelado-host-com-validacao-wgsl",
+  "ponteReferenciaRun": "40121560671",
+  "cargoLockSha256": "9fab7f9f7917878da0adffb178bfc1145937a20b2e565cbbbb8f627cb03c7e82"
 }
